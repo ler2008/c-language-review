@@ -1,0 +1,533 @@
+[
+  {
+    "id": "结-41",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "单链表",
+      "反转",
+      "指针操作"
+    ],
+    "stem": "单链表（不带头结点）反转时常用三指针循环：`cur` 指向当前待处理结点，`prev` 指向它的前驱（初值 `NULL`），`next` 用来暂存后继。下列四条语句的排列中，能正确反转整条链表的是（ ）。",
+    "options": [
+      "`cur->next = prev; next = cur->next; prev = cur; cur = next;`",
+      "`next = cur->next; cur->next = prev; prev = cur; cur = next;`",
+      "`next = cur->next; prev = cur; cur->next = prev; cur = next;`",
+      "`prev = cur; next = cur->next; cur->next = prev; cur = next;`"
+    ],
+    "answer": 1,
+    "analysis": "反转的本质是把每个结点的 next 指向前驱，但一旦改动 next 就再也找不到后继，所以顺序必须是：先保存后继 `next = cur->next`，再改链 `cur->next = prev`，然后把 prev 前移到 cur，最后把 cur 前移到刚保存的 next，B 正是这个顺序。A 先改链，`next = cur->next` 取到的其实是 prev，链表在第一个结点处就断掉；C 先把 prev 移到 cur，再执行 `cur->next = prev`，cur 指向自己形成自环，遍历会死循环；D 同样在保存后继之前移动了 prev，改链后后继信息全部丢失。循环结束时 prev 指向原来的表尾，它就是新表头。"
+  },
+  {
+    "id": "结-42",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "单链表",
+      "快慢指针",
+      "遍历"
+    ],
+    "stem": "从表头出发，`slow` 每轮前进 1 个结点、`fast` 每轮前进 2 个结点，循环条件为 `while (fast != NULL && fast->next != NULL)`。对恰好含 6 个结点（不带头结点）的单链表，循环结束时 `slow` 指向第几个结点（从 1 开始计数）（ ）。",
+    "options": [
+      "第 4 个",
+      "第 3 个",
+      "第 5 个",
+      "第 6 个"
+    ],
+    "answer": 0,
+    "analysis": "逐轮模拟：初始 slow 与 fast 都在第 1 个；第 1 轮后 slow=2、fast=3；第 2 轮时 fast->next 是第 4 个非空，继续，slow=3、fast=5；第 3 轮时 fast->next 是第 6 个非空，继续，slow=4、fast 越过表尾变成 NULL，条件不成立退出，所以 slow 停在第 4 个结点，也就是 6 个结点的“后中点”。结点数为奇数时（如 5 个）同样的条件会让 slow 停在正中间第 3 个。两个条件缺一不可：只判断 `fast != NULL` 时，`fast->next->next` 可能解引用空指针。选第 3 个是把偶数个当成奇数处理，选第 5、6 个是误以为 slow 每轮也走两步。"
+  },
+  {
+    "id": "结-43",
+    "module": "结构体",
+    "type": "fill",
+    "difficulty": 2,
+    "tags": [
+      "单链表",
+      "反转",
+      "函数"
+    ],
+    "stem": "下面程序用尾插法建立单链表，再调用 `reverse` 把它整体反转后输出，请填空。\n\n```c\n#include <stdio.h>\n#include <stdlib.h>\n\nstruct Node {\n    int data;\n    struct Node *next;\n};\n\n/* 反转整条链表，返回新的表头 */\nstruct Node *reverse(struct Node *head)\n{\n    struct Node *prev = NULL, *cur = head, *next;\n\n    while (cur != NULL) {\n        next = ①;\n        cur->next = ②;\n        prev = cur;\n        cur = ③;\n    }\n    return prev;\n}\n\nint main(void)\n{\n    int x;\n    struct Node *head = NULL, *tail = NULL, *p;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = (struct Node *)malloc(sizeof(struct Node));\n        if (p == NULL)\n            return 1;\n        p->data = x;\n        p->next = NULL;\n        if (head == NULL)\n            head = tail = p;\n        else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n\n    head = reverse(head);\n\n    for (p = head; p != NULL; p = p->next)\n        printf(\"%d \", p->data);\n    printf(\"\\n\");\n    return 0;\n}\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "cur->next",
+        "note": "先保存后继，否则改链之后就找不到了"
+      },
+      {
+        "no": "②",
+        "answer": "prev",
+        "note": "让当前结点指向前驱；第一轮 prev 为 NULL，所以原表头会变成新表尾"
+      },
+      {
+        "no": "③",
+        "answer": "next",
+        "note": "cur 前移到刚才保存的后继，不能写 cur->next（那已经指向 prev 了）"
+      }
+    ],
+    "analysis": "三指针反转的关键是“先存后继、再改链、最后前移”。① 处必须保存 `cur->next`，因为第 ② 步会覆盖它；② 处把当前结点挂到前驱上，第一轮时 prev 为 NULL，于是原表头的 next 被置空，正好成为新表尾；③ 处让 cur 前进到已保存的 next，如果这里误写 `cur = cur->next`，cur 会退回 prev，形成死循环。循环结束后 prev 指向原来的最后一个结点，所以函数 `return prev` 作为新表头。输入 `1 2 3 4 5 -1` 时输出 `5 4 3 2 1 `。整个过程时间 O(n)、额外空间 O(1)。"
+  },
+  {
+    "id": "结-44",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "单链表",
+      "快慢指针",
+      "判环"
+    ],
+    "stem": "下面用快慢指针判断单链表是否有环。关于这段代码，下列说法正确的是（ ）。\n\n```c\nint has_cycle(struct Node *head)\n{\n    struct Node *slow = head, *fast = head;\n\n    while (fast != NULL && fast->next != NULL) {\n        slow = slow->next;\n        fast = fast->next->next;\n        if (slow == fast)\n            return 1;\n    }\n    return 0;\n}\n```",
+    "options": [
+      "有环时它仍可能返回 0，因为 fast 会先绕完一整圈回到起点",
+      "无环时循环条件写成 `while (fast != NULL)` 就够了，不必再检查 `fast->next`",
+      "有环时 slow 与 fast 一定会在环内相遇：fast 每轮相对 slow 多走 1 个结点，环内结点数有限，追上只是时间问题",
+      "判环必须额外保存访问过的结点地址，Floyd 算法只能求环长而不能判环"
+    ],
+    "answer": 2,
+    "analysis": "快慢指针在环内的相对速度是 1（fast 走 2、slow 走 1），也就是说每轮两者在环上的距离缩小 1，而环长 L 是有限的，所以 slow 进环之后最多再走 L 轮必被追上，二者一定相遇，A 说可能返回 0 是错的。无环时 fast 会一路走到 NULL 结束，但循环体里要求值 `fast->next->next`，必须同时保证 `fast->next` 非空，否则会解引用空指针，B 错。Floyd 算法只用两个指针，时间 O(n)、额外空间 O(1)，不需要哈希表保存访问记录，D 错。进一步的做法是：相遇后把一个指针放回表头，两者每次各走一步，再次相遇的位置就是环的入口。"
+  },
+  {
+    "id": "结-45",
+    "module": "结构体",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "单链表",
+      "反转",
+      "指针操作"
+    ],
+    "stem": "读入一串整数（以 -1 结束）建立单链表，把链表整体反转后按新顺序输出。\n\n**输入格式：** 一行若干整数，以 -1 结束，-1 不计入链表。\n\n**输出格式：** 一行输出反转后各结点值，相邻数字用一个空格分隔，行末无多余空格；若没有有效数据，输出 `empty`。\n\n**输入样例：**\n```text\n1 2 3 4 5 -1\n```\n**输出样例：**\n```text\n5 4 3 2 1\n```",
+    "analysis": "思路：先用尾插法建表（保证原顺序与输入一致），再原地反转——维护 prev（新表头方向）、cur（当前）、next（暂存后继）三个指针，每轮把 cur->next 指向 prev 后整体前移，最后返回 prev。原地反转的时间复杂度 O(n)，额外空间 O(1)；若改用递归，代码短但递归深度等于 n，长链表可能爆栈。易错点：忘记把 `head = reverse(head)` 的结果接回去，导致打印的还是旧表头；建表时尾结点的 next 未置 NULL，反转后原表头会指向垃圾地址；空链表要单独输出 empty，否则 `p->data` 会崩。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nstruct Node {\n    int data;\n    struct Node *next;\n};\n\nstruct Node *reverse(struct Node *head)\n{\n    struct Node *prev = NULL, *cur = head, *next;\n\n    while (cur != NULL) {\n        next = cur->next;\n        cur->next = prev;\n        prev = cur;\n        cur = next;\n    }\n    return prev;\n}\n\nint main(void)\n{\n    int x, first = 1;\n    struct Node *head = NULL, *tail = NULL, *p, *q;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = (struct Node *)malloc(sizeof(struct Node));\n        if (p == NULL)\n            return 1;\n        p->data = x;\n        p->next = NULL;\n        if (head == NULL) {\n            head = tail = p;\n        } else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n\n    head = reverse(head);\n\n    if (head == NULL) {\n        printf(\"empty\\n\");\n        return 0;\n    }\n    for (p = head; p != NULL; p = p->next) {\n        if (!first)\n            printf(\" \");\n        printf(\"%d\", p->data);\n        first = 0;\n    }\n    printf(\"\\n\");\n\n    p = head;\n    while (p != NULL) {\n        q = p->next;\n        free(p);\n        p = q;\n    }\n    return 0;\n}",
+    "points": [
+      "用尾插法建立单链表并正确读入数据（-1 不入表）",
+      "用 prev/cur/next 三指针原地反转，循环结束后返回 prev",
+      "把 reverse 的返回值赋回 head",
+      "按格式输出反转结果，空链表输出 empty 并释放全部结点"
+    ]
+  },
+  {
+    "id": "结-46",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "单链表",
+      "双指针",
+      "边界处理"
+    ],
+    "stem": "下面代码用双指针定位倒数第 k 个结点（head 不带头结点，1 ≤ k ≤ 链表长度）。\n\n```c\nstruct Node *fast = head, *slow = head, *prev = NULL;\nint i;\n\nfor (i = 0; i < k; i++)\n    fast = fast->next;\nwhile (fast != NULL) {\n    prev = slow;\n    slow = slow->next;\n    fast = fast->next;\n}\n/* 此时 slow 指向倒数第 k 个结点 */\n```\n\n若 k 恰好等于链表长度，执行到注释处时 `prev` 的值是（ ）。",
+    "options": [
+      "指向头结点，因此直接 `free(slow)` 就能安全删掉它",
+      "是未定义的值，程序行为不可预测",
+      "指向被删结点的前驱，即倒数第 k+1 个结点",
+      "是 `NULL`；说明被删的正是首结点，必须单独用 `head = slow->next` 更新表头"
+    ],
+    "answer": 3,
+    "analysis": "fast 先走 k 步，当 k 等于链表长度时它刚好走到 NULL，后面的 while 一次都不会执行：slow 仍停在 head，prev 保持初值 NULL。这正对应“要删的是首结点”这一分支，必须改 head（`head = slow->next`），否则 head 会继续指向被 free 的结点而悬空。B 错，prev 有明确初值；A 错，prev 并不指向头结点，且直接 free 会让 head 悬空；C 描述的是 k 小于 n 时的情形（例如 n=5、k=2 时 slow 停在第 4 个、prev 停在第 3 个），k=n 时根本不存在倒数第 n+1 个结点，prev 也从未被赋值。这也说明为什么工程上常用哑结点来统一首结点的处理。"
+  },
+  {
+    "id": "结-47",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "结构体指针数组",
+      "sizeof",
+      "声明辨析"
+    ],
+    "stem": "有\n\n```c\nstruct Stu {\n    int id;\n    char name[10];\n};\n\nstruct Stu a[3] = {{1, \"A\"}, {2, \"B\"}, {3, \"C\"}};\nstruct Stu *p[3] = {&a[0], &a[1], &a[2]};\n```\n\n在指针占 8 字节的 64 位环境中，`sizeof(p)` 与表达式 `p[1]->name` 的值分别是（ ）。",
+    "options": [
+      "24 与 \"B\"",
+      "12 与 \"B\"",
+      "24 与 \"A\"",
+      "8 与 \"B\""
+    ],
+    "answer": 0,
+    "analysis": "读声明的窍门是先看后缀：`p[3]` 说明 p 有 3 个元素，再看前缀 `struct Stu *` 说明每个元素是指向结构体的指针，所以 p 是“指针数组”，`sizeof(p)` = 3 × 8 = 24，与结构体本身多大无关——这一点和数组指针 `struct Stu (*q)[3]`（q 只是一个指针，sizeof 为 8）完全不同，是本节最容易混的一对声明。p[1] 的类型是 `struct Stu *`，取成员必须用 `->`，`p[1]->name` 等价于 `a[1].name`，值为字符串 \"B\"。选 12 的人把指针当 4 字节；选 8 的人把指针数组当成了单个指针；选 \"A\" 的人把下标 1 当成了 0。"
+  },
+  {
+    "id": "结-48",
+    "module": "结构体",
+    "type": "fill",
+    "difficulty": 1,
+    "tags": [
+      "单链表",
+      "快慢指针",
+      "查找"
+    ],
+    "stem": "下面程序用快慢指针返回链表的中间结点（偶数个结点时返回后中间的那个），请填空。\n\n```c\n#include <stdio.h>\n#include <stdlib.h>\n\nstruct Node {\n    int data;\n    struct Node *next;\n};\n\nstruct Node *middle(struct Node *head)\n{\n    struct Node *slow = head, *fast = head;\n\n    while (fast != NULL && fast->next != NULL) {\n        slow = slow->next;\n        fast = ①;\n    }\n    return ②;\n}\n\nint main(void)\n{\n    int x;\n    struct Node *head = NULL, *tail = NULL, *p;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = (struct Node *)malloc(sizeof(struct Node));\n        if (p == NULL)\n            return 1;\n        p->data = x;\n        p->next = NULL;\n        if (head == NULL)\n            head = tail = p;\n        else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    if (head == NULL)\n        return 0;\n\n    p = middle(head);\n    printf(\"%d\\n\", p->data);\n    return 0;\n}\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "fast->next->next",
+        "note": "快指针一次走两步；循环条件已保证 fast 与 fast->next 都非空，因此这次解引用安全"
+      },
+      {
+        "no": "②",
+        "answer": "slow",
+        "note": "循环结束时 slow 正好落在中间结点上，返回它而不是 fast"
+      }
+    ],
+    "analysis": "快慢指针的核心是“让 fast 替 slow 探路”：slow 每次走 1 步，fast 每次走 2 步，所以 slow 走过的距离约为 fast 的一半，当 fast 到达表尾时 slow 刚好在中间。① 处写 `fast->next->next`，因为循环条件 `fast != NULL && fast->next != NULL` 已经保证 `fast->next` 是有效结点，再取它的 next 是安全的；② 处返回 slow。对 `1 2 3 4 5 -1`（5 个结点）返回 3，对 `1 2 3 4 -1`（4 个结点）返回 3（后中间）。常见错误是返回 fast（已经越界为 NULL），或循环条件只写 `fast != NULL` 造成空指针解引用。整个过程只遍历一遍，时间 O(n)、额外空间 O(1)。"
+  },
+  {
+    "id": "结-49",
+    "module": "结构体",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "单链表",
+      "合并",
+      "哑结点"
+    ],
+    "stem": "读入两个升序排列的整数序列（各自以 -1 结束），分别建成两个单链表，合并成一个仍按升序排列的单链表并输出。\n\n**输入格式：** 第一行为第一个序列，以 -1 结束；第二行为第二个序列，以 -1 结束。两个序列都可能为空（第一个数就是 -1）。\n\n**输出格式：** 一行输出合并后的链表，相邻数字用一个空格分隔，行末无多余空格；若合并结果为空，输出 `empty`。\n\n**输入样例：**\n```text\n1 3 5 -1\n2 3 4 6 -1\n```\n**输出样例：**\n```text\n1 2 3 3 4 5 6\n```",
+    "analysis": "思路：先用尾插法建两条升序链表，再用“哑结点 + 尾指针”合并。哑结点 dummy 让“结果表还没有结点”和“已经有结点”两种情况共用 `tail->next = ...` 这一句，省掉大量 head 特判；每轮取较小的头结点挂到 tail 后面，比较用 `<=` 可以保证相等元素先取第一条表（稳定）；某一条表走空后，把另一条的剩余部分整段接上即可，不必逐个搬运。时间复杂度 O(n+m)，额外空间 O(1)。易错点：返回 `dummy.next` 而不是 `dummy`（dummy 是栈上的局部变量，返回它的地址会悬空）；忘记接剩余部分；三个指针（p、q、tail）前移不同步导致死循环。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nstruct Node {\n    int data;\n    struct Node *next;\n};\n\nstruct Node *build(void)\n{\n    int x;\n    struct Node *head = NULL, *tail = NULL, *p;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = (struct Node *)malloc(sizeof(struct Node));\n        if (p == NULL)\n            return NULL;\n        p->data = x;\n        p->next = NULL;\n        if (head == NULL) {\n            head = tail = p;\n        } else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    return head;\n}\n\nstruct Node *merge(struct Node *a, struct Node *b)\n{\n    struct Node dummy;\n    struct Node *tail = &dummy;\n\n    dummy.next = NULL;\n    while (a != NULL && b != NULL) {\n        if (a->data <= b->data) {\n            tail->next = a;\n            a = a->next;\n        } else {\n            tail->next = b;\n            b = b->next;\n        }\n        tail = tail->next;\n    }\n    tail->next = (a != NULL) ? a : b;\n    return dummy.next;\n}\n\nint main(void)\n{\n    struct Node *a = build();\n    struct Node *b = build();\n    struct Node *m = merge(a, b);\n    struct Node *p, *q;\n    int first = 1;\n\n    if (m == NULL) {\n        printf(\"empty\\n\");\n        return 0;\n    }\n    for (p = m; p != NULL; p = p->next) {\n        if (!first)\n            printf(\" \");\n        printf(\"%d\", p->data);\n        first = 0;\n    }\n    printf(\"\\n\");\n\n    p = m;\n    while (p != NULL) {\n        q = p->next;\n        free(p);\n        p = q;\n    }\n    return 0;\n}",
+    "points": [
+      "分别用尾插法建立两条升序链表（-1 不入表）",
+      "用哑结点 dummy 与尾指针 tail 合并，避免首结点特判",
+      "比较用 <= 保证稳定性，并正确前移 p、q、tail",
+      "把未走完的那条链表整段接到尾部",
+      "返回 dummy.next，按格式输出并释放全部结点"
+    ]
+  },
+  {
+    "id": "结-50",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "const",
+      "结构体指针",
+      "类型限定符"
+    ],
+    "stem": "有\n\n```c\nstruct Point {\n    int x;\n    int y;\n};\n\nstruct Point a = {1, 2}, b = {3, 4};\nconst struct Point *p1 = &a;\nstruct Point * const p2 = &a;\n```\n\n下列语句中**错误**（无法通过编译）的是（ ）。",
+    "options": [
+      "`a.x = 3;`",
+      "`p1->y = 4;`",
+      "`p2->y = 5;`",
+      "`p1 = &b;`"
+    ],
+    "answer": 1,
+    "analysis": "判断口诀是“const 在 * 左边管内容，在 * 右边管指针”。`const struct Point *p1` 中的 const 修饰的是“p1 所指的对象”，因此不能通过 p1 修改 a 的成员，B 直接编译报错；但 p1 这个指针本身可以改指向，D 合法。`struct Point * const p2` 中的 const 修饰 p2 本身，p2 只能指向 a（改指向会报错），但通过它修改 a 的成员是允许的，C 合法。a 本身不是 const 对象，A 合法。若写成 `const struct Point * const p`，则指针和所指内容都不能改。注意 const 只是编译期的承诺，通过别的非 const 途径修改同一对象仍然可行，但那属于违反约定。"
+  },
+  {
+    "id": "结-51",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "typedef",
+      "函数指针",
+      "回调"
+    ],
+    "stem": "有\n\n```c\ntypedef int (*Cmp)(const void *, const void *);\n\nint by_score(const void *a, const void *b);\n\nCmp cmp = by_score;\nqsort(s, n, sizeof(s[0]), cmp);\n```\n\n关于 `Cmp` 与这次 `qsort` 调用，说法正确的是（ ）。",
+    "options": [
+      "`Cmp` 是函数类型，因此 `Cmp cmp = by_score;` 一定编译错误",
+      "`qsort` 第四个参数的类型是 `int *`，必须把 `cmp` 强制转换后再传入",
+      "`Cmp` 只能指向返回 `void` 的函数，因为回调函数不需要返回值",
+      "`Cmp` 是指向“返回 int、接收两个 `const void *` 参数的函数”的指针，`qsort` 第四个参数要求的正是这种函数指针"
+    ],
+    "answer": 3,
+    "analysis": "读复杂声明可以“由内向外”：`(*Cmp)` 说明 Cmp 是指针，`(*Cmp)(const void *, const void *)` 说明它指向函数，最左边的 `int` 是函数返回类型，所以 Cmp 是函数指针类型而不是函数类型，A 错。`qsort` 的原型是 `void qsort(void *base, size_t n, size_t size, int (*cmp)(const void *, const void *))`：第二个参数是元素个数，第三个是单个元素的大小，第四个才是比较函数指针，B 把第三、四个参数弄混了。比较函数必须返回 int（负数、0、正数分别表示小于、等于、大于），返回 void 就无法排序，C 错。函数名在表达式中自动退化为函数指针，`Cmp cmp = by_score;` 与 `= &by_score` 等价，都是合法的初始化。"
+  },
+  {
+    "id": "结-52",
+    "module": "结构体",
+    "type": "fill",
+    "difficulty": 3,
+    "tags": [
+      "单链表",
+      "双指针",
+      "结点删除"
+    ],
+    "stem": "下面程序删除单链表中倒数第 k 个结点（1 ≤ k ≤ 结点个数），请填空。\n\n```c\n#include <stdio.h>\n#include <stdlib.h>\n\nstruct Node {\n    int data;\n    struct Node *next;\n};\n\nint main(void)\n{\n    int x, k, i;\n    struct Node *head = NULL, *tail = NULL, *p, *q;\n    struct Node *fast, *slow, *prev;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = (struct Node *)malloc(sizeof(struct Node));\n        if (p == NULL)\n            return 1;\n        p->data = x;\n        p->next = NULL;\n        if (head == NULL)\n            head = tail = p;\n        else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    scanf(\"%d\", &k);\n\n    fast = head;\n    for (i = 0; i < k; i++)\n        fast = fast->next;\n\n    slow = head;\n    prev = NULL;\n    while (fast != NULL) {\n        prev = slow;\n        slow = ①;\n        fast = ②;\n    }\n\n    if (prev == NULL)\n        head = ③;\n    else\n        prev->next = slow->next;\n    free(slow);\n\n    for (p = head; p != NULL; p = p->next)\n        printf(\"%d \", p->data);\n    printf(\"\\n\");\n\n    p = head;\n    while (p != NULL) {\n        q = p->next;\n        free(p);\n        p = q;\n    }\n    return 0;\n}\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "slow->next",
+        "note": "慢指针前移一格，prev 已经记住了它的前驱"
+      },
+      {
+        "no": "②",
+        "answer": "fast->next",
+        "note": "快指针同步前移，保证两者始终相距 k 个结点"
+      },
+      {
+        "no": "③",
+        "answer": "slow->next",
+        "note": "prev 为 NULL 说明要删的是首结点，直接让 head 指向第二个结点"
+      }
+    ],
+    "analysis": "双指针定位倒数第 k 个的核心是“保持间距”：fast 先走 k 步，此时 slow 与 fast 相距 k 个结点；之后两者同步前进，当 fast 走到 NULL 时，slow 恰好落在倒数第 k 个结点上，而 prev 停在它的前驱。① 与 ② 分别让 slow、fast 前移一格，注意两者的基指针不同，不能都写 `->next` 了事；③ 是删除首结点这一特殊分支，必须改 head，否则 head 会指向已释放的内存。删除时先改链再 `free(slow)`，之后链表仍然是完整的。输入 `1 2 3 4 5 -1` 与 k=2 时输出 `1 2 3 5 `；k=1 时删除的是最后一个结点，k=5 时 prev 为 NULL、走 ③ 分支。"
+  },
+  {
+    "id": "结-53",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "offsetof",
+      "内存对齐",
+      "结构体布局"
+    ],
+    "stem": "有\n\n```c\n#include <stddef.h>\n\nstruct Pack {\n    char tag;\n    int value;\n    double ratio;\n};\n```\n\n在 `char` 1 字节、`int` 4 字节、`double` 8 字节，且成员按自身大小（最大 8）对齐的 x64 环境中，`offsetof(struct Pack, ratio)` 的值是（ ）。",
+    "options": [
+      "4",
+      "5",
+      "8",
+      "12"
+    ],
+    "answer": 2,
+    "analysis": "`offsetof` 是 `<stddef.h>` 提供的宏，本质是 `(size_t)&(((struct Pack *)0)->ratio)`，即把 0 当地址算成员相对结构体开头的字节偏移，编译器在编译期就能算出。逐成员排布：tag 在偏移 0 占 1 字节；value 是 int，需 4 对齐，所以偏移 1~3 填充，value 占 4~7；ratio 是 double，需 8 对齐，下一个 8 的倍数正好是 8，因此 ratio 的偏移是 8，中间没有额外填充。选项 4 是 value 的偏移（把填充算错了对象），5 是把三个成员大小直接相加、忽略对齐，12 是误以为 ratio 还要再等一个 4 字节周期才对齐。顺带一提，`sizeof(struct Pack)` 是 16（8 字节的 ratio 之后恰好收尾，无需尾部填充）。"
+  },
+  {
+    "id": "结-54",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "柔性数组",
+      "动态内存",
+      "sizeof"
+    ],
+    "stem": "有\n\n```c\nstruct Buf {\n    int len;\n    int data[];   /* 柔性数组成员（C99） */\n};\n```\n\n在 `int` 占 4 字节的环境中，`sizeof(struct Buf)` 的值，以及为 `len` 与 5 个 `data` 元素申请空间的正确写法分别是（ ）。",
+    "options": [
+      "4；`malloc(sizeof(struct Buf) + 5 * sizeof(int))`",
+      "4；`malloc(5 * sizeof(int))`",
+      "24；`malloc(sizeof(struct Buf) + 5 * sizeof(int))`",
+      "0；`malloc(5 * sizeof(int))`"
+    ],
+    "answer": 0,
+    "analysis": "柔性数组 `int data[];` 声明的是一个不完整类型，不参与 `sizeof`，所以 `sizeof(struct Buf)` 只算 len 的 4 字节（并按 int 的对齐取整，仍是 4）。但运行时它确实要占用空间，必须按“结构体头部 + 元素个数 × 元素大小”一次申请：`malloc(sizeof(struct Buf) + 5 * sizeof(int))`，之后 `b->len = 5;` 再逐个写 `b->data[i]`，最后只 `free(b)` 一次。B 少申请了 len 自己的 4 字节，写 len 就越界；C 把柔性数组当成固定 5 个元素算进了 sizeof（那需要写 `int data[5]`，就不是柔性数组了）；D 忽略了“柔性数组要求结构体至少还有一个其他具名成员”，因此 sizeof 不可能是 0。还要记住：柔性数组必须是最后一个成员，且用 sizeof 求不出实际元素个数，得靠 len 记录。"
+  },
+  {
+    "id": "结-55",
+    "module": "结构体",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "单链表",
+      "双指针",
+      "结点删除"
+    ],
+    "stem": "读入一串整数（以 -1 结束）建立单链表，再读入 k，删除链表中倒数第 k 个结点（1 ≤ k ≤ 结点个数），输出剩余链表。\n\n**输入格式：** 第一行为若干整数，以 -1 结束；第二行为一个整数 k。\n\n**输出格式：** 一行输出剩余结点值，相邻数字用一个空格分隔，行末无多余空格；若链表被删空，输出 `empty`。\n\n**输入样例：**\n```text\n1 2 3 4 5 -1\n2\n```\n**输出样例：**\n```text\n1 2 3 5\n```",
+    "analysis": "思路：先用尾插法建表，再用双指针一次遍历完成删除。fast 先走 k 步，然后 fast 与 slow 同步前进并记录 slow 的前驱 prev，当 fast 为 NULL 时 slow 就是倒数第 k 个。删除时要分两种情况：prev 为 NULL 说明命中的是首结点（k 等于长度），必须改 head；否则让 prev 跳过 slow。最后 `free(slow)` 并输出剩余链表，删空则输出 empty。时间复杂度 O(n)（只遍历一遍），额外空间 O(1)。易错点：k=1 时删的是最后一个结点，`slow->next` 为 NULL，改链后要保证尾结点 next 仍为 NULL；先 free 再取 `slow->next` 属于访问已释放内存；忘记链路释放会导致内存泄漏。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nstruct Node {\n    int data;\n    struct Node *next;\n};\n\nint main(void)\n{\n    int x, k, i, first = 1;\n    struct Node *head = NULL, *tail = NULL, *p, *q;\n    struct Node *fast, *slow, *prev;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = (struct Node *)malloc(sizeof(struct Node));\n        if (p == NULL)\n            return 1;\n        p->data = x;\n        p->next = NULL;\n        if (head == NULL) {\n            head = tail = p;\n        } else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    if (scanf(\"%d\", &k) != 1 || head == NULL)\n        return 0;\n\n    fast = head;\n    for (i = 0; i < k; i++)\n        fast = fast->next;\n\n    slow = head;\n    prev = NULL;\n    while (fast != NULL) {\n        prev = slow;\n        slow = slow->next;\n        fast = fast->next;\n    }\n\n    if (prev == NULL)\n        head = slow->next;\n    else\n        prev->next = slow->next;\n    free(slow);\n\n    if (head == NULL) {\n        printf(\"empty\\n\");\n        return 0;\n    }\n    for (p = head; p != NULL; p = p->next) {\n        if (!first)\n            printf(\" \");\n        printf(\"%d\", p->data);\n        first = 0;\n    }\n    printf(\"\\n\");\n\n    p = head;\n    while (p != NULL) {\n        q = p->next;\n        free(p);\n        p = q;\n    }\n    return 0;\n}",
+    "points": [
+      "用尾插法正确建立单链表并读入 k",
+      "fast 先走 k 步，再与 slow 同步前进并记录前驱 prev",
+      "区分 prev 为 NULL（删首结点）与一般情况，正确改链后 free",
+      "按格式输出剩余链表，删空时输出 empty"
+    ]
+  },
+  {
+    "id": "结-56",
+    "module": "结构体",
+    "type": "fill",
+    "difficulty": 1,
+    "tags": [
+      "qsort",
+      "函数指针",
+      "结构体数组"
+    ],
+    "stem": "下面程序用 `qsort` 把学生按成绩降序排列（成绩相同按姓名升序），请填空。\n\n```c\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\nstruct Stu {\n    char name[20];\n    int score;\n};\n\nint by_score(const void *a, const void *b)\n{\n    const struct Stu *p = (const struct Stu *)a;\n    const struct Stu *q = (const struct Stu *)b;\n\n    if (p->score != q->score)\n        return q->score - p->score;\n    return ①;\n}\n\nint main(void)\n{\n    struct Stu s[50];\n    int n, i;\n\n    scanf(\"%d\", &n);\n    for (i = 0; i < n; i++)\n        scanf(\"%19s%d\", s[i].name, &s[i].score);\n\n    qsort(s, (size_t)n, ②, by_score);\n\n    for (i = 0; i < n; i++)\n        printf(\"%s %d\\n\", s[i].name, s[i].score);\n    return 0;\n}\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "strcmp(p->name, q->name)",
+        "note": "成绩相同按姓名升序；写 strcmp(q->name, p->name) 就变成降序了"
+      },
+      {
+        "no": "②",
+        "answer": "sizeof(s[0])",
+        "note": "qsort 的第三个参数是单个元素的大小；写 sizeof(struct Stu) 也正确"
+      }
+    ],
+    "analysis": "qsort 是通用排序函数，它不知道元素类型，所以要求调用者给出三样东西：元素个数、每个元素的字节数、以及一个比较函数。比较函数的两个参数是 `const void *`，必须先用强制转换还原成 `const struct Stu *` 再取成员；返回值决定顺序：返回负数表示 a 应排在 b 前面。要按成绩降序，就写成 `q->score - p->score`（成绩大的 q 减成绩小的 p 得正数，说明 a 应排在后面）。① 处在分数相同时比较姓名，`strcmp(p->name, q->name)` 为负表示 p 的名字更小、应排前面，正好是升序。② 处填元素大小 `sizeof(s[0])`，这样数组元素类型改变时不用改代码。注意 qsort 交换的是整块字节，结构体数组会被直接搬动，若结构体内部有指针成员，搬动后指针仍指向原来的对象（浅拷贝），这是设计上要留意的点。"
+  },
+  {
+    "id": "结-57",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "单链表",
+      "哑结点",
+      "合并"
+    ],
+    "stem": "合并两条有序单链表时，常用一个“哑结点（dummy head）”作为临时的结果表头。这样做的主要目的是（ ）。",
+    "options": [
+      "减少一次内存申请，提高运行速度",
+      "让“向空结果表追加第一个结点”和“追加后续结点”共用同一句 `tail->next = ...`，省掉为表头单独写的分支",
+      "哑结点会保留在最终结果中，用来标记链表长度",
+      "只有带哑结点的链表才能用 `->next` 访问后继结点"
+    ],
+    "answer": 1,
+    "analysis": "哑结点是用一个局部结构体变量（不需要 malloc）当“占位表头”，让尾指针 tail 一开始就指向它。这样每取下一个较小结点时，都统一执行 `tail->next = p; tail = tail->next;`，不需要判断“结果表是不是还空着、要不要改 head”，从而把首结点的特殊情况消掉，代码更短也更不容易写错，B 正确。它并不会减少内存申请（A 错，而且哑结点通常就放在栈上），也不该被返回或保留在结果里（C 错，函数应返回 `dummy.next`，返回 `&dummy` 会悬空）。`->next` 是成员访问运算符，与有没有哑结点无关（D 错）。同理，删除结点时也可以用哑结点统一处理“删首结点”。"
+  },
+  {
+    "id": "结-58",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "二级指针",
+      "单链表",
+      "函数参数"
+    ],
+    "stem": "有\n\n```c\nvoid push_front(struct Node **head, int v)\n{\n    struct Node *p = (struct Node *)malloc(sizeof(struct Node));\n\n    if (p == NULL)\n        return;\n    p->data = v;\n    p->next = *head;\n    *head = p;\n}\n```\n\n主函数中执行 `push_front(&head, 5);` 之后，主函数的 `head` 为什么会被改成指向新结点（ ）。",
+    "options": [
+      "因为 `malloc` 申请的结点地址会自动写回主函数的 head 变量",
+      "因为结构体作为参数传递时默认按地址传递，head 会被自动修改",
+      "因为形参是指向指针的指针，`*head = p` 修改的正是主函数中 head 这个指针变量本身",
+      "把 `&head` 传给二级指针等于按值传递，因此主函数的 head 其实不会改变"
+    ],
+    "answer": 2,
+    "analysis": "C 的函数参数一律是值传递：传入 `&head` 时，复制的是 head 变量的地址，形参 `head`（二级指针）保存这个地址，于是 `*head` 就代表主函数里的 head 变量本身，`*head = p` 当然会改到它；这正是“想在函数内修改调用者的指针变量，就要传它的地址”的典型用法。A 错，malloc 只返回一块堆地址，不会知道谁在接收；B 错，结构体传参也是值传递，只有数组作参数才会退化成指针；D 错，传地址就是为了让函数能改到调用者的变量，说“不会改变”与事实相反。顺带说明：若形参写成 `struct Node *head`，函数内的 `head = p` 只改副本，主函数的 head 不变，此时必须靠返回值 `head = push_front(head, 5);` 接回去。"
+  },
+  {
+    "id": "结-59",
+    "module": "结构体",
+    "type": "fill",
+    "difficulty": 3,
+    "tags": [
+      "单链表",
+      "合并",
+      "哑结点"
+    ],
+    "stem": "下面程序读入两条升序链表（各自以 -1 结束），把它们合并成一条升序链表后输出，请填空。\n\n```c\n#include <stdio.h>\n#include <stdlib.h>\n\nstruct Node {\n    int data;\n    struct Node *next;\n};\n\nstruct Node *build(void)\n{\n    int x;\n    struct Node *head = NULL, *tail = NULL, *p;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = (struct Node *)malloc(sizeof(struct Node));\n        if (p == NULL)\n            return NULL;\n        p->data = x;\n        p->next = NULL;\n        if (head == NULL)\n            head = tail = p;\n        else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    return head;\n}\n\nstruct Node *merge(struct Node *a, struct Node *b)\n{\n    struct Node dummy;\n    struct Node *tail = &dummy;\n\n    dummy.next = NULL;\n    while (a != NULL && b != NULL) {\n        if (a->data <= b->data) {\n            tail->next = a;\n            a = ①;\n        } else {\n            tail->next = b;\n            b = ②;\n        }\n        tail = ③;\n    }\n    tail->next = (a != NULL) ? a : b;\n    return dummy.next;\n}\n\nint main(void)\n{\n    struct Node *a = build(), *b = build(), *m, *p;\n\n    m = merge(a, b);\n    for (p = m; p != NULL; p = p->next)\n        printf(\"%d \", p->data);\n    printf(\"\\n\");\n    return 0;\n}\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "a->next",
+        "note": "取了 a 的结点，a 自己向后移动一格"
+      },
+      {
+        "no": "②",
+        "answer": "b->next",
+        "note": "取了 b 的结点，b 向后移动一格"
+      },
+      {
+        "no": "③",
+        "answer": "tail->next",
+        "note": "tail 前移到刚挂上的那个结点，不能写 tail = tail->next->next"
+      }
+    ],
+    "analysis": "合并的循环每一步做三件事：比较两个表头、把较小者挂到结果表尾、让被取走的那条表和 tail 各前移一格。① 与 ② 分别推进 a、b，两者不能写混，否则会跳过元素或重复；③ 让 tail 前进到刚接上的结点——因为上一步已经把 `tail->next` 指向了被取的结点，所以写 `tail = tail->next` 即可。循环结束后必有一条表先空，剩下的整段本来就有序，直接 `tail->next = (a != NULL) ? a : b;` 接上，不需要再逐个搬。返回 `dummy.next` 而不是 `dummy`：dummy 是栈上的局部变量，函数返回后它就不存在了。输入 `1 3 5 -1` 与 `2 3 4 6 -1` 时输出 `1 2 3 3 4 5 6 `。比较用 `<=` 可以保证相等元素先取第一条表，结果稳定。"
+  },
+  {
+    "id": "结-60",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "单链表",
+      "反转",
+      "结构变化"
+    ],
+    "stem": "把 `head` 指向的单链表（不带头结点）整体反转之后，原来的表头结点变成（ ），新的 `head` 应该指向（ ）。",
+    "options": [
+      "表头；原来的第二个结点",
+      "表头；原来的表头结点",
+      "表尾；原来的第二个结点",
+      "表尾；原来的表尾结点"
+    ],
+    "answer": 3,
+    "analysis": "反转改变的是每个结点 next 的方向，结点之间的先后次序被完全颠倒：原来第一个结点前面不再有结点，它的 next 在第一轮就被置为 NULL，因此成为新链表的最后一个结点（表尾）；原来最后一个结点的 next 原本是 NULL，反转后它指向原来的倒数第二个结点，自己成了新链表的第一个结点，所以新的 head 应指向原来的表尾。三指针循环结束时 prev 正好停在这个位置，`return prev` 就是新表头，这也是反转函数必须返回 prev 而不能返回原 head 的原因。选“表头”的选项把反转理解成了交换数据；选“第二个结点”的选项混淆了相邻结点的位置关系。"
+  },
+  {
+    "id": "枚-13",
+    "module": "枚举",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "枚举",
+      "数组下标",
+      "名字表"
+    ],
+    "stem": "有\n\n```c\nenum Color { RED, GREEN, BLUE, COLOR_COUNT };\nconst char *names[COLOR_COUNT] = {\"red\", \"green\", \"blue\"};\n\nenum Color c = BLUE;\nprintf(\"%s\\n\", names[c]);\n```\n\n程序输出是（ ）。",
+    "options": [
+      "blue",
+      "BLUE",
+      "2",
+      "编译错误：枚举变量不能作数组下标"
+    ],
+    "answer": 0,
+    "analysis": "枚举常量本质上是 int 常量（RED=0、GREEN=1、BLUE=2），所以枚举变量可以直接当数组下标使用，`names[c]` 就是 `names[2]`，取到字符串 \"blue\"。这里的 COLOR_COUNT 是一个“哨兵”常量，它的值正好等于前面常量的个数 3，用 `names[COLOR_COUNT]` 声明数组既让元素个数自动对上，也方便后续用 `for (i = 0; i < COLOR_COUNT; i++)` 遍历，这是枚举最常见的用法之一。选 \"BLUE\" 的人误以为编译器会保存常量名的字符串——常量名只存在于源码里，要输出名字必须自己准备名字表或写 switch；选 2 的人把 `%s` 当成了 `%d`；D 错，枚举变量完全可以作下标。"
+  },
+  {
+    "id": "枚-14",
+    "module": "枚举",
+    "type": "fill",
+    "difficulty": 2,
+    "tags": [
+      "枚举",
+      "状态机",
+      "switch"
+    ],
+    "stem": "下面程序用枚举实现一个简单的运行状态机：`s` 启动、`p` 暂停、`r` 恢复、`x` 停止（停止后不可再变），请填空。\n\n```c\n#include <stdio.h>\n\nenum State { IDLE, RUNNING, PAUSED, STOPPED };\n\nstatic const char *state_name[] = {\"IDLE\", \"RUNNING\", \"PAUSED\", \"STOPPED\"};\n\nenum State next(enum State s, char cmd)\n{\n    switch (s) {\n    case IDLE:\n        return (cmd == 's') ? RUNNING : IDLE;\n    case RUNNING:\n        if (cmd == 'p')\n            return PAUSED;\n        if (cmd == 'x')\n            return STOPPED;\n        return RUNNING;\n    case PAUSED:\n        if (cmd == 'r')\n            return ①;\n        if (cmd == 'x')\n            return STOPPED;\n        return PAUSED;\n    case ②:\n        return STOPPED;\n    }\n    return s;\n}\n\nint main(void)\n{\n    char cmd;\n    enum State s = IDLE;\n\n    while (scanf(\" %c\", &cmd) == 1)\n        s = ③(s, cmd);\n\n    printf(\"%s\\n\", state_name[s]);\n    return 0;\n}\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "RUNNING",
+        "note": "从暂停恢复就是回到运行态，不能直接跳到 IDLE"
+      },
+      {
+        "no": "②",
+        "answer": "STOPPED",
+        "note": "STOPPED 分支的 case 标签，必须是枚举常量"
+      },
+      {
+        "no": "③",
+        "answer": "next",
+        "note": "调用状态转移函数 next，再把返回值赋给外层变量 s"
+      }
+    ],
+    "analysis": "状态机的写法是“一个变量存状态 + 一个函数算下一个状态”：`enum State s` 记录当前状态，`next(s, cmd)` 根据当前状态和输入字符返回新状态，主循环只负责 `s = next(s, cmd)`，把转移规则和输入处理分开。① 处从 PAUSED 收到 'r' 应回到 RUNNING；② 处是 STOPPED 分支的 case 标签，由于停止后不可再变，直接返回 STOPPED 即可；③ 处填函数名 next。用枚举而不是裸数字的好处是可读性和编译期检查：`s = 7` 这种越界赋值在代码评审时一眼就能发现，而 `switch` 里漏写某个状态时编译器还能给出警告。输入 `s p r x` 时状态依次为 RUNNING、PAUSED、RUNNING、STOPPED，输出 STOPPED。"
+  },
+  {
+    "id": "枚-15",
+    "module": "枚举",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "枚举",
+      "位标志",
+      "按位运算"
+    ],
+    "stem": "有\n\n```c\nenum Perm { READ = 1, WRITE = 2, EXEC = 4 };\nint p = READ | WRITE;\n```\n\n要判断变量 `p` 中是否含有 WRITE 权限，正确且规范的说法是（ ）。",
+    "options": [
+      "`if (p || WRITE)` 即可，因为只要 p 非 0 就说明有权限",
+      "`if ((p & WRITE) != 0)` 判断，且 `p` 的类型是 int——按位或的结果是 int，赋回枚举变量时最好显式强制转换",
+      "`if (p && WRITE)` 即可，两个非 0 值相与为真就表示有该权限",
+      "枚举常量不能参与按位运算，`READ | WRITE` 会直接编译错误"
+    ],
+    "answer": 1,
+    "analysis": "把枚举常量取成 1、2、4 这种“一位一个标志”的形式，就可以用按位或来组合权限、用按位与来检测权限，这是枚举的经典用法之一（D 错，枚举常量是 int，按位运算完全合法）。检测必须用按位与：`p & WRITE` 只有当 WRITE 对应的那一位确实为 1 时才非 0，写成 `p || WRITE` 或 `p && WRITE` 都属于逻辑运算，只关心“是否为真”——p 里只要含有 READ，`p || WRITE` 就为真，会误判，B 正确而 A、C 是典型错误。另外要留意类型：`READ | WRITE` 的结果类型是 int，C 允许把它直接赋给枚举变量，但不会检查取值范围，显式写 `(enum Perm)` 强制转换更能表明意图，也能避免 C++ 编译器报警。"
+  },
+  {
+    "id": "枚-16",
+    "module": "枚举",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "枚举",
+      "字符串映射",
+      "统计"
+    ],
+    "stem": "读入 n 个操作名（只可能是 `ADD`、`SUB`、`MUL`），用枚举表示这三种操作，统计每种操作出现的次数，并按枚举常量的顺序输出。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；随后 n 行，每行一个操作名，为大写字母组成的不超过 10 个字符的字符串。\n\n**输出格式：** 共 3 行，每行 `操作名 次数`，顺序固定为 ADD、SUB、MUL，用空格分隔。\n\n**输入样例：**\n```text\n5\nADD\nMUL\nSUB\nADD\nMUL\n```\n**输出样例：**\n```text\nADD 2\nSUB 1\nMUL 2\n```",
+    "analysis": "思路：定义 `enum Op { OP_ADD, OP_SUB, OP_MUL, OP_COUNT };`，用 OP_COUNT 给出“操作种类数”，让计数数组可以写成 `int cnt[OP_COUNT] = {0}`。再写一个 `to_op` 函数，用 `strcmp` 把字符串映射成枚举值——这一步是本题的核心，把“字符串比较”这件杂事收敛到一个函数里，主函数就只剩下 `cnt[to_op(buf)]++`。输出时用一张名字表 `names[OP_COUNT]` 按枚举顺序打印，循环上界用 OP_COUNT，将来增加操作种类只需改枚举和名字表。时间复杂度 O(n × 串长)，空间 O(1)。易错点：用 `==` 比较字符串（应该用 strcmp）；计数数组没有初始化；把输出顺序写成输入顺序而不是枚举顺序。",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nenum Op {\n    OP_ADD,\n    OP_SUB,\n    OP_MUL,\n    OP_COUNT\n};\n\nstatic const char *names[OP_COUNT] = {\"ADD\", \"SUB\", \"MUL\"};\n\nenum Op to_op(const char *s)\n{\n    if (strcmp(s, \"ADD\") == 0)\n        return OP_ADD;\n    if (strcmp(s, \"SUB\") == 0)\n        return OP_SUB;\n    return OP_MUL;\n}\n\nint main(void)\n{\n    char buf[16];\n    int n, i;\n    int cnt[OP_COUNT] = {0};\n\n    scanf(\"%d\", &n);\n    for (i = 0; i < n; i++) {\n        scanf(\"%15s\", buf);\n        cnt[to_op(buf)]++;\n    }\n\n    for (i = 0; i < OP_COUNT; i++)\n        printf(\"%s %d\\n\", names[i], cnt[i]);\n    return 0;\n}",
+    "points": [
+      "用枚举表示三种操作，并用 OP_COUNT 表示种类数",
+      "用 strcmp 正确把字符串映射为枚举值",
+      "以枚举值作下标统计次数，计数数组正确初始化",
+      "按枚举常量顺序输出操作名与次数"
+    ]
+  }
+]

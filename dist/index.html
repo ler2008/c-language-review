@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C 语言程序设计基础 · 习题复习库</title>
+<meta name="description" content="PTA 风格 C 语言习题复习库：300 道选择题、程序填空与程序设计，覆盖基础、数组、指针、结构体、枚举、函数，附详细答案解析。">
+<meta name="theme-color" content="#0b1f3a">
+<meta property="og:type" content="website">
+<meta property="og:title" content="C 语言程序设计基础 · 300 题复习库">
+<meta property="og:description" content="300 道 PTA 风格 C 语言习题，覆盖 6 大模块，含选择题、程序填空、程序设计与详细答案解析。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231d4ed8'/><text x='50' y='72' font-size='62' font-family='monospace' font-weight='bold' text-anchor='middle' fill='white'>C</text></svg>">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<svg class="svg-sprite" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3 7h3.5c1.2 0 2.3.6 3 1.6l5 7c.7 1 1.8 1.6 3 1.6H21"/><path d="M3 17h3.5c1.2 0 2.3-.6 3-1.6l5-7c.7-1 1.8-1.6 3-1.6H21"/><path d="M18 3l3 3-3 3M18 15l3 3-3 3"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="M12 20V4M5 11l7-7 7 7"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">C</div>
+      <div class="brand-text">
+        <strong>C 语言复习库</strong>
+        <span>PTA Style · 300 Questions</span>
+      </div>
+      <button class="icon-btn sidebar-close" id="sidebarClose" aria-label="关闭菜单">
+        <svg class="icon"><use href="#i-close"></use></svg>
+      </button>
+    </div>
+
+    <div class="side-label">题库导航</div>
+    <nav class="module-nav" id="moduleNav" aria-label="模块筛选"></nav>
+
+    <div class="side-card">
+      <div class="side-card-head">
+        <svg class="icon"><use href="#i-target"></use></svg>
+        <span>总进度</span>
+        <b id="sidePercent">0%</b>
+      </div>
+      <div class="progress"><i id="sideBar" style="width:0%"></i></div>
+      <p id="sideHint">从任意模块开始刷题吧</p>
+    </div>
+
+    <div class="side-foot">
+      <p>学习数据保存在浏览器本地</p>
+      <p>题目与解析为原创整理，仅供复习使用</p>
+    </div>
+  </aside>
+
+  <div class="sidebar-mask" id="sidebarMask"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="打开菜单">
+        <svg class="icon"><use href="#i-menu"></use></svg>
+      </button>
+      <div class="crumb">
+        <span class="crumb-root">C 语言程序设计基础</span>
+        <span class="crumb-sep">/</span>
+        <span>习题复习库</span>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" aria-label="切换深色模式" title="切换深色模式">
+          <svg class="icon theme-sun"><use href="#i-sun"></use></svg>
+          <svg class="icon theme-moon"><use href="#i-moon"></use></svg>
+        </button>
+        <button class="btn ghost small" id="resetBtn">
+          <svg class="icon"><use href="#i-reset"></use></svg>
+          重置进度
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wx-banner" id="wxBanner" hidden>
+        <span class="wx-badge">微信</span>
+        <p>可直接在线做题。点右上角 <b>···</b> 选择「收藏」或「浮窗」，下次就能快速打开。</p>
+        <button class="wx-close" id="wxClose" type="button" aria-label="关闭提示">×</button>
+      </div>
+
+      <section class="hero">
+        <div class="hero-glow"></div>
+        <div class="hero-main">
+          <div class="eyebrow">FINAL REVIEW · PTA STYLE</div>
+          <h1>C 语言程序设计基础</h1>
+          <p class="hero-sub">300 道习题复习库 · 选择题 / 程序填空 / 程序设计 · 每一题都配有答案解析</p>
+          <div class="hero-tags">
+            <span>数组 · 指针 · 结构体重点强化</span>
+            <span>覆盖 6 大知识模块</span>
+            <span>本地记录学习进度</span>
+          </div>
+          <div class="hero-actions">
+            <button class="btn hero-btn" id="startBtn">
+              <svg class="icon"><use href="#i-book"></use></svg>
+              开始练习
+            </button>
+            <button class="btn hero-ghost" id="randomBtn">
+              <svg class="icon"><use href="#i-shuffle"></use></svg>
+              随机抽题
+            </button>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-num" id="statDone">0<em>/300</em></span>
+            <span class="stat-label">已练习</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num" id="statRate">--</span>
+            <span class="stat-label">正确率</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num" id="statWrong">0</span>
+            <span class="stat-label">错题</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num" id="statFav">0</span>
+            <span class="stat-label">收藏</span>
+          </div>
+          <div class="stat ring-stat">
+            <div class="ring" id="heroRing"><span id="heroRingText">0%</span></div>
+            <span class="stat-label">完成度</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="toolbar" id="toolbar">
+        <div class="toolbar-row">
+          <label class="search">
+            <svg class="icon"><use href="#i-search"></use></svg>
+            <input id="searchInput" type="search" placeholder="搜索题目、知识点，例如：二维数组 / sizeof / 链表" autocomplete="off">
+            <kbd>/</kbd>
+          </label>
+          <div class="selects">
+            <label class="select">
+              <span>题型</span>
+              <select id="typeSelect">
+                <option value="all">全部题型</option>
+                <option value="choice">选择题</option>
+                <option value="fill">程序填空</option>
+                <option value="design">程序设计</option>
+              </select>
+            </label>
+            <label class="select">
+              <span>难度</span>
+              <select id="diffSelect">
+                <option value="all">全部难度</option>
+                <option value="1">★ 基础</option>
+                <option value="2">★★ 中等</option>
+                <option value="3">★★★ 较难</option>
+              </select>
+            </label>
+          </div>
+          <div class="toolbar-btns">
+            <button class="btn ghost small" id="shuffleBtn" aria-pressed="false">
+              <svg class="icon"><use href="#i-shuffle"></use></svg>
+              <span>乱序</span>
+            </button>
+            <button class="btn ghost small" id="sheetBtn" aria-expanded="false">
+              <svg class="icon"><use href="#i-layers"></use></svg>
+              <span>答题卡</span>
+            </button>
+          </div>
+        </div>
+        <div class="toolbar-row second">
+          <div class="chips" id="typeChips" role="tablist" aria-label="题型快捷筛选"></div>
+          <div class="chips scope-chips" id="scopeChips" role="tablist" aria-label="范围筛选"></div>
+          <div class="toolbar-meta">
+            <span id="resultCount">共 300 题</span>
+            <button class="link-btn" id="clearFilterBtn" hidden>清除筛选</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="sheet" id="sheet" hidden>
+        <div class="sheet-head">
+          <div>
+            <h3>答题卡</h3>
+            <p>点击题号快速跳转 · 颜色代表作答状态</p>
+          </div>
+          <div class="sheet-legend">
+            <span><i class="dot none"></i>未做</span>
+            <span><i class="dot ok"></i>正确</span>
+            <span><i class="dot bad"></i>错误</span>
+            <span><i class="dot seen"></i>已看答案</span>
+          </div>
+        </div>
+        <div class="sheet-grid" id="sheetGrid"></div>
+      </section>
+
+      <div class="list-head">
+        <div>
+          <h2 id="listTitle">全部题目</h2>
+          <p id="listSub">先自己做一遍，再展开答案解析，效果更好。</p>
+        </div>
+        <button class="btn ghost small" id="collapseAllBtn" hidden>收起全部解析</button>
+      </div>
+
+      <section class="question-list" id="questionList" aria-live="polite"></section>
+
+      <div class="empty" id="emptyState" hidden>
+        <div class="empty-mark">0</div>
+        <h3>没有符合条件的题目</h3>
+        <p>换一个关键词，或清除筛选条件再试试。</p>
+        <button class="btn primary" id="emptyResetBtn">清除全部筛选</button>
+      </div>
+
+      <footer class="foot">
+        <div class="foot-brand">
+          <div class="brand-mark small">C</div>
+          <div>
+            <strong>C 语言程序设计基础 · 习题复习库</strong>
+            <p>覆盖 C 语言基础、数组、指针、结构体、枚举、函数 · 共 300 题</p>
+          </div>
+        </div>
+        <p class="foot-note">建议按「基础 → 数组 → 指针 → 结构体/枚举 → 函数」顺序复习；错题至少重做两遍。微信内可直接做题，学习记录仅保存在当前浏览器。</p>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<button class="to-top" id="toTop" aria-label="回到顶部">
+  <svg class="icon"><use href="#i-arrow-up"></use></svg>
+</button>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

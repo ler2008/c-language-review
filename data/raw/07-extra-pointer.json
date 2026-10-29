@@ -1,0 +1,633 @@
+[
+  {
+    "id": "指-49",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "qsort",
+      "函数指针",
+      "回调"
+    ],
+    "stem": "用标准库 `qsort` 对 `int` 数组升序排序时，比较函数的正确定义是（ ）。",
+    "options": [
+      "`int cmp(const void *a, const void *b) { return *(const int *)a - *(const int *)b; }`",
+      "`int cmp(const int *a, const int *b) { return *a - *b; }`",
+      "`int cmp(const void *a, const void *b) { return *(const int *)a < *(const int *)b; }`",
+      "`void cmp(const void *a, const void *b) { return *(const int *)a - *(const int *)b; }`"
+    ],
+    "answer": 0,
+    "analysis": "知识点：`qsort` 的原型是\n\n```c\nvoid qsort(void *base, size_t nmemb, size_t size,\n           int (*compar)(const void *, const void *));\n```\n\n比较函数必须返回 `int`，用负值、0、正值分别表示第一个参数小于、等于、大于第二个参数。qsort 内部只拿到 `void *`，所以比较函数必须自己把指针转回真实类型再取值。\n\nA 正确：参数类型与 qsort 要求完全一致，返回两个 int 的差，符号正确。\n\nB 错：参数类型是 `const int *`，与 `int (*)(const void *, const void *)` 不兼容，传给 qsort 是约束违反（编译器一般给出 incompatible pointer type 警告），运行行为不可靠。C 错：返回的是 `<` 的布尔值（0 或 1），永远不返回负数，qsort 无法判断「谁更小」，结果排序错误且不稳定。D 错：返回类型是 `void` 却写了 return 表达式，编译错误；qsort 也需要 int 返回值。\n\n补充：用减法返回虽然简洁，但当两个数相差超过 `INT_MAX` 时会整型溢出，严格写法是 `return (a > b) - (a < b);`。"
+  },
+  {
+    "id": "指-50",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "typedef",
+      "函数指针",
+      "类型别名"
+    ],
+    "stem": "有如下代码：\n\n```c\ntypedef int (*BinOp)(int, int);\nint add(int a, int b) { return a + b; }\n```\n\n要定义一个指向 `add` 的变量 `op` 并用它调用，下列写法正确的是（ ）。",
+    "options": [
+      "`BinOp *op = add; printf(\"%d\", op(2, 3));`",
+      "`BinOp op = add; printf(\"%d\", op(2, 3));`",
+      "`BinOp op = &add; printf(\"%d\", *op(2, 3));`",
+      "`int BinOp op = add;`"
+    ],
+    "answer": 1,
+    "analysis": "知识点：`typedef int (*BinOp)(int, int);` 定义的类型别名 `BinOp` 本身就是「指向函数的指针」类型，所以 `BinOp op;` 已经是一个函数指针变量，不需要再写 `*`。\n\nB 正确：`BinOp op = add;` 把函数名（自动转换为函数指针）赋给 op，`op(2, 3)` 调用得 5。\n\nA 错：`BinOp *op` 是「函数指针的指针」，类型为 `int (**)(int, int)`，用 `add` 初始化类型不符。C 错：`&add` 与 `add` 都表示函数地址，赋值本身合法，但 `*op(2, 3)` 由于 `()` 优先级高于 `*`，等价于 `*(op(2, 3))`——先调用得到 int，再解引用 int，编译错误；正确写法是 `(*op)(2, 3)`。D 错：在声明中同时出现 `int` 和 `BinOp` 是语法错误。\n\n要点：typedef 只是起别名，`BinOp`、`BinOp *`、`BinOp[3]` 分别表示函数指针、函数指针的指针、函数指针数组。"
+  },
+  {
+    "id": "指-51",
+    "module": "指针",
+    "type": "fill",
+    "difficulty": 2,
+    "tags": [
+      "返回函数指针",
+      "函数指针",
+      "回调"
+    ],
+    "stem": "下面程序让 `pick` 根据运算符返回对应的函数指针，请填空。\n\n```c\n#include <stdio.h>\n\nint add(int a, int b) { return a + b; }\nint sub(int a, int b) { return a - b; }\n\nint apply(int (*fn)(int, int), int x, int y)\n{\n    return fn(x, y);\n}\n\nint (*pick(char op))(int, int)\n{\n    if (op == '+')\n        return ①;\n    return sub;\n}\n\nint main(void)\n{\n    int (*f)(int, int) = ②;\n    printf(\"%d\\n\", apply(f, 9, 4));\n    f = pick('+');\n    printf(\"%d\\n\", ③);\n    return 0;\n}\n```\n\n补全后输出两行：`5` 和 `13`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "add",
+        "note": "函数名自动转换为函数指针，也可写 &add"
+      },
+      {
+        "no": "②",
+        "answer": "pick('-')",
+        "note": "让 f 指向 sub"
+      },
+      {
+        "no": "③",
+        "answer": "apply(f, 9, 4)",
+        "note": "此时 f 指向 add，结果为 13"
+      }
+    ],
+    "analysis": "知识点：函数可以返回函数指针，声明形式是 `返回类型 (*函数名(参数列表))(函数指针的参数列表)`，读法是「先看函数名和它的参数，再看它返回的指针指向什么函数」。\n\n`pick` 接受一个 char，返回 `int (*)(int, int)`：遇到 '+' 返回 add，否则返回 sub。主函数先用 `pick('-')` 让 f 指向 sub，再通过 `apply(f, 9, 4)` 调用（9-4=5）；随后 `f = pick('+')` 让 f 指向 add，第二次 apply 得 13。\n\n补全后输出 5 和 13。易错点：① 把返回类型写成 `int *pick(char)`（那是指向 int 的指针）；② 忘记 `pick` 的返回类型需要括号；③ 第二空写成 `pick(\"-\")`（字符常量与字符串字面量类型不同）；④ 以为函数指针变量要解引用才能调用——`f(x, y)` 与 `(*f)(x, y)` 等价。"
+  },
+  {
+    "id": "指-52",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "复杂声明",
+      "函数指针",
+      "数组指针"
+    ],
+    "stem": "声明 `int (*(*f)(int))[3];` 中，`f` 的类型是（ ）。",
+    "options": [
+      "指向函数的指针，该函数接受一个 int，返回指向「含 3 个 int 的数组」的指针",
+      "指向含 3 个元素的数组的指针，数组的每个元素都是函数指针",
+      "函数，接受一个 int，返回指向「含 3 个 int 的数组」的指针",
+      "指向函数的指针，该函数接受一个 int，返回「含 3 个 int 的数组」"
+    ],
+    "answer": 0,
+    "analysis": "知识点：读复杂声明用「由内向外、先右后左」：从标识符出发，先看右边的 `[]`、`()`，再看左边的 `*`。\n\n拆解 `int (*(*f)(int))[3];`：\n1. `(*f)` —— f 是一个指针；\n2. `(*f)(int)` —— 它指向一个接受 int 的函数；\n3. 函数前面还有 `*`，即该函数返回 `int (*)[3]`，也就是行指针；\n4. 最外层 `int` 说明数组元素是 int。\n\n所以 f 是「指向函数的指针，函数接受 int、返回指向含 3 个 int 的数组的指针」，A 正确。\n\n干扰项：B 把 `[3]` 的层次读反了，写成「数组，元素是函数指针」——那应该是 `int (*f[3])(int);`。C 漏掉最外层的 `*`，把 f 当成了函数本身。D 说函数返回数组——C 语言不允许函数返回数组类型，只能返回指向数组的指针。\n\n小技巧：把它拆成 typedef 会清楚很多：\n\n```c\ntypedef int (*Row)[3];      /* 行指针 */\ntypedef Row (*Fn)(int);     /* 接受 int、返回行指针的函数指针 */\nFn f;\n```"
+  },
+  {
+    "id": "指-53",
+    "module": "指针",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "qsort",
+      "函数指针",
+      "回调"
+    ],
+    "stem": "输入 n（1 ≤ n ≤ 100）个整数，用标准库 `qsort` 排序后输出。排序规则：按绝对值从小到大；绝对值相同时，数值小的排在前面（例如 `-2` 排在 `2` 前面）。要求自己编写比较函数 `int cmp(const void *pa, const void *pb);`。\n\n**输入格式：** 第一行一个整数 n；第二行 n 个整数，用空格分隔。\n\n**输出格式：** 排序后的 n 个整数，相邻整数之间一个空格，行末换行。\n\n**输入样例：**\n```text\n5\n-3 2 -1 4 -2\n```\n**输出样例：**\n```text\n-1 -2 2 -3 4\n```",
+    "analysis": "思路：qsort 本身不知道「按什么排」，排序规则完全由比较函数决定。比较函数先取出两个 int，算出各自的绝对值；绝对值不同就按绝对值决定先后；绝对值相同时再用数值本身比较，保证结果唯一且稳定（例如 -2 一定排在 2 前面）。\n\n复杂度：qsort 平均 O(n log n)；比较函数 O(1)。注意比较函数会被调用很多次，里面不要做分配内存之类的重操作。\n\n易错点：① 直接返回 `aa - bb`，当绝对值之差可能溢出或有相等情况时信息不足；② 只比较绝对值，导致 -2 与 2 的先后不确定（不同实现的 qsort 结果可能不同，评测会判错）；③ 参数写成 `int *` 而不是 `const void *`，类型不兼容；④ 忘记把 `void *` 转回 `const int *` 就解引用（编译错误）；⑤ `qsort` 的第三个参数写成 `n` 而不是 `sizeof(int)`。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nstatic int abs_int(int x)\n{\n    return x < 0 ? -x : x;\n}\n\nint cmp(const void *pa, const void *pb)\n{\n    int a = *(const int *)pa;\n    int b = *(const int *)pb;\n    int aa = abs_int(a);\n    int bb = abs_int(b);\n\n    if (aa != bb)\n        return aa < bb ? -1 : 1;\n    if (a == b)\n        return 0;\n    return a < b ? -1 : 1;\n}\n\nint main(void)\n{\n    int n, i;\n    int *a;\n\n    if (scanf(\"%d\", &n) != 1 || n <= 0 || n > 100)\n        return 0;\n    a = (int *)malloc((size_t)n * sizeof(int));\n    if (a == NULL)\n        return 1;\n    for (i = 0; i < n; i++)\n        scanf(\"%d\", &a[i]);\n\n    qsort(a, (size_t)n, sizeof(int), cmp);\n\n    for (i = 0; i < n; i++)\n        printf(\"%d%c\", a[i], i < n - 1 ? ' ' : '\\n');\n    free(a);\n    return 0;\n}",
+    "points": [
+      "正确定义 int cmp(const void *, const void *) 并按规则返回负数/0/正数",
+      "把 void * 参数正确转换为 const int * 后取值",
+      "调用 qsort 时元素个数与元素大小参数正确",
+      "输出格式正确（相邻整数一个空格，行末换行）"
+    ]
+  },
+  {
+    "id": "指-54",
+    "module": "指针",
+    "type": "fill",
+    "difficulty": 2,
+    "tags": [
+      "原地压缩",
+      "双指针",
+      "字符指针"
+    ],
+    "stem": "下面程序把字符串中连续重复的字符压缩成一个，请填空。\n\n```c\n#include <stdio.h>\n\nint compress(char *s)\n{\n    char *p = s, *q = s;\n    while (*p != '\\0') {\n        if (q == s || *p != ①)\n            *q++ = *p;\n        p++;\n    }\n    ②;\n    return (int)(q - s);\n}\n\nint main(void)\n{\n    char s[] = \"aaabbbcccd\";\n    int n = compress(s);\n    printf(\"%s %d\\n\", s, ③);\n    return 0;\n}\n```\n\n补全后输出 `abcd 4`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "*(q - 1)",
+        "note": "q 前面刚写入的字符，也可写 q[-1]"
+      },
+      {
+        "no": "②",
+        "answer": "*q = '\\0'",
+        "note": "压缩后必须补结束符"
+      },
+      {
+        "no": "③",
+        "answer": "n",
+        "note": "新字符串的长度"
+      }
+    ],
+    "analysis": "知识点：双指针「读写分离」是原地压缩的通用套路：p 负责读原始字符，q 负责写压缩后的结果，q 永远不超过 p，所以不会覆盖还没读到的字符。\n\n判定条件是「当前字符与上一个已写入的字符不同」：第一个字符没有「上一个」，因此用 `q == s` 单独放行；其余情况与 `*(q - 1)` 比较（`q - 1` 指向刚写入的那个字符，也可写 `q[-1]`）。循环结束后必须在 q 处补 `'\\0'`，否则 printf 会把原串尾部残留的字符一起输出。返回值 `q - s` 正好是新长度。\n\n补全后 `\"aaabbbcccd\"` 变成 `\"abcd\"`，长度 4，输出 `abcd 4`。\n\n易错点：① 写成 `*p != *q`（p、q 同步时比较的是同一位置）；② 漏掉 `q == s` 的首字符特判，越界读 `*(q - 1)`；③ 忘记补结束符，输出变成 `abcdcccd` 之类的残留；④ q、p 的自增位置写错导致跳字符。"
+  },
+  {
+    "id": "指-55",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "malloc",
+      "动态内存",
+      "标准语义"
+    ],
+    "stem": "按照 C 标准，`malloc(0)` 的行为是（ ）。",
+    "options": [
+      "一定返回 `NULL`，表示分配失败",
+      "返回一个指向 0 字节可用空间的指针，向其中写入 1 个字节是安全的",
+      "可能返回 `NULL`，也可能返回一个唯一的非空指针；若返回非空指针，不能通过它访问任何对象，但可以安全地传给 `free`",
+      "属于未定义行为，标准对此没有任何规定"
+    ],
+    "answer": 2,
+    "analysis": "知识点：C 标准对 `malloc(0)` 的规定是「实现定义」：要么返回空指针，要么返回一个可以传给 `free` 的唯一非空指针。\n\nC 正确：返回值有两种可能，因此使用前仍要判空；即使拿到非空指针，它也不指向任何可访问的对象，解引用或写入都是未定义行为；但把它交给 `free` 是合法的。\n\nA 错：把「可能返回 NULL」说成「一定」，过于绝对。B 错：0 字节的分配没有任何可用空间，写 1 个字节就越界，属于未定义行为。D 错：标准明确给出了两种允许的行为，并不是「什么都没规定」。\n\n延伸要点：`calloc(0, size)`、`realloc(p, 0)` 也有类似的实现定义行为；`realloc(p, 0)` 在多数实现上等价于释放 p 并返回空指针，但标准允许返回非空指针，所以可移植写法是显式 `free(p); p = NULL;`。"
+  },
+  {
+    "id": "指-56",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "柔性数组",
+      "结构体",
+      "动态内存"
+    ],
+    "stem": "有结构体定义：\n\n```c\nstruct Line {\n    int len;\n    int data[];\n};\n```\n\n关于柔性数组成员 `data`，下列说法正确的是（ ）。",
+    "options": [
+      "`sizeof(struct Line)` 等于 8，因为 `data` 本身也占 4 字节",
+      "`data` 必须是最后一个成员，`sizeof(struct Line)` 不计 `data` 的大小（本机为 4）；使用时应按 `sizeof(struct Line) + n * sizeof(int)` 申请内存",
+      "定义 `struct Line s;` 之后可以直接写 `s.data[0] = 1;`，数组长度由编译器自动推导",
+      "一个结构体里可以定义多个柔性数组成员，只要都放在末尾"
+    ],
+    "answer": 1,
+    "analysis": "知识点：柔性数组成员（flexible array member）是 C99 引入的语法，用于「结构体 + 变长尾部数据」一次性分配。\n\nB 正确：柔性数组必须是结构体的**最后一个**成员，且结构体至少还要有一个具名成员；`sizeof` 不把它计入（本题中 `sizeof(struct Line)` 只含 `int len`，为 4，可能另有尾部填充）；正确用法是\n\n```c\nstruct Line *p = (struct Line *)malloc(sizeof(struct Line) + n * sizeof(int));\np->len = n;\np->data[0] = 1;\n```\n\nA 错：柔性数组不占结构体自身大小，写成 8 是把 `data` 当普通数组了。C 错：直接定义结构体变量时，`data` 没有任何存储空间，访问 `s.data[0]` 会写到结构体外面，属于越界写；长度不是编译器推导的，而是由程序员通过 malloc 的大小决定的。D 错：标准规定柔性数组成员至多一个，且必须在末尾。\n\n优点：只需一次 malloc、一次 free，且 `len` 与数据在同一块连续内存中，缓存友好。"
+  },
+  {
+    "id": "指-57",
+    "module": "指针",
+    "type": "fill",
+    "difficulty": 2,
+    "tags": [
+      "双指针",
+      "回文",
+      "字符指针"
+    ],
+    "stem": "下面程序用双指针判断字符串是否为回文，请填空。\n\n```c\n#include <stdio.h>\n#include <string.h>\n\nint is_palindrome(const char *s)\n{\n    const char *left = s;\n    const char *right = s + strlen(s) - 1;\n\n    while (left < right) {\n        if (①)\n            return 0;\n        left++;\n        ②;\n    }\n    return 1;\n}\n\nint main(void)\n{\n    char s[100];\n    scanf(\"%99s\", s);\n    printf(\"%s\\n\", ③ ? \"YES\" : \"NO\");\n    return 0;\n}\n```\n\n输入 `level` 输出 `YES`，输入 `hello` 输出 `NO`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "*left != *right",
+        "note": "两端字符不同即不是回文"
+      },
+      {
+        "no": "②",
+        "answer": "right--",
+        "note": "右指针向中间移动"
+      },
+      {
+        "no": "③",
+        "answer": "is_palindrome(s)",
+        "note": "返回 1 表示是回文"
+      }
+    ],
+    "analysis": "知识点：回文判断的经典双指针法——left 从首字符出发、right 从末字符出发，向中间靠拢，每次比较两端字符。\n\n`right` 的初值用 `s + strlen(s) - 1`：先走到结束符再退一格，得到真正的末字符。循环条件 `left < right` 保证两个指针不相交（长度为奇数时中间那个字符不用和自己比较；长度 1 或空串时循环体一次也不执行，直接返回 1）。发现字符不同立即返回 0；全部匹配则返回 1。主函数用三目运算符把返回值转成 YES/NO。\n\n输入 `level` 输出 YES；`hello` 输出 NO。易错点：① `right` 初值忘记减 1，拿结束符去比较；② 循环条件写成 `left != right`，偶数长度时两指针会交错、越界；③ 指针移动方向写反；④ 用 `scanf(\"%s\")` 读入含空格的句子时只读到第一个词（本题约定不含空白）。"
+  },
+  {
+    "id": "指-58",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "动态内存",
+      "二维数组",
+      "指针数组"
+    ],
+    "stem": "动态构造 m 行 n 列的 `int` 矩阵，有两种常见写法：\n\n```c\n/* 方式一 */\nint **a = (int **)malloc(m * sizeof(int *));\nfor (i = 0; i < m; i++)\n    a[i] = (int *)malloc(n * sizeof(int));\n\n/* 方式二 */\nint *b = (int *)malloc((size_t)m * n * sizeof(int));\n```\n\n关于这两种方式，说法正确的是（ ）。",
+    "options": [
+      "方式一的 m 行内存是连续的，方式二反而不连续",
+      "两种方式完全等价，方式二也可以直接写 `b[i][j]` 访问",
+      "方式二无法表示二维数组，必须再申请一个行指针数组",
+      "方式二只需一次 malloc，整块内存连续；方式一需要 m+1 次 malloc，各行不保证连续，释放时也必须逐行释放后再释放行指针数组"
+    ],
+    "answer": 3,
+    "analysis": "知识点：动态二维数组有两套完全不同的内存模型。\n\n方式一（指针数组 + 逐行分配）：先申请 m 个 `int *`，再为每行单独申请 n 个 int。行与行之间是各自独立的堆块，不保证相邻；释放时必须先 `free(a[i])` 再 `free(a)`，共 m+1 次。\n\n方式二（单块连续内存）：一次申请 m×n 个 int，用 `b[i * n + j]` 手动算下标。整块连续，只需一次 free，缓存局部性好，也更容易整体拷贝。\n\nD 正确。A 把两者的连续性说反了。B 错：方式二的类型是 `int *`，`b[i]` 只是一个 int，不能写 `b[i][j]`（那需要 `int **`）。C 错：方式二完全能表示二维数组，只是访问方式从「双重下标」变成「一维下标换算」。\n\n补充：方式二申请时 `(size_t)m * n * sizeof(int)` 里的乘法顺序要注意，先转 `size_t` 可以避免大尺寸下的有符号溢出。"
+  },
+  {
+    "id": "指-59",
+    "module": "指针",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "动态内存",
+      "二维数组",
+      "矩阵转置"
+    ],
+    "stem": "输入 m 和 n（1 ≤ m, n ≤ 50），再输入 m 行 n 列的整数矩阵。要求**只调用一次 `malloc`** 申请一块连续内存\n\n```c\nint *a = (int *)malloc((size_t)m * n * sizeof(int));\n```\n\n存放整个矩阵，用 `a[i * n + j]` 访问元素，输出它的转置矩阵（共 n 行，每行 m 列），最后释放内存。\n\n**输入格式：** 第一行两个整数 m 和 n；随后 m 行，每行 n 个整数。\n\n**输出格式：** 转置后的 n 行，每行 m 个整数，相邻整数之间一个空格。\n\n**输入样例：**\n```text\n2 3\n1 2 3\n4 5 6\n```\n**输出样例：**\n```text\n1 4\n2 5\n3 6\n```",
+    "analysis": "思路：把 m×n 的矩阵压成一维连续数组，元素 a[i][j] 存在下标 `i * n + j` 处（i 是行、n 是列数）。转置就是输出 n 行 m 列：外层枚举原列 j（0..n-1），内层枚举原行 i（0..m-1），输出 `a[i * n + j]`。\n\n复杂度：时间 O(m×n)，空间 O(m×n)，只有一次 malloc 和一次 free。\n\n易错点：① 下标写成 `i * m + j`（行列搞反，m 是行数不是列数）；② 转置时双重循环的边界写反，仍按 m 行 n 列输出；③ malloc 参数漏乘 `sizeof(int)`，或 `m * n` 先按 int 相乘在大数据下溢出，应先转 `(size_t)`；④ 忘记判空和 free；⑤ 输出行末多一个空格。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void)\n{\n    int m, n, i, j;\n    int *a;\n\n    if (scanf(\"%d %d\", &m, &n) != 2 || m <= 0 || n <= 0)\n        return 0;\n\n    a = (int *)malloc((size_t)m * n * sizeof(int));\n    if (a == NULL)\n        return 1;\n\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++)\n            scanf(\"%d\", &a[i * n + j]);\n\n    for (j = 0; j < n; j++) {\n        for (i = 0; i < m; i++)\n            printf(\"%d%c\", a[i * n + j], i < m - 1 ? ' ' : '\\n');\n    }\n\n    free(a);\n    return 0;\n}",
+    "points": [
+      "用一次 malloc 申请 m*n 个 int 的连续内存并检查返回值",
+      "用 i*n+j 正确完成行列下标到一维下标的换算",
+      "按 n 行 m 列输出转置结果，元素间一个空格",
+      "使用 free 释放整块内存"
+    ]
+  },
+  {
+    "id": "指-60",
+    "module": "指针",
+    "type": "fill",
+    "difficulty": 2,
+    "tags": [
+      "函数指针数组",
+      "分发",
+      "sizeof"
+    ],
+    "stem": "下面程序用函数指针数组实现一个极简计算器，请填空。\n\n```c\n#include <stdio.h>\n\nint add(int a, int b) { return a + b; }\nint sub(int a, int b) { return a - b; }\nint mul(int a, int b) { return a * b; }\n\nint main(void)\n{\n    int (*op[3])(int, int) = {①};\n    char sym[3] = {'+', '-', '*'};\n    char c;\n    int x, y, i;\n\n    if (scanf(\"%d %d %c\", &x, &y, &c) != 3)\n        return 0;\n\n    for (i = 0; i < ②; i++)\n        if (sym[i] == c) {\n            printf(\"%d\\n\", ③);\n            break;\n        }\n    return 0;\n}\n```\n\n输入 `6 3 *` 时输出 `18`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "add, sub, mul",
+        "note": "依次对应 sym 里的 + - *"
+      },
+      {
+        "no": "②",
+        "answer": "(int)(sizeof(op) / sizeof(op[0]))",
+        "note": "也可直接写 3"
+      },
+      {
+        "no": "③",
+        "answer": "op[i](x, y)",
+        "note": "也可写 (*op[i])(x, y)"
+      }
+    ],
+    "analysis": "知识点：函数指针数组把「符号」和「要执行的函数」用同一个下标关联起来，是消除长串 if-else / switch 的常用手法。\n\n`int (*op[3])(int, int)` 表示含 3 个元素的数组，每个元素都是 `int (*)(int, int)`。初始化列表用函数名（自动转换为函数指针），顺序必须与 `sym` 一一对应，否则按符号取函数会张冠李戴。循环里找到匹配的符号后执行 `op[i](x, y)`。\n\n第三空用 `sizeof(op) / sizeof(op[0])` 求元素个数：`sizeof(op)` 是整个数组的字节数（3 × 8 = 24），`sizeof(op[0])` 是单个函数指针的字节数（8），相除得 3。这里能这样算，是因为 op 是真正的数组、没有退化为指针；若把 op 作为参数传进另一个函数，就必须额外传长度。\n\n输入 `6 3 *` 输出 18。易错点：① 初始化顺序与 sym 不一致；② 写成 `op(x, y)`（op 是数组不是指针）；③ 下标越界；④ 在别的函数里对数组参数用 sizeof 求长度。"
+  },
+  {
+    "id": "指-61",
+    "module": "指针",
+    "type": "fill",
+    "difficulty": 2,
+    "tags": [
+      "动态内存",
+      "二维数组",
+      "下标计算"
+    ],
+    "stem": "下面程序用一块连续内存模拟 3 行 4 列的二维数组，请填空。\n\n```c\n#include <stdio.h>\n#include <stdlib.h>\n\nint main(void)\n{\n    int m = 3, n = 4, i, j;\n    int *a = (int *)malloc((size_t)m * n * sizeof(int));\n\n    if (a == NULL)\n        return 1;\n\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++)\n            a[①] = i * 10 + j;\n\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++)\n            printf(\"%d%c\", a[i * n + j], j < n - 1 ? ' ' : '\\n');\n\n    printf(\"%d\\n\", a[②]);\n    ③;\n    return 0;\n}\n```\n\n程序输出前 3 行为 0~23 的矩阵，第 4 行是 `21`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "i * n + j",
+        "note": "行优先：每行 n 个元素"
+      },
+      {
+        "no": "②",
+        "answer": "2 * n + 1",
+        "note": "即第 2 行第 1 列，值为 21"
+      },
+      {
+        "no": "③",
+        "answer": "free(a)",
+        "note": "释放整块内存"
+      }
+    ],
+    "analysis": "知识点：一维数组模拟二维数组的核心是行优先下标换算 `i * 列数 + j`。这里列数是 n，因此 `a[i * n + j]` 对应逻辑上的第 i 行第 j 列。\n\n① 是写入时的下标换算；② 要取第 2 行第 1 列（从 0 开始计数），代入公式得 `2 * n + 1 = 9`，该位置存的是 `2 * 10 + 1 = 21`；③ 程序结束前 `free(a)`。\n\n输出：\n```text\n0 1 2 3\n10 11 12 13\n20 21 22 23\n21\n```\n\n易错点：① 写成 `i * m + j`（m 是行数，混淆了行列）；② 写成 `i + j * m`（变成列优先，布局就错了）；③ 忘记 free；④ malloc 后没有判空。若把这块内存传给别的函数，别忘了同时传 m、n 两个维度，函数内部无法从指针推出形状。"
+  },
+  {
+    "id": "指-62",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "回调",
+      "void指针",
+      "上下文参数"
+    ],
+    "stem": "标准库 `qsort` 的比较函数只能拿到两个元素。很多平台另外提供带上下文参数的版本，例如：\n\n```c\nvoid qsort_r(void *base, size_t nmemb, size_t size,\n             int (*compar)(const void *, const void *, void *), void *arg);\n```\n\n若要用它实现「按调用者给定的基准值排序」，比较函数的第三个参数 `arg` 应当（ ）。",
+    "options": [
+      "由调用者传入并原样转发给比较函数，函数内把它转换成所需类型后使用，例如 `const int *pivot = (const int *)arg;`",
+      "必须是 `NULL`，否则排序结果未定义",
+      "接收的是当前正在比较的两个元素之一，不需要额外转换",
+      "由比较函数自己用静态变量保存基准值，不用第三个参数"
+    ],
+    "answer": 0,
+    "analysis": "知识点：回调函数无法直接访问调用者的局部变量，带上下文的接口就把一个 `void *` 参数原样转交给回调，让回调「带回」它需要的外部信息。这是 C 语言实现闭包式传参的常用手段。\n\nA 正确：`arg` 由调用者传入、由库原样转发，回调内部按约定转换成真实类型使用，类型安全由调用双方自行保证（通常传结构体地址）。\n\nB 错：`arg` 的取值完全由调用者决定，传 `NULL` 只是「没有上下文」，谈不上「必须」或「未定义」。C 错：被比较的两个元素通过前两个参数传入，第三个参数是上下文，与元素无关。D 错：用静态变量保存状态会让函数不可重入、多线程下互相干扰，而且这里明明有现成的上下文参数。\n\n易错点：传递上下文时不要在回调返回后继续保存指向局部变量的指针；上下文结构体的生命周期必须覆盖整个排序过程。"
+  },
+  {
+    "id": "指-63",
+    "module": "指针",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "原地压缩",
+      "双指针",
+      "字符串"
+    ],
+    "stem": "输入一行可能含空格的字符串（长度小于 200），要求**原地**删除其中所有的空格字符（不申请新的字符串数组），然后输出处理后的字符串和它的长度。\n\n**输入格式：** 一行字符串（可能含空格）。\n\n**输出格式：** 第一行为删除空格后的字符串；第二行为该字符串的长度。\n\n**输入样例：**\n```text\na b  c   d\n```\n**输出样例：**\n```text\nabcd\n4\n```",
+    "analysis": "思路：双指针「读写分离」。`p` 负责读，`q` 负责写：只有当前字符不是空格时才把它写到 `*q` 并让 q 前进；无论是否写入，p 都前进。因为 q 始终不越过 p，所以不会覆盖尚未读取的字符。遍历结束后在 q 处补 `'\\0'`，返回 `q - s` 即新长度。\n\n用 `fgets` 读入时会把行末换行也读进来，所以要先把第一个 `'\\n'` 改成 `'\\0'`，否则换行会被当成普通字符保留下来，长度和输出都会多一位。\n\n复杂度：时间 O(n)，空间 O(1)（原地操作，只用了两个指针）。\n\n易错点：① 每删一个空格就用 `strcpy` 搬一次后续内容，复杂度退化到 O(n²) 且容易越界；② 忘记补 `'\\0'`，输出尾部带出原串残留；③ 用 `scanf(\"%s\")` 读入，遇到空格就停，根本读不到整行；④ 输出新长度时用了原串长度；⑤ 把 `fgets` 读到的换行当成普通字符处理。",
+    "solution": "#include <stdio.h>\n\nint squeeze(char *s)\n{\n    char *p = s;\n    char *q = s;\n\n    while (*p != '\\0') {\n        if (*p != ' ')\n            *q++ = *p;\n        p++;\n    }\n    *q = '\\0';\n    return (int)(q - s);\n}\n\nint main(void)\n{\n    char s[200];\n    char *p;\n    int n;\n\n    if (fgets(s, sizeof(s), stdin) == NULL)\n        return 0;\n\n    p = s;\n    while (*p != '\\0' && *p != '\\n')\n        p++;\n    *p = '\\0';\n\n    n = squeeze(s);\n    printf(\"%s\\n%d\\n\", s, n);\n    return 0;\n}",
+    "points": [
+      "用双指针原地删除空格，未申请额外的字符串数组",
+      "正确读入含空格的整行并去掉行末换行",
+      "删除结束后在写指针处补 '\\0'",
+      "输出新字符串及其长度（q - s）"
+    ]
+  },
+  {
+    "id": "指-64",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "函数指针",
+      "调用语法",
+      "优先级"
+    ],
+    "stem": "已知 `int f(int x) { return x + 1; }` 和 `int (*p)(int) = f;`，下列调用中**错误**的是（ ）。",
+    "options": [
+      "`p(3)`",
+      "`(*p)(3)`",
+      "`(&f)(3)`",
+      "`*p(3)`"
+    ],
+    "answer": 3,
+    "analysis": "知识点：函数指针的调用写法有多种等价形式，但 `*` 与 `()` 的优先级决定了括号不能乱省。\n\n- `p(3)`：正确，函数指针可以直接像函数一样加括号调用。\n- `(*p)(3)`：正确，先解引用得到函数再调用，与上一种完全等价。\n- `(&f)(3)`：正确，`&f` 得到函数指针，直接对它加括号调用也合法。\n- `*p(3)`：错误。`()` 的优先级高于 `*`，它被解析为 `*(p(3))`：先调用 p 得到 int，再对 int 解引用，编译报错。要解引用函数指针，必须写成 `(*p)(3)`。\n\n要点：C 标准规定函数指示符与函数指针在使用上几乎等价——`f`、`&f`、`*f` 都能用来调用函数，但前提是运算符优先级不把表达式拆成别的意思。`*p(3)` 就是典型的优先级陷阱，与 `*p++` 这类写法同源。"
+  },
+  {
+    "id": "指-65",
+    "module": "指针",
+    "type": "fill",
+    "difficulty": 1,
+    "tags": [
+      "void指针",
+      "逐字节复制",
+      "sizeof"
+    ],
+    "stem": "下面程序用指针逐字节复制内存，请填空。\n\n```c\n#include <stdio.h>\n\nvoid copy_bytes(void *dst, const void *src, int n)\n{\n    unsigned char *d = (unsigned char *)dst;\n    const unsigned char *s = (const unsigned char *)src;\n\n    while (n-- > 0)\n        ①;\n}\n\nint main(void)\n{\n    int x = 0x11223344, y = 0;\n\n    copy_bytes(&y, &x, ②);\n    printf(\"%d\\n\", y == x);\n    printf(\"%d\\n\", ③);\n    return 0;\n}\n```\n\n补全后输出 `1` 和 `4`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "*d++ = *s++",
+        "note": "先复制再各自前进，也可拆成两条语句"
+      },
+      {
+        "no": "②",
+        "answer": "(int)sizeof(x)",
+        "note": "要复制的字节数，正是 int 的大小"
+      },
+      {
+        "no": "③",
+        "answer": "(int)sizeof(y)",
+        "note": "输出 4"
+      }
+    ],
+    "analysis": "知识点：通用内存操作必须先把 `void *` 转成 `unsigned char *`，因为只有按 1 字节步长前进才能覆盖对象的每一个字节；`void *` 本身不能解引用，也不能做算术。\n\n① `*d++ = *s++` 先取出 `*s` 写入 `*d`，然后两个指针各自前进一字节（后置自增的值先参与赋值，再自增）。② 复制长度就是 `sizeof(x)`，即 4 字节；形参 n 是 int，因此加 `(int)` 转换消除 size_t→int 的告警。③ 同样输出 `sizeof(y)` = 4。\n\n输出 1（复制后 y 与 x 逐位相同）和 4。易错点：① 写 `(*d)++ = (*s)++`（这是把指针所指的值自增，语义完全变了）；② 忘记转换成 `unsigned char *`，对 `void *` 解引用直接编译错误；③ 用 `sizeof(x)` 除以 `sizeof(char)` 之类的多余运算；④ 复制长度写成元素个数以外的值导致越界。"
+  },
+  {
+    "id": "指-66",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "指针数组",
+      "二维数组",
+      "内存布局"
+    ],
+    "stem": "有：\n\n```c\nchar *s[3] = {\"red\", \"green\", \"blue\"};\nchar t[3][6] = {\"red\", \"green\", \"blue\"};\n```\n\n关于两者的内存布局与 `sizeof`，说法正确的是（ ）。",
+    "options": [
+      "`sizeof(s)` 与 `sizeof(t)` 都等于 18",
+      "`s` 的三个字符串在内存中连续存放，`t` 的各行不保证连续",
+      "`sizeof(s)` 是 3 个指针的大小（64 位下为 24），`sizeof(t)` 是 18；`s` 的元素指向别处的字符串，`t` 的字符按行连续存放",
+      "`s[0][0]` 与 `t[0][0]` 都表示字符 'r'，两种定义完全等价"
+    ],
+    "answer": 2,
+    "analysis": "知识点：`char *s[3]` 是「指针数组」——数组本身只存 3 个指针，字符串字面量放在别处（通常是只读区）；`char t[3][6]` 是「二维字符数组」——18 个字符连续存放，每行固定 6 字节。\n\nC 正确：64 位下 `sizeof(s) = 3 × 8 = 24`，`sizeof(t) = 3 × 6 = 18`。\n\nA 错：`s` 存的是指针，不是字符。B 错：指针数组里的各个字符串由编译器分别安排，彼此不保证连续；而二维数组的行恰恰是连续的。D 错：`s[0][0]` 与 `t[0][0]` 的值虽然都是 'r'，但 `s` 的元素可以改指向别的字符串、`t` 的行不能改指向，且 `t` 的每行长度固定为 6，放不下更长的字符串。\n\n要点：需要「行长度可变、只存指针」时用指针数组；需要「整块连续、可整体读写」时用二维数组。二者的 `sizeof` 语义完全不同。"
+  },
+  {
+    "id": "指-67",
+    "module": "指针",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "void指针",
+      "函数指针",
+      "通用排序"
+    ],
+    "stem": "输入 n（1 ≤ n ≤ 50）个整数，用你自己实现的**通用排序函数**\n\n```c\nvoid sort(void *base, size_t n, size_t size, int (*cmp)(const void *, const void *));\n```\n\n排序后输出。要求：函数内部必须用 `char *` 做字节级寻址、逐字节交换元素，从而对任意元素类型都适用；不得直接按 `int` 处理，也不得调用 `qsort`。\n\n**输入格式：** 第一行一个整数 n；第二行 n 个整数，用空格分隔。\n\n**输出格式：** 升序输出 n 个整数，相邻整数之间一个空格，行末换行。\n\n**输入样例：**\n```text\n6\n3 -1 4 1 5 9\n```\n**输出样例：**\n```text\n-1 1 3 4 5 9\n```",
+    "analysis": "思路：`void *` 不知道元素类型，唯一可移植的做法是把它转成 `char *`，用「基地址 + 下标 × 元素大小」得到第 i 个元素的地址，再把地址交给比较函数。比较函数只接收两个元素地址，返回负/0/正。交换时因为不知道类型，只能逐字节交换：拿两个 `char *` 和元素大小，循环 size 次交换一个字节。\n\n选择排序框架不变：外层 i，内层在 [i+1, n) 中找最小元素的下标 best，最后交换 i 与 best 两个元素。\n\n复杂度：时间 O(n²)，交换次数 O(n)；空间 O(1)。因为元素通过指针间接访问，编译器无法内联比较逻辑，性能低于针对具体类型写的排序，但通用性最好——同一份代码可排 int、double、结构体。\n\n易错点：① 用 `p + i` 而不是 `p + i * size`（`void *` 或 `char *` 的步长是 1 字节）；② 交换时只交换了指针而不是内容；③ 循环边界写成 `i < n` 导致越界；④ 比较函数参数类型写错；⑤ 把 `size` 和元素个数混用。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nint cmp_int(const void *pa, const void *pb)\n{\n    int a = *(const int *)pa;\n    int b = *(const int *)pb;\n\n    return (a > b) - (a < b);\n}\n\nstatic void swap_bytes(char *x, char *y, size_t size)\n{\n    size_t i;\n\n    for (i = 0; i < size; i++) {\n        char t = x[i];\n        x[i] = y[i];\n        y[i] = t;\n    }\n}\n\nvoid sort(void *base, size_t n, size_t size, int (*cmp)(const void *, const void *))\n{\n    char *p = (char *)base;\n    size_t i, j, best;\n\n    for (i = 0; i + 1 < n; i++) {\n        best = i;\n        for (j = i + 1; j < n; j++)\n            if (cmp(p + j * size, p + best * size) < 0)\n                best = j;\n        if (best != i)\n            swap_bytes(p + i * size, p + best * size, size);\n    }\n}\n\nint main(void)\n{\n    int a[50], n, i;\n\n    if (scanf(\"%d\", &n) != 1 || n <= 0 || n > 50)\n        return 0;\n    for (i = 0; i < n; i++)\n        scanf(\"%d\", &a[i]);\n\n    sort(a, (size_t)n, sizeof(int), cmp_int);\n\n    for (i = 0; i < n; i++)\n        printf(\"%d%c\", a[i], i < n - 1 ? ' ' : '\\n');\n    return 0;\n}",
+    "points": [
+      "函数签名与题目给定原型一致，用 void * 接收任意类型数组",
+      "用 char * 做字节级寻址，元素地址为 p + i * size",
+      "逐字节交换两个元素，不依赖具体元素类型",
+      "比较函数按负/0/正返回，选择排序逻辑正确",
+      "主函数读入并正确输出排序结果"
+    ]
+  },
+  {
+    "id": "指-68",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "悬空指针",
+      "free",
+      "代码审查"
+    ],
+    "stem": "下面函数存在内存管理问题：\n\n```c\nchar *make_copy(const char *src)\n{\n    char *p = (char *)malloc(strlen(src) + 1);\n    if (p == NULL)\n        return NULL;\n    strcpy(p, src);\n    if (p[0] == '\\0') {\n        free(p);\n        return p;\n    }\n    return p;\n}\n```\n\n主要问题是（ ）。",
+    "options": [
+      "`malloc` 的参数少加了 1 个字节，会造成越界写",
+      "释放后仍然 `return p`，把已释放的指针交给调用者，形成悬空指针",
+      "`strcpy` 之后不能再访问 `p[0]`，这里读取了已释放的内存",
+      "函数应该返回 `void`，因为返回 `char *` 无法释放"
+    ],
+    "answer": 1,
+    "analysis": "知识点：`free` 之后指针变量本身的值不变，仍保存原来的地址，这个地址已经不能再访问——这就是悬空指针。函数返回悬空指针，调用者一旦使用就是未定义行为。\n\nB 正确：空串分支里先 `free(p)`，紧接着 `return p`，把已释放的地址交给调用者。\n\nA 错：`malloc(strlen(src) + 1)` 已经为结束符留了 1 个字节，长度是对的。C 错：`p[0]` 是在 `free` 之前读取的，合法；问题出在 `free` 之后的 `return p`。D 错：返回 `char *` 与释放与否无关，调用者本来就应该负责 `free` 返回的缓冲区。\n\n正确写法是直接 `return p;`（由调用者释放），或先 `free(p); return NULL;` 明确表示「没有内容」。另一个隐患是函数没有文档说明「返回的指针需要调用者 free」，容易造成内存泄漏——这属于接口约定问题，不是本题的主要 bug。"
+  },
+  {
+    "id": "指-69",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "尾后指针",
+      "指针运算",
+      "数组边界"
+    ],
+    "stem": "有 `int a[5];`，执行 `int *p = a + 5;` 之后，下列说法正确的是（ ）。",
+    "options": [
+      "p 是合法的「尾后指针」，可以参与比较（如 `p > a`）和相减（`p - a` 得 5），但不能解引用",
+      "p 越界，程序会立即崩溃，因此这条语句本身非法",
+      "p 指向 `a[5]`，可以通过它读写 `a[5]` 的值",
+      "`p - a` 的结果是 20，因为两者相差 20 个字节"
+    ],
+    "answer": 0,
+    "analysis": "知识点：C 标准允许指针指向数组最后一个元素之后的那个位置（one past the end，尾后指针）。这类指针可以参与比较、相减，也可以作为循环的上界，但唯独不能解引用。\n\nA 正确：`a + 5` 正是尾后位置；`p > a` 成立，`p - a` 等于 5（元素个数）。这也是 `for (p = a; p < a + n; p++)` 这种循环能安全工作的原因。\n\nB 错：构造尾后指针本身是合法的，不会崩溃；只有当它被解引用时才越界。C 错：`a[5]` 并不存在，通过 p 读写就是越界访问，属于未定义行为。D 错：指针相减的单位是元素，不是字节；`p - a` 得 5（对应 20 字节，但表达式的值是 5）。\n\n易错点：`a + n` 合法，`a + n + 1` 或 `a - 1` 就是未定义行为；不要以为「只要不写就随便算」。"
+  },
+  {
+    "id": "指-70",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "void指针",
+      "字节访问",
+      "内存操作"
+    ],
+    "stem": "用指针实现通用内存复制（类似 `memcpy`）时，函数内通常先把形参 `void *` 转换成 `unsigned char *` 再做逐字节操作。这样做的主要原因是（ ）。",
+    "options": [
+      "`void *` 完全不能参与任何运算，转换成 `unsigned char *` 后才能按 4 字节步长前进",
+      "`unsigned char` 的读写速度比 `char` 快，可以提高复制效率",
+      "只有 `unsigned char *` 才能接收 `void *` 的赋值，其他类型都不行",
+      "`unsigned char` 没有符号位与填充位的额外语义，且步长为 1 字节，正好能覆盖对象中的每一个字节，也避免对未对齐地址做宽类型访问"
+    ],
+    "answer": 3,
+    "analysis": "知识点：`void *` 是「无类型指针」，既不能解引用，也不能做指针算术；要逐字节处理内存，必须转成「1 字节宽、且按位模式解释」的类型，`unsigned char` 正是标准为此准备的类型。\n\nD 正确：`unsigned char` 的每个取值都是纯位模式（没有符号位问题），`sizeof(unsigned char) == 1`，所以 `p + 1` 恰好前进一个字节，能访问到对象内部的每一个字节；同时逐字节访问不会触发「未对齐访问」的问题。\n\nA 错：`unsigned char *` 的步长是 1 字节，不是 4 字节；而且 `void *` 不能做算术，也谈不上「按 4 字节前进」。B 错：性能主要取决于访存模式，`char` 与 `unsigned char` 本身并没有速度差异。C 错：任何对象指针都能与 `void *` 互相赋值（C 语言隐式转换）。\n\n补充：C 标准保证所有对象都能被当作 `unsigned char` 数组来检查其字节表示，这也是实现序列化、哈希、比较的基础。"
+  },
+  {
+    "id": "指-71",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "qsort",
+      "整型溢出",
+      "函数指针"
+    ],
+    "stem": "要把 `int` 数组按降序排序，有人写了这样的比较函数：\n\n```c\nint cmp(const void *a, const void *b)\n{\n    return *(const int *)b - *(const int *)a;\n}\n```\n\n关于这个写法，正确的评价是（ ）。",
+    "options": [
+      "完全正确，降序排序必须这样写",
+      "错误，因为 `const void *` 不能强制转换成 `const int *`",
+      "排序方向是对的，但当两个元素之差超出 `int` 的表示范围时（如 2000000000 与 -2000000000 相减），减法会溢出，属于未定义行为；应改成先比较再返回 -1/0/1",
+      "错误，`qsort` 的比较函数必须返回 `void`"
+    ],
+    "answer": 2,
+    "analysis": "知识点：用「相减」实现比较函数是很常见的写法，但 `int` 减法可能溢出，而有符号整型溢出在 C 中是未定义行为，不能依赖它「回绕成正确的负数」。\n\nC 正确：`b - a` 在数值差距不大时确实能得到正确的降序关系（b 大则返回正），但当两元素相差超过 `INT_MAX` 时（例如 2000000000 - (-2000000000)）结果溢出，行为不可预期，排序可能出错。安全写法是：\n\n```c\nint x = *(const int *)a, y = *(const int *)b;\nreturn (x > y) - (x < y);   /* 升序 */\nreturn (x < y) - (x > y);   /* 降序 */\n```\n\nA 错：存在溢出隐患，不能算「完全正确」。B 错：把 `const void *` 转成 `const int *` 正是比较函数的标准做法。D 错：比较函数必须返回 `int`，返回 `void` 编译不过。\n\n补充：只有在能保证差值不会溢出时（例如元素都是 0~1000 的成绩）才可以用减法简化。"
+  },
+  {
+    "id": "指-72",
+    "module": "指针",
+    "type": "fill",
+    "difficulty": 3,
+    "tags": [
+      "函数指针",
+      "区间遍历",
+      "返回指针"
+    ],
+    "stem": "下面程序用函数指针实现「在区间内查找第一个满足条件的元素」，请填空。\n\n```c\n#include <stdio.h>\n\nint is_odd(int x) { return x % 2 != 0; }\n\nint *find_if(int *begin, int *end, int (*pred)(int))\n{\n    for (; ①; begin++)\n        if (②)\n            return begin;\n    return ③;\n}\n\nint main(void)\n{\n    int a[6] = {2, 4, 7, 8, 9, 10};\n    int *p = find_if(a, a + 6, is_odd);\n\n    if (p != NULL)\n        printf(\"%d %d\\n\", *p, (int)(p - a));\n    return 0;\n}\n```\n\n补全后输出 `7 2`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "begin < end",
+        "note": "左闭右开区间，end 指向尾后位置"
+      },
+      {
+        "no": "②",
+        "answer": "pred(*begin)",
+        "note": "也可写 (*pred)(*begin)"
+      },
+      {
+        "no": "③",
+        "answer": "NULL",
+        "note": "没找到时返回空指针"
+      }
+    ],
+    "analysis": "知识点：C 的「泛型算法」风格接口通常用两个指针表示区间 [begin, end)，end 指向最后一个元素之后的位置（尾后指针），因此循环条件是 `begin < end`，不能解引用 end。比较/判定逻辑通过函数指针传入，主函数把 `is_odd` 这样的谓词交给它。\n\n`find_if` 找到就返回该元素地址，找不到返回 `NULL`——返回指针（而不是下标）让调用者可以直接用 `p - a` 求偏移，也可以直接解引用，这是 C 标准库 `bsearch`、`strchr` 等接口的常见约定。\n\n补全后输出 `7 2`：第一个奇数是 7，位于下标 2。易错点：① 循环写成 `begin <= end`，最后一次会解引用尾后位置；② 谓词写成 `pred(begin)`（传的是指针，参数类型 int 不匹配）；③ 找不到时返回 `-1` 或 `end`，导致调用者无法用同一个返回值约定判断；④ 忘记检查 NULL 就解引用。"
+  },
+  {
+    "id": "指-73",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "返回函数指针",
+      "声明解析",
+      "typedef"
+    ],
+    "stem": "要声明一个函数 `choose`，它接受一个 `char` 参数，返回「指向 `int (int, int)` 类型函数的指针」，下列声明正确的是（ ）。",
+    "options": [
+      "`int *choose(char)(int, int);`",
+      "`int (*choose)(char)(int, int);`",
+      "`typedef int (*F)(int, int); F *choose(char);`",
+      "`int (*choose(char))(int, int);`"
+    ],
+    "answer": 3,
+    "analysis": "知识点：返回函数指针的声明是 C 里最容易写错的形式，诀窍是「先写函数本身，再把返回值替换成函数指针类型」。\n\n`int (*choose(char))(int, int);` 的读法：`choose(char)` 说明 choose 是接受 char 的函数；它前面的 `(*...)` 与后面的 `(int, int)` 合起来说明返回类型是 `int (*)(int, int)`。\n\n- A `int *choose(char)(int, int);`：声明成「返回 `int *` 的函数，又接一个参数列表」，非法（函数不能返回函数）。\n- B `int (*choose)(char)(int, int);`：把 choose 直接写成指针，后面跟了两组参数列表，语法非法。\n- C 用 typedef 是对的思路，但 `F *choose(char)` 返回的是「函数指针的指针」，多了一层 `*`，应该是 `F choose(char);`。\n- D 正确。\n\n补充：用 typedef 可以大幅降低可读性门槛：\n\n```c\ntypedef int (*BinOp)(int, int);\nBinOp choose(char op);\n```"
+  },
+  {
+    "id": "指-74",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "main参数",
+      "指针数组",
+      "二级指针"
+    ],
+    "stem": "在 `int main(int argc, char *argv[])` 中，形参 `argv` 的实际类型是（ ）。",
+    "options": [
+      "`char`，即单个字符",
+      "`char **`，即指向字符指针的指针；`argv[i]` 是第 i 个参数字符串的首地址",
+      "`char *`，即一个字符串",
+      "`char [][]`，即二维字符数组"
+    ],
+    "answer": 1,
+    "analysis": "知识点：`char *argv[]` 作为函数形参会退化为 `char **argv`，即「指向 `char *` 的指针」——本质上是指针数组的首地址。\n\nB 正确：`argv[0]` 是程序名，`argv[1]`~`argv[argc-1]` 是各个命令行参数，它们都是 `char *`；标准还保证 `argv[argc]` 是空指针，可以作为遍历的结束标志：\n\n```c\nfor (char **p = argv; *p != NULL; p++)\n    puts(*p);\n```\n\nA 错：`argv` 不是单个字符。C 错：虽然 `char *argv[]` 与 `char **argv` 等价，但它表示的是一组字符串而不是一个字符串。D 错：C 语言没有 `char [][]` 这种不完整类型的二维数组形参，而且 `argv` 的各个字符串长度不同、并不连续存放。\n\n要点：`argv` 是「指针数组」的经典应用——每个元素指向一个独立存放的字符串。"
+  },
+  {
+    "id": "指-75",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "指针数组",
+      "二级指针",
+      "输出分析"
+    ],
+    "stem": "下列程序的输出是（ ）。\n\n```c\n#include <stdio.h>\n\nint main(void)\n{\n    char *s[3] = {\"ab\", \"cd\", \"ef\"};\n    char **p = s;\n    printf(\"%s %c\\n\", *(p + 1), **(p + 2));\n    return 0;\n}\n```",
+    "options": [
+      "ab c",
+      "cd f",
+      "cd e",
+      "cd c"
+    ],
+    "answer": 2,
+    "analysis": "知识点：`s` 是含 3 个 `char *` 的指针数组，`p = s` 让 p 指向 `s[0]`（类型 `char **`）。对 p 加 1 移动的是「一个 `char *` 的大小」，`*(p + 1)` 就是 `s[1]`。\n\n- `*(p + 1)`：即 `s[1]`，类型 `char *`，指向字符串 \"cd\"，用 `%s` 输出 `cd`。\n- `**(p + 2)`：先 `*(p + 2)` 得到 `s[2]`（指向 \"ef\" 的 `char *`），再解引用一次得到首字符 `'e'`，用 `%c` 输出 `e`。\n\n所以输出 `cd e`。干扰项 A 把 `*(p + 1)` 当成了 `s[0]`；B 把 `**(p + 2)` 当成了最后一个字符（那需要 `*(*(p + 2) + 1)`）；D 把第二项当成了 `*(p + 2)` 的首字符的前一个。\n\n要点：`char **` 加 1 跳过的是一个指针（64 位下 8 字节），不是 1 个字符；要访问字符串内部字符，必须解引用两次。"
+  },
+  {
+    "id": "指-76",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "指针运算",
+      "数组指针",
+      "地址计算"
+    ],
+    "stem": "假设 `int a[5];` 的首地址为 1000，`int` 占 4 字节，则 `a + 1`、`&a + 1`、`(char *)a + 1` 的值分别是（ ）。",
+    "options": [
+      "1004、1020、1001",
+      "1004、1004、1001",
+      "1004、1020、1004",
+      "1001、1004、1020"
+    ],
+    "answer": 0,
+    "analysis": "知识点：指针加 1 的步长等于「所指类型的大小」，同一条 `+ 1` 在不同类型下可以差很多。\n\n- `a + 1`：`a` 退化为 `int *`，步长 `sizeof(int) = 4`，结果为 1004。\n- `&a + 1`：`&a` 的类型是 `int (*)[5]`，步长是整个数组 20 字节，结果为 1000 + 20 = 1020（即「数组之后」的地址）。\n- `(char *)a + 1`：转成 `char *` 后步长为 1，结果为 1001。\n\nA 正确。\n\n干扰项：B 以为 `&a` 与 `a` 的步长相同——虽然两者的**值**都是 1000，但**类型**不同；C 以为 `char *` 的步长是 4；D 把三个顺序完全对调。\n\n要点：判断指针算术，先看类型再看值。`sizeof(*(&a))` 是 20，`sizeof(*a)` 是 4，这就是步长差异的来源。本题的 1000 是题目给定的假设，用来考查偏移计算。"
+  }
+]
