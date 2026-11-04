@@ -294,6 +294,23 @@ def main() -> None:
     for seq, q in enumerate(questions, 1):
         q["seq"] = seq
 
+    knowledge_path = ROOT / "data" / "knowledge.json"
+    knowledge = {"version": 1, "topics": []}
+    if knowledge_path.exists():
+        knowledge = json.loads(knowledge_path.read_text(encoding="utf-8"))
+        ids = set()
+        for topic in knowledge.get("topics", []):
+            for field in ("id", "title", "summary", "points", "usage"):
+                if field not in topic:
+                    die([f"knowledge.json 缺少字段 {field}：{topic.get('id', '?')}"])
+            if topic["id"] in ids:
+                die([f"knowledge.json 主题 id 重复：{topic['id']}"])
+            ids.add(topic["id"])
+            for lang in ("c", "cpp", "python"):
+                if not topic["usage"].get(lang):
+                    die([f"knowledge.json 主题 {topic['id']} 缺少 {lang} 示例"])
+        print(f"知识点主题：{len(knowledge['topics'])} 个")
+
     bank = {
         "meta": {
             "title": "程序设计基础 · 三语言习题复习库",
@@ -311,6 +328,7 @@ def main() -> None:
             for m in MODULES
         ],
         "typeCounts": dict(type_counts),
+        "knowledge": knowledge,
         "questions": questions,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)

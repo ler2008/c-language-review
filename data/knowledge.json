@@ -1,0 +1,1086 @@
+{
+  "version": 1,
+  "updated": "2026-11-04",
+  "topics": [
+    {
+      "id": "int-division",
+      "title": "整数除法与取模",
+      "module": "C语言基础",
+      "tags": [
+        "整数除法",
+        "取模",
+        "整除",
+        "算术运算",
+        "整型除法",
+        "运算符"
+      ],
+      "summary": "两个整数相除，结果仍是整数：C/C++ 向零截断，Python 的 // 向下取整。取模结果的符号跟着「除数」走，这是三种语言最容易踩坑的一处差异。",
+      "points": [
+        "C/C++：7 / 2 == 3，-7 / 2 == -3（向零截断）；Python：7 // 2 == 3，-7 // 2 == -4（向下取整）。",
+        "取模：C 中 -7 % 2 == -1（符号随被除数）；Python 中 -7 % 2 == 1（符号随除数）。",
+        "想要浮点结果，至少让一个操作数是浮点：1.0 * a / b 或 (double)a / b；Python 直接用 / 就是真除法。"
+      ],
+      "usage": {
+        "c": "int a = 7, b = 2;\nprintf(\"%d %d\\n\", a / b, a % b);      /* 3 1 */\nprintf(\"%.2f\\n\", (double)a / b);          /* 3.50 */",
+        "cpp": "int a = 7, b = 2;\nstd::cout << a / b << ' ' << a % b << '\\n';   // 3 1\nstd::cout << static_cast<double>(a) / b;      // 3.5",
+        "python": "a, b = 7, 2\nprint(a // b, a % b)      # 3 1\nprint(a / b)              # 3.5，/ 永远是float"
+      },
+      "pitfalls": [
+        "把 1/2 写成整数除法，期望 0.5 却得到 0。",
+        "在 Python 里用 // 求平均值，结果被悄悄向下取整。"
+      ]
+    },
+    {
+      "id": "increment",
+      "title": "自增自减与求值顺序",
+      "module": "C语言基础",
+      "tags": [
+        "自增运算符",
+        "自增自减",
+        "副作用",
+        "求值顺序",
+        "表达式求值",
+        "表达式",
+        "赋值",
+        "赋值表达式"
+      ],
+      "summary": "i++ 先取值再加一，++i 先加一再取值。同一个表达式里对同一变量多次修改属于未定义行为，考试里常靠「拆成多条语句」来考你。",
+      "points": [
+        "j = i++：j 拿到旧值，i 变 i+1；j = ++i：i 先加一，j 拿到新值。",
+        "C/C++ 中 i = i++ + ++i 这类写法是未定义行为，不同编译器结果不同，不要依赖。",
+        "Python 没有 ++/-- 运算符，只能写 i += 1；这也是三语言题干会同时改写的原因。"
+      ],
+      "usage": {
+        "c": "int i = 3, j, k;\nj = i++;   /* j=3, i=4 */\nk = ++i;   /* i=5, k=5 */",
+        "cpp": "int i = 3, j, k;\nj = i++;   // j=3, i=4\nk = ++i;   // i=5, k=5",
+        "python": "i = 3\nj = i\ni += 1        # 对应 j = i++\nk = i + 1\ni = k         # 对应 k = ++i"
+      },
+      "pitfalls": [
+        "把 i++ 当成「先加一再参与运算」。",
+        "在 printf 的同一参数列表里对同一变量多次 ++。"
+      ]
+    },
+    {
+      "id": "short-circuit",
+      "title": "短路求值与逻辑运算",
+      "module": "C语言基础",
+      "tags": [
+        "短路求值",
+        "逻辑运算",
+        "关系运算",
+        "if语句",
+        "条件运算符",
+        "逻辑表达式",
+        "比较"
+      ],
+      "summary": "&& 和 || 会短路：左边能定结果时右边根本不执行。所以 a != 0 && b / a > 1 既安全又常用，而 & 和 | 不会短路。",
+      "points": [
+        "a && b：a 为假直接得假，b 不执行；a || b：a 为真直接得真，b 不执行。",
+        "短路常用来做「空指针/除零保护」，例如 p != NULL && p->next != NULL。",
+        "逻辑运算的结果是 0 或 1（C++ 是 bool），不是操作数本身；Python 返回的是参与判断的那个对象。"
+      ],
+      "usage": {
+        "c": "int a = 0, b = 5;\nif (a != 0 && b / a > 1) puts(\"yes\");\nelse puts(\"no\");          /* 不会除零 */",
+        "cpp": "int a = 0, b = 5;\nif (a != 0 && b / a > 1) std::cout << \"yes\";\nelse std::cout << \"no\";",
+        "python": "a, b = 0, 5\nprint(\"yes\" if a != 0 and b / a > 1 else \"no\")\n# and/or 返回操作数：0 and x -> 0，5 or x -> 5"
+      },
+      "pitfalls": [
+        "把 && 写成 &，失去短路保护导致除零或空指针崩溃。",
+        "以为 if (a = 3) 是判断相等，实际是赋值且恒为真。"
+      ]
+    },
+    {
+      "id": "switch-case",
+      "title": "switch 的分支与贯穿",
+      "module": "C语言基础",
+      "tags": [
+        "switch",
+        "case",
+        "default",
+        "贯穿",
+        "分支",
+        "switch语句",
+        "case标签"
+      ],
+      "summary": "switch 从匹配的 case 开始一路往下执行，直到遇到 break。故意或忘记写 break 都会「贯穿」，这是选择题的经典考点。",
+      "points": [
+        "case 后面必须是整型常量表达式，不能是变量或浮点数。",
+        "default 的位置任意：放在中间时，若前面没有匹配且没有 break，会先执行 default 再继续往下贯穿。",
+        "Python 3.10+ 用 match/case，每个 case 执行完自动结束，没有贯穿，也不需要 break。"
+      ],
+      "usage": {
+        "c": "switch (x) {\ncase 1: putchar('a');\ncase 2: putchar('b');\ncase 3: putchar('c'); break;\ndefault: putchar('d');\n}   /* x=2 -> bc */",
+        "cpp": "switch (x) {\ncase 1: std::cout << 'a';\ncase 2: std::cout << 'b';\ncase 3: std::cout << 'c'; break;\ndefault: std::cout << 'd';\n}",
+        "python": "match x:\n    case 1: print('a')\n    case 2: print('b')   # 不贯穿\n    case _: print('d')"
+      },
+      "pitfalls": [
+        "只在最后一个 case 写 break，导致前面全部贯穿。",
+        "把 default 当成「最后才判断」，忽略它出现在中间时的贯穿顺序。"
+      ]
+    },
+    {
+      "id": "loop-boundary",
+      "title": "循环边界、次数与跳转",
+      "module": "C语言基础",
+      "tags": [
+        "循环",
+        "循环边界",
+        "循环次数",
+        "for循环",
+        "while循环",
+        "do-while",
+        "break",
+        "continue",
+        "嵌套循环",
+        "循环嵌套"
+      ],
+      "summary": "循环写不对，九成是边界（< 还是 <=）、初值、步长三件事。break 结束整个循环，continue 只跳过本次，嵌套时都只作用于最内层。",
+      "points": [
+        "for (i = 0; i < n; i++) 执行 n 次；写成 i <= n 就多一次，是数组越界的头号原因。",
+        "do-while 先执行后判断，至少执行一次；while 可能一次都不执行。",
+        "break 跳出当前层循环，continue 进入下一次迭代；要跳出多层需要标志位或 goto。"
+      ],
+      "usage": {
+        "c": "int i, s = 0;\nfor (i = 1; i <= 5; i++) {\n    if (i == 3) continue;   /* 跳过 3 */\n    if (i == 5) break;      /* 到 5 结束 */\n    s += i;                 /* 1+2+4 = 7 */\n}",
+        "cpp": "int s = 0;\nfor (int i = 1; i <= 5; ++i) {\n    if (i == 3) continue;\n    if (i == 5) break;\n    s += i;                 // 7\n}",
+        "python": "s = 0\nfor i in range(1, 6):\n    if i == 3: continue\n    if i == 5: break\n    s += i                  # 7"
+      },
+      "pitfalls": [
+        "数组循环写成 i <= n，访问 a[n] 越界。",
+        "以为 continue 也会结束循环，或以为 break 能跳出两层。"
+      ]
+    },
+    {
+      "id": "scanf-buffer",
+      "title": "格式化输入输出与输入缓冲区",
+      "module": "C语言基础",
+      "tags": [
+        "scanf",
+        "printf",
+        "getchar",
+        "输入缓冲区",
+        "字符输入",
+        "fgets",
+        "printf格式",
+        "格式说明符",
+        "输入输出"
+      ],
+      "summary": "scanf(\"%d\") 只取走数字，回车仍留在缓冲区里，后面的 getchar/gets 会先读到它。混用数值输入和字符输入时必须清掉换行。",
+      "points": [
+        "scanf 返回成功转换的项数，while (scanf(\"%d\", &x) == 1) 是读不确定个数输入的标准写法。",
+        "读字符前用 getchar() 吃掉换行，或用 \" %c\"（%c 前加空格）跳过空白。",
+        "gets 已被移除，改用 fgets(buf, sizeof buf, stdin)；Python 用 input()/sys.stdin 不会有这个残留问题。"
+      ],
+      "usage": {
+        "c": "int n; char c;\nscanf(\"%d\", &n);\ngetchar();                 /* 吃掉换行 */\nc = getchar();",
+        "cpp": "int n; char c;\nstd::cin >> n;\nstd::cin.get();            // 吃掉换行\nc = std::cin.get();",
+        "python": "n = int(input())\ns = input()                # input 已去掉行尾换行"
+      },
+      "pitfalls": [
+        "scanf 后直接 getchar，读到的是 '\\n' 而不是用户输入。",
+        "用 %d 读 double、用 %f 读 double（应为 %lf），导致结果错乱。"
+      ]
+    },
+    {
+      "id": "macro",
+      "title": "宏定义与预处理",
+      "module": "C语言基础",
+      "tags": [
+        "宏定义",
+        "预处理",
+        "#define",
+        "带参宏",
+        "文本替换",
+        "条件编译",
+        "头文件"
+      ],
+      "summary": "宏是预处理阶段的纯文本替换，没有类型检查，也不做运算优先级保护。带参宏的每个参数和整体都要加括号，否则 SQR(2+3) 会算成 11。",
+      "points": [
+        "#define SQR(x) ((x) * (x)) 才安全；写成 x * x 时 SQR(2+3) 展开为 2+3*2+3 = 11。",
+        "const 常量有类型、可调试、可取地址；宏只是文本替换，出错时报错位置会很奇怪。",
+        "#if / #ifdef 在编译前决定保留哪段代码，常用于平台分支和调试开关。"
+      ],
+      "usage": {
+        "c": "#define SQR(x) ((x) * (x))\nprintf(\"%d\\n\", SQR(2 + 3));   /* 25 */\nconst int N = 10;              /* 有类型，推荐 */",
+        "cpp": "constexpr int sqr(int x) { return x * x; }   // C++ 更好的选择\nstatic_assert(sqr(2 + 3) == 25);",
+        "python": "def sqr(x):\n    return x * x\nprint(sqr(2 + 3))    # 25，函数天然有括号保护"
+      },
+      "pitfalls": [
+        "带参宏不加括号，运算优先级被破坏。",
+        "在宏参数里写 i++，展开后被求值多次。"
+      ]
+    },
+    {
+      "id": "bitwise",
+      "title": "位运算与掩码",
+      "module": "C语言基础",
+      "tags": [
+        "位运算",
+        "位操作",
+        "移位",
+        "掩码",
+        "lowbit",
+        "异或",
+        "按位运算",
+        "取位",
+        "整数取位",
+        "循环移位"
+      ],
+      "summary": "位运算直接操作二进制：& 清零、| 置位、^ 翻转、~ 取反、<< >> 移位。判断奇偶用 x & 1，取最低位的 1 用 x & -x，都是常考技巧。",
+      "points": [
+        "x & (x - 1) 清除最低位的 1，可用来数 1 的个数或判断 2 的幂。",
+        "x & -x 取出最低位的 1（lowbit），树状数组的基础操作。",
+        "对无符号数右移是逻辑移位；对有符号负数右移是实现定义，不要依赖。"
+      ],
+      "usage": {
+        "c": "int x = 12;                 /* 1100 */\nprintf(\"%d %d\\n\", x & (x - 1), x & -x);   /* 8 4 */\nprintf(\"%d\\n\", (x >> 1) & 1);              /* 0 */",
+        "cpp": "int x = 12;\nstd::cout << (x & (x - 1)) << ' ' << (x & -x);  // 8 4",
+        "python": "x = 12\nprint(x & (x - 1), x & -x)   # 8 4\nprint((x >> 1) & 1)          # 0"
+      },
+      "pitfalls": [
+        "把 & 当成逻辑与，if (n & 1) 与 if (n && 1) 含义完全不同。",
+        "移位位数超过类型宽度（如 int 移 32 位）是未定义行为。"
+      ]
+    },
+    {
+      "id": "type-conversion",
+      "title": "类型转换、整型提升与溢出",
+      "module": "C语言基础",
+      "tags": [
+        "类型转换",
+        "强制类型转换",
+        "整型提升",
+        "无符号",
+        "取值范围",
+        "数据类型",
+        "溢出",
+        "unsigned",
+        "short"
+      ],
+      "summary": "不同类型混合运算会先做整型提升和寻常算术转换：有 unsigned 参与时，int 会被转成 unsigned，-1 < 1u 居然为假。",
+      "points": [
+        "int 与 unsigned int 比较时，int 先转成 unsigned，-1 变成 4294967295。",
+        "强制转换只改变「怎么解释这块内存」，不改变位模式；大范围转小范围会截断。",
+        "unsigned char 赋值 -1 得到 255；赋值 300 得到 300 % 256 = 44。"
+      ],
+      "usage": {
+        "c": "int a = -1; unsigned b = 1;\nprintf(\"%d\\n\", a < b);            /* 0，a 被转成无符号 */\nprintf(\"%u\\n\", (unsigned char)-1);  /* 255 */",
+        "cpp": "int a = -1; unsigned b = 1;\nstd::cout << (a < b) << '\\n';      // 0\nstd::cout << static_cast<int>(static_cast<unsigned char>(-1));  // 255",
+        "python": "print(-1 < 1)        # True，Python 整数无宽度、无 unsigned\nprint(-1 & 0xFF)     # 255，用掩码模拟 unsigned char"
+      },
+      "pitfalls": [
+        "用 unsigned 做循环变量倒序循环，i >= 0 永远成立，造成死循环。",
+        "以为 (int)3.9 会四舍五入，实际是截断成 3。"
+      ]
+    },
+    {
+      "id": "float-compare",
+      "title": "浮点数比较与精度",
+      "module": "C语言基础",
+      "tags": [
+        "浮点数",
+        "精度",
+        "浮点比较",
+        "fabs",
+        "double",
+        "类型转换",
+        "比较"
+      ],
+      "summary": "二进制无法精确表示 0.1 这类小数，直接用 == 比较两个 double 几乎必错。正确做法是判断差值绝对值小于一个足够小的 epsilon。",
+      "points": [
+        "浮点数用 fabs(a - b) < 1e-9 判断相等，1e-9 是常用的容差。",
+        "float 有效数字约 7 位，double 约 15~16 位；大数相减会损失精度。",
+        "Python 的 float 就是 C 的 double，同样不能直接用 == 比较计算结果。"
+      ],
+      "usage": {
+        "c": "#include <math.h>\nif (fabs(a - b) < 1e-9) puts(\"equal\");",
+        "cpp": "#include <cmath>\nif (std::fabs(a - b) < 1e-9) std::cout << \"equal\";",
+        "python": "import math\nif math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-9):\n    print('equal')"
+      },
+      "pitfalls": [
+        "用 a == b 比较两个经过计算的 double。",
+        "容差取 1（太大）导致 1.5 和 2.0 也被判为相等。"
+      ]
+    },
+    {
+      "id": "precedence",
+      "title": "运算符优先级与结合性",
+      "module": "C语言基础",
+      "tags": [
+        "运算符优先级",
+        "优先级",
+        "结合性",
+        "条件运算符",
+        "逗号表达式",
+        "表达式",
+        "表达式求值",
+        "赋值"
+      ],
+      "summary": "优先级决定谁先算：括号 > 单目 > 算术 > 移位 > 关系 > 相等 > 位与/异或/或 > 逻辑与/或 > 条件 > 赋值 > 逗号。记不清就加括号。",
+      "points": [
+        "x & 1 == 0 实际是 x & (1 == 0)，因为 == 优先级高于 &；应写 (x & 1) == 0。",
+        "赋值运算符右结合：a = b = c 等价于 a = (b = c)；条件运算符也是右结合。",
+        "逗号表达式从左到右求值，整个表达式的值是最后一个，常出现在 for 的更新部分。"
+      ],
+      "usage": {
+        "c": "int a = 1, b = 2, c;\nc = (a = 3, b = a + 1, a + b);   /* c = 8 */\nprintf(\"%d\\n\", 1 << 2 + 1);      /* 8，先算 2+1 */",
+        "cpp": "int a = 1, b = 2;\nint c = (a = 3, b = a + 1, a + b);   // 8\nstd::cout << (1 << (2 + 1));            // 8",
+        "python": "a, b = 1, 2\na = 3\nb = a + 1\nc = a + b        # 8，Python 没有逗号表达式"
+      },
+      "pitfalls": [
+        "把 & 与 == 混写不加括号。",
+        "以为 1 << 2 + 1 等于 (1 << 2) + 1。"
+      ]
+    },
+    {
+      "id": "ascii-char",
+      "title": "字符与 ASCII 编码",
+      "module": "C语言基础",
+      "tags": [
+        "字符",
+        "ASCII码",
+        "字符输入",
+        "大小写转换",
+        "字符处理",
+        "字符统计",
+        "编码"
+      ],
+      "summary": "char 本质是小整数：'A' 是 65，'a' 是 97，差 32。大小写转换可以加减 32，也可以用位运算 c ^ 0x20 / c | 0x20。",
+      "points": [
+        "'0' ~ '9' 是连续的 48~57，c - '0' 可把字符数字转成数值。",
+        "大写转小写 c + 32 或 c | 0x20；小写转大写 c - 32 或 c & ~0x20。",
+        "判断字符类别优先用 <ctype.h> 的 isalpha/isdigit/isspace，别手写区间时漏掉边界。"
+      ],
+      "usage": {
+        "c": "char c = 'A';\nprintf(\"%c %d\\n\", c + 32, c);   /* a 65 */\nif (c >= 'A' && c <= 'Z') c = c + 32;",
+        "cpp": "char c = 'A';\nc = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));",
+        "python": "c = 'A'\nprint(c.lower(), ord(c))   # a 65\nprint(chr(65 + 32))        # a"
+      },
+      "pitfalls": [
+        "把字符 '5' 直接当数字 5 参与运算，'5' + 1 得到 '6' 而不是 6。",
+        "用 char 存 200 以上的值，在 signed char 平台上变成负数。"
+      ]
+    },
+    {
+      "id": "array-basics",
+      "title": "数组定义、初始化与下标",
+      "module": "数组",
+      "tags": [
+        "一维数组",
+        "数组定义",
+        "初始化",
+        "下标",
+        "数组长度",
+        "数组名",
+        "越界",
+        "数组",
+        "遍历",
+        "数组遍历"
+      ],
+      "summary": "数组是一段连续内存，下标从 0 到 n-1。定义时长度必须是常量（C99 变长数组除外），部分初始化时其余元素自动为 0。",
+      "points": [
+        "int a[5] = {1, 2}; 前两个是 1、2，其余三个自动为 0。",
+        "数组名在大多数表达式里退化为首元素地址，所以 sizeof(a) 只在定义所在作用域内是整块大小。",
+        "C/C++ 不做下标检查，越界是未定义行为；Python 列表越界会抛 IndexError。"
+      ],
+      "usage": {
+        "c": "int a[5] = {1, 2};          /* 1 2 0 0 0 */\nfor (int i = 0; i < 5; i++) printf(\"%d \", a[i]);",
+        "cpp": "int a[5] = {1, 2};\nfor (int x : a) std::cout << x << ' ';   // 1 2 0 0 0",
+        "python": "a = [1, 2] + [0] * 3    # 长度固定为 5\nfor x in a: print(x, end=' ')"
+      },
+      "pitfalls": [
+        "循环条件写 i <= 5 访问 a[5]，越界。",
+        "以为 int a[n] 里的 n 可以是变量（C99 前不允许，且不能初始化）。"
+      ]
+    },
+    {
+      "id": "matrix",
+      "title": "二维数组与行优先布局",
+      "module": "数组",
+      "tags": [
+        "二维数组",
+        "内存布局",
+        "行优先",
+        "矩阵",
+        "矩阵乘法",
+        "杨辉三角",
+        "数组定义",
+        "初始化"
+      ],
+      "summary": "二维数组在内存里按行连续存放，a[i][j] 的地址是基址 + (i * 列数 + j) * 元素大小。行优先这一点决定了遍历顺序会影响缓存效率。",
+      "points": [
+        "定义时只有第一维可以省略：int a[][3] = {{1,2,3},{4,5,6}}; 第二维必须写。",
+        "二维数组作参数必须指定列数：void f(int a[][3], int rows)。",
+        "按行遍历（外层 i、内层 j）比按列遍历缓存命中率更高。"
+      ],
+      "usage": {
+        "c": "int a[2][3] = {{1,2,3},{4,5,6}};\nprintf(\"%d\\n\", a[1][2]);        /* 6 */\nprintf(\"%zu\\n\", sizeof(a));       /* 24 */",
+        "cpp": "int a[2][3] = {{1,2,3},{4,5,6}};\nstd::cout << a[1][2] << ' ' << sizeof(a);   // 6 24",
+        "python": "a = [[1,2,3],[4,5,6]]\nprint(a[1][2])      # 6\n# 注意 [[0]*3]*2 是同一行的别名，要写成 [[0]*3 for _ in range(2)]"
+      },
+      "pitfalls": [
+        "用 [[0] * 3] * 2 创建二维列表，改一行会连带改另一行。",
+        "把二维数组当二级指针传参，类型不兼容。"
+      ]
+    },
+    {
+      "id": "cstring",
+      "title": "C 字符串与字符数组",
+      "module": "数组",
+      "tags": [
+        "字符串",
+        "字符数组",
+        "strlen",
+        "sizeof",
+        "strcpy",
+        "strcat",
+        "strcmp",
+        "strncmp",
+        "fgets",
+        "gets",
+        "字符串比较",
+        "字符串长度"
+      ],
+      "summary": "C 字符串是以 '\\0' 结尾的字符数组。strlen 数到 '\\0' 为止（不含），sizeof 数整块内存，两者在数组上经常不相等。",
+      "points": [
+        "char s[10] = \"abc\"; strlen(s) == 3，sizeof(s) == 10。",
+        "strcpy/strcat 不检查目标容量，安全版本用 strncpy/snprintf；gets 已从标准中删除。",
+        "字符串比较必须用 strcmp，== 比较的是两个地址。"
+      ],
+      "usage": {
+        "c": "char s[10] = \"abc\";\nprintf(\"%zu %zu\\n\", strlen(s), sizeof(s));   /* 3 10 */\nif (strcmp(s, \"abc\") == 0) puts(\"equal\");",
+        "cpp": "char s[10] = \"abc\";\nstd::cout << std::strlen(s) << ' ' << sizeof(s);  // 3 10\nstd::string t = \"abc\";                            // 更推荐",
+        "python": "s = 'abc'\nprint(len(s))     # 3，Python 字符串不需要 '\\0'"
+      },
+      "pitfalls": [
+        "把 sizeof 当成字符串长度。",
+        "用 == 比较两个 char* 的内容。"
+      ]
+    },
+    {
+      "id": "array-param",
+      "title": "数组作函数参数与指针退化",
+      "module": "数组",
+      "tags": [
+        "数组作参数",
+        "数组作函数参数",
+        "数组传参",
+        "形参",
+        "指针退化",
+        "函数参数",
+        "数组名",
+        "数组长度"
+      ],
+      "summary": "数组传参时退化为指向首元素的指针，函数里 sizeof(a) 得到的是指针大小（8 字节），数组长度必须另传一个参数。",
+      "points": [
+        "void f(int a[10]) 与 void f(int *a) 完全等价，方括号里的 10 会被忽略。",
+        "函数内用 sizeof(a) / sizeof(a[0]) 求长度是错的，结果恒为 2（64 位下 8/4）。",
+        "C++ 可以用模板或 std::array/std::vector 保留长度信息。"
+      ],
+      "usage": {
+        "c": "void f(int a[], int n) {          /* 必须额外传 n */\n    printf(\"%zu\\n\", sizeof(a));     /* 8，不是数组大小 */\n}",
+        "cpp": "template <size_t N>\nvoid f(int (&a)[N]) { sizeof(a); }  // 保留长度\nvoid g(const std::vector<int>& v) { v.size(); }",
+        "python": "def f(a):\n    print(len(a))   # 列表自带长度，不存在退化"
+      },
+      "pitfalls": [
+        "在函数里用 sizeof 求数组长度。",
+        "以为 int a[10] 形参能限制调用者只传 10 个元素。"
+      ]
+    },
+    {
+      "id": "sort-search",
+      "title": "排序与查找",
+      "module": "数组",
+      "tags": [
+        "冒泡排序",
+        "选择排序",
+        "插入排序",
+        "排序",
+        "二分查找",
+        "有序数组",
+        "查找",
+        "排序过程",
+        "qsort",
+        "最值"
+      ],
+      "summary": "冒泡与插入是稳定排序 O(n²)，选择排序不稳定；二分查找要求数组有序，边界写错就会死循环或漏解。",
+      "points": [
+        "冒泡：每轮把最大值换到末尾，n 个元素最多 n-1 轮，可加「本轮无交换则提前结束」。",
+        "二分：while (left <= right)，mid = left + (right - left) / 2 防止溢出。",
+        "C 标准库 qsort 需要比较函数，返回负数/0/正数表示小于/等于/大于。"
+      ],
+      "usage": {
+        "c": "int cmp(const void *a, const void *b) {\n    return (*(int *)a > *(int *)b) - (*(int *)a < *(int *)b);\n}\nqsort(a, n, sizeof(a[0]), cmp);",
+        "cpp": "std::sort(a, a + n);                     // 默认升序\nstd::sort(v.begin(), v.end(), std::greater<int>());",
+        "python": "a.sort()                 # 原地升序\na.sort(key=lambda x: -x) # 降序\nidx = bisect.bisect_left(a, x)"
+      },
+      "pitfalls": [
+        "二分写成 mid = (left + right) / 2 且 left/right 很大时溢出。",
+        "比较函数直接 return a - b，遇到大数相减溢出。"
+      ]
+    },
+    {
+      "id": "pointer-basics",
+      "title": "指针、取地址与解引用",
+      "module": "指针",
+      "tags": [
+        "指针",
+        "取地址",
+        "解引用",
+        "指针运算",
+        "指针相减",
+        "指针比较",
+        "地址计算",
+        "野指针",
+        "悬空指针",
+        "指针作参数",
+        "指针传参",
+        "交换",
+        "sizeof",
+        "指针大小",
+        "数组"
+      ],
+      "summary": "指针保存地址，*p 访问它指向的对象，&x 取地址。指针加减以「所指类型的大小」为单位，同数组内两个指针相减得到元素个数。",
+      "points": [
+        "int *p = &a; *p 就是 a；p + 1 前进 sizeof(int) 字节。",
+        "同数组内 p - q 的结果是元素个数（ptrdiff_t），不是字节差。",
+        "未初始化的指针是野指针，free 之后不置 NULL 是悬空指针，解引用都可能崩溃。"
+      ],
+      "usage": {
+        "c": "int a[5] = {10, 20, 30, 40, 50};\nint *p = a + 2;\nprintf(\"%d %d\\n\", *p, p[-1]);   /* 30 20 */",
+        "cpp": "int a[5] = {10, 20, 30, 40, 50};\nint* p = a + 2;\nstd::cout << *p << ' ' << p[-1];   // 30 20",
+        "python": "# Python 没有指针；列表下标/切片对应「偏移访问」\na = [10,20,30,40,50]\nprint(a[2], a[1])   # 30 20"
+      },
+      "pitfalls": [
+        "把 p + 1 当成地址加 1 字节。",
+        "返回局部数组的地址，函数结束后指针悬空。"
+      ]
+    },
+    {
+      "id": "pointer-array",
+      "title": "指针数组、数组指针与二级指针",
+      "module": "指针",
+      "tags": [
+        "指针数组",
+        "数组指针",
+        "行指针",
+        "二级指针",
+        "双指针",
+        "字符指针",
+        "指针作参数",
+        "声明解析",
+        "void指针",
+        "等价形式",
+        "指针比较"
+      ],
+      "summary": "看声明先看括号：int *p[3] 是「指针数组」（3 个 int*），int (*p)[3] 是「数组指针」（指向 int[3]）。二级指针用来在函数里修改一级指针本身。",
+      "points": [
+        "int *p[3]：p 是数组，元素是 int*；int (*p)[3]：p 是指针，指向 int[3]。",
+        "char *s[] 与 char **s 在函数参数中等价。",
+        "要在函数内改变指针本身（如链表头），传 int ** 或 Node **。"
+      ],
+      "usage": {
+        "c": "int a = 1, b = 2;\nint *arr[2] = {&a, &b};        /* 指针数组 */\nint (*row)[3];                 /* 数组指针 */\nvoid swap(int **p, int **q) { int *t = *p; *p = *q; *q = t; }",
+        "cpp": "int a = 1, b = 2;\nint* arr[2] = {&a, &b};\nint (*row)[3] = nullptr;\nvoid swap(int*& p, int*& q) { std::swap(p, q); }   // 引用更直接",
+        "python": "# 用列表元素重新绑定来模拟「修改指针本身」\npa, pb = [1], [2]\npa, pb = pb, pa"
+      },
+      "pitfalls": [
+        "把 int *p[3] 说成「指向数组的指针」。",
+        "二级指针解引用层级写错，*p 与 **p 混用。"
+      ]
+    },
+    {
+      "id": "function-pointer",
+      "title": "函数指针与回调",
+      "module": "指针",
+      "tags": [
+        "函数指针",
+        "回调",
+        "qsort",
+        "函数指针数组",
+        "声明解析",
+        "回调函数"
+      ],
+      "summary": "函数名本身就是地址。int (*f)(int, int) 声明一个指向「两个 int 参数、返回 int」的函数指针；回调就是把函数当参数传进去。",
+      "points": [
+        "声明：返回类型 (*名字)(参数列表)，括号不能省，否则变成返回指针的函数。",
+        "qsort 的第四个参数就是回调比较函数，用 void* 接收任意类型。",
+        "函数指针数组可以当分发表：int (*ops[])(int, int) = {add, sub}; 用下标选择。"
+      ],
+      "usage": {
+        "c": "int add(int a, int b) { return a + b; }\nint (*f)(int, int) = add;\nprintf(\"%d\\n\", f(2, 3));       /* 5 */\nint (*ops[2])(int, int) = {add};",
+        "cpp": "int add(int a, int b) { return a + b; }\nint (*f)(int, int) = add;\nstd::function<int(int,int)> g = add;   // 更灵活",
+        "python": "def add(a, b): return a + b\nf = add\nprint(f(2, 3))      # 5\nops = [add, lambda a, b: a - b]"
+      },
+      "pitfalls": [
+        "写成 int *f(int, int)，变成「返回 int* 的函数」而不是函数指针。",
+        "调用时忘记解引用也没错（f() 与 (*f)() 等价），但声明写错会直接编译失败。"
+      ]
+    },
+    {
+      "id": "dynamic-memory",
+      "title": "动态内存管理",
+      "module": "指针",
+      "tags": [
+        "动态内存",
+        "malloc",
+        "free",
+        "realloc",
+        "calloc",
+        "内存泄漏",
+        "野指针",
+        "悬空指针",
+        "内存池",
+        "内存管理",
+        "realloc"
+      ],
+      "summary": "malloc 只分配不初始化，calloc 分配并清零，realloc 调整大小。谁申请谁释放，free 后要把指针置 NULL，避免重复释放和悬空访问。",
+      "points": [
+        "malloc(n * sizeof(int)) 要检查返回值是否为 NULL；calloc(n, size) 自动清零。",
+        "realloc 可能搬移内存，必须用临时变量接收：p = realloc(p, n) 失败会丢原指针。",
+        "free(NULL) 是安全的；对同一块内存 free 两次是未定义行为。"
+      ],
+      "usage": {
+        "c": "int *a = malloc(n * sizeof(int));\nif (!a) return 1;\nint *tmp = realloc(a, 2 * n * sizeof(int));\nif (tmp) a = tmp;\nfree(a); a = NULL;",
+        "cpp": "auto a = std::make_unique<int[]>(n);      // 自动释放\nauto v = std::vector<int>(n);              // 更推荐",
+        "python": "a = [0] * n        # 由 GC 管理，无 free\nb = a * 2          # 重新分配"
+      },
+      "pitfalls": [
+        "p = realloc(p, ...) 直接覆盖，失败时原内存泄漏。",
+        "free 之后继续使用或再次 free。"
+      ]
+    },
+    {
+      "id": "const-pointer",
+      "title": "const 与指针的组合",
+      "module": "指针",
+      "tags": [
+        "const",
+        "const指针",
+        "只读",
+        "常量指针",
+        "指针常量",
+        "const指针",
+        "只读变量"
+      ],
+      "summary": "const 修饰谁，谁就不能改。const int *p 是「指向常量的指针」（*p 不能改），int *const p 是「常量指针」（p 不能改），const int *const p 两者都不能改。",
+      "points": [
+        "从右往左读：const int *p —— p 是变量，指向 const int。",
+        "int *const p —— p 是 const，指向 int，所以必须初始化。",
+        "把 const 指针赋给普通指针会编译失败，这是 C++ 的类型安全保护。"
+      ],
+      "usage": {
+        "c": "const int *p;      /* *p 只读，p 可改 */\nint *const q = &x; /* q 只读，*q 可改 */\nconst int *const r = &x;",
+        "cpp": "const int* p = &x;      // 底层 const\nint* const q = &x;      // 顶层 const\nconst int* const r = &x;",
+        "python": "# 无 const；用只读属性/命名约定表达\nclass P:\n    @property\n    def x(self): return self._x"
+      },
+      "pitfalls": [
+        "把 int *const p 说成「指向常量的指针」。",
+        "const 局部变量用指针强制转换后修改，属于未定义行为。"
+      ]
+    },
+    {
+      "id": "struct-basics",
+      "title": "结构体定义、初始化与访问",
+      "module": "结构体",
+      "tags": [
+        "结构体",
+        "结构体定义",
+        "初始化",
+        "成员访问",
+        "结构体指针",
+        "嵌套结构体",
+        "结构体赋值",
+        "typedef",
+        "结构体数组",
+        "结构体传参"
+      ],
+      "summary": "结构体把不同类型的数据打包。用 . 访问成员，指针用 ->。结构体可以整体赋值（逐成员拷贝），但不能用 == 比较。",
+      "points": [
+        "typedef struct Node { int data; struct Node *next; } Node; 让 Node 成为类型名。",
+        "p->data 等价于 (*p).data；. 的优先级高于 *，所以 *p.data 是错的。",
+        "结构体传参默认按值复制，大结构体应传指针或 const 引用。"
+      ],
+      "usage": {
+        "c": "struct Point { int x, y; };\nstruct Point p = {1, 2};\nstruct Point *q = &p;\nprintf(\"%d %d\\n\", p.x, q->y);   /* 1 2 */",
+        "cpp": "struct Point { int x, y; };\nPoint p{1, 2};\nPoint* q = &p;\nstd::cout << p.x << ' ' << q->y;   // 1 2",
+        "python": "from dataclasses import dataclass\n@dataclass\nclass Point:\n    x: int\n    y: int\np = Point(1, 2)\nprint(p.x, p.y)      # 1 2"
+      },
+      "pitfalls": [
+        "用 == 比较两个结构体（C 不支持，C++ 需自己重载）。",
+        "对结构体指针用 . 访问成员。"
+      ]
+    },
+    {
+      "id": "struct-layout",
+      "title": "内存对齐、位域与 sizeof",
+      "module": "结构体",
+      "tags": [
+        "内存对齐",
+        "内存布局",
+        "sizeof",
+        "位域",
+        "offsetof",
+        "结构体布局",
+        "结构体大小",
+        "填充"
+      ],
+      "summary": "编译器会插入填充字节，让每个成员对齐到自身大小的整数倍，结构体总大小再对齐到最大成员大小。成员顺序会影响 sizeof。",
+      "points": [
+        "struct { char c; int i; } 在 32 位 int 下通常是 8 字节（1 字节 + 3 填充 + 4）。",
+        "把 char 放最后可能把大小从 12 降到 8：大成员在前、小成员在后更省空间。",
+        "位域 unsigned f : 3 只占 3 个二进制位，但不能取地址，跨平台布局不保证。"
+      ],
+      "usage": {
+        "c": "struct A { char c; int i; };        /* 8 */\nstruct B { int i; char c; };        /* 8，尾部填充 */\nprintf(\"%zu %zu\\n\", sizeof(struct A), sizeof(struct B));",
+        "cpp": "struct A { char c; int i; };\nstatic_assert(sizeof(A) == 8);\nstd::cout << offsetof(A, i);        // 4",
+        "python": "# 无对齐概念，dataclass 字段独立存储\n# 需要紧凑布局时用 struct 模块\nimport struct\nstruct.calcsize('ci')   # 8"
+      },
+      "pitfalls": [
+        "以为 sizeof(struct) 等于各成员大小之和。",
+        "对位域成员使用 & 取地址。"
+      ]
+    },
+    {
+      "id": "linked-list",
+      "title": "单链表与结点操作",
+      "module": "结构体",
+      "tags": [
+        "单链表",
+        "链表",
+        "结点删除",
+        "反转",
+        "快慢指针",
+        "哑结点",
+        "头插法",
+        "尾插法",
+        "遍历",
+        "指针操作"
+      ],
+      "summary": "链表题的核心是「先保存 next 再改指针」，否则链会断。带头结点（哑结点）能统一头插、删除首结点的边界处理。",
+      "points": [
+        "遍历：for (p = head; p; p = p->next)；删除：先找到前驱，再 prev->next = cur->next。",
+        "反转：pre = NULL; while (cur) { next = cur->next; cur->next = pre; pre = cur; cur = next; }",
+        "快慢指针：slow 走一步、fast 走两步，可找中点、判环、找倒数第 k 个。"
+      ],
+      "usage": {
+        "c": "struct Node *reverse(struct Node *h) {\n    struct Node *pre = NULL;\n    while (h) { struct Node *n = h->next; h->next = pre; pre = h; h = n; }\n    return pre;\n}",
+        "cpp": "Node* reverse(Node* h) {\n    Node* pre = nullptr;\n    while (h) { Node* n = h->next; h->next = pre; pre = h; h = n; }\n    return pre;\n}",
+        "python": "def reverse(h):\n    pre = None\n    while h:\n        h.next, pre, h = pre, h, h.next\n    return pre"
+      },
+      "pitfalls": [
+        "反转时先改 next 再保存，导致后面整条链丢失。",
+        "删除结点后没有 free，造成内存泄漏。"
+      ]
+    },
+    {
+      "id": "enum-basics",
+      "title": "枚举的定义与本质",
+      "module": "枚举",
+      "tags": [
+        "枚举",
+        "枚举定义",
+        "枚举常量",
+        "默认值",
+        "显式赋值",
+        "枚举本质",
+        "命名冲突",
+        "作用域枚举"
+      ],
+      "summary": "枚举本质是整型常量集合，默认从 0 开始依次加一，可以显式赋值。C 的枚举很弱，任何整数都能赋给枚举变量；C++11 的 enum class 才有强类型和作用域。",
+      "points": [
+        "enum Color { RED, GREEN = 5, BLUE }; 则 RED=0、GREEN=5、BLUE=6。",
+        "C 中枚举变量可以接收任意 int，编译器最多给警告；C++ 的 enum class 不允许隐式转换。",
+        "enum class 的成员必须写 Color::RED，避免不同枚举的命名冲突。"
+      ],
+      "usage": {
+        "c": "enum Color { RED, GREEN = 5, BLUE };\nenum Color c = BLUE;\nprintf(\"%d\\n\", c);      /* 6 */",
+        "cpp": "enum class Color { RED, GREEN = 5, BLUE };\nColor c = Color::BLUE;\nstd::cout << static_cast<int>(c);   // 6",
+        "python": "from enum import Enum, auto\nclass Color(Enum):\n    RED = 0\n    GREEN = 5\n    BLUE = auto()   # 6\nprint(Color.BLUE.value)"
+      },
+      "pitfalls": [
+        "以为 enum 变量只能取枚举里列出的值（C 并不检查）。",
+        "两个枚举都定义 RED，C 中同名会冲突。"
+      ]
+    },
+    {
+      "id": "bit-flags",
+      "title": "位标志与权限组合",
+      "module": "枚举",
+      "tags": [
+        "位标志",
+        "按位运算",
+        "权限",
+        "状态机",
+        "字符串映射",
+        "标志位"
+      ],
+      "summary": "用 1、2、4、8 这样的 2 的幂做标志位，可以用一个整数同时表示多个开关：| 组合、& 检查、& ~ 清除、^ 翻转。",
+      "points": [
+        "定义：READ = 1, WRITE = 2, EXEC = 4；组合 rw = READ | WRITE 得到 3。",
+        "检查必须写 (perm & READ) != 0，不能写 perm & READ == READ（== 优先级更高）。",
+        "清除用 perm &= ~WRITE；翻转用 perm ^= EXEC。"
+      ],
+      "usage": {
+        "c": "enum { READ = 1, WRITE = 2, EXEC = 4 };\nint perm = READ | WRITE;\nif (perm & WRITE) puts(\"can write\");\nperm &= ~WRITE;                 /* 清掉写权限 */",
+        "cpp": "enum Perm : unsigned { READ = 1, WRITE = 2, EXEC = 4 };\nunsigned perm = READ | WRITE;\nif (perm & WRITE) std::cout << \"can write\";\nperm &= ~WRITE;",
+        "python": "from enum import IntFlag\nclass Perm(IntFlag):\n    READ = 1\n    WRITE = 2\n    EXEC = 4\np = Perm.READ | Perm.WRITE\nprint(bool(p & Perm.WRITE))"
+      },
+      "pitfalls": [
+        "标志位用 1、2、3 这类非 2 的幂，组合后无法区分。",
+        "写 perm & READ == READ，实际等价于 perm & (READ == READ)。"
+      ]
+    },
+    {
+      "id": "function-basics",
+      "title": "函数定义、声明与返回值",
+      "module": "函数",
+      "tags": [
+        "函数定义",
+        "函数声明",
+        "函数原型",
+        "返回值",
+        "void函数",
+        "return语句",
+        "函数调用",
+        "形参",
+        "实参",
+        "返回值类型"
+      ],
+      "summary": "函数要先声明后使用。返回类型决定调用处如何解释结果：返回 int 的函数返回 double 会被截断；void 函数不能返回值。",
+      "points": [
+        "声明（原型）只需类型和参数列表，定义才有函数体；多文件时声明放头文件。",
+        "return 会立刻结束函数；main 的 return 0 表示正常结束。",
+        "数组不能按值返回，只能返回指针或结构体；C++ 可以返回 std::vector。"
+      ],
+      "usage": {
+        "c": "int max(int a, int b);          /* 声明 */\nint max(int a, int b) { return a > b ? a : b; }\nint main(void) { printf(\"%d\\n\", max(3, 5)); return 0; }",
+        "cpp": "int max(int a, int b) { return a > b ? a : b; }\nint main() { std::cout << max(3, 5); }",
+        "python": "def max_of(a, b):\n    return a if a > b else b\nprint(max_of(3, 5))"
+      },
+      "pitfalls": [
+        "返回局部变量的地址或数组。",
+        "函数声明与定义参数类型不一致，链接或调用出错。"
+      ]
+    },
+    {
+      "id": "param-passing",
+      "title": "值传递与地址传递",
+      "module": "函数",
+      "tags": [
+        "值传递",
+        "地址传递",
+        "形参",
+        "实参",
+        "函数参数",
+        "副作用",
+        "返回多值",
+        "返回结构体",
+        "指针作参数",
+        "数组传参"
+      ],
+      "summary": "C 只有值传递：形参是实参的副本。想在被调函数里修改调用者的变量，必须传地址（指针）；数组名传参本质也是传首地址。",
+      "points": [
+        "swap(int a, int b) 交换不了实参；swap(int *a, int *b) 才可以。",
+        "传指针可以「返回多个值」：函数通过指针参数写出结果。",
+        "C++ 用引用 int& 更直观；Python 传的是对象引用，可变对象原地修改会影响调用者。"
+      ],
+      "usage": {
+        "c": "void swap(int *a, int *b) { int t = *a; *a = *b; *b = t; }\nint x = 1, y = 2;\nswap(&x, &y);        /* x=2, y=1 */",
+        "cpp": "void swap(int& a, int& b) { std::swap(a, b); }\nint x = 1, y = 2; swap(x, y);",
+        "python": "def swap(a, b):\n    return b, a\nx, y = 1, 2\nx, y = swap(x, y)"
+      },
+      "pitfalls": [
+        "以为数组传参是「按值传整块」，其实只传了首地址。",
+        "在函数里对指针参数赋值（p = ...）只改副本，要改指针本身得用二级指针。"
+      ]
+    },
+    {
+      "id": "recursion",
+      "title": "递归与分治",
+      "module": "函数",
+      "tags": [
+        "递归",
+        "分治",
+        "尾递归",
+        "阶乘",
+        "斐波那契",
+        "复杂度",
+        "递归调用",
+        "回溯"
+      ],
+      "summary": "递归要写两件事：终止条件 + 把问题缩小并向终止条件靠近。每层调用都占栈空间，递归太深会栈溢出。",
+      "points": [
+        "阶乘：n <= 1 返回 1，否则 n * fact(n - 1)。",
+        "递归求斐波那契是指数级重复计算，应改记忆化或递推。",
+        "递归下降打印（先递归后输出）与回溯顺序相反，是常考的输出顺序题。"
+      ],
+      "usage": {
+        "c": "int fact(int n) {\n    if (n <= 1) return 1;\n    return n * fact(n - 1);\n}",
+        "cpp": "int fact(int n) {\n    return n <= 1 ? 1 : n * fact(n - 1);\n}",
+        "python": "def fact(n):\n    return 1 if n <= 1 else n * fact(n - 1)"
+      },
+      "pitfalls": [
+        "忘记终止条件或终止条件写错，导致无限递归。",
+        "用递归算 fib(40) 而不加记忆化，运行时间爆炸。"
+      ]
+    },
+    {
+      "id": "scope-static",
+      "title": "作用域、生命周期与 static",
+      "module": "函数",
+      "tags": [
+        "static",
+        "局部变量",
+        "全局变量",
+        "生命周期",
+        "作用域",
+        "extern",
+        "多文件",
+        "存储类",
+        "调用次数"
+      ],
+      "summary": "局部变量随函数调用创建、返回销毁；static 局部变量只初始化一次，函数返回后仍保留值；全局变量默认外部链接，static 全局变量只在本文件可见。",
+      "points": [
+        "static int cnt = 0; 在函数内：只初始化一次，多次调用累加。",
+        "全局变量与 static 全局变量都存于静态区，初值为 0；区别是链接性。",
+        "局部变量与全局变量同名时，局部遮蔽全局（shadowing）。"
+      ],
+      "usage": {
+        "c": "int counter(void) {\n    static int n = 0;   /* 只初始化一次 */\n    return ++n;\n}   /* 连续调用返回 1 2 3 */",
+        "cpp": "int counter() {\n    static int n = 0;\n    return ++n;\n}",
+        "python": "def counter():\n    counter.n = getattr(counter, 'n', 0) + 1\n    return counter.n   # 用函数属性模拟 static"
+      },
+      "pitfalls": [
+        "以为 static 局部变量每次调用都重新初始化为 0。",
+        "在头文件里定义全局变量，多文件包含后重复定义。"
+      ]
+    },
+    {
+      "id": "module-basics",
+      "title": "C 语言基础速查",
+      "module": "C语言基础",
+      "tags": [],
+      "summary": "基础题集中在：数据类型与取值范围、运算符与优先级、分支与循环、输入输出、预处理。做题时先判断「这一步是编译期还是运行期」。",
+      "points": [
+        "先定类型再算值：整数除法、溢出、隐式转换往往在第一步就改变结果。",
+        "循环题画三次迭代的表，比在脑子里推更可靠。",
+        "输入输出题注意缓冲区残留和格式符匹配。"
+      ],
+      "usage": {
+        "c": "int a = 7, b = 2;\nprintf(\"%d %.2f\\n\", a / b, (double)a / b);   /* 3 3.50 */",
+        "cpp": "int a = 7, b = 2;\nstd::cout << a / b << ' ' << std::fixed << std::setprecision(2)\n          << static_cast<double>(a) / b;",
+        "python": "a, b = 7, 2\nprint(a // b, f\"{a / b:.2f}\")   # 3 3.50"
+      },
+      "pitfalls": [
+        "把编译错误当成运行结果，或反过来。",
+        "忽略有符号与无符号混用带来的隐式转换。"
+      ]
+    },
+    {
+      "id": "module-array",
+      "title": "数组与字符串速查",
+      "module": "数组",
+      "tags": [],
+      "summary": "数组题先确定「长度、下标范围、是否以 '\\0' 结尾」。二维数组按行连续存放，数组传参会退化为指针。",
+      "points": [
+        "下标范围永远是 0 ~ n-1；循环条件写 < n。",
+        "字符串操作看是否越界、是否补 '\\0'。",
+        "排序查找题注意边界：二分用 left <= right。"
+      ],
+      "usage": {
+        "c": "int a[5] = {3, 1, 4, 1, 5};\nfor (int i = 0; i < 5; i++) printf(\"%d \", a[i]);",
+        "cpp": "std::vector<int> a{3, 1, 4, 1, 5};\nfor (int x : a) std::cout << x << ' ';",
+        "python": "a = [3, 1, 4, 1, 5]\nprint(*a)"
+      },
+      "pitfalls": [
+        "越界访问在 C 里不一定崩溃，但结果不可信。",
+        "字符数组没留 '\\0' 的位置，strlen 会读飞。"
+      ]
+    },
+    {
+      "id": "module-pointer",
+      "title": "指针速查",
+      "module": "指针",
+      "tags": [],
+      "summary": "指针题先问三件事：指向什么类型、指向哪里、有没有越界或悬空。声明从内向外读，运算符优先级不确定就加括号。",
+      "points": [
+        "指针运算以元素为单位；p + 1 不是加 1 字节。",
+        "动态内存配对：malloc/calloc/realloc 必须有 free。",
+        "函数指针声明：(*名字) 的括号不能省。"
+      ],
+      "usage": {
+        "c": "int a[3] = {1, 2, 3};\nint *p = a;\nprintf(\"%d %d\\n\", *p, *(p + 2));   /* 1 3 */",
+        "cpp": "int a[3] = {1, 2, 3};\nint* p = a;\nstd::cout << *p << ' ' << *(p + 2);",
+        "python": "a = [1, 2, 3]\ni = 0\nprint(a[i], a[i + 2])   # 1 3"
+      },
+      "pitfalls": [
+        "解引用未初始化或已释放的指针。",
+        "把数组名当成可赋值的指针变量。"
+      ]
+    },
+    {
+      "id": "module-struct",
+      "title": "结构体与链表速查",
+      "module": "结构体",
+      "tags": [],
+      "summary": "结构体题关注：成员访问符号（. / ->）、内存对齐、按值复制、链表指针改写的先后顺序。",
+      "points": [
+        "p->x 等价于 (*p).x；. 优先级高于 *。",
+        "结构体赋值是逐成员浅拷贝，指针成员会共享同一块内存。",
+        "链表改动顺序：先存 next，再改指针。"
+      ],
+      "usage": {
+        "c": "struct Node { int v; struct Node *next; };\nstruct Node n = {1, NULL};\nstruct Node *p = &n;\nprintf(\"%d\\n\", p->v);",
+        "cpp": "struct Node { int v; Node* next; };\nNode n{1, nullptr};\nNode* p = &n;\nstd::cout << p->v;",
+        "python": "class Node:\n    def __init__(self, v, nxt=None):\n        self.v, self.next = v, nxt\nprint(Node(1).v)"
+      },
+      "pitfalls": [
+        "结构体含指针成员时直接整体赋值，造成双重释放。",
+        "链表删除后继续访问已释放结点。"
+      ]
+    },
+    {
+      "id": "module-enum",
+      "title": "枚举与常量速查",
+      "module": "枚举",
+      "tags": [],
+      "summary": "枚举是整型常量的集合，默认从 0 递增，可显式赋值。C 的枚举不做类型检查，C++11 的 enum class 才是强类型。",
+      "points": [
+        "后续未赋值的成员 = 前一个值 + 1。",
+        "枚举可作 switch 的 case 标签，也可作数组下标。",
+        "位标志用 1、2、4、8 配合 | & 使用。"
+      ],
+      "usage": {
+        "c": "enum State { IDLE, RUN = 3, STOP };   /* 0 3 4 */\nprintf(\"%d\\n\", STOP);",
+        "cpp": "enum class State { IDLE, RUN = 3, STOP };\nauto s = State::STOP;\nstd::cout << static_cast<int>(s);   // 4",
+        "python": "from enum import Enum\nclass State(Enum):\n    IDLE = 0\n    RUN = 3\n    STOP = 4"
+      },
+      "pitfalls": [
+        "以为枚举成员之间会自动跳过某些值。",
+        "把 enum 变量当字符串直接输出（C 输出的是整数）。"
+      ]
+    },
+    {
+      "id": "module-function",
+      "title": "函数速查",
+      "module": "函数",
+      "tags": [],
+      "summary": "函数题看四件事：参数怎么传、返回什么类型、变量活多久、递归有没有终止。C 只有值传递，改实参必须传地址。",
+      "points": [
+        "值传递复制实参，指针/引用才能真正修改调用者。",
+        "static 局部变量跨调用保留；全局变量谨慎使用。",
+        "递归必须有终止条件，并保证每层向终止靠近。"
+      ],
+      "usage": {
+        "c": "int sum(int n) {\n    int s = 0;\n    for (int i = 1; i <= n; i++) s += i;\n    return s;\n}",
+        "cpp": "int sum(int n) {\n    return n * (n + 1) / 2;\n}",
+        "python": "def total(n):\n    return sum(range(1, n + 1))"
+      },
+      "pitfalls": [
+        "函数返回局部数组的地址。",
+        "递归缺少终止条件或终止条件永远到不了。"
+      ]
+    }
+  ]
+}

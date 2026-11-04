@@ -15,6 +15,7 @@ RUNTIME_FILES = [
     "assets/css/style.css",
     "assets/css/apple.css",
     "assets/js/app.js",
+    "assets/js/auth.js",
     "assets/js/data.js",
 ]
 

@@ -12,8 +12,10 @@
     return;
   }
 
-  var STORAGE_KEY = 'c-review-bank-v2';
+  var BASE_KEY = 'c-review-bank-v2';
   var LEGACY_KEY = 'c-review-bank-v1';
+  function authUser() { return (window.C_AUTH && window.C_AUTH.current()) || null; }
+  function storageKey() { return window.C_AUTH ? window.C_AUTH.dataKey(BASE_KEY) : BASE_KEY; }
   var TYPE_LABEL = { choice: '选择题', fill: '程序填空', design: '程序设计' };
   var MODULE_CLASS = {
     'C语言基础': 'mod-basics', '数组': 'mod-array', '指针': 'mod-pointer',
@@ -43,6 +45,37 @@
   function langLabel(key) { return (LANG_MAP[key] || {}).label || String(key).toUpperCase(); }
   function isLang(key) { return Object.prototype.hasOwnProperty.call(LANG_MAP, key); }
 
+  /* 知识点主题：按题目标签匹配，匹配不到时回退到模块速查卡 */
+  var KNOWLEDGE = (bank.knowledge && bank.knowledge.topics) || [];
+  function moduleFallback(module) {
+    for (var i = 0; i < KNOWLEDGE.length; i++) {
+      if (KNOWLEDGE[i].module === module && String(KNOWLEDGE[i].id).indexOf('module-') === 0) return KNOWLEDGE[i];
+    }
+    return null;
+  }
+  function topicsFor(q) {
+    var tags = q.tags || [];
+    var scored = KNOWLEDGE.filter(function (t) {
+      return t.id.indexOf('module-') !== 0 && t.tags && t.tags.length;
+    }).map(function (t) {
+      var score = 0;
+      t.tags.forEach(function (tag) { if (tags.indexOf(tag) >= 0) score++; });
+      return { topic: t, score: score };
+    }).filter(function (x) { return x.score > 0; })
+      .sort(function (a, b) {
+        if (b.score !== a.score) return b.score - a.score;
+        var am = a.topic.module === q.module ? 1 : 0;
+        var bm = b.topic.module === q.module ? 1 : 0;
+        return bm - am;
+      });
+    var picked = scored.slice(0, 2).map(function (x) { return x.topic; });
+    if (!picked.length) {
+      var fb = moduleFallback(q.module);
+      if (fb) picked.push(fb);
+    }
+    return picked;
+  }
+
   /* ---------------- State ---------------- */
   var state = {
     lang: 'c',
@@ -64,8 +97,8 @@
   }
 
   function loadState() {
-    var saved = parseJSON(localStorage.getItem(STORAGE_KEY) || 'null');
-    if (!saved) {
+    var saved = parseJSON(localStorage.getItem(storageKey()) || 'null');
+    if (!saved && !authUser()) {
       var legacy = parseJSON(localStorage.getItem(LEGACY_KEY) || 'null');
       if (legacy && typeof legacy === 'object') {
         saved = legacy;
@@ -104,9 +137,10 @@
     }
   }
 
-  function saveState() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignore quota */ }
+  function saveStateTo(key) {
+    try { localStorage.setItem(key, JSON.stringify(state)); } catch (e) { /* ignore quota */ }
   }
+  function saveState() { saveStateTo(storageKey()); }
 
   /* ---------------- Localization ---------------- */
   function localized(q, lang) {
@@ -209,6 +243,186 @@
     el.classList.add('show');
     clearTimeout(toast._t);
     toast._t = setTimeout(function () { el.classList.remove('show'); }, 1800);
+  }
+
+  /* ---------------- 本地账号与错题本 ---------------- */
+  var authMode = 'login';
+
+  function showAuthMsg(text) {
+    var el = $('#authMsg');
+    if (!el) return;
+    el.textContent = text || '';
+    el.hidden = !text;
+  }
+
+  function setAuthTab(mode) {
+    authMode = mode === 'register' ? 'register' : 'login';
+    $$('#authTabs button').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.tab === authMode);
+    });
+    var row = $('#authPass2Row');
+    if (row) row.hidden = authMode !== 'register';
+    var submit = $('#authSubmit');
+    if (submit) submit.textContent = authMode === 'register' ? '注册并登录' : '登录';
+    var pass = $('#authPass');
+    if (pass) pass.setAttribute('autocomplete', authMode === 'register' ? 'new-password' : 'current-password');
+    showAuthMsg('');
+  }
+
+  function updateAuthUI() {
+    var u = authUser();
+    var label = $('#authLabel');
+    if (label) label.textContent = u ? u.name : '登录';
+    var btn = $('#authBtn');
+    if (btn) {
+      btn.classList.toggle('signed', !!u);
+      btn.setAttribute('data-initial', u ? String(u.name).slice(0, 1) : '');
+      btn.setAttribute('title', u ? '已登录：' + u.name : '登录 / 注册');
+    }
+    var form = $('#authForm');
+    var tabs = $('#authTabs');
+    var account = $('#authAccount');
+    if (!form || !tabs || !account) return;
+    account.hidden = !u;
+    form.hidden = !!u;
+    tabs.hidden = !!u;
+    if (u) {
+      $('#authWho').textContent = u.name;
+      $('#authSince').textContent = '错题本与进度按账号独立保存 · 仅本机';
+      $('#authAvatar').textContent = String(u.name).slice(0, 1).toUpperCase();
+      $('#authTitle').textContent = '我的账号';
+      $('#authSub').textContent = '登录中，学习记录只属于这个账号';
+    } else {
+      $('#authTitle').textContent = authMode === 'register' ? '注册账号' : '登录';
+      $('#authSub').textContent = '登录后拥有独立的错题本，记录保存在本机';
+    }
+  }
+
+  function openAuth(mode) {
+    if (!authUser()) setAuthTab(mode || 'login');
+    updateAuthUI();
+    var modal = $('#authModal');
+    if (!modal) return;
+    modal.hidden = false;
+    document.body.classList.add('auth-open');
+    haptic(6);
+    setTimeout(function () {
+      var focus = authUser() ? $('#authLogout') : $('#authUser');
+      if (focus) focus.focus();
+    }, 40);
+  }
+
+  function closeAuth() {
+    var modal = $('#authModal');
+    if (!modal) return;
+    modal.hidden = true;
+    document.body.classList.remove('auth-open');
+    showAuthMsg('');
+  }
+
+  function resetProgressState() {
+    state.module = 'all';
+    state.type = 'all';
+    state.diff = 'all';
+    state.scope = 'all';
+    state.keyword = '';
+    state.shuffle = false;
+    state.shufOrder = [];
+    state.progress = {};
+    state.favorites = [];
+  }
+
+  function applyUserSwitch(oldKey, msg) {
+    saveStateTo(oldKey);
+    var newKey = storageKey();
+    var moved = false;
+    if (newKey !== oldKey && !localStorage.getItem(newKey) &&
+        oldKey === BASE_KEY && localStorage.getItem(oldKey)) {
+      try {
+        localStorage.setItem(newKey, localStorage.getItem(oldKey));
+        moved = true;
+      } catch (e) { /* ignore quota */ }
+    }
+    resetProgressState();
+    loadState();
+    syncControls();
+    renderList();
+    updateAuthUI();
+    haptic([10, 30, 12]);
+    toast(moved ? '已把游客进度带入账号' : (msg || '已切换账号'));
+  }
+
+  function submitAuth(e) {
+    e.preventDefault();
+    if (!window.C_AUTH) { showAuthMsg('账号模块未加载，请刷新页面'); return; }
+    var name = ($('#authUser').value || '').trim();
+    var pw = $('#authPass').value || '';
+    if (authMode === 'register' && pw !== $('#authPass2').value) {
+      showAuthMsg('两次输入的密码不一致');
+      haptic(24);
+      return;
+    }
+    var oldKey = storageKey();
+    var res = authMode === 'register' ? C_AUTH.register(name, pw) : C_AUTH.login(name, pw);
+    if (!res.ok) {
+      showAuthMsg(res.msg);
+      haptic(24);
+      return;
+    }
+    applyUserSwitch(oldKey, res.msg);
+    closeAuth();
+  }
+
+  function doLogout() {
+    var oldKey = storageKey();
+    saveStateTo(oldKey);
+    if (window.C_AUTH) C_AUTH.logout();
+    resetProgressState();
+    loadState();
+    closeAuth();
+    syncControls();
+    renderList();
+    updateAuthUI();
+    toast('已退出登录，当前为游客模式');
+  }
+
+  function openMyWrongBook() {
+    closeAuth();
+    state.scope = 'wrong';
+    state.module = 'all';
+    state.type = 'all';
+    state.diff = 'all';
+    state.keyword = '';
+    syncControls();
+    renderList();
+    var title = $('#listTitle');
+    if (title) title.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    haptic(8);
+  }
+
+  function bindAuth() {
+    var btn = $('#authBtn');
+    if (btn) btn.addEventListener('click', function () { openAuth('login'); });
+    var close = $('#authClose');
+    var mask = $('#authMask');
+    if (close) close.addEventListener('click', closeAuth);
+    if (mask) mask.addEventListener('click', closeAuth);
+    var tabs = $('#authTabs');
+    if (tabs) tabs.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-tab]');
+      if (b) { setAuthTab(b.dataset.tab); updateAuthUI(); }
+    });
+    var form = $('#authForm');
+    if (form) form.addEventListener('submit', submitAuth);
+    var logout = $('#authLogout');
+    if (logout) logout.addEventListener('click', doLogout);
+    var mine = $('#authWrongBtn');
+    if (mine) mine.addEventListener('click', openMyWrongBook);
+    ['authUser', 'authPass', 'authPass2'].forEach(function (id) {
+      var el = $('#' + id);
+      if (el) el.addEventListener('input', function () { showAuthMsg(''); });
+    });
+    updateAuthUI();
   }
 
   function initRipple() {
@@ -389,7 +603,7 @@
     }
 
     if (revealed) {
-      body += renderAnswerPanel(lq, p);
+      body += renderAnswerPanel(lq, p, q);
     } else {
       body += '<div class="reveal-row"><button class="btn reveal" type="button" data-act="reveal">' +
         icon('eye') + '查看答案与解析</button><span class="hint-text">建议先独立写出答案</span></div>';
@@ -404,7 +618,30 @@
     return el;
   }
 
-  function renderAnswerPanel(lq, p) {
+  function renderKnowledge(q, lq, bad) {
+    var topics = topicsFor(q);
+    if (!topics.length) return '';
+    var cards = topics.map(function (t) {
+      var usage = (t.usage && (t.usage[lq.lang] || t.usage.c)) || '';
+      var points = (t.points || []).map(function (pt) { return '<li>' + inline(pt) + '</li>'; }).join('');
+      var pitfalls = (t.pitfalls || []).map(function (pt) { return '<span>' + inline(pt) + '</span>'; }).join('');
+      return '<div class="know-item">' +
+        '<div class="know-title">' + icon('spark') + '<h5>' + esc(t.title) + '</h5>' +
+        '<span class="know-mod">' + esc(moduleLabel(t.module)) + '</span></div>' +
+        '<p class="know-summary">' + inline(t.summary) + '</p>' +
+        (points ? '<ul class="know-points">' + points + '</ul>' : '') +
+        '<div class="know-code">' +
+        renderCode(String(usage).replace(/\n$/, ''), lq.lang) + '</div>' +
+        (pitfalls ? '<div class="know-pitfall"><b>易错</b>' + pitfalls + '</div>' : '') +
+        '</div>';
+    }).join('');
+    return '<details class="know-block' + (bad ? ' is-bad' : '') + '"' + (bad ? ' open' : '') + '>' +
+      '<summary>' + icon('spark') + '<span>' + (bad ? '为什么错 · 相关知识点讲解' : '相关知识点讲解') + '</span>' +
+      '<em>' + topics.length + ' 个知识点</em></summary>' +
+      '<div class="know-body">' + cards + '</div></details>';
+  }
+
+  function renderAnswerPanel(lq, p, q) {
     var inner = '';
 
     if (lq.type === 'fill' && Array.isArray(lq.blanks)) {
@@ -424,6 +661,10 @@
     }
 
     inner += '<div class="analysis"><h4>' + esc(langLabel(lq.lang)) + ' 答案解析</h4>' + renderRich(lq.analysis || '') + '</div>';
+
+    var bad = (lq.type === 'choice' && typeof p.choice === 'number' && p.choice !== lq.answer) ||
+      (lq.type !== 'choice' && p.self === 'bad');
+    if (q) inner += renderKnowledge(q, lq, bad);
 
     if (lq.type === 'choice') {
       inner += '<div class="self-check"><span>做完啦？</span>' +
@@ -460,11 +701,30 @@
 
     var title = '全部题目';
     if (state.module !== 'all') title = moduleLabel(state.module);
-    else if (state.scope === 'wrong') title = '错题本';
+    else if (state.scope === 'wrong') title = authUser() ? authUser().name + ' 的错题本' : '错题本（游客）';
     else if (state.scope === 'fav') title = '我的收藏';
     else if (state.scope === 'undone') title = '未做题目';
     else if (state.type !== 'all') title = TYPE_LABEL[state.type] + '专项';
     $('#listTitle').textContent = title;
+
+    var emptyTitle = $('#emptyState h3');
+    var emptyText = $('#emptyState p');
+    var emptyBtn = $('#emptyResetBtn');
+    if (emptyTitle && emptyText && emptyBtn) {
+      if (state.scope === 'wrong') {
+        emptyTitle.textContent = '错题本还是空的';
+        emptyText.textContent = '答错的题目会自动收进来，也可以在题目里手动点「加入错题」。';
+        emptyBtn.textContent = '去全部题目练习';
+      } else if (state.scope === 'fav') {
+        emptyTitle.textContent = '还没有收藏的题目';
+        emptyText.textContent = '点题目右上角的星标就能收藏，方便考前回看。';
+        emptyBtn.textContent = '去全部题目看看';
+      } else {
+        emptyTitle.textContent = '没有符合条件的题目';
+        emptyText.textContent = '换一个关键词，或清除筛选条件再试试。';
+        emptyBtn.textContent = '清除全部筛选';
+      }
+    }
 
     var counts = { choice: 0, fill: 0, design: 0 };
     arr.forEach(function (q) { counts[q.type]++; });
@@ -910,7 +1170,8 @@
     list.addEventListener('click', onListClick);
 
     $('#resetBtn').addEventListener('click', function () {
-      if (!window.confirm('确定清空三种语言的全部作答记录、错题和收藏吗？此操作不可撤销。')) return;
+      var who = authUser() ? authUser().name + ' 账号' : '游客模式';
+      if (!window.confirm('确定清空「' + who + '」下三种语言的全部作答记录、错题和收藏吗？此操作不可撤销。')) return;
       state.progress = {};
       state.favorites = [];
       saveState();
@@ -960,7 +1221,7 @@
         e.preventDefault();
         $('#searchInput').focus();
       }
-      if (e.key === 'Escape') closeSidebar();
+      if (e.key === 'Escape') { closeSidebar(); closeAuth(); }
     });
   }
 
@@ -1000,12 +1261,13 @@
   buildChips();
   buildSheet();
   bind();
+  bindAuth();
   initRipple();
   initWeChatBanner();
   syncControls();
   renderList();
 
-  if (localStorage.getItem(STORAGE_KEY) === null && localStorage.getItem(LEGACY_KEY) === null) {
+  if (localStorage.getItem(storageKey()) === null && localStorage.getItem(LEGACY_KEY) === null) {
     setTimeout(function () { toast('提示：右上角可切换 C / C++ / Python，按 / 可搜索'); }, 900);
   }
 })();

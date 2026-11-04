@@ -37,6 +37,9 @@
   <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
   <symbol id="i-vibrate" viewBox="0 0 24 24"><rect x="7" y="4" width="10" height="16" rx="2.5"/><path d="M4 8v8M2 10v4M20 8v8M22 10v4"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h10"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18 16l.9 2.1 2.1.9-2.1.9L18 22l-.9-2.1-2.1-.9 2.1-.9z"/></symbol>
   <symbol id="i-command" viewBox="0 0 24 24"><path d="M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z"/></symbol>
 </svg>
 
@@ -67,7 +70,7 @@
     </div>
 
     <div class="side-foot">
-      <p>学习数据保存在浏览器本地</p>
+      <p>登录后错题本按账号保存 · 仅本机</p>
       <p>题目与解析为原创整理，仅供复习使用</p>
     </div>
   </aside>
@@ -86,6 +89,10 @@
       </div>
       <div class="lang-switch" id="langSwitch" role="tablist" aria-label="答题语言"></div>
       <div class="top-actions">
+        <button class="btn auth-btn" id="authBtn" type="button" aria-haspopup="dialog" aria-controls="authModal">
+          <svg class="icon"><use href="#i-user"></use></svg>
+          <span id="authLabel">登录</span>
+        </button>
         <button class="icon-btn" id="hapticBtn" aria-label="切换触感反馈" title="触感反馈" aria-pressed="true">
           <svg class="icon"><use href="#i-vibrate"></use></svg>
         </button>
@@ -116,7 +123,8 @@
           <div class="hero-tags">
             <span>数组 · 指针 · 结构体重点强化</span>
             <span>C / C++ / Python 三套参考实现</span>
-            <span>触感反馈 · 本地记录进度</span>
+            <span>触感反馈 · 答错即讲知识点</span>
+            <span>登录后独立错题本</span>
           </div>
           <div class="hero-actions">
             <button class="btn hero-btn" id="startBtn">
@@ -242,7 +250,7 @@
             <p>覆盖程序设计基础、数组与字符串、指针与引用、结构体与类、枚举与常量、函数与递归 · 共 400 题</p>
           </div>
         </div>
-        <p class="foot-note">建议按「基础 → 数组 → 指针 → 结构体/枚举 → 函数」顺序复习；切换 C / C++ / Python 后，作答记录分别保存。触感反馈可在右上角开启或关闭；微信内可直接做题。</p>
+        <p class="foot-note">建议按「基础 → 数组 → 指针 → 结构体/枚举 → 函数」顺序复习；切换 C / C++ / Python 后，作答记录分别保存。答错会自动展开相关知识点讲解；登录后错题本按账号独立保存（仅存本机）。触感反馈可在右上角开启或关闭；微信内可直接做题。</p>
       </footer>
     </main>
   </div>
@@ -253,7 +261,54 @@
 </button>
 <div class="toast" id="toast" role="status"></div>
 
+<div class="auth-modal" id="authModal" hidden>
+  <div class="auth-mask" id="authMask"></div>
+  <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <button class="icon-btn auth-close" id="authClose" type="button" aria-label="关闭">
+      <svg class="icon"><use href="#i-close"></use></svg>
+    </button>
+    <div class="auth-head">
+      <div class="auth-mark"><svg class="icon"><use href="#i-user"></use></svg></div>
+      <div>
+        <h3 id="authTitle">登录</h3>
+        <p id="authSub">登录后拥有独立的错题本，记录保存在本机</p>
+      </div>
+    </div>
+    <div class="auth-tabs" id="authTabs" role="tablist">
+      <button type="button" class="active" data-tab="login" role="tab">登录</button>
+      <button type="button" data-tab="register" role="tab">注册</button>
+    </div>
+    <form class="auth-form" id="authForm" autocomplete="off">
+      <label class="field"><span>用户名</span>
+        <input id="authUser" name="username" maxlength="16" placeholder="2~16 个字符" autocomplete="username">
+      </label>
+      <label class="field"><span>密码</span>
+        <input id="authPass" type="password" maxlength="32" placeholder="至少 6 位" autocomplete="current-password">
+      </label>
+      <label class="field" id="authPass2Row" hidden><span>确认密码</span>
+        <input id="authPass2" type="password" maxlength="32" placeholder="再输入一次" autocomplete="new-password">
+      </label>
+      <p class="auth-msg" id="authMsg" role="alert" hidden></p>
+      <button class="btn primary auth-submit" type="submit" id="authSubmit">登录</button>
+    </form>
+    <div class="auth-account" id="authAccount" hidden>
+      <div class="auth-avatar" id="authAvatar">L</div>
+      <h4 id="authWho">未登录</h4>
+      <p id="authSince"></p>
+      <div class="auth-actions">
+        <button class="btn primary" type="button" id="authWrongBtn">查看我的错题本</button>
+        <button class="btn ghost" type="button" id="authLogout">
+          <svg class="icon"><use href="#i-logout"></use></svg>
+          退出登录
+        </button>
+      </div>
+    </div>
+    <p class="auth-note">账号与学习记录只保存在这台设备的浏览器里，换设备不会同步；清除站点数据会一并删除。</p>
+  </div>
+</div>
+
 <script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>
