@@ -17,6 +17,7 @@ RUNTIME_FILES = [
     "assets/js/app.js",
     "assets/js/auth.js",
     "assets/js/data.js",
+    "docs/qr-site.png",
 ]
 
 
