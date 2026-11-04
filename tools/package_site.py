@@ -13,6 +13,7 @@ DIST = ROOT / "dist"
 RUNTIME_FILES = [
     "index.html",
     "assets/css/style.css",
+    "assets/css/apple.css",
     "assets/js/app.js",
     "assets/js/data.js",
 ]
@@ -29,8 +30,8 @@ def main() -> None:
     data_js = (ROOT / "assets/js/data.js").read_text(encoding="utf-8")
     m = re.search(r'"total":(\d+)', data_js)
     total = int(m.group(1)) if m else 0
-    if total != 300:
-        print(f"题库总数为 {total}，预期 300。请先运行 python tools/build_data.py。")
+    if total != 400:
+        print(f"题库总数为 {total}，预期 400。请先运行 python tools/build_data.py。")
         sys.exit(1)
 
     if DIST.exists():

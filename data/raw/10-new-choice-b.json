@@ -1,0 +1,2078 @@
+[
+  {
+    "id": "指-85",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "二级指针",
+      "指针传参",
+      "交换"
+    ],
+    "stem": "阅读下面的程序：\n\n```c\nvoid swap_ptr(int **a, int **b)\n{\n    int *t = *a;\n    *a = *b;\n    *b = t;\n}\n\nint main(void)\n{\n    int x = 1, y = 2;\n    int *p = &x, *q = &y;\n\n    /* 在此处调用 swap_ptr，使 p 指向 y、q 指向 x */\n\n    return 0;\n}\n```\n\n注释处应填入的调用是（ ）。",
+    "analysis": "`swap_ptr` 的形参是两个 `int **`，即「指向 `int *` 的指针」。要让函数修改 main 中 p、q 这两个指针变量本身，必须把它们的地址传进去，所以应写 `swap_ptr(&p, &q);`，B 正确。\n\n- A 传的是 p、q 的值（类型 `int *`），与 `int **` 不兼容，编译器会报错或警告；即便强转，函数也会把 `&x` 当成「指针变量的地址」去解引用，语义完全错误。\n- C 传的是 `*p`、`*q`，类型是 `int`，连指针都不是。\n- D 传的是 `&x`、`&y`，类型是 `int *`；函数内 `*a` 会被当作 `int *` 使用，实际却指向一个 int 变量，属于类型混淆。\n\n函数体内 `*a` 就是 main 中的 p，因此 `*a = *b` 改变的是 p 的指向，x、y 的值不变。正确调用后 p 指向 y、q 指向 x，`*p` 为 2、`*q` 为 1。这类「二级指针修改一级指针」的写法在动态分配、链表头指针更新中非常常见。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "`swap_ptr(p, q);`",
+      "`swap_ptr(&p, &q);`",
+      "`swap_ptr(*p, *q);`",
+      "`swap_ptr(&x, &y);`"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "stem": "阅读下面的 C++ 程序：\n\n```cpp\n#include <utility>\n\nvoid swap_ptr(int **a, int **b)\n{\n    std::swap(*a, *b);\n}\n\nint main()\n{\n    int x = 1, y = 2;\n    int *p = &x, *q = &y;\n\n    /* 在此处调用 swap_ptr，使 p 指向 y、q 指向 x */\n\n    return 0;\n}\n```\n\n注释处应填入的调用是（ ）。",
+        "options": [
+          "`swap_ptr(p, q);`",
+          "`swap_ptr(&p, &q);`",
+          "`swap_ptr(*p, *q);`",
+          "`swap_ptr(&x, &y);`"
+        ],
+        "answer": 1,
+        "analysis": "形参是 `int **`，实参必须是指针变量的地址，因此 B 正确：`swap_ptr(&p, &q);`。\n\nC++ 中更地道的写法是引用传参：`void swap_ptr(int *&a, int *&b) { std::swap(a, b); }`，此时调用写成 `swap_ptr(p, q)`——a、b 直接是 p、q 的别名，不需要再取地址。两种写法语义一致，都是让函数能改动调用者的指针本身。\n\nA 的实参类型是 `int *`，无法隐式转成 `int **`；C 传的是 int 值；D 的 `int *` 同样不匹配，C++ 会在编译期直接拒绝。C++ 中空指针写 `nullptr`，`std::swap` 对指针同样适用。"
+      },
+      "python": {
+        "stem": "在 Python 中执行下面的代码：\n\n```python\ndef swap(a, b):\n    a, b = b, a\n\nx, y = 1, 2\nswap(x, y)\n```\n\n执行后 x 与 y 的值是（ ）。",
+        "options": [
+          "2 和 1，交换成功",
+          "仍然是 1 和 2：形参 a、b 只是两个新的局部名字，函数内交换的是这两个名字的绑定",
+          "抛出 `UnboundLocalError`",
+          "只有当 x、y 是列表时才会交换"
+        ],
+        "answer": 1,
+        "analysis": "Python 的实参传递是「对象引用按值传递」：调用时把 x、y 所引用对象的引用分别赋给局部名字 a、b。函数内 `a, b = b, a` 只改变局部名字 a、b 的绑定，外层的 x、y 完全不受影响，所以仍是 1 和 2，B 正确。\n\n这与 C 中「形参是实参的副本」是同一个道理：想在函数里改变调用者的变量，必须传入「内容可被修改的容器」，或者把结果返回。Python 的常见做法是 `return b, a`，调用处写 `x, y = swap(x, y)`；如果传入的是列表，则可以原地交换 `lst[0], lst[1] = lst[1], lst[0]`，因为改的是共享对象的内容。A 把「局部名字交换」误当成「调用者变量交换」；D 的说法也不对，列表能改是因为它是可变对象，与「是否使用列表」无关。"
+      }
+    }
+  },
+  {
+    "id": "指-86",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "函数指针",
+      "类型兼容",
+      "未定义行为"
+    ],
+    "stem": "有下面的程序：\n\n```c\n#include <stdio.h>\n\nint add(int a, int b)\n{\n    return a + b;\n}\n\nint main(void)\n{\n    int (*fp)(double, double) = add;\n    printf(\"%d\\n\", fp(1.5, 2.5));\n    return 0;\n}\n```\n\n关于这段程序，下列说法正确的是（ ）。",
+    "analysis": "C 的函数指针类型必须与所指函数的类型兼容。`add` 的类型是 `int (int, int)`，而 `fp` 的类型是 `int (*)(double, double)`，两者参数类型不同，标准要求编译器给出诊断；不少编译器只给警告、仍然生成代码，但通过类型不匹配的函数指针调用函数是**未定义行为**，B 正确。\n\n原因在调用约定：`fp(1.5, 2.5)` 会按 `double` 形参准备实参（例如放进浮点寄存器），而 `add` 按 `int` 形参读取（例如从整型寄存器取），双方对参数位置的约定不一致，结果不可预期，可能凑巧得到 4，也可能是垃圾值。\n\n- A 错：函数指针当然可以指向已经定义的函数，函数名本身就代表入口地址。\n- C 错：这不是普通算术转换后再转回来，而是 ABI 层面的类型错配。\n- D 错：把函数名赋给同类型函数指针时 `&` 可以省略，`= add` 与 `= &add` 等价；问题出在类型不匹配，不是缺 `&`。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "编译错误：函数指针只能指向函数原型，不能指向已经定义的函数",
+      "能编译通过（通常伴随警告），但函数指针类型与 `add` 不兼容，通过它调用是未定义行为，不保证输出 4",
+      "能正常运行并输出 4，因为实参会自动转换成 double 再转换回 int",
+      "编译错误：必须写成 `int (*fp)(double, double) = &add;`"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "stem": "有下面的 C++ 程序：\n\n```cpp\n#include <cstdio>\n\nint add(int a, int b)\n{\n    return a + b;\n}\n\nint main()\n{\n    int (*fp)(double, double) = add;\n    std::printf(\"%d\\n\", fp(1.5, 2.5));\n    return 0;\n}\n```\n\n关于这段程序，下列说法正确的是（ ）。",
+        "options": [
+          "编译错误：`int (*)(double, double)` 不能由 `int (int, int)` 初始化，C++ 的函数指针类型检查比 C 更严格",
+          "能编译并输出 4",
+          "只有把 `add` 写成 `&add` 才能通过编译",
+          "能编译，但调用的是 `add` 的一份拷贝"
+        ],
+        "answer": 0,
+        "analysis": "C++ 不允许把 `int (int, int)` 隐式转换成 `int (*)(double, double)`，这段程序在 C++ 中是**编译错误**，A 正确。C++ 的函数指针类型检查比 C 严格：C 往往只给警告，C++ 直接拒绝。\n\n函数名到函数指针的标准转换只要求类型完全匹配；`&add` 与 `add` 都能得到同类型指针（C++ 中两者等价），所以 C 的「缺 `&`」不是问题。若用 `reinterpret_cast<int (*)(double, double)>(add)` 强行转换，代码可以编译，但通过错误类型的指针调用仍然是未定义行为，不能因为「能跑」就认为正确。\n\n确实需要「接受两个 double」的语义时，应另写 `int add_d(double, double)`，或用 lambda 适配：`auto fp = [](double a, double b) { return add((int)a, (int)b); };`。"
+      },
+      "python": {
+        "stem": "阅读下面的 Python 代码：\n\n```python\ndef add(a, b):\n    return a + b\n\nfp = add\nprint(fp(1.5, 2.5))\n```\n\n输出是（ ）。",
+        "options": [
+          "运行时抛出 `TypeError`，因为 add 声明了两个 int 参数",
+          "`4.0`：Python 函数是一等对象，可以赋给变量；形参没有静态类型检查，两个 float 相加仍是 float",
+          "`4`，多余的小数部分被自动截断",
+          "会报错：函数不能赋给变量"
+        ],
+        "answer": 1,
+        "analysis": "Python 中函数是「一等对象」，可以像普通值一样赋给变量、作为参数传递，`fp = add` 完全合法。Python 的形参没有静态类型声明，调用时也不会按 `int` 检查实参；`1.5 + 2.5` 得到 `4.0`，所以输出 `4.0`，B 正确。\n\n- A 错：Python 不做形参类型检查，只有真正执行到不支持的操作（如 `\"a\" + 1`）时才抛 `TypeError`。\n- C 错：Python 的 `+` 不会把 float 截断成 int；需要整数除法要写 `//`。\n- D 错：把函数赋给变量是常见写法，模块顶层也没有「编译」这一步。\n\n这与 C 的函数指针形成对照：C 在编译期检查函数指针类型，Python 把类型错误推迟到运行时的具体操作，灵活但需要测试和类型注解（如 mypy）兜底。"
+      }
+    }
+  },
+  {
+    "id": "指-87",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "函数指针",
+      "回调",
+      "数组传参"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\n\nint inc(int x)\n{\n    return x + 1;\n}\n\nvoid apply(int *a, int n, int (*f)(int))\n{\n    int i;\n\n    for (i = 0; i < n; i++)\n        a[i] = f(a[i]);\n}\n\nint main(void)\n{\n    int a[3] = {1, 2, 3};\n\n    apply(a, 3, inc);\n    apply(a, 3, inc);\n    printf(\"%d %d %d\\n\", a[0], a[1], a[2]);\n    return 0;\n}\n```",
+    "analysis": "`apply` 的第三个形参是函数指针 `int (*f)(int)`，实参 `inc` 会自动转换成函数指针，因此这种「把函数当参数传」的回调写法完全合法，D 错。\n\n第一次 `apply(a, 3, inc)` 把每个元素加 1，数组变成 `{2, 3, 4}`；第二次再对结果加 1，变成 `{3, 4, 5}`，所以输出 `3 4 5`，C 正确。函数内的 `a[i] = f(a[i])` 通过指针修改的是 main 中的原数组，`a` 作为实参退化为首元素地址，不会产生副本。\n\n- A 只算了一次 `apply`，忽略了第二次调用。\n- B 误以为两次调用会重置数组，或以为 `f` 只作用一次。\n- 注意函数指针形参写成 `int (*f)(int)`；若写成 `int *f(int)` 就变成「返回指针的函数」，含义完全不同。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "2 3 4",
+      "2 2 2",
+      "3 4 5",
+      "编译错误：函数名不能作为实参传递"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nvoid apply(int *a, int n, int (*f)(int))\n{\n    for (int i = 0; i < n; ++i)\n        a[i] = f(a[i]);\n}\n\nint main()\n{\n    int a[3] = {1, 2, 3};\n\n    apply(a, 3, [](int x) { return x + 1; });\n    apply(a, 3, [](int x) { return x + 1; });\n    std::cout << a[0] << ' ' << a[1] << ' ' << a[2] << '\\n';\n}\n```",
+        "options": [
+          "2 3 4",
+          "2 2 2",
+          "3 4 5",
+          "编译错误：无捕获的 lambda 不能转换为函数指针"
+        ],
+        "answer": 2,
+        "analysis": "输出 `3 4 5`，C 正确。两次 `apply` 各把每个元素加 1。\n\nC++ 的亮点在于实参可以直接写无捕获的 lambda：`[](int x) { return x + 1; }`。这种 lambda 能隐式转换成函数指针 `int (*)(int)`，因此可以传给 `apply`。如果 lambda 捕获了外部变量（如 `[k](int x) { return x + k; }`），它就**不能**再转换成普通函数指针，此时应把形参改成 `std::function<int(int)>`，或用函数模板接收可调用对象：\n\n```cpp\ntemplate <class F>\nvoid apply(int *a, int n, F f) { /* ... */ }\n```\n\nA 只算了一次；B 误以为两次调用会重置；D 错，无捕获 lambda 到函数指针的转换是标准允许的。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\ndef inc(x):\n    return x + 1\n\ndef apply(a, f):\n    for i in range(len(a)):\n        a[i] = f(a[i])\n\na = [1, 2, 3]\napply(a, inc)\napply(a, inc)\nprint(a)\n```",
+        "options": [
+          "[2, 3, 4]",
+          "[3, 4, 5]",
+          "[1, 2, 3]",
+          "[2, 2, 2]"
+        ],
+        "answer": 1,
+        "analysis": "输出 `[3, 4, 5]`，B 正确。Python 函数是一等对象，`inc` 作为实参传给形参 `f`，函数内 `f(a[i])` 就是调用 `inc`。\n\n关键在于列表是可变对象：`a[i] = ...` 直接修改调用者传入的那个列表，所以两次 `apply` 的修改都保留下来。如果函数内写成 `a = [x + 1 for x in a]`，那只是让局部名字 a 重新绑定到一个新列表，调用者的列表不会变——这正是「修改内容」与「重新绑定名字」的区别，也是 Python 里最常见的坑。\n\nA 只算了一次；C 误以为列表按值复制；D 误以为 `f` 每次只作用在同一个元素上。"
+      }
+    }
+  },
+  {
+    "id": "指-88",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "野指针",
+      "未初始化",
+      "查找"
+    ],
+    "stem": "下面函数用于在数组中查找 target 并返回它的值：\n\n```c\nint find_first(int *a, int n, int target)\n{\n    int *p;\n    int i;\n\n    for (i = 0; i < n; i++)\n        if (a[i] == target) {\n            p = &a[i];\n            break;\n        }\n    return *p;\n}\n```\n\n当 target 不在数组中时，这个函数的主要问题是（ ）。",
+    "analysis": "C 正确。p 在函数开头只声明、没有初始化，它的值是不确定的（野指针）。当 target 不存在时，循环正常结束，`p` 从未被赋值，`return *p;` 就会解引用一个随机地址，属于未定义行为——可能读到垃圾值，也可能直接崩溃。\n\n- A 错：循环不执行不是语法错误；n ≤ 0 时确实需要另外处理，但那是逻辑边界问题。\n- B 错：`&a[i]` 正是要保存元素地址，改成 `a[i]` 反而变成保存元素的值。\n- D 错：数组元素不是 `malloc` 来的，不能 `free`；`free` 栈上的地址同样是未定义行为。\n\n正确写法是把 `p` 初始化为 `NULL`，找不到时返回一个约定的失败值（如 -1），并让调用者先判断；若一定要返回指针，就返回 `NULL` 而不是解引用它。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "n 为 0 时循环不执行，这属于语法错误",
+      "`&a[i]` 取的是数组元素的地址，应该改成 `a[i]`",
+      "循环结束后 p 仍未被赋值，`*p` 解引用一个未初始化的野指针，属于未定义行为",
+      "应该在循环里对 p 执行 `free`"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "stem": "下面函数用于在数组中查找 target 并返回它的值：\n\n```cpp\nint find_first(int *a, int n, int target)\n{\n    int *p;\n    int i;\n\n    for (i = 0; i < n; i++)\n        if (a[i] == target) {\n            p = &a[i];\n            break;\n        }\n    return *p;\n}\n```\n\n当 target 不在数组中时，这个函数的主要问题是（ ）。",
+        "options": [
+          "循环结束后 p 仍未被赋值，`*p` 解引用一个未初始化的野指针，属于未定义行为；可把 p 初始化为 `nullptr`，失败时返回 -1 或 `std::optional<int>`",
+          "n 为 0 时循环不执行，这属于语法错误",
+          "`&a[i]` 应该改成 `a[i]`",
+          "应该在循环里对 p 执行 `delete`"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。C++ 同样规定未初始化的指针不能解引用；`int *p;` 的值不确定，target 不存在时 `return *p;` 是未定义行为。\n\n修复方式：`int *p = nullptr;`，循环结束后先判断 `if (p == nullptr) return -1;`。更符合 C++ 风格的写法是直接返回下标并用 `std::optional<size_t>` 表示「可能没有」，或者返回 `-1` 这样的哨兵值——总之不要让调用者拿到一个可能无效的指针。\n\nB 错：循环不执行不是语法错误，是边界情况。C 错：`&a[i]` 正是要保存的地址。D 错：数组元素在栈上（或由外部提供），不能用 `delete`；`delete` 只能用于 `new` 返回的指针。"
+      },
+      "python": {
+        "stem": "阅读下面的 Python 代码：\n\n```python\ndef find_first(a, target):\n    for i, x in enumerate(a):\n        if x == target:\n            p = a[i]\n            break\n    return p\n```\n\n当 target 不在列表中时，调用 `find_first([1, 2, 3], 9)` 会（ ）。",
+        "options": [
+          "返回 `None`",
+          "返回 0",
+          "抛出 `UnboundLocalError`，因为 p 在赋值前被使用",
+          "返回列表最后一个元素"
+        ],
+        "answer": 2,
+        "analysis": "C 正确。循环没有找到目标时，`p` 这个名字从未被绑定；执行 `return p` 时 Python 会抛出 `UnboundLocalError`（它是 `NameError` 的子类）。这与 C 的野指针不同：C 是未定义行为，可能读到垃圾值；Python 明确抛异常，更容易发现。\n\n修复方式是循环前写 `p = None`，或者在 `for` 的 `else` 分支里返回值：\n\n```python\ndef find_first(a, target):\n    for x in a:\n        if x == target:\n            return x\n    return None\n```\n\nA 错：只有事先给 p 赋过 `None` 才会返回 None；B、D 都是凭空猜测。另外注意，如果函数里对 p 赋值而没写 `nonlocal`，Python 会把它当作局部变量，这正是不写初始化就使用会报错的原因。"
+      }
+    }
+  },
+  {
+    "id": "指-89",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "free",
+      "动态内存",
+      "生命周期"
+    ],
+    "stem": "下列关于 `free` 的用法中，符合 C 标准且安全的是（ ）。",
+    "analysis": "D 正确：`free` 只能接收 `malloc`、`calloc`、`realloc` 返回的指针（或空指针），并且必须释放分配块的首地址；释放后把 p 置 `NULL`，可以避免重复释放和悬空指针误用。\n\n- A 错：`a` 是栈上的数组，不是堆内存，`free(a)` 是未定义行为。\n- B 错：`p++` 之后 p 已偏移，不再是分配块的首地址；`free` 必须接收原始返回的指针，否则同样是未定义行为。\n- C 错：字符串字面量 `\"hello\"` 具有静态存储期，通常位于只读区，不是 `malloc` 得到的，不能 `free`。\n\n再补充两点：`free(NULL)` 是安全的空操作；`free(p)` 不会把 p 自动置空（指-18 的 C 选项正是这个常见误解），重复 `free` 同一地址属于未定义行为。记住所有权约定：谁申请谁释放，释放后立即置空。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "`int a[5]; free(a);`",
+      "`int *p = (int *)malloc(5 * sizeof(int)); p++; free(p);`",
+      "`char *s = \"hello\"; free(s);`",
+      "`int *p = (int *)malloc(5 * sizeof(int)); if (p == NULL) return 1; /* 使用 p */ free(p); p = NULL;`"
+    ],
+    "answer": 3,
+    "variants": {
+      "cpp": {
+        "options": [
+          "`int a[5]; free(a);`",
+          "`int *p = (int *)malloc(5 * sizeof(int)); p++; free(p);`",
+          "`char *s = \"hello\"; free(s);`",
+          "`int *p = (int *)malloc(5 * sizeof(int)); if (p == NULL) return 1; /* 使用 p */ free(p); p = NULL;`"
+        ],
+        "answer": 3,
+        "analysis": "D 正确。C++ 中 `free` 同样只能释放 `malloc`/`calloc`/`realloc` 返回的块，并且必须传首地址；释放后置 `nullptr` 是良好习惯。\n\n特别提醒：C++ 中 `new` 分配的内存必须用 `delete` 释放，`new[]` 必须用 `delete[]`；把 `new` 得到的指针交给 `free`（或反过来）是未定义行为。现代 C++ 更推荐 `std::vector`、`std::string`、`std::unique_ptr` 等 RAII 设施，让析构函数自动完成释放，从根源上避免忘记 free、重复 free、释放偏移指针这几类问题。\n\nA 是栈数组；B 释放的是偏移后的地址；C 是字符串字面量（静态存储期，不能释放），三项在 C++ 中同样是错误用法。"
+      },
+      "python": {
+        "stem": "在 Python 中，关于对象的释放与引用，下列说法正确的是（ ）。",
+        "options": [
+          "`del s` 会立即销毁 s 指向的字符串对象并释放其内存",
+          "对象只有在没有任何引用指向它之后才可能被回收；`del` 只是删除一个名字（减少一个引用），其他引用仍然有效",
+          "必须手动调用 `s.free()` 才能释放字符串占用的内存",
+          "对同一个对象执行两次 `del` 一定会导致程序崩溃"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。Python 没有 `free`：对象是否可回收取决于「还有没有引用能到达它」。`del s` 只删除名字 s 这一个引用，若还有别的名字指向同一对象，对象继续存活；当引用计数归零（CPython）或循环垃圾被 GC 发现后，对象才被回收。\n\n- A 错：`del` 不保证销毁对象，它只解除一个绑定；CPython 中引用计数清零时通常立即回收，但这是实现细节，语言层面只保证「不再可达后可能回收」。\n- C 错：内置类型没有 `free()` 方法；内存管理由解释器负责。\n- D 错：删除不存在的名字抛 `NameError`，重复 `del` 不会崩溃；对同一对象 `del` 两个不同名字，只要各自存在就都合法。\n\n需要「确定性释放」时，用 `with` 语句（上下文管理器）在离开代码块时执行清理，例如文件、锁、数据库连接；这与 C 的 `free` 在时机控制上最接近。"
+      }
+    }
+  },
+  {
+    "id": "指-90",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "深浅拷贝",
+      "结构体指针",
+      "动态内存"
+    ],
+    "stem": "有下面的结构体和复制函数声明：\n\n```c\n#include <stdlib.h>\n#include <string.h>\n\nstruct Info {\n    char *name;\n    int age;\n};\n\n/* 把 src 的内容完整复制到 dst，使两者互不影响 */\nint copy_info(struct Info *dst, const struct Info *src);\n```\n\n下列实现中，正确的是（ ）。",
+    "analysis": "B 正确。`name` 是指针成员，所谓「完整复制、互不影响」要求为新结构体单独申请一块字符缓冲区，再把字符串内容复制过去，最后复制 age。`strlen(src->name) + 1` 中的 `+1` 是给结束符 `'\\0'` 留的位置，不能漏；`malloc` 之后必须判空再使用。\n\n- A 是浅拷贝：`*dst = *src` 只复制指针值，dst->name 与 src->name 指向同一块内存。之后 free 其中一个，另一个立刻变成悬空指针；两个都 free 就是重复释放，属于未定义行为。\n- C 名义上是「转移所有权」，但它先把 src 的缓冲区释放了，src 自己反而变成悬空指针，语义错误。\n- D 用 `memcpy` 按字节复制整个结构体，效果与 A 相同，仍然只复制了指针，不是深拷贝。\n\n深拷贝的代价是调用者之后要分别释放两个 `name`。如果结构体还有多层指针成员，深拷贝必须逐层递归处理。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "`*dst = *src; return 0;`",
+      "`dst->name = (char *)malloc(strlen(src->name) + 1); if (dst->name == NULL) return -1; strcpy(dst->name, src->name); dst->age = src->age; return 0;`",
+      "`dst->name = src->name; dst->age = src->age; free(src->name); return 0;`",
+      "`memcpy(dst, src, sizeof(struct Info)); return 0;`"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "stem": "在 C++ 中，结构体 `Info` 含有姓名成员：\n\n```cpp\n#include <string>\n\nstruct Info {\n    std::string name;\n    int age;\n};\n```\n\n需要让复制出来的对象与原对象互不影响。关于复制语义，下列说法正确的是（ ）。",
+        "options": [
+          "若 `name` 是 `std::string`，`Info b = a;` 的默认拷贝构造会复制字符内容，属于深拷贝；若 `name` 是 `char *`，默认拷贝只复制指针，必须自己写拷贝构造和拷贝赋值，并遵守三法则",
+          "C++ 的结构体赋值一定是浅拷贝，无法实现深拷贝",
+          "必须用 `memcpy` 才能复制结构体",
+          "C++ 不允许结构体整体赋值，只能逐成员赋值"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。`std::string` 具有值语义：它的拷贝构造会分配自己的缓冲区并复制字符，所以 `Info b = a;` 之后修改 b.name 不会影响 a.name，天然就是深拷贝。\n\n如果坚持用 `char *name` 管理资源，编译器生成的拷贝构造/拷贝赋值只复制指针（浅拷贝），这时必须自己实现「分配 + 复制 + 释放旧资源」，并遵守三法则：需要析构函数、拷贝构造、拷贝赋值；现代 C++ 还可以用 `std::unique_ptr<char[]>` 或 `std::vector<char>` 让资源自动管理。\n\nB 错：`std::string`、`std::vector` 等成员的默认拷贝就是深拷贝。C 错：`memcpy` 对含 `std::string` 的对象是未定义行为，且对 `char *` 也只是浅拷贝。D 错：同类型结构体可以整体赋值。"
+      },
+      "python": {
+        "stem": "阅读下面的 Python 代码：\n\n```python\nimport copy\n\na = {\"name\": \"Tom\", \"tags\": [\"x\", \"y\"]}\nb = copy.copy(a)\nc = copy.deepcopy(a)\nb[\"tags\"].append(\"z\")\n```\n\n执行后，a、b、c 三者的 `tags` 分别是（ ）。",
+        "options": [
+          "a 是 `['x', 'y']`，b 是 `['x', 'y', 'z']`，c 是 `['x', 'y']`",
+          "三者都是 `['x', 'y', 'z']`",
+          "a 和 b 都是 `['x', 'y', 'z']`，c 是 `['x', 'y']`",
+          "b 会报错，因为 `copy.copy` 不能复制字典"
+        ],
+        "answer": 2,
+        "analysis": "C 正确。`copy.copy` 是浅拷贝：它新建一个字典，但字典里的值仍然是原对象的引用，所以 `b[\"tags\"]` 与 `a[\"tags\"]` 是同一个列表。执行 `b[\"tags\"].append(\"z\")` 会同时改变 a 和 b 看到的 tags。`copy.deepcopy` 会递归复制嵌套的可变对象，c 拥有自己的列表，因此保持 `['x', 'y']`。\n\nA 把浅拷贝误当成深拷贝；B 忽略了 deepcopy 的隔离效果；D 错，`copy.copy` 支持字典、列表等常见容器。\n\n这与 C 中 `*dst = *src` 的浅拷贝是同一个模型：只复制「第一层」，内部的指针/引用仍然共享。需要完全独立时，C 要手动 malloc + strcpy，Python 用 `copy.deepcopy`。"
+      }
+    }
+  },
+  {
+    "id": "指-91",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "void指针",
+      "类型安全",
+      "二级指针"
+    ],
+    "stem": "有下面的代码：\n\n```c\n#include <stddef.h>\n\nvoid set_null(void **p)\n{\n    *p = NULL;\n}\n\nint main(void)\n{\n    int *q = NULL;\n\n    set_null(&q);\n    return 0;\n}\n```\n\n关于 `set_null(&q);` 这一调用，下列说法正确的是（ ）。",
+    "analysis": "C 正确。C 标准只保证「任何对象指针」与 `void *` 之间可以互相转换，但 `void **` 是「指向 `void *` 的指针」，`int **` 是「指向 `int *` 的指针」，二者是不同且不兼容的类型，不能隐式转换。这是一处约束违反，编译器应当给出诊断，但不同实现的做法不同：GCC 一般给警告，MSVC 在常用警告级别下可能直接放过，所以不能靠「能编译」判断代码正确。\n\n为什么危险：如果函数里写 `*p = &some_double;`，而实参其实是 `&q`（`int **`），那么 q 会指向一个 double，但类型仍被当成 `int *`，后续解引用就是类型混淆。`void **` 与 `int **` 之间没有「泛型」关系，只有一级的 `void *` 才是通用的。\n\n- A 错：`void *` 的通用性不能传递到 `void **`。\n- B 错：指针大小相同不代表类型兼容，类型系统约束的是语义而不只是字节数。\n- D 错：可以写 `(void **)&q` 强制转换让编译通过，但只有当函数确实不通过 `*p` 写入不兼容类型时才安全，标准层面仍不推荐。\n\n本例中 `*p = NULL` 恰好不会破坏 q 的类型，但函数签名本身不合法。更稳的做法是 `void set_null(int **p)`，或用 C++ 模板/`void *&`。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "合法：`void *` 可以接收任何对象指针，所以 `void **` 也能接收 `int **`",
+      "合法，因为所有指针的大小都相同",
+      "标准 C 不允许把 `int **` 隐式转换成 `void **`，这是一处类型不兼容（编译器通常会诊断，但有的实现默认放过）；正确做法是把形参写成与实参匹配的类型（如 `int **`），或让函数返回 `void *` 由调用者赋值",
+      "编译错误，且不存在任何绕过办法"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "options": [
+          "合法：`void *` 可以接收任何对象指针，所以 `void **` 也能接收 `int **`",
+          "合法，因为所有指针的大小都相同",
+          "标准 C++ 不允许把 `int **` 隐式转换成 `void **`；可以按具体类型写形参，或用模板 `template<class T> void set_null(T *&p) { p = nullptr; }`",
+          "编译错误，且不存在任何绕过办法"
+        ],
+        "answer": 2,
+        "analysis": "C 正确。C++ 同样不允许 `int **` 隐式转换成 `void **`，理由与 C 一致：`void **` 与 `int **` 指向的类型不同，若允许转换，函数内写入一个 `void *` 就可能让 `int *` 变量指向错误类型的对象。\n\nC++ 的常规解法是模板：\n\n```cpp\ntemplate <class T>\nvoid set_null(T *&p) { p = nullptr; }\n```\n\n调用 `set_null(q)` 时 T 推导为 `int`，形参是 `int *&`，直接绑定 q 本身。也可以写 `void set_null(void *&p)` 让形参是 `void *` 的引用——注意这是「引用的类型是 void *」，与 `void **` 不同，传 `q` 时 `int *` 到 `void *` 的转换是允许的。\n\nA、B 混淆了「指针大小相同」与「类型兼容」；D 错，`reinterpret_cast<void **>(&q)` 可以强行编译，但写入不兼容类型时仍是未定义行为。",
+        "stem": "有下面的代码：\n\n```cpp\n#include <stddef.h>\n\nvoid set_null(void **p)\n{\n    *p = NULL;\n}\n\nint main(void)\n{\n    int *q = NULL;\n\n    set_null(&q);\n    return 0;\n}\n```\n\n关于 `set_null(&q);` 这一调用，下列说法正确的是（ ）。"
+      },
+      "python": {
+        "stem": "阅读下面的 Python 代码：\n\n```python\ndef fill(items: list[int]) -> None:\n    items.append(\"oops\")\n\ndata: list[int] = [1, 2]\nfill(data)\nprint(data)\n```\n\n关于这段代码，下列说法正确的是（ ）。",
+        "options": [
+          "运行时报错：`list[int]` 注解会阻止向列表中加入字符串",
+          "可以运行，输出 `[1, 2, 'oops']`；Python 的类型注解不参与运行时检查，类型不一致要等后续操作或静态检查工具才发现",
+          "必须先用 `typing.cast` 转换才能追加字符串",
+          "会自动把 `\"oops\"` 转换成 int"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。Python 的类型注解在运行时只是保存在 `__annotations__` 里的数据，不会强制检查，`list[int]` 也不会阻止 `append(\"oops\")`。代码会正常输出 `[1, 2, 'oops']`，问题要到后续对该元素做整数运算时才暴露，或者由 mypy、pyright 这类静态检查工具在运行前发现。\n\n- A、C 错：注解不产生运行时/编译期强制检查。\n- D 错：Python 不会自动做这种字符串到整数的隐式转换，`\"1\" + 1` 会直接抛 `TypeError`。\n\n这与 C 的 `void **` 问题在思想上相通：容器/指针的「元素类型」并不能靠签名自动保证，运行时可能塞进不兼容的东西。区别在于 C 会因类型混淆产生未定义行为，Python 通常会在真正执行不支持的操作时抛异常，更安全但仍需类型检查兜底。"
+      }
+    }
+  },
+  {
+    "id": "指-92",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "链表",
+      "内存泄漏",
+      "二级指针"
+    ],
+    "stem": "下面函数用于删除单链表中所有值为 key 的结点：\n\n```c\nstruct Node {\n    int data;\n    struct Node *next;\n};\n\nvoid remove_all(struct Node **head, int key)\n{\n    struct Node *cur = *head, *prev = NULL;\n\n    while (cur != NULL) {\n        if (cur->data == key) {\n            if (prev == NULL) {\n                *head = cur->next;\n                cur = *head;\n            } else {\n                prev->next = cur->next;\n                cur = prev->next;\n            }\n        } else {\n            prev = cur;\n            cur = cur->next;\n        }\n    }\n}\n```\n\n这段代码能把所有值为 key 的结点从链表中摘除，但存在的主要问题是（ ）。",
+    "analysis": "C 正确。这段代码只做了「摘链」：把前驱的 `next` 改成指向后继、必要时更新 `*head`，被摘下的结点从此不在链上，但它的内存仍然被占用，而且没有任何指针再指向它，既无法访问也无法释放——典型的堆内存泄漏。删除操作应当保存待删结点、改链、再 `free`：\n\n```c\nstruct Node *tmp = cur;\n/* 先改指针把 tmp 摘下来 */\nfree(tmp);\n```\n\n- A 错：代码里已经用 `*head = cur->next;` 更新了表头。\n- B 错：`prev` 已初始化为 `NULL`，不会产生野指针。\n- D 错：`prev` 此时仍指向链表中的前驱结点，`free(prev)` 会破坏仍在使用的链表，属于错误释放。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "删除首结点时没有更新 `*head`，链表头会失效",
+      "`prev` 没有初始化，删除时会产生野指针",
+      "被摘下的结点没有 `free`，结点占用的内存再也无法访问，属于内存泄漏",
+      "应该在 `cur = cur->next` 之前先 `free(prev)`"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "stem": "下面函数用于删除单链表中所有值为 key 的结点：\n\n```cpp\nstruct Node {\n    int data;\n    Node *next;\n};\n\nvoid remove_all(Node **head, int key)\n{\n    Node *cur = *head, *prev = nullptr;\n\n    while (cur != nullptr) {\n        if (cur->data == key) {\n            if (prev == nullptr) {\n                *head = cur->next;\n                cur = *head;\n            } else {\n                prev->next = cur->next;\n                cur = prev->next;\n            }\n        } else {\n            prev = cur;\n            cur = cur->next;\n        }\n    }\n}\n```\n\n这段代码能把结点从链表中摘除，但存在的主要问题是（ ）。",
+        "options": [
+          "删除首结点时没有更新 `*head`",
+          "被摘下的结点没有释放，造成内存泄漏；应根据分配方式 `delete`（或 `free`）被摘结点，或直接用 `std::unique_ptr`/`std::list` 让析构自动完成",
+          "`prev` 没有初始化，会产生野指针",
+          "应该先 `delete prev` 再移动 `cur`"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。摘链只改变指针关系，不释放对象；C++ 中被摘下的结点同样会泄漏。用裸指针时应先保存 `Node *tmp = cur;`，改链后再按分配方式 `delete tmp;`（`new` 分配）或 `free(tmp);`（`malloc` 分配）。\n\n更现代的做法是让所有权显式化：`std::unique_ptr<Node>` 组成的链表在结点被移出链时自动释放；或者直接用 `std::list<int>` / `std::forward_list<int>` 的 `remove`，它们会正确销毁元素。\n\nA 错：代码已更新 `*head`。C 错：`prev` 初始化为 `nullptr`。D 错：`prev` 仍在链上，`delete prev` 会破坏链表。"
+      },
+      "python": {
+        "stem": "在 Python 中，用对象和 `next` 属性模拟单链表：\n\n```python\nclass Node:\n    def __init__(self, data, nxt=None):\n        self.data = data\n        self.nxt = nxt\n```\n\n把某个结点从链上「摘除」后，下列说法正确的是（ ）。",
+        "options": [
+          "必须调用 `node.free()`，否则一定内存泄漏",
+          "`del node` 一定会立即销毁对象，即使还有别的引用指向它",
+          "只要没有任何引用再指向被摘下的结点，垃圾回收器就会回收它；如果还把它保存在别的容器里，对象会继续存活，看起来就像「泄漏」",
+          "Python 的结点对象永远不会被回收"
+        ],
+        "answer": 2,
+        "analysis": "C 正确。Python 没有手动 `free`，对象是否存活取决于可达性：把结点从链上摘除、并且没有任何变量/容器再引用它之后，垃圾回收器（CPython 的引用计数 + 循环 GC）会回收它。若出于调试或缓存的目的，仍把该结点放进某个列表/字典，它就继续存活——这不是内存泄漏，而是「还有引用」；真正的泄漏通常来自全局缓存无限增长或循环引用中的 `__del__` 等问题。\n\n- A 错：Python 对象没有 `free()` 方法。\n- B 错：`del node` 只删除一个名字，其他引用仍然让对象存活。\n- D 错：对象在不可达后会被回收。\n\n与 C 对照：C 需要显式 `free` 被摘下的结点，Python 依赖引用可达性自动回收；但两者都要求「不再需要时切断所有引用」。"
+      }
+    }
+  },
+  {
+    "id": "指-93",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "realloc",
+      "内存泄漏",
+      "动态数组"
+    ],
+    "stem": "有下面的扩容代码：\n\n```c\nint *p = (int *)malloc(n * sizeof(int));\nif (p == NULL)\n    return 1;\n/* 使用 p ... */\n\np = (int *)realloc(p, 2 * n * sizeof(int));\nif (p == NULL)\n    return 1;\n```\n\n这段代码的主要问题是（ ）。",
+    "analysis": "A 正确。`realloc(p, size)` 成功时可能返回与 p 相同的地址，也可能搬到新地址；失败时返回 `NULL`，**原内存块保持不变且仍然有效**。如果直接写 `p = realloc(p, ...)`，一旦失败，p 就变成 `NULL`，原来那块内存的地址丢失，既无法继续使用也无法 `free`，造成泄漏。\n\n正确写法：\n\n```c\nint *tmp = (int *)realloc(p, 2 * n * sizeof(int));\nif (tmp == NULL) {\n    /* p 仍然有效，可以继续使用或在这里 free(p) */\n    return 1;\n}\np = tmp;\n```\n\n- B 错：`realloc` 的实参可以是 `malloc`、`calloc` 或 `realloc` 返回的指针，也可以是 `NULL`（此时等价于 `malloc`）。\n- C 错：`realloc` 不保证新增部分清零，需要清零可以用 `memset` 或 `calloc` 方案。\n- D 错：乘积确实可能溢出（应按 `size_t` 检查），但不是「必然」，也不是这段代码的主要缺陷。\n\nC++ 中更推荐 `std::vector`，它的扩容由容器管理，不会出现「丢失原指针」的问题。引申一步：`realloc` 对含有内部指针的结构体数组不安全，因为搬家后内部指针仍指向旧地址。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "`realloc` 失败时返回 `NULL`，原内存块仍然有效，但它的地址已经被赋给 p 而丢失，既造成内存泄漏，也无法再释放原内存；应先用临时指针接收返回值，成功后再赋给 p",
+      "`realloc` 不能用于 `malloc` 得到的内存，只能用于 `calloc` 的结果",
+      "`realloc` 成功后一定会把新增部分清零",
+      "`2 * n * sizeof(int)` 一定会溢出，因此代码必然崩溃"
+    ],
+    "answer": 0,
+    "variants": {
+      "cpp": {
+        "options": [
+          "`realloc` 失败时返回 `NULL`，原内存块仍然有效，但地址已经被赋给 p 而丢失，造成泄漏；应先存入临时指针，成功后再赋给 p",
+          "`realloc` 不能用于 `malloc` 得到的内存，只能用于 `calloc` 的结果",
+          "`realloc` 成功后一定会把新增部分清零",
+          "`2 * n * sizeof(int)` 一定会溢出，因此代码必然崩溃"
+        ],
+        "answer": 0,
+        "analysis": "A 正确，理由与 C 相同：`realloc` 失败返回 `NULL` 且不释放原块，直接赋值会丢失原地址。C++ 中更推荐用 `std::vector<int>`：\n\n```cpp\nstd::vector<int> v(n);\nv.resize(2 * n);   // 自动处理扩容与异常安全\n```\n\n`vector` 的 `resize` 在失败时抛 `std::bad_alloc`，原容器内容仍然有效（强异常安全保证视操作而定），不会出现「指针丢失」这类问题。\n\n另外注意：不要对 `new[]` 得到的指针调用 `realloc`，也不要用 `free` 释放 `new[]` 的内存，分配/释放方式必须配对。B、C、D 的说法与 C 版本一样是错误或非主要问题。",
+        "stem": "有下面的扩容代码：\n\n```cpp\nint *p = (int *)malloc(n * sizeof(int));\nif (p == NULL)\n    return 1;\n/* 使用 p ... */\n\np = (int *)realloc(p, 2 * n * sizeof(int));\nif (p == NULL)\n    return 1;\n```\n\n这段代码的主要问题是（ ）。"
+      },
+      "python": {
+        "stem": "阅读下面的 Python 代码：\n\n```python\ndata = [1, 2, 3]\ndata = data + [4, 5]\n```\n\n关于这段「扩容」代码，下列说法正确的是（ ）。",
+        "options": [
+          "`data = data + [4, 5]` 会创建新列表并让 data 重新绑定，原列表若没有其他引用就被回收；不存在 C 里 realloc 失败丢失原指针的问题",
+          "列表扩容必须手动调用 realloc",
+          "`data + [4, 5]` 会原地修改原列表",
+          "`data.extend([4, 5])` 也会创建新列表"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。`data + [4, 5]` 生成一个新列表，再让名字 data 绑定到它；旧列表若没有其他引用就会被回收。整个扩容（以及内部数组的重新分配）由解释器管理，失败时抛 `MemoryError`，不会出现 C 中「realloc 失败返回 NULL 导致原指针丢失」的接口问题。\n\n- B 错：Python 没有 realloc，列表的容量增长是内部实现细节。\n- C 错：`+` 返回新列表，原列表不变；要原地追加应写 `data.extend([4, 5])` 或 `data += [4, 5]`。\n- D 错：`extend` 原地修改，不创建新列表。\n\n两种写法体现不同语义：`+` 是「产生新对象」，`extend` 是「修改原对象」。理解这一点，才能避免「函数里改了列表但调用者看不到」或「以为没改其实改了」这类问题。"
+      }
+    }
+  },
+  {
+    "id": "指-94",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "memmove",
+      "内存重叠",
+      "字符串"
+    ],
+    "stem": "有下面的程序：\n\n```c\n#include <string.h>\n#include <stdio.h>\n\nint main(void)\n{\n    char s[10] = \"abcdef\";\n\n    memcpy(s + 1, s, 5);   /* 想把 \"abcde\" 整体后移一位 */\n    puts(s);\n    return 0;\n}\n```\n\n关于这段代码，下列说法正确的是（ ）。",
+    "analysis": "C 正确。`memcpy` 的前提是源区间与目标区间**不重叠**；本题目标 `s+1` 与源 `s` 覆盖了 `s[1..5]`，属于重叠复制，标准规定行为未定义。某些实现从左到右复制，结果会变成 `aaaaaa`；某些实现用宽字长优化，结果又不一样——不能依赖任何具体输出。\n\n`memmove` 正是为重叠场景设计的：它会判断方向（或先复制到临时缓冲），保证结果等价于「先完整取出源，再写入目标」，正确输出 `aabcde`。\n\n- A 错：不保证 `aabcde`，重叠时是未定义行为。\n- B 错：`strcpy` 同样要求源和目标不重叠，而且按 `'\\0'` 截断、语义与定长复制不同。\n- D 错：`memmove` 就是标准库提供的重叠安全版本；手写循环也要注意从后往前复制，否则会覆盖尚未读取的源字节。\n\n顺带一提，`s` 有 10 字节，后移 5 字节不会越界；如果目标更大，还要额外检查容量。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "没有问题，一定输出 `aabcde`",
+      "应该改用 `strcpy(s + 1, s)`，它比 `memcpy` 更安全",
+      "源区间与目标区间重叠，`memcpy` 的行为未定义；应改用 `memmove(s + 1, s, 5)`，它允许重叠并保证复制正确",
+      "重叠复制只能手写循环，标准库函数都不支持"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "options": [
+          "没有问题，`std::memcpy` 会自动检测重叠并处理",
+          "应改用 `std::memmove(s + 1, s, 5)`；`std::memcpy` 要求区间不重叠，重叠时行为未定义",
+          "应改用 `std::strcpy(s + 1, s)`，它更安全",
+          "C++ 标准库没有处理重叠复制的函数"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。`std::memcpy` 要求源和目标不重叠，重叠时是未定义行为；`std::memmove` 明确允许重叠并保证结果正确，输出 `aabcde`。\n\nC++ 还有算法层面的选择：`std::copy` 同样要求目标区间不与源区间重叠（向右搬移时应使用 `std::copy_backward`）；`std::move` 处理的是对象所有权转移，与内存搬移不是一回事。\n\nA 错：`memcpy` 不会检测重叠；C 错：`strcpy` 也要求不重叠，且遇到 `'\\0'` 停止；D 错：`memmove` 与 `copy_backward` 都能处理相应场景。\n\n补充：在 C++ 中操作字符缓冲区，优先用 `std::string` / `std::vector<char>` 与 `std::copy` 系列，能减少这类「重叠/越界」隐患。",
+        "stem": "有下面的程序：\n\n```cpp\n#include <string.h>\n#include <stdio.h>\n\nint main(void)\n{\n    char s[10] = \"abcdef\";\n\n    memcpy(s + 1, s, 5);   /* 想把 \"abcde\" 整体后移一位 */\n    puts(s);\n    return 0;\n}\n```\n\n关于这段代码，下列说法正确的是（ ）。"
+      },
+      "python": {
+        "stem": "阅读下面的 Python 代码：\n\n```python\na = list(\"abcdef\")\na[1:6] = a[0:5]\nprint(\"\".join(a))\n```\n\n输出是（ ）。",
+        "options": [
+          "结果不可预期，因为切片区间重叠",
+          "`aabcde`：切片赋值会先取出右侧切片的副本，再写回左侧，重叠不影响结果",
+          "`aaaaaa`",
+          "必须写成 `a[1:6] = a[0:5].copy()` 才正确"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。`a[0:5]` 先被求值成一个新的列表（切片会创建副本），然后 `a[1:6] = ...` 再用这个副本覆盖左侧切片，所以等价于 C 的 `memmove`：先把源数据完整取出，再写入目标，重叠不会破坏源。结果为 `aabcde`。\n\n- A 错：Python 的切片语义保证右侧先求值，结果确定。\n- C 是「从左到右逐元素写」会得到的结果，例如 `for i in range(5): a[i+1] = a[i]`，因为后面的源数据被前面的写操作覆盖了——这正好对应 C 中错误方向的 `memcpy`。\n- D 错：切片本身已经创建了新列表，再 `.copy()` 是多余的。\n\n这个例子可以和 C 的 `memcpy`/`memmove` 对照：C 需要程序员自己选择重叠安全的函数，Python 的切片赋值默认就采用「先取副本」的语义。"
+      }
+    }
+  },
+  {
+    "id": "结-61",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "嵌套结构体",
+      "成员访问",
+      "指针"
+    ],
+    "stem": "有下面的定义：\n\n```c\nstruct Date { int y, m, d; };\n\nstruct Student {\n    int id;\n    struct Date birth;\n    int score[3];\n};\n\nstruct Student s = {1001, {2005, 9, 1}, {80, 90, 85}};\nstruct Student *p = &s;\n```\n\n下列表达式中，能取到 9 的是（ ）。",
+    "analysis": "C 正确。p 是 `struct Student *`，通过指针访问成员用 `->`，所以 `p->birth` 得到内嵌的 `struct Date` 对象；`birth` 本身是结构体**对象**而不是指针，再取它的成员要用 `.`，因此完整写法是 `p->birth.m`（值为 9）。等价的写法还有 `(*p).birth.m`，以及 `p->birth` 中 birth 是对象时的 `(p->birth).m`。\n\n- A 错：`p.birth` 对指针用 `.`，语法错误。\n- B 错：`p->birth` 已经是对象，再写 `->` 等于把对象当指针用。\n- D 错：`(*p)` 是 `struct Student` 对象，对它用 `->` 也是类型错误。\n\n顺带一提，数组元素同理：`p->score[1]` 取到 90。记住一条规则：**左边是指针用 `->`，左边是对象用 `.`**，嵌套时逐层判断，不要因为「外层是结构体」就整串都用 `.`。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "`p.birth->m`",
+      "`p->birth->m`",
+      "`p->birth.m`",
+      "`(*p)->birth.m`"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "stem": "有下面的定义：\n\n```cpp\nstruct Date { int y, m, d; };\n\nstruct Student {\n    int id;\n    Date birth;\n    int score[3];\n};\n\nStudent s = {1001, {2005, 9, 1}, {80, 90, 85}};\nStudent *p = &s;\n```\n\n下列表达式中，能取到 9 的是（ ）。",
+        "options": [
+          "`p.birth->m`",
+          "`p->birth->m`",
+          "`p->birth.m`",
+          "`(*p)->birth.m`"
+        ],
+        "answer": 2,
+        "analysis": "C 正确。`p->birth` 得到内嵌的 `Date` 对象，再对对象用 `.` 取 m，即 `p->birth.m`；这与 C 完全一致，`(*p).birth.m` 也等价。\n\nC++ 中如果 birth 换成指针成员 `std::unique_ptr<Date> birth;`，访问方式就变成 `p->birth->m`——因为 `p->birth` 得到的是 `unique_ptr`，`operator->` 会继续转发到 `Date`。如果 birth 是引用成员 `Date &birth;`，则仍然用 `p->birth.m`。所以关键始终是「左边这个表达式的类型是对象还是指针（或像指针一样的智能指针）」。\n\nA、B、D 分别在指针/对象上用了错误的运算符，都会编译失败。"
+      },
+      "python": {
+        "stem": "有下面的 Python 代码：\n\n```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass Date:\n    y: int\n    m: int\n    d: int\n\n@dataclass\nclass Student:\n    id: int\n    birth: Date\n    score: list[int]\n\ns = Student(1001, Date(2005, 9, 1), [80, 90, 85])\n```\n\n下列表达式中，能取到 9 的是（ ）。",
+        "options": [
+          "`s.birth.m`",
+          "`s[\"birth\"][\"m\"]`",
+          "`s.birth->m`",
+          "`s.birth.m()`"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。dataclass 生成的实例用属性访问成员，`s.birth` 返回内嵌的 `Date` 实例，再 `.m` 取到 9。这种「点号逐层访问」和 C 结构体的 `.` 在语义上是对应的，只是 Python 没有 `->`。\n\n- B 错：`Student` 不是字典，不能用下标访问；若对象本身是 dict，才写 `s[\"birth\"][\"m\"]`。\n- C 错：Python 没有 `->` 运算符。\n- D 错：`s.birth.m` 已经是整数，不是可调用对象；只有方法才加括号。\n\n另外，`score` 是普通列表，`s.score[1]` 取到 90，与 C 的数组下标一致。dataclass 只负责生成 `__init__`、`__repr__`、`__eq__` 等，不会改变成员访问方式。"
+      }
+    }
+  },
+  {
+    "id": "结-62",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "结构体数组",
+      "指针遍历",
+      "求和"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\n\nstruct Stu { int id; int score; };\n\nint main(void)\n{\n    struct Stu a[3] = {{1, 70}, {2, 85}, {3, 90}};\n    struct Stu *p = a;\n    int sum = 0;\n\n    for (; p < a + 3; p++)\n        sum += p->score;\n    printf(\"%d\\n\", sum);\n    return 0;\n}\n```",
+    "analysis": "B 正确。p 指向结构体数组的首元素，`p++` 按 `sizeof(struct Stu)`（本环境为 8 字节）前进到下一个元素，循环依次访问 a[0]、a[1]、a[2]，累加 70 + 85 + 90 = 245。\n\n`p < a + 3` 是合法的：`a + 3` 是数组的「尾后指针」，指向最后一个元素之后的位置，可以与数组内（含尾后）的指针比较；循环在 p 到达尾后位置时结束，不会越界解引用。\n\n- A 算成了 70 + 85 + 85 或漏掉某个元素。\n- C 把 id 也加了进去或算错分数。\n- D 错：同一数组内的指针可以比较大小，这是标准允许的。\n\n注意两个易错点：`p++` 移动的字节数由所指类型决定，不是固定 4 字节；`p->score` 与 `(*p).score` 等价，不要写成 `*p.score`（`.` 优先级高于 `*`）。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "240",
+      "245",
+      "243",
+      "编译错误：结构体指针不能比较大小"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <vector>\n\nstruct Stu { int id; int score; };\n\nint main()\n{\n    std::vector<Stu> a = {{1, 70}, {2, 85}, {3, 90}};\n    int sum = 0;\n\n    for (const auto &s : a)\n        sum += s.score;\n    std::cout << sum << '\\n';\n}\n```",
+        "options": [
+          "245",
+          "240",
+          "253",
+          "编译错误：范围 for 不能用于结构体数组"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。范围 for 依次把每个元素绑定到 `const auto &s`，`s.score` 累加 70 + 85 + 90 = 245。\n\n这里用 `const auto &` 有两个好处：避免按值复制结构体，同时表明只读；如果需要在循环中修改元素，应写成 `for (auto &s : a)`。用下标循环 `for (size_t i = 0; i < a.size(); ++i) sum += a[i].score;` 结果相同。\n\nB 漏算/错算；C 把 id 也加进去了；D 错，范围 for 对数组、`std::vector`、`std::array` 等都适用。\n\n对照 C 版本：C 用「指针 + 尾后」控制循环，C++ 的迭代器/范围 for 把「遍历边界」交给容器，少了手写 `a + 3` 这类容易出错的边界。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\nstudents = [\n    {\"id\": 1, \"score\": 70},\n    {\"id\": 2, \"score\": 85},\n    {\"id\": 3, \"score\": 90},\n]\n\ntotal = 0\nfor s in students:\n    total += s[\"score\"]\nprint(total)\n```",
+        "options": [
+          "240",
+          "243",
+          "245",
+          "抛出 `TypeError`"
+        ],
+        "answer": 2,
+        "analysis": "C 正确。`for s in students` 让 s 依次绑定到每个字典，`s[\"score\"]` 取出分数，累加 70 + 85 + 90 = 245。\n\n如果 students 的元素是 dataclass 实例而不是字典，就应写 `total += s.score`；如果元素是具名元组，则写 `s.score` 或 `s[1]`。访问方式取决于元素类型，这是 Python 与 C 结构体数组最直观的差异：C 的成员名在编译期固定，Python 的对象可以用属性、下标或解包等多种方式访问。\n\nA、B 是计算错误；D 错，字典用字符串键访问完全合法。若用 `s[\"ID\"]` 这种不存在的键，才会抛 `KeyError`。"
+      }
+    }
+  },
+  {
+    "id": "结-63",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "typedef",
+      "指针类型",
+      "声明符"
+    ],
+    "stem": "有下面的代码：\n\n```c\ntypedef struct Node {\n    int data;\n    struct Node *next;\n} *NodePtr;\n\nNodePtr a, b;\n```\n\n关于 `NodePtr a, b;`，下列说法正确的是（ ）。",
+    "analysis": "D 正确。`typedef` 定义的是一个完整的类型别名，这里的 `NodePtr` 等价于 `struct Node *`，所以 `NodePtr a, b;` 中 a、b 都取这个类型，都是指针。\n\n这正是 typedef 与直接写声明符的区别：`struct Node *a, b;` 中 `*` 只作用于 a，b 是普通结构体变量；而把 `*` 放进 typedef 后，这个「指针属性」成为类型的一部分，对每个声明符都生效。很多编码规范因此建议 `typedef struct Node Node;`，再显式写 `Node *p;`，避免隐藏指针语义。\n\n- A、C 把 typedef 当成「只对第一个声明符生效」，与上面的规则相反。\n- B 错：typedef 可以为指针、数组、函数指针等任意类型起别名，例如 `typedef int (*Cmp)(int, int);`。\n\n补充：typedef 只是别名，不会创建新类型，编译器仍按 `struct Node *` 做类型检查；`a = b;` 合法，`a = 1;` 不合法。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "a 是 `struct Node` 变量，b 是 `struct Node *` 指针",
+      "编译错误：typedef 不能为指针类型起别名",
+      "a 和 b 都是 `struct Node` 变量，等同于 `struct Node a, b;`",
+      "a 和 b 都是 `struct Node *` 指针，因为 typedef 定义的 `NodePtr` 本身就是指针类型"
+    ],
+    "answer": 3,
+    "variants": {
+      "cpp": {
+        "options": [
+          "a 是 `Node` 变量，b 是 `Node *` 指针",
+          "编译错误：`using` 不能定义指针别名",
+          "a 和 b 都是 `Node` 变量",
+          "a 和 b 都是 `Node *` 指针，因为 `NodePtr` 这个别名本身就是指针类型"
+        ],
+        "answer": 3,
+        "analysis": "D 正确。`typedef struct Node { ... } *NodePtr;` 与 `using NodePtr = Node *;` 都把「指向 Node 的指针」定义成一个类型名，`NodePtr a, b;` 因此声明两个指针。\n\nC++ 中更推荐 `using` 别名（可读性更好，且能与模板配合），语义与 typedef 相同：别名不创建新类型，`NodePtr` 与 `Node *` 是同一类型，`std::is_same_v<NodePtr, Node *>` 为真。\n\nA、C 重犯了 `Node *a, b;` 的直觉错误——把 `*` 看成只修饰第一个名字；B 错，别名当然可以是指针类型。\n\n实践提醒：用 `std::unique_ptr<Node>` 表达独占所有权，比裸 `Node *` 更能说明资源归属；`NodePtr` 这种把 `*` 藏进别名的写法容易让人误以为它是值类型，读代码时要留意。",
+        "stem": "有下面的代码：\n\n```cpp\ntypedef struct Node {\n    int data;\n    struct Node *next;\n} *NodePtr;\n\nNodePtr a, b;\n```\n\n关于 `NodePtr a, b;`，下列说法正确的是（ ）。"
+      },
+      "python": {
+        "stem": "有下面的 Python 代码：\n\n```python\nclass Node:\n    def __init__(self, data):\n        self.data = data\n\nNodePtr = Node\na = NodePtr(1)\nb = NodePtr(2)\n```\n\n关于这段代码，下列说法正确的是（ ）。",
+        "options": [
+          "`NodePtr` 是 `Node` 的子类，a 与 b 的类型不同",
+          "`NodePtr` 只是绑定到同一个类对象的另一个名字；a、b 都是 `Node` 实例，但两次构造产生的是两个不同对象",
+          "a 和 b 是同一个对象，修改 `a.data` 会改变 `b.data`",
+          "必须用 `typedef` 关键字才能在 Python 中创建类型别名"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。`NodePtr = Node` 只是把同一个类对象再绑定一个名字，`NodePtr is Node` 为 True，不会创建新类，也不会复制类定义。随后两次调用构造器分别创建两个独立实例，`a is b` 为 False，修改 `a.data` 不影响 `b.data`。\n\n- A 错：没有继承关系，`type(a) is type(b)` 为 True，都是 `Node`。\n- C 错：两次 `NodePtr(...)` 各创建一个对象；只有 `b = a` 才会让两个名字指向同一对象。\n- D 错：Python 用赋值语句就能建立别名；`typedef` 是 C/C++ 关键字。\n\n如果把 C 的 typedef 和 Python 的别名放在一起看：两者都只在「名字/类型」层面工作，不创建新实体；区别是 C 的 typedef 在编译期由编译器处理并参与类型检查，Python 的赋值在运行时执行，且别名可以被重新绑定到别的对象。"
+      }
+    }
+  },
+  {
+    "id": "结-64",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "内存对齐",
+      "sizeof",
+      "填充"
+    ],
+    "stem": "有下面的两个结构体：\n\n```c\nstruct A { char c; int i; short s; };\nstruct B { int i; short s; char c; };\n```\n\n在 `char` 1 字节、`short` 2 字节、`int` 4 字节，且成员按自身大小对齐的 x64 环境中，`sizeof(struct A)` 与 `sizeof(struct B)` 分别是（ ）。",
+    "analysis": "B 正确。逐成员排布 struct A：c 在偏移 0 占 1 字节；i 要求 4 对齐，偏移 1~3 填充 3 字节，i 占 4~7；s 要求 2 对齐，偏移 8~9；结构体总大小还要是最大对齐数 4 的倍数，所以尾部再补 2 字节，合计 12。\n\nstruct B：i 占 0~3；s 占 4~5；c 占 6；尾部补 1 字节使总大小成为 4 的倍数，合计 8。\n\n所以把成员按「对齐要求从大到小」排列（int、short、char）可以把填充从 3+2 字节压缩到 1 字节。填充不是浪费，而是为了让每个成员落在对齐的地址上，CPU 访问未对齐数据可能变慢甚至在部分架构上出错。\n\nA 忽略了 A 的填充；C 忽略了 B 的紧凑排列；D 把两者算反了。注意 `sizeof` 的结果还可能受编译器 `#pragma pack` 影响，考试默认按自然对齐。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "8 和 8",
+      "12 和 8",
+      "12 和 12",
+      "8 和 12"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "options": [
+          "8 和 8",
+          "12 和 8",
+          "12 和 12",
+          "8 和 12"
+        ],
+        "answer": 1,
+        "analysis": "B 正确，布局与 C 完全一致：A 为 1 + 3 填充 + 4 + 2 + 2 尾部填充 = 12；B 为 4 + 2 + 1 + 1 尾部填充 = 8。C++ 的 `alignof(std::max_align_t)`、`alignof(int)` 可以查询对齐要求，`sizeof` 与 C 的规则相同。\n\nC++ 还提供 `std::is_standard_layout` 等类型特征来检查布局是否可预测；`#pragma pack(1)` 或 `[[gnu::packed]]` 可以取消填充，但会带来未对齐访问的代价。若要按固定二进制格式序列化，最好不要依赖编译器默认布局，而是显式按字段读写。\n\nA、C、D 都是把填充算错或把两个结构体算反了。",
+        "stem": "有下面的两个结构体：\n\n```cpp\nstruct A { char c; int i; short s; };\nstruct B { int i; short s; char c; };\n```\n\n在 `char` 1 字节、`short` 2 字节、`int` 4 字节，且成员按自身大小对齐的 x64 环境中，`sizeof(struct A)` 与 `sizeof(struct B)` 分别是（ ）。"
+      },
+      "python": {
+        "stem": "Python 可以用 `ctypes` 按 C 的 ABI 布局结构体：\n\n```python\nimport ctypes\n\nclass A(ctypes.Structure):\n    _fields_ = [(\"c\", ctypes.c_char),\n                (\"i\", ctypes.c_int),\n                (\"s\", ctypes.c_short)]\n\nclass B(ctypes.Structure):\n    _fields_ = [(\"i\", ctypes.c_int),\n                (\"s\", ctypes.c_short),\n                (\"c\", ctypes.c_char)]\n\nprint(ctypes.sizeof(A), ctypes.sizeof(B))\n```\n\n在常见 x64 环境中，`ctypes.sizeof(A)` 与 `ctypes.sizeof(B)` 分别是（ ）。",
+        "options": [
+          "8 和 8",
+          "12 和 8",
+          "12 和 12",
+          "8 和 12"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。`ctypes.Structure` 按 C 编译器的 ABI 规则布局：A 中 char 占偏移 0，int 需要 4 对齐所以在 4~7，short 在 8~9，整体再补齐到 4 的倍数，共 12 字节；B 中 int 0~3、short 4~5、char 6，尾部补 1 字节到 8。`ctypes.alignment(A)` 与 `ctypes.alignment(B)` 都是 4。\n\n注意不要与 `struct.calcsize` 混淆：`struct.calcsize(\"@cih\")` 只插入字段之间的对齐填充，**不会**把总大小补齐到最大对齐的倍数，在本机得到 10 和 7，与 C 的 `sizeof` 不同。要严格复现 C 结构体布局（例如调用 C 库），应使用 `ctypes`，并保证字段顺序、类型与 C 声明一致。\n\nA、C、D 都是把填充算错或把两个结构体算反。"
+      }
+    }
+  },
+  {
+    "id": "结-65",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "访问控制",
+      "封装",
+      "语言对比"
+    ],
+    "stem": "在 C 语言中，关于结构体成员的访问控制，下列说法正确的是（ ）。",
+    "analysis": "C 正确。C 的结构体只是一个「把多个数据成员聚合在一起」的类型，没有访问说明符，也没有成员函数；只要代码能看到结构体定义，就能直接读写它的任何成员。所谓「封装」在 C 里靠的是约定与组织方式：把实现细节放在 .c 文件、头文件只给出不透明指针（如 `typedef struct Buffer Buffer;` 加上创建/销毁函数），调用者拿不到完整定义，自然无法直接访问成员。\n\nA、D 把 C++ 的 private/protected 概念套到了 C 上；B 更是把「指针/变量」当成了访问级别的分界，二者与访问控制无关。\n\n对照其他语言：C++ 的 `class` 默认 private、`struct` 默认 public，但都提供真正的访问控制；Python 没有强制访问控制，靠 `_name` 约定和 `__name` 名字改写提示「内部使用」。理解「C 没有访问控制」这一点，才能明白为什么 C 的库常用不透明指针来隐藏实现。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "结构体成员默认是 private，必须显式声明为 public 才能被外部代码访问",
+      "只有通过指针访问的成员才是公开的，通过变量名访问的成员是私有的",
+      "C 的结构体没有 public/private 等访问控制，所有成员对所有能看到该类型定义的代码都是可访问的",
+      "结构体成员默认是 protected，同一源文件中的函数可以访问，其他文件不能"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "stem": "在 C++ 中，关于 `class` 与 `struct` 的默认访问权限，下列说法正确的是（ ）。",
+        "options": [
+          "`class` 默认 public，`struct` 默认 private",
+          "两者默认都是 public",
+          "两者默认都是 private",
+          "`class` 默认 private，`struct` 默认 public；默认继承方式也分别是 private 和 public"
+        ],
+        "answer": 3,
+        "analysis": "D 正确。C++ 中 `class` 与 `struct` 几乎完全相同，**唯一的区别**就是默认访问权限和默认继承方式：`class` 的成员与继承默认 private，`struct` 默认 public。两者都可以有成员函数、构造/析构、运算符重载、继承和多态。\n\nA 把两者说反了；B、C 忽略了这个默认差异。\n\n实际编码中，`struct` 常用于「只有数据、没有不变量」的聚合类型（如 `Point`、配置项），`class` 常用于需要封装不变量的类型。但这不是语法强制，把 `struct` 写成带 private 成员的类也完全合法——只是会让读者意外，所以团队通常会约定一致的风格。\n\n补充：无论 class 还是 struct，显式写 `public:`/`private:` 都能覆盖默认值；默认继承方式同理，`class D : B` 是 private 继承，`struct D : B` 是 public 继承。"
+      },
+      "python": {
+        "stem": "在 Python 中，关于类属性的访问控制，下列说法正确的是（ ）。",
+        "options": [
+          "属性默认是 private，外部不能访问",
+          "Python 没有强制访问控制：`_name` 只是「内部使用」的约定，`__name` 会触发名字改写（name mangling），但仍可从外部访问",
+          "必须写 `public` 关键字，否则属性不可见",
+          "以 `__` 开头的属性在类外完全无法访问"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。Python 的设计哲学是「大家都是成年人」：没有 private/protected 关键字，所有属性在运行时都可访问。单下划线 `_name` 表示「内部使用，请勿依赖」，是给读者和静态检查工具的约定；双下划线 `__name` 会被改写为 `_ClassName__name`（name mangling），目的是避免子类意外覆盖，但它并不是加密，仍然可以用改写后的名字访问。\n\n- A、C 把 C++/Java 的机制套到 Python 上；Python 没有 `public` 关键字。\n- D 错：`obj._Class__name` 依然可访问，name mangling 只改名字不改可见性。\n\n需要受控访问时，用 `@property` 提供 getter/setter，在 setter 里做校验；需要真正隐藏实现时，靠模块边界（不在 `__all__` 中导出）和文档约定。对照 C 的「结构体没有访问控制」：两者都依赖约定，但 Python 还多了 name mangling 与 property 这两样工具。"
+      }
+    }
+  },
+  {
+    "id": "结-66",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "链表",
+      "插入",
+      "指针顺序"
+    ],
+    "stem": "有下面的代码：\n\n```c\nstruct Node { int data; struct Node *next; };\n\n/* 在 p 所指结点之后插入 s 所指结点（p 不为 NULL） */\nvoid insert_after(struct Node *p, struct Node *s)\n{\n    语句①;\n    语句②;\n}\n```\n\n①② 处应依次填入（ ）。",
+    "analysis": "B 正确。插入的关键是「先接后断」：先把 s 的后继接到 p 原来的后继上（`s->next = p->next;`），再把 p 的后继改成 s（`p->next = s;`）。这样 s 就夹在 p 与原来 p 的后继之间，链表完整。\n\n- A 顺序反了：先执行 `p->next = s;` 会覆盖 p 原来的后继，随后 `s->next = p->next;` 相当于 `s->next = s;`，s 指向自己，后面的结点全部丢失，形成自环。\n- C 把 s 的后继指向了 p（方向反了），再让 p 指向 s，链会断成两截并成环。\n- D 把 p 的后继置成 s 原来的后继，再接 s，原有的后半段被跳过。\n\n记忆方法：涉及「插入/删除」的链表操作，凡是需要读取「原来的 next」，都必须在覆盖它之前先保存或先使用。本题中 p->next 被读取一次、写入一次，所以读的语句在前。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "`p->next = s;` `s->next = p->next;`",
+      "`s->next = p->next;` `p->next = s;`",
+      "`s->next = p;` `p->next = s->next;`",
+      "`p->next = s->next;` `s->next = p;`"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "options": [
+          "`p->next = s;` `s->next = p->next;`",
+          "`s->next = p->next;` `p->next = s;`",
+          "`s->next = p;` `p->next = s->next;`",
+          "`p->next = s->next;` `s->next = p;`"
+        ],
+        "answer": 1,
+        "analysis": "B 正确，规则与 C 相同：先用 `s->next = p->next;` 保住 p 原来的后继，再让 `p->next = s;` 接上新结点。\n\nC++ 标准库中 `std::forward_list` 的 `insert_after(pos, value)` 语义与此一致：在 pos 之后插入，返回新元素的迭代器；`std::list` 的 `insert(pos, value)` 则是在 pos 之前插入。使用标准容器时不必手写指针顺序，也就避免了 A 那种「先断后接」的错误。\n\nA 会覆盖 p->next，使 s 自指并丢失后续结点；C 方向错误；D 跳过原来的后继。即使不崩溃，链表结构也已经损坏，后续遍历可能死循环。\n\n补充：单向链表只知道后继，所以「在 p 之后插入」是 O(1)；若要在 p 之前插入，通常需要从头找到前驱，或者改用双向链表。",
+        "stem": "有下面的代码：\n\n```cpp\nstruct Node { int data; struct Node *next; };\n\n/* 在 p 所指结点之后插入 s 所指结点（p 不为 NULL） */\nvoid insert_after(struct Node *p, struct Node *s)\n{\n    语句①;\n    语句②;\n}\n```\n\n①② 处应依次填入（ ）。"
+      },
+      "python": {
+        "stem": "用对象模拟单链表：\n\n```python\nclass Node:\n    def __init__(self, data, nxt=None):\n        self.data = data\n        self.nxt = nxt\n\n# 在 p 所指结点之后插入 s 所指结点\ndef insert_after(p, s):\n    语句①\n    语句②\n```\n\n①② 处应依次填入（ ）。",
+        "options": [
+          "`p.nxt = s` `s.nxt = p.nxt`",
+          "`s.nxt = p.nxt` `p.nxt = s`",
+          "`s.nxt = p` `p.nxt = s.nxt`",
+          "`p.nxt = s.nxt` `s.nxt = p`"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。Python 虽然没有指针，但属性赋值同样会「覆盖旧值」，所以顺序规则不变：先 `s.nxt = p.nxt` 保存 p 原来的后继，再 `p.nxt = s` 把 s 接到 p 后面。\n\n- A 先覆盖 `p.nxt`，随后 `s.nxt = p.nxt` 等于 `s.nxt = s`，s 指向自己，原链表后半段丢失。\n- C 让 s 指向 p，再接回去，方向错了。\n- D 跳过原来的后继。\n\n在 Python 中调试这类错误，可以插入一个 `id()` 或遍历打印来确认链没有成环；另外 `dataclass` 也可以用来定义 Node，写法更简洁：\n\n```python\n@dataclass\nclass Node:\n    data: int\n    nxt: \"Node | None\" = None\n```"
+      }
+    }
+  },
+  {
+    "id": "结-67",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "双向链表",
+      "删除",
+      "指针"
+    ],
+    "stem": "有下面的双向链表结点：\n\n```c\nstruct DNode {\n    int data;\n    struct DNode *prev, *next;\n};\n\n/* p 指向双向循环链表中待删除的结点（表中至少还有两个结点） */\n```\n\n要把 p 从链上摘除并释放，正确的语句序列是（ ）。",
+    "analysis": "D 正确。双向链表删除一个结点，要让它的前驱和后继「互相绕过它」：前驱的 next 指向 p 的后继（`p->prev->next = p->next;`），后继的 prev 指向 p 的前驱（`p->next->prev = p->prev;`）。这两步都在使用 p 的 prev/next，必须在 `free(p)` 之前完成；最后释放 p 本身。\n\n- A 让前驱的 next 指回前驱自己、后继的 prev 指回后继自己，p 的邻居被拆开，链表断裂。\n- B 先 `free(p)`，随后再访问 `p->prev`、`p->next` 就是使用已释放内存（悬空指针），属于未定义行为。\n- C 把方向写反了，前后指针交叉，链结构被破坏。\n\n双向链表的优势正在于此：已知结点指针时，删除是 O(1)，不需要像单链表那样从头找前驱。代价是每个结点多一个指针，插入/删除时要多维护一条反向链接。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "`p->prev->next = p->prev; p->next->prev = p->next; free(p);`",
+      "`free(p); p->prev->next = p->next; p->next->prev = p->prev;`",
+      "`p->next->next = p->prev; p->prev->prev = p->next; free(p);`",
+      "`p->prev->next = p->next; p->next->prev = p->prev; free(p);`"
+    ],
+    "answer": 3,
+    "variants": {
+      "cpp": {
+        "options": [
+          "`p->prev->next = p->prev; p->next->prev = p->next;` `free(p);`",
+          "`free(p); p->prev->next = p->next; p->next->prev = p->prev;`",
+          "`p->next->next = p->prev; p->prev->prev = p->next;` `free(p);`",
+          "`p->prev->next = p->next; p->next->prev = p->prev;` `free(p);`"
+        ],
+        "answer": 3,
+        "analysis": "D 正确。C++ 中步骤与 C 相同：先让前驱和后继互相连接，再释放 p；释放之后不能再访问 p 的成员。\n\n- A 让邻居指向自己，链断裂。\n- B 先释放 p 再使用 p->prev/p->next，是 use-after-free，属于未定义行为（C++ 中甚至可能直接崩溃）。\n- C 方向写反。\n\n释放方式必须与分配方式配对：若结点是用 `malloc` 创建的（C 风格链表），用 `free(p)`；若用 `new`，则用 `delete p`。本题的结点布局是 C 风格，选项按 `free` 给出。混用 `new`/`free` 或 `malloc`/`delete` 都是未定义行为。\n\n如果使用 `std::list<T>`，删除应写成 `it = lst.erase(it);`，`erase` 返回下一个元素的迭代器，且会调用元素的析构函数、自动维护双向链接，不需要手写这两条赋值。",
+        "stem": "有下面的双向链表结点：\n\n```cpp\nstruct DNode {\n    int data;\n    struct DNode *prev, *next;\n};\n\n/* p 指向双向循环链表中待删除的结点（表中至少还有两个结点） */\n```\n\n要把 p 从链上摘除并释放，正确的语句序列是（ ）。"
+      },
+      "python": {
+        "stem": "用对象模拟双向链表：\n\n```python\nclass DNode:\n    def __init__(self, data):\n        self.data = data\n        self.prev = None\n        self.next = None\n\n# p 为待删除结点（非表头，表中至少还有两个结点）\n```\n\n要把 p 从链上摘除，正确的语句序列是（ ）。",
+        "options": [
+          "`p.prev.next = p.prev; p.next.prev = p.next`",
+          "`p.next.next = p.prev; p.prev.prev = p.next`",
+          "`p.prev = None; p.next = None`",
+          "`p.prev.next = p.next; p.next.prev = p.prev`"
+        ],
+        "answer": 3,
+        "analysis": "D 正确。摘除双向链表结点，必须同时修正前驱的 next 和后继的 prev：`p.prev.next = p.next;` 让前驱跨过 p 指向后继，`p.next.prev = p.prev;` 让后继跨过 p 指回前驱。\n\n- A 让邻居各自指向自己，链断裂。\n- B 方向写反，前后指针交叉。\n- C 只把 p 自己的 prev/next 置空，但前驱的 next 与后继的 prev 仍然指向 p，p 根本没有离开链表——遍历时还会遇到它，这是「逻辑上没删掉」。\n\nPython 不需要 `free`，删除引用后由 GC 回收；但「从链上摘除」与「释放对象」是两件事：只要还有邻居指向 p，p 就仍然存活。若在类里维护了其他索引（如字典缓存），也要同步删除，否则会阻止对象被回收。"
+      }
+    }
+  },
+  {
+    "id": "结-68",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "资源管理",
+      "生命周期",
+      "析构"
+    ],
+    "stem": "有下面的结构体与初始化函数：\n\n```c\n#include <stdlib.h>\n\nstruct Buffer {\n    char *data;\n    int len;\n};\n\nint buf_init(struct Buffer *b, int n)\n{\n    b->data = (char *)malloc(n);\n    if (b->data == NULL)\n        return -1;\n    b->len = n;\n    return 0;\n}\n```\n\n关于这套「初始化—使用—释放」的模式，下列说法正确的是（ ）。",
+    "analysis": "C 正确。C 没有构造函数/析构函数，也不存在自动资源回收：`buf_init` 申请的内存由程序员负责释放。所有使用完毕后要 `free(b->data); b->data = NULL;`，并且要保证每一条 return 路径（包括中途出错提前返回）都能释放，否则就是泄漏。\n\n- A 错：`struct Buffer` 没有析构语义，离开作用域只会回收结构体本身的自动存储空间，`data` 指向的堆内存不会自动释放。\n- B 错：进程退出时操作系统会回收整个地址空间，但这不能作为程序设计依据——长驻服务、库函数、循环中的泄漏会持续累积。\n- D 错：所有权通常交给调用者，`buf_init` 只负责申请，释放应发生在「不再使用」的地方；在 init 里 free 等于刚申请就释放。\n\n正确做法是配套提供 `buf_free`，并在文档中写清所有权；C++ 用析构函数 + 智能指针实现 RAII，Python 用引用计数/`with`，本质上都是把「释放」绑定到「生命周期结束」。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "结构体变量离开作用域时会自动调用析构函数释放 data，不需要手动 free",
+      "malloc 分配的内存会在程序结束时自动释放，所以可以不 free",
+      "C 没有析构函数，必须在所有使用完毕后手动调用 free(b->data) 并把指针置 NULL；提前 return 的路径也要保证释放",
+      "只要在 buf_init 里 malloc，就必须在 buf_init 里 free"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "stem": "有下面的 C++ 结构体：\n\n```cpp\nstruct Buffer {\n    char *data;\n    int len;\n\n    Buffer(int n) : data(new char[n]), len(n) {}\n    ~Buffer() { delete[] data; }\n};\n```\n\n关于这套资源管理方式，下列说法正确的是（ ）。",
+        "options": [
+          "析构函数会在对象生命周期结束时自动调用，`delete[] data` 完成释放；但编译器生成的拷贝构造/拷贝赋值只复制指针，会导致两次 delete，需要自己实现深拷贝并遵守三法则",
+          "C++ 的析构函数也需要手动调用，与 C 的 free 完全一样",
+          "只要写了析构函数，拷贝构造和拷贝赋值就会自动变成深拷贝",
+          "`new char[n]` 申请的内存必须用 `free` 释放"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。对象离开作用域、被 delete 或作为临时对象结束时，析构函数自动执行，`delete[] data` 释放数组；这就是 RAII 的核心——把资源释放绑定到对象生命周期，即使中途 return 或抛异常也能保证清理。\n\n但「有析构函数」不等于「拷贝安全」：编译器生成的拷贝构造/拷贝赋值只做逐成员复制，两个 Buffer 会持有同一个 data 指针，析构时 delete 两次，属于未定义行为。这就是三法则（析构、拷贝构造、拷贝赋值要么都不写，要么都写）的由来，C++11 起还有移动语义与五法则。\n\nB 错：析构由语言自动调用。C 错：拷贝仍是浅拷贝。D 错：`new[]` 必须配 `delete[]`，不能 `free`。\n\n更省心的写法是用 `std::vector<char>` 或 `std::string` 作为成员，让标准库负责资源管理。"
+      },
+      "python": {
+        "stem": "有下面的 Python 类：\n\n```python\nclass Buffer:\n    def __init__(self, n):\n        self.data = bytearray(n)\n```\n\n关于这块内存的释放时机，下列说法正确的是（ ）。",
+        "options": [
+          "必须显式调用 `b.free()`，否则内存不会释放",
+          "对象在最后一个引用消失后由引用计数（及循环 GC）回收，通常不需要手动释放；需要确定性清理时用 `with` 上下文管理器",
+          "Python 对象永远不会被回收",
+          "`del b` 会立即销毁对象，即使还有别的引用"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。`bytearray` 的缓冲区由 Python 对象管理，对象不可达后由 CPython 的引用计数回收（循环引用交给循环 GC），因此通常不需要手动释放。若资源需要「确定性关闭」（文件、socket、锁），应实现 `__enter__`/`__exit__` 并用 `with`，或使用 `contextlib.closing`。\n\n- A 错：Python 对象没有统一的 `free()`。\n- C 错：不可达对象会被回收。\n- D 错：`del` 只删除一个名字；其他引用仍让对象存活。\n\n`__del__` 不是 C 的析构函数：调用时机不保证，解释器退出时也可能不调用，因此不能把关键清理逻辑只放在 `__del__` 里。对照 C 版本：C 需要手动 `free` 且要覆盖所有返回路径；Python 自动回收但时机不确定，需要确定性时用 `with`。"
+      }
+    }
+  },
+  {
+    "id": "结-69",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "字符数组",
+      "赋值",
+      "strcpy"
+    ],
+    "stem": "有下面的定义：\n\n```c\n#include <string.h>\n\nstruct Stu {\n    int id;\n    char name[10];\n};\n\nstruct Stu a = {1, \"Tom\"}, b = {2, \"Jim\"};\n```\n\n要把 b 的姓名改成 a 的姓名（id 保持为 2），正确的语句是（ ）。",
+    "analysis": "B 正确。`name` 是 `char[10]` 数组成员，数组名不是可修改的左值，不能整体赋值；要把字符内容搬过去，必须用 `strcpy`（或 `memcpy`、逐字符循环），并且要保证目标空间足够、结果以 `'\\0'` 结尾。`strcpy(b.name, a.name)` 把 \"Tom\" 连同结束符复制到 b.name，b.id 保持 2。\n\n- A 错：数组不能赋值，编译错误。\n- C 错：同样是给数组赋值，编译错误；初始化列表里可以写字符串，但赋值语句不行。\n- D 错：类型不匹配，`b` 是结构体，`a.name` 是数组（退化为 `char *`）。\n\n如果确实想把整个结构体（含 id）一起复制，可以写 `b = a;`，结构体整体赋值是允许的，但那会把 id 也改成 1，不符合本题要求。需要更安全时用 `snprintf(b.name, sizeof b.name, \"%s\", a.name)`，可以防止目标缓冲区溢出。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "`b.name = a.name;`",
+      "`strcpy(b.name, a.name);`",
+      "`b.name = \"Tom\";`",
+      "`b = a.name;`"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "options": [
+          "`b.name = a.name;`",
+          "`strcpy(b.name, a.name);`",
+          "`b.name = \"Tom\";`",
+          "`b = a.name;`"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。在 C++ 中，`char name[10]` 同样不能整体赋值，需要 `std::strcpy`（来自 `<cstring>`）或 `std::copy`；`strcpy` 不检查目标容量，实际工程中更推荐 `std::snprintf`。\n\n如果成员改成 `std::string name;`，那么 A 就变成正确写法：`b.name = a.name;` 会调用 `std::string` 的拷贝赋值，按值复制字符内容，b.id 不受影响。`std::array<char, 10>` 则支持整体赋值（逐元素复制），但不会自动补 `'\\0'`，输出前要自己保证结束符。\n\nC 错：给数组赋字符串字面量在 C++ 中同样非法（初始化可以，赋值不行）。D 错：类型不匹配。若想连 id 一起复制，可写 `b = a;`，但本题要求 id 保持 2。",
+        "stem": "有下面的定义：\n\n```cpp\n#include <string.h>\n\nstruct Stu {\n    int id;\n    char name[10];\n};\n\nstruct Stu a = {1, \"Tom\"}, b = {2, \"Jim\"};\n```\n\n要把 b 的姓名改成 a 的姓名（id 保持为 2），正确的语句是（ ）。"
+      },
+      "python": {
+        "stem": "有下面的 Python 代码：\n\n```python\nclass Stu:\n    def __init__(self, id, name):\n        self.id = id\n        self.name = name\n\na = Stu(1, \"Tom\")\nb = Stu(2, \"Jim\")\n```\n\n要把 b 的姓名改成 a 的姓名，同时保持 b 的 id 为 2，正确的做法是（ ）。",
+        "options": [
+          "`b.name = a.name`：属性重新绑定到同一个字符串对象即可，id 不变",
+          "`strcpy(b.name, a.name)`",
+          "`b = a`，这样只改姓名",
+          "`b.name[:] = a.name`"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。Python 的字符串是不可变对象，`b.name = a.name` 只是让 b.name 这个属性绑定到 a.name 所指向的同一个字符串对象，id 保持不变。之后 a 或 b 的 name 再被重新赋值，也互不影响，因为每次赋值都是重新绑定，不会原地修改字符串。\n\n- B 错：Python 没有 `strcpy`，字符串也不可原地修改。\n- C 错：`b = a` 让两个名字指向同一个对象，b 原来的对象被丢弃，id 也变成了 1。\n- D 错：`b.name[:] = ...` 是给切片赋值，只对可变序列有意义，字符串不支持。\n\n对照 C：C 的 `char` 数组是可变存储，必须用 `strcpy` 把字符逐个搬过去；Python 的字符串不可变，直接重新绑定属性即可。理解「可变对象 vs 不可变对象」，就能判断什么时候需要「复制内容」，什么时候只需要「重新绑定名字」。"
+      }
+    }
+  },
+  {
+    "id": "结-70",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "typedef",
+      "宏",
+      "类型别名"
+    ],
+    "stem": "关于 `typedef struct Node Node;` 与 `#define Node struct Node` 的区别，下列说法正确的是（ ）。",
+    "analysis": "C 正确。`typedef` 是编译阶段的类型别名，遵循块作用域/文件作用域，编译器知道它是一个类型；`#define` 只是预处理阶段的文本替换，在编译之前就把所有 `Node` 三个字母换成 `struct Node`，不识别类型、不遵守作用域，也不会区分「类型名」和「变量名」。\n\n一个经典差异：\n\n```c\ntypedef char *String;\nconst String s;      /* char *const s：s 是常量指针 */\n```\n\n而\n\n```c\n#define String char *\nconst String s;      /* const char *s：指向常量的指针 */\n```\n\n宏把 `const` 加在了 `char` 上，含义完全不同，这就是「文本替换不识别类型」带来的坑。\n\n- A 错：作用域、类型检查、展开时机都不同。\n- B 错：宏没有任何类型检查。\n- D 错：typedef 可以给数组、函数指针等任意类型起别名，不限于结构体。\n\n现代做法：C 用 `typedef struct Node Node;`；C++ 用 `using Node = struct Node;`；Python 用 `NodePtr = Node`（运行时名字绑定，见 Python 版本）。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "两者完全等价，都只是给 `struct Node` 起别名",
+      "宏定义比 typedef 更安全，因为宏会做类型检查",
+      "typedef 由编译器处理，是类型别名，遵守作用域规则；宏只是预处理阶段的文本替换，不识别类型，可能误替换同名标识符，也无法正确处理某些声明",
+      "typedef 只能用于结构体，宏可以用于任何类型"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "stem": "在 C++ 中，关于 `using Node = struct Node;`、`typedef struct Node Node;` 与 `#define Node struct Node` 的区别，下列说法正确的是（ ）。",
+        "options": [
+          "`using` 与 `typedef` 都是编译期的类型别名，遵循作用域规则；宏是预处理阶段的文本替换，不识别类型",
+          "三者完全等价",
+          "`using` 是运行时绑定，宏是编译期替换",
+          "宏比 `using` 更安全，因为它有类型检查"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。`using Node = struct Node;` 是 C++11 引入的别名声明，与 `typedef` 语义相同：编译期处理、遵守作用域、参与类型检查；`using` 的语法更直观，并且可以写成别名模板（`template <class T> using Vec = std::vector<T>;`），typedef 做不到。\n\n`#define` 仍是预处理文本替换，在编译器看到代码之前就完成，不识别类型、不遵守作用域，容易误替换同名标识符，也无法出现在模板参数等需要类型语义的位置。\n\nB 错：三者的处理阶段和语义都不同。C 错：`using` 是编译期的。D 错：宏没有类型检查。\n\n实践建议：C++ 中优先用 `using`；只有在需要条件编译、字符串化、拼接等预处理能力时才用宏。"
+      },
+      "python": {
+        "stem": "在 Python 中，关于 `NodePtr = Node` 与 C 的 `typedef struct Node Node;` / `#define Node struct Node` 的对比，下列说法正确的是（ ）。",
+        "options": [
+          "`NodePtr = Node` 与 `#define` 一样是文本替换",
+          "`NodePtr = Node` 只是把同一个类对象再绑定一个模块级名字，运行时可用、可重新赋值；它不是新类型，也不参与静态类型检查（除非另写类型别名声明）",
+          "`NodePtr = Node` 会创建一个新类",
+          "`NodePtr = Node` 会复制一份类定义"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。Python 的赋值语句在运行时执行，`NodePtr = Node` 让模块级名字 NodePtr 指向同一个类对象，`NodePtr is Node` 为 True；它既不会创建新类，也不会复制类定义。之后 `NodePtr = 123` 也是合法的重新绑定——名字只是引用。\n\n这与 C 的 typedef 有相似之处：都不创建新类型；但区别很大：typedef 在编译期由编译器处理并参与类型检查，Python 的别名是运行时的名字绑定，类型检查要靠 mypy/pyright 这类工具。Python 3.12 的 `type NodePtr = Node` 语句会创建 `TypeAliasType`，供静态检查器使用，但运行时仍指向同一个类对象。\n\nA 错：Python 没有预处理器，不是文本替换。C、D 错：没有任何复制或新类产生。\n\n如果要限制别名的用途，可以在类型注解中显式声明，例如 `NodePtr: type[Node] = Node`。"
+      }
+    }
+  },
+  {
+    "id": "结-71",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "相等比较",
+      "运算符",
+      "内存比较"
+    ],
+    "stem": "有下面的定义：\n\n```c\nstruct Point { int x, y; };\nstruct Point a = {1, 2}, b = {1, 2};\n```\n\n要判断 a 与 b 是否相等，下列说法正确的是（ ）。",
+    "analysis": "C 正确。C 的 `==` 只能用于算术类型、指针等，结构体（以及数组）不能直接比较；`a == b` 是编译错误。要判断两个结构体是否「逻辑相等」，必须逐成员比较：`a.x == b.x && a.y == b.y`。\n\n- A 错：C 不会为结构体自动生成比较运算符。\n- B 错：`memcmp` 按字节比较，对含填充字节、指针成员或数组成员的结构体并不可靠——填充字节的值未定义，两个逻辑相等的对象可能因为填充不同而比较结果不等；指针成员比较的是地址而不是所指内容。\n- D 错：`a = b` 是赋值，赋值表达式的值是 b，非零即真，语义完全不对。\n\n如果结构体成员很多，可以写一个 `point_equal` 函数，或在 C++ 中重载 `operator==`；关键是明确「相等」的语义（是所有字段都相等，还是只比较关键字段）。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "`if (a == b)` 可以直接比较，结果为真",
+      "只能用 `memcmp(&a, &b, sizeof a)`，对任何结构体都可靠",
+      "`a == b` 编译错误：C 没有为结构体自动生成 `==`，应逐成员比较 `a.x == b.x && a.y == b.y`",
+      "`if (a = b)` 就是判断相等"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "options": [
+          "C++ 会自动为所有结构体生成 `==`，直接 `a == b` 即可",
+          "C++ 默认不生成 `==`（C++20 起可写 `bool operator==(const Point &) const = default;`），需要自己定义或逐成员比较",
+          "C++ 中 `a == b` 比较的是两个对象的地址",
+          "只能用 `memcmp`"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。C++ 不会自动为类/结构体生成 `==`；C++20 之前必须自己写 `operator==` 或逐成员比较，C++20 起可以写 `bool operator==(const Point &) const = default;`，编译器会按成员依次比较（按声明顺序），并可由它派生 `!=`。\n\nA 错：默认不生成。C 错：`a == b` 若没有定义运算符，是编译错误，不会退化成比较地址。D 错：`memcmp` 对含填充、指针、`std::string` 成员的类型不可靠，`std::string` 甚至不能按字节比较语义。\n\nC++20 的 `= default` 比较只按成员值，不比较填充，因此比 `memcmp` 可靠得多；但要注意浮点成员的 `NaN` 语义，以及指针成员仍然比较地址。跨语言对照：Python 的 `@dataclass` 默认生成按字段比较的 `__eq__`，与 C++20 的 `= default` 思路一致。",
+        "stem": "有下面的定义：\n\n```cpp\nstruct Point { int x, y; };\nstruct Point a = {1, 2}, b = {1, 2};\n```\n\n要判断 a 与 b 是否相等，下列说法正确的是（ ）。"
+      },
+      "python": {
+        "stem": "有下面的 Python 代码：\n\n```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass Point:\n    x: int\n    y: int\n\na = Point(1, 2)\nb = Point(1, 2)\nprint(a == b)\n```\n\n输出是（ ）。",
+        "options": [
+          "`True`：dataclass 默认按字段值生成 `__eq__`",
+          "`False`：默认比较对象身份",
+          "抛出 `TypeError`：dataclass 不支持 `==`",
+          "`True`，因为两个对象的地址相同"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。`@dataclass` 默认 `eq=True`，会生成 `__eq__`，按字段元组 `(self.x, self.y)` 与对方比较；a、b 字段值相同，因此输出 `True`。\n\n- B 错：那是普通类的默认行为（继承 `object.__eq__`，等价于 `is` 比较）；dataclass 改变了它。\n- C 错：dataclass 明确支持 `==`。\n- D 错：两个对象是分别构造的，地址不同（`a is b` 为 False），相等是因为值相同。\n\n补充：`@dataclass(eq=False)` 会关闭自动生成，恢复按身份比较；`@dataclass(order=True)` 还会生成 `<`、`<=` 等；比较只使用声明为字段的属性，`ClassVar` 和未声明的普通类属性不参与。\n\n对照 C：C 的结构体没有自动 `==`，必须逐成员写；Python 的 dataclass 把这件事自动化了，但「比较哪些字段」仍由字段声明决定。"
+      }
+    }
+  },
+  {
+    "id": "结-72",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "位域",
+      "内存布局",
+      "位运算"
+    ],
+    "stem": "有下面的位域结构体：\n\n```c\nstruct Flags {\n    unsigned int a : 1;\n    unsigned int b : 2;\n    unsigned int c : 3;\n};\n```\n\n在 `unsigned int` 占 4 字节的常见环境中，关于该结构体，下列说法正确的是（ ）。",
+    "analysis": "B 正确。位域（bit-field）把多个小整数打包进同一个存储单元：a 占 1 位、b 占 2 位、c 占 3 位，共 6 位，都可以放进一个 32 位的 `unsigned int` 单元，所以整个结构体通常是 4 字节（具体布局由实现定义，但 sizeof 一般就是 4）。\n\n位域的价值是节省空间，例如把协议头、标志位压缩到几个字节里。使用时要注意：\n\n- 取值范围：a 只能表示 0~1，b 为 0~3，c 为 0~7；赋超出范围的值会被截断（实现定义），例如 `f.b = 7` 实际存进去的是 3。\n- 不能对位域取地址：`&f.a` 非法，因为位域没有独立地址。\n- 布局（谁在高位、跨字节如何排列）依赖编译器和字节序，不适合直接用于跨平台二进制协议。\n\nA 把「位数」当成了「字节数」；C 忽略了位域共享存储单元；D 错，位域可以正常赋值。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "`sizeof(struct Flags)` 是 6，因为三个位域一共 1 + 2 + 3 = 6 位",
+      "`sizeof(struct Flags)` 通常是 4：三个位域共 6 位，装在同一个 `unsigned int` 存储单元里，整体补齐到 4 字节",
+      "每个位域各占 4 字节，`sizeof` 是 12",
+      "位域成员不能参与赋值，只能读取"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "options": [
+          "`sizeof(Flags)` 是 6，因为 1 + 2 + 3 = 6 位",
+          "每个位域各占 4 字节，`sizeof` 是 12",
+          "位域成员不能参与赋值，只能读取",
+          "`sizeof(Flags)` 通常是 4：三个位域共 6 位，共享一个 `unsigned int` 存储单元，整体补齐到 4 字节"
+        ],
+        "answer": 3,
+        "analysis": "D 正确，C++ 的位域规则与 C 基本相同：三个位域共 6 位，装进同一个 `unsigned int` 单元，`sizeof` 通常是 4。布局（位的顺序、是否跨单元）由实现定义。\n\nC++ 中还可以用 `std::bitset` 或位运算封装来获得更可移植、更易调试的位集合；位域的优势是与 C 结构体布局兼容、写法紧凑，缺点是不可移植、不能取地址、赋值截断规则不直观。\n\nA 把位数当字节；B 误以为每个位域独占一个 int；C 错，位域可以赋值。\n\n如果需要「一定按某个二进制格式」布局，应显式用 `uint8_t`/`uint16_t` 加位运算读写，而不是依赖位域的实现定义行为。",
+        "stem": "有下面的位域结构体：\n\n```cpp\nstruct Flags {\n    unsigned int a : 1;\n    unsigned int b : 2;\n    unsigned int c : 3;\n};\n```\n\n在 `unsigned int` 占 4 字节的常见环境中，关于该结构体，下列说法正确的是（ ）。"
+      },
+      "python": {
+        "stem": "Python 没有位域，通常用一个整数打包多个小字段。假设按下面的方式打包：\n\n```python\nflags = 0\nflags |= 1 << 0      # a 占第 0 位\nflags |= 2 << 1      # b 占第 1~2 位\nflags |= 5 << 3      # c 占第 3~5 位\n```\n\n要取出 c 的值，正确的表达式是（ ）。",
+        "options": [
+          "`(flags >> 3) & 0b111`",
+          "`flags & 3`",
+          "`flags >> 5`",
+          "`flags | 0b111`"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。c 从第 3 位开始、占 3 位：先用 `flags >> 3` 把 c 移到最低位，再用 `& 0b111`（即 `& 7`）只保留低 3 位，得到 c 的值 5。这种「移位 + 掩码」的写法就是手工实现的位域读取，与 C 位域的语义对应。\n\n- B 取的是最低 2 位（a 和 b 的一部分），与 c 无关。\n- C 只右移、不掩码，会把 c 以上的位（这里没有）也带进来；如果还有别的字段，就会取到多余的高位。\n- D 是按位或，不是提取。\n\n写入时同理：先清空目标位段 `flags &= ~(0b111 << 3)`，再 `flags |= (value & 0b111) << 3`。这种写法虽然比 C 位域啰嗦，但布局完全由代码控制，跨语言、跨平台都可复现。"
+      }
+    }
+  },
+  {
+    "id": "结-73",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "结构体数组",
+      "间接排序",
+      "指针数组"
+    ],
+    "stem": "有下面的定义：\n\n```c\nstruct Student {\n    char name[20];\n    int score;\n};\n\nstruct Student a[100];\nstruct Student *p[100];\n```\n\n要把 100 条记录按成绩排序，且记录较大、排序过程中要频繁交换，下列说法正确的是（ ）。",
+    "analysis": "C 正确。这叫「间接排序」（index/pointer sort）：先让 `p[i] = &a[i]`，排序时比较 `p[i]->score`，交换的是 p 数组中的指针。每次交换只搬 8 个字节（64 位），而不是复制 `sizeof(struct Student)` 那么大的记录；原数组 a 保持不动，输出时按 p 的顺序访问即可。\n\n- A 错：指针数组当然可以排序，而且正是大记录排序的常用技巧。\n- B 错：排序改变的正是 p[i] 的指向顺序，所以按 p 输出就是排好序的顺序。\n- D 错：原数组顺序确实不变，但这不影响结果——排序结果体现在指针数组里。\n\n间接排序的代价是多一个指针数组、多一次间接访问；优点是交换成本低、可以同时保留原顺序（例如需要稳定输出或恢复原始次序时）。C++ 的 `std::sort` 对 `std::vector<Student *>` 排序、Python 的 `sorted(range(n), key=...)` 都是同一思想。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "只能交换结构体本身，指针数组无法参与排序",
+      "指针数组排序后，`p[i]` 仍指向原来的 `a[i]`，顺序不会变",
+      "可以先用指针数组 p 指向各元素，排序时只交换 p 中的指针；每次交换的代价是交换两个指针，而不是复制整个结构体，最后按 p 的顺序输出即可",
+      "交换指针会改变原数组的顺序，因此结果一定错误"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "options": [
+          "`std::sort` 可以作用于 `std::vector<Student *>`，比较器按 `p->score` 比较；排序只交换指针，不搬移 Student 对象",
+          "只能对 `std::vector<Student>` 排序，不能对指针排序",
+          "`std::sort` 必须复制元素才能比较",
+          "指针排序后原数组顺序也会改变"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。`std::sort(v.begin(), v.end(), [](Student *x, Student *y) { return x->score < y->score; });` 只交换 vector 中的指针，`Student` 对象本身不移动；比较器通过指针读取 score。\n\n- B 错：指针完全可以排序。\n- C 错：`std::sort` 通过比较器比较，交换的是元素（这里是指针），不会复制 Student。\n- D 错：原数组顺序不变，变的是指针数组的顺序。\n\n需要稳定排序时用 `std::stable_sort`；需要保留原顺序又想要排名时，可以排序下标 `std::vector<size_t> idx(n); std::iota(...)`，再按 `a[idx[i]].score` 比较。C++20 还可以用 `std::ranges::sort` 配合投影（projection），写法更简洁。\n\n注意：如果记录里含有需要维护的自引用指针，间接排序尤其有价值，因为对象地址始终不变。",
+        "stem": "有下面的定义：\n\n```cpp\nstruct Student {\n    char name[20];\n    int score;\n};\n\nstruct Student a[100];\nstruct Student *p[100];\n```\n\n要把 100 条记录按成绩排序，且记录较大、排序过程中要频繁交换，下列说法正确的是（ ）。"
+      },
+      "python": {
+        "stem": "有下面的 Python 数据：\n\n```python\nstudents = [\n    {\"name\": \"A\", \"score\": 90},\n    {\"name\": \"B\", \"score\": 70},\n    {\"name\": \"C\", \"score\": 80},\n]\n```\n\n要按照成绩排序，同时不改变 `students` 本身的顺序，下列做法正确的是（ ）。",
+        "options": [
+          "`sorted(range(len(students)), key=lambda i: students[i][\"score\"])` 得到按分数排好的下标，原记录不动，输出时用下标访问",
+          "只能调用 `students.sort()`，否则无法排序",
+          "下标排序会把 `students` 原地重排",
+          "`sorted` 一定会修改原列表"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。`sorted` 返回新列表，`range(len(students))` 产生下标，`key` 按每个下标对应的分数排序，得到的是「排好序的下标序列」，`students` 本身完全不动。输出时写 `for i in order: print(students[i][\"name\"])` 即可。\n\n- B 错：`students.sort()` 会原地排序，而且它只能按记录本身排序，不能直接得到「下标顺序」。\n- C 错：下标排序只重排下标列表，不碰 students。\n- D 错：`sorted` 返回新对象，`list.sort()` 才是原地排序。\n\n这与 C 的指针数组间接排序是同一个思想：排序「引用/下标」而不是搬动大对象。如果记录是 dataclass 实例，key 写成 `lambda i: students[i].score`；也可以直接用 `sorted(students, key=lambda s: s[\"score\"])` 得到记录的新顺序，但那会复制记录列表（浅拷贝，记录本身仍共享）。"
+      }
+    }
+  },
+  {
+    "id": "结-74",
+    "module": "结构体",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "函数指针成员",
+      "成员函数",
+      "绑定"
+    ],
+    "stem": "有下面的代码：\n\n```c\nstruct Counter {\n    int value;\n    void (*inc)(struct Counter *);\n};\n\nvoid inc_impl(struct Counter *c)\n{\n    c->value++;\n}\n\nint main(void)\n{\n    struct Counter c = {0, inc_impl};\n\n    c.inc(&c);\n    c.inc(&c);\n    return 0;\n}\n```\n\n关于在 C 中给结构体「绑定」操作，下列说法正确的是（ ）。",
+    "analysis": "C 正确。C 的结构体只能聚合数据，不能定义成员函数。想在「记录」上绑定行为，常见做法有两种：一是像本题这样放一个函数指针成员，初始化时赋值为 `inc_impl`，调用时显式传 `&c`；二是干脆写普通函数 `void counter_inc(struct Counter *c)`，把结构体指针作为第一个参数。\n\n- A 错：C 没有成员函数。\n- B 错：C 的函数指针调用不会自动绑定对象，`c.inc()` 缺少参数，而且函数指针类型要求传入 `struct Counter *`；必须写 `c.inc(&c)`。\n- D 错：结构体成员可以是指针、数组、其他结构体，函数指针也可以。\n\n这种「函数指针 + 显式上下文」的模式就是 C 里模拟面向对象的方式，Linux 内核的 `file_operations`、`struct proto_ops` 都是这个思路。代价是每个操作都要手动传 `self`，且没有编译期的「方法属于哪个类型」检查；C++ 的成员函数和 Python 的绑定方法把这一步自动化了。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "C 结构体可以像类一样直接定义成员函数",
+      "函数指针成员在调用时会自动收到结构体本身的地址，因此调用 `c.inc()` 即可",
+      "C 结构体不能定义成员函数，但可以把函数指针作为成员（初始化时赋值），或写一个接受结构体指针的普通函数；调用时要显式把结构体地址传进去",
+      "结构体成员只能是基本数据类型，不能包含函数指针"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "stem": "有下面的 C++ 代码：\n\n```cpp\nstruct Counter {\n    int value = 0;\n    void inc() { ++value; }\n};\n```\n\n关于成员函数的调用，下列说法正确的是（ ）。",
+        "options": [
+          "成员函数有隐含的 `this` 指针，`c.inc()` 会自动把 `&c` 作为 `this` 传入；非静态成员函数不能脱离对象单独调用",
+          "成员函数没有 this，必须手动把结构体地址传进去",
+          "`struct` 不能有成员函数，只有 `class` 可以",
+          "静态成员函数也能直接访问非静态成员"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。非静态成员函数都有一个隐含的 `this` 指针，`c.inc()` 等价于 `Counter::inc(&c)`（只是语法上更自然）；函数体内访问 `value` 实际上就是 `this->value`。因此成员函数必须通过对象（或指针、引用）调用，不能像自由函数那样单独写 `inc()`。\n\n- B 错：`this` 是语言机制，不需要手动传。\n- C 错：`struct` 与 `class` 都能有成员函数，唯一区别是默认访问权限/继承方式。\n- D 错：静态成员函数没有 `this`，不能直接访问非静态成员，只能访问静态成员或通过参数传入对象。\n\n对照 C 版本：C 用「函数指针成员 + 显式传 `&c`」模拟，C++ 把 `this` 隐式化，代码更简洁，也让编译器能做重载解析、访问控制等检查。"
+      },
+      "python": {
+        "stem": "有下面的 Python 代码：\n\n```python\nclass Counter:\n    def __init__(self):\n        self.value = 0\n\n    def inc(self):\n        self.value += 1\n\nc = Counter()\nc.inc()\n```\n\n关于实例方法的调用，下列说法正确的是（ ）。",
+        "options": [
+          "`obj.method()` 调用时，解释器会自动把 obj 作为第一个参数传给方法（通常命名为 self），因此 `obj.method()` 与 `Class.method(obj)` 等价",
+          "self 是关键字，必须命名为 self 才能工作",
+          "必须手动把 obj 作为参数传入才能调用",
+          "方法和普通函数完全一样，不会自动绑定"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。通过实例访问方法时，Python 会返回一个「绑定方法」，把实例作为第一个参数预先绑定好；`c.inc()` 等价于 `Counter.inc(c)`。这也解释了为什么实例方法的第一个形参（通常叫 self）能拿到对象本身。\n\n- B 错：self 只是约定俗成的名字，换成 this 也能运行（但不推荐，会误导读者）。\n- C 错：`c.inc()` 会自动传入 c，不需要手动传；`Counter.inc(c)` 才是显式写法。\n- D 错：普通函数作为类属性时，会通过描述符协议变成方法，自动绑定实例；而 `staticmethod` 装饰的函数不会绑定实例。\n\n对照 C 的「函数指针成员 + 显式 `&c`」：Python 把「传 self」自动化了，C++ 用隐含的 `this`，三者都在解决同一个问题——让操作知道它作用于哪个对象。Python 的灵活性更高（可以动态绑定、替换方法），代价是缺少编译期检查。"
+      }
+    }
+  },
+  {
+    "id": "枚-17",
+    "module": "枚举",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "枚举本质",
+      "类型转换",
+      "取值范围"
+    ],
+    "stem": "有下面的程序：\n\n```c\n#include <stdio.h>\n\nenum Cmd { STOP = 0, RUN = 1, PAUSE = 2 };\n\nint main(void)\n{\n    enum Cmd c = 99;\n\n    printf(\"%d\\n\", c);\n    return 0;\n}\n```\n\n关于这段程序，下列说法正确的是（ ）。",
+    "analysis": "B 正确。C 的枚举类型与整型兼容：枚举变量本质上是某种整型（通常与 `int` 同宽），标准不要求编译器检查赋值是否落在枚举常量范围内，所以 `enum Cmd c = 99;` 合法（有的编译器会给警告），输出 99。\n\n但「合法」不等于「有意义」：99 不对应任何枚举成员，若后面写 `switch (c)` 且没有 `default`，会直接跳过所有分支，容易埋下逻辑错误。实践上应当在赋值前校验，或在 `switch` 中加 `default` 兜底。\n\n- A 错：C 不做这种范围检查；C++ 的普通 enum 则不允许 int 隐式转换，见 C++ 版本。\n- C 错：枚举变量不会自动截断到最近的枚举值，它保存的就是 99。\n- D 错：读取一个整型值不会崩溃。\n\n对照 C++：`enum Cmd c = 99;` 在 C++ 中编译错误，必须 `static_cast<enum Cmd>(99)`；`enum class` 的约束更强。Python 的 `Enum` 则通过 `Cmd(99)` 抛 `ValueError` 拒绝非法值。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "编译错误：枚举变量只能取枚举常量列出的值",
+      "合法：C 中枚举变量本质上是整型，可以保存枚举常量之外的值，输出 99；但用它做分支判断时要自己处理这种未定义值",
+      "合法，但输出 0，因为越界值会被截断到最近的枚举常量",
+      "运行时一定崩溃"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "stem": "有下面的程序：\n\n```cpp\n#include <cstdio>\n\nenum Cmd { STOP = 0, RUN = 1, PAUSE = 2 };\n\nint main()\n{\n    Cmd c = 99;\n\n    std::printf(\"%d\\n\", c);\n    return 0;\n}\n```\n\n关于这段程序，下列说法正确的是（ ）。",
+        "options": [
+          "编译错误：C++ 的普通 enum 也不允许把 int 隐式转换成枚举类型，需要 `static_cast<Cmd>(99)`",
+          "合法，输出 99",
+          "合法，但输出 0",
+          "合法，但值是随机的"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。C++ 比 C 严格：int 不能隐式转换成枚举类型，`Cmd c = 99;` 是编译错误，必须显式写 `Cmd c = static_cast<Cmd>(99);`。\n\n即使用 `static_cast` 转换，99 仍然不是任何枚举成员，用它做 `switch` 时同样没有匹配分支。C++11 的 `enum class` 进一步提供了作用域和强类型，但也不阻止用 `static_cast` 构造越界值——类型系统能防「隐式」错误，防不了「显式」的故意越界，所以逻辑校验仍要自己写。\n\nB、C、D 都误以为这段代码能编译。对照 C：同样的写法在 C 中只给警告，这是两种语言类型检查强度的一个典型差异。"
+      },
+      "python": {
+        "stem": "有下面的 Python 代码：\n\n```python\nfrom enum import Enum\n\nclass Cmd(Enum):\n    STOP = 0\n    RUN = 1\n    PAUSE = 2\n\nprint(Cmd(99))\n```\n\n运行结果是（ ）。",
+        "options": [
+          "打印一个值为 99 的新成员",
+          "抛出 `ValueError`：99 不是已定义的成员值；Enum 成员在类定义时固定，不能在运行时扩展",
+          "打印 `Cmd.STOP`",
+          "打印 `None`"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。`Cmd(99)` 是按「值」查找成员：Enum 会遍历已定义的成员，找不到值为 99 的成员就抛 `ValueError`。Enum 的成员集合在类定义时确定，不能在运行时通过 `Cmd(99)` 动态新增；要新增只能修改类定义（不推荐）。\n\n- A 错：Enum 不是「按值自动建成员」的容器；那是 `collections.defaultdict` 之类的行为。\n- C 错：不会回退到 STOP，查找是精确匹配。\n- D 错：找不到时抛异常，不是返回 None。\n\n若确实需要「允许任意整数」的枚举，可以用 `IntEnum`（成员可与 int 比较，但同样不能凭空构造），或干脆用普通常量。对照 C：C 允许枚举变量保存 99（见 C 版本），Python 的 Enum 在构造时就拒绝，安全性更高。"
+      }
+    }
+  },
+  {
+    "id": "枚-18",
+    "module": "枚举",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "常量表达式",
+      "数组长度",
+      "case标签"
+    ],
+    "stem": "有下面的代码：\n\n```c\nenum { MAXN = 100 };\nint a[MAXN];\n\nenum Color { RED, GREEN, BLUE };\n\nint main(void)\n{\n    switch (1) {\n    case RED:\n        break;\n    }\n    return 0;\n}\n```\n\n关于 `int a[MAXN];` 与 `case RED:`，下列说法正确的是（ ）。",
+    "analysis": "B 正确。枚举常量是「整型常量表达式」（integer constant expression），值在编译期确定：`MAXN` 就是 100，所以 `int a[MAXN];` 是普通的定长数组，`case RED:` 也合法（RED 为 0，是常量）。\n\n- A 错：`MAXN` 是枚举常量，不是变量，`a` 不是变长数组。\n- C 错：在 C 中，`const int MAXN = 100;` 声明的是「只读变量」而不是常量表达式，`int a[MAXN];` 会成为变长数组（VLA），不能用于文件作用域，也不能作 `case` 标签。C++ 则不同，已初始化的 `const int` 是常量表达式。\n- D 错：case 标签要求整型常量表达式，枚举常量完全符合，不必是字面量。\n\n补充：枚举常量还可用于 `#if` 之外的编译期计算、位域宽度、`static_assert`（C11）等场景。把「编译期常量」与「运行期只读变量」区分清楚，是掌握 C 常量表达式的关键。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "`MAXN` 是变量，`int a[MAXN];` 在 C 中是变长数组，不是常量",
+      "枚举常量是整型常量表达式，可用于数组长度、case 标签、位域宽度等要求常量表达式的地方",
+      "只有 `const int MAXN = 100;` 才能用于数组长度",
+      "`case RED:` 非法，case 标签必须是字面量"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "options": [
+          "只有字面量可以作数组长度",
+          "只有 enum 常量可以，`const int` 不行",
+          "枚举常量和已初始化的 `const int` 都是常量表达式，可用于数组长度；`constexpr` 让意图更明确",
+          "枚举常量和 const int 都不能用于数组长度"
+        ],
+        "answer": 2,
+        "analysis": "C 正确。C++ 中，用常量表达式初始化的 `const int` 是整型常量表达式，可以作为数组长度；枚举常量同样可以。C++11 起更推荐写 `constexpr int MAXN = 100;`，语义最清晰，也能用于模板参数、`static_assert` 等场景。\n\n```cpp\nconstexpr int MAXN = 100;\nint a[MAXN];              // OK\nenum { N = 10 };\nint b[N];                 // OK\n```\n\nA、B、D 都过于绝对。注意 C++ 标准不支持变长数组（VLA 是编译器扩展），所以「用变量作数组长度」在标准 C++ 中不合法，这正是 `const`/`constexpr` 常量重要的原因。\n\n对照 C：C 中 `const int` 不是常量表达式，数组长度会退化成 VLA；同样的代码在 C 和 C++ 中语义不同，这是两种语言容易混淆的细节。",
+        "stem": "有下面的代码：\n\n```cpp\nenum { MAXN = 100 };\nint a[MAXN];\n\nenum Color { RED, GREEN, BLUE };\n\nint main(void)\n{\n    switch (1) {\n    case RED:\n        break;\n    }\n    return 0;\n}\n```\n\n关于 `int a[MAXN];` 与 `case RED:`，下列说法正确的是（ ）。"
+      },
+      "python": {
+        "stem": "有下面的 Python 代码：\n\n```python\nfrom enum import Enum\n\nclass Size(Enum):\n    MAXN = 100\n\na = [0] * Size.MAXN.value\nprint(len(a))\n```\n\n运行结果是（ ）。",
+        "options": [
+          "输出 100：`Size.MAXN.value` 是 int 100，列表长度在运行时确定",
+          "报错：枚举成员不能参与乘法",
+          "需要先写 `int(Size.MAXN)` 才能相乘，否则报错",
+          "输出 0，因为枚举值不能用作长度"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。`Size.MAXN.value` 取出成员的值 100（int），`[0] * 100` 创建一个长度为 100 的列表，输出 100。Python 没有「编译期常量」的概念，列表长度在运行时求值，因此枚举值当然可以参与运算。\n\n- B 错：枚举成员本身不直接支持乘法（`Size.MAXN * 2` 会报错），但取 `.value` 后就是普通 int，完全可以。\n- C 错：`int(Size.MAXN)` 对普通 Enum 也会报错（`IntEnum` 才行）；正确写法是 `.value`。\n- D 错：长度由 `[0] * 100` 决定，是 100。\n\n与 C 的对照很有意思：C 的枚举常量在编译期就能确定数组大小；Python 的列表长度在运行时才确定，枚举只是提供有名字的整数常量。若需要「像 C 一样」的强类型整数，可以用 `IntEnum`，它可以直接当 int 用，但也就失去了普通 Enum 的类型隔离。"
+      }
+    }
+  },
+  {
+    "id": "枚-19",
+    "module": "枚举",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "作用域",
+      "命名冲突",
+      "作用域枚举"
+    ],
+    "stem": "某项目两个模块都要表示状态 `IDLE`、`BUSY`，而 C 的枚举常量与普通标识符共享同一作用域。下列做法中最合适的是（ ）。",
+    "analysis": "B 正确。C 的枚举常量是普通标识符，与变量、函数名共享同一命名空间：同一作用域内不能出现两个 `IDLE`，即使它们属于不同的 `enum` 也不行（见枚-09）。因此 C 里常见的做法是加模块前缀（`NET_IDLE`、`DISK_IDLE`），或者把两套状态合并到一个枚举里并取不冲突的名字。\n\n- A 错：编译器不会按枚举类型区分同名常量，重复定义直接报错。\n- C 错：用宏再 `#undef` 只是把冲突推迟到预处理阶段，且宏会污染后续代码、影响所有同名标识符，比枚举更不安全。\n- D 错：定义在函数内的枚举常量只有块作用域，离开函数就不可见，无法在多个函数间共享。\n\n对照其他语言：C++11 的 `enum class` 把成员限定在枚举作用域内（`NetState::IDLE`），从根本上解决重名；Python 的 `Enum` 成员位于类命名空间内，`NetState.IDLE` 与 `DiskState.IDLE` 天然不冲突。C 没有这两个机制，所以「加前缀」是最朴素也最可靠的办法。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "两个模块各自写 `enum { IDLE, BUSY };`，编译器会按枚举类型自动区分",
+      "给常量加模块前缀，如 `NET_IDLE`、`DISK_IDLE`，或把两套状态合并到一个枚举中；C 没有 `enum class` 那样的作用域",
+      "用 `#define IDLE 0` 再 `#undef` 切换",
+      "把枚举定义在函数内部就能在多个函数间共享"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "stem": "某项目两个模块都要表示状态 `IDLE`、`BUSY`。在 C++11 及以后，最合适的做法是（ ）。",
+        "options": [
+          "用 `enum class NetState { IDLE, BUSY };` 和 `enum class DiskState { IDLE, BUSY };`：成员名限定在枚举作用域内，`NetState::IDLE` 与 `DiskState::IDLE` 不冲突，且不会隐式转成 int",
+          "用普通 `enum` 就能实现作用域隔离",
+          "必须给常量加前缀，C++ 没有作用域枚举",
+          "`enum class` 的成员可以隐式转换成 int，所以更危险"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。`enum class`（scoped enumeration）把枚举成员放进枚举类型的作用域：使用时写 `NetState::IDLE`，两个模块的同名成员互不冲突；同时它不会隐式转换成 int，比较和赋值都需要显式转换，类型更安全。\n\n- B 错：普通 `enum`（unscoped）的成员仍泄漏到外层作用域，两个 `IDLE` 依然冲突。\n- C 错：C++11 正是为此引入了 `enum class`。\n- D 错：`enum class` 恰恰**禁止**隐式转换，需要 `static_cast<int>(NetState::IDLE)` 才能取出整数值。\n\n普通 `enum` 也并非一无是处：它可以直接当 int 用，适合与 C 接口、位掩码配合；`enum class` 更适合纯状态机、配置项等需要类型隔离的场景。若要做位标志，C++11 还可以为 `enum class` 重载 `operator|`、`operator&`。"
+      },
+      "python": {
+        "stem": "有下面的 Python 代码：\n\n```python\nfrom enum import Enum\n\nclass NetState(Enum):\n    IDLE = 0\n    BUSY = 1\n\nclass DiskState(Enum):\n    IDLE = 0\n    BUSY = 1\n\nprint(NetState.IDLE == DiskState.IDLE)\n```\n\n输出是（ ）。",
+        "options": [
+          "`False`：`NetState.IDLE` 与 `DiskState.IDLE` 是两个不同枚举类的成员，类命名空间隔离，成员之间不相等",
+          "`True`：两个成员的值都是 0",
+          "抛出 `NameError`：两个 IDLE 重名冲突",
+          "`True`：IDLE 是全局常量"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。Python 的 Enum 成员定义在各自的类命名空间里：`NetState.IDLE` 与 `DiskState.IDLE` 是两个不同类的成员，即使值都为 0，`==` 也为 False（Enum 的相等默认按身份判断）。只有 `IntEnum` 才按整数值比较，那时 `NetState.IDLE == 0` 为 True，但两个不同 IntEnum 类之间仍取决于具体实现——普通 Enum 不会混淆。\n\n- B、D 错：值相同不代表成员相等；Enum 不是「全局整数常量」。\n- C 错：两个 IDLE 分属不同类，不冲突；这也是 Python 相对于 C 的一大优势。\n\n若需要按值互相转换，可以显式比较 `.value` 或建立映射；`@unique` 装饰器只能保证同一枚举类内值不重复，不跨类。对照 C 的「必须加前缀」：Python 用类命名空间天然解决了作用域问题。"
+      }
+    }
+  },
+  {
+    "id": "枚-20",
+    "module": "枚举",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "位标志",
+      "按位运算",
+      "权限"
+    ],
+    "stem": "有下面的枚举与变量：\n\n```c\nenum Perm {\n    NONE  = 0,\n    READ  = 1,\n    WRITE = 2,\n    EXEC  = 4,\n    ALL   = READ | WRITE | EXEC\n};\n\nint p = READ | EXEC;\n```\n\n要判断 p 是否**同时**拥有 READ、WRITE、EXEC 三种权限，正确且规范的条件是（ ）。",
+    "analysis": "B 正确。`ALL = READ | WRITE | EXEC` 是整型常量表达式（值为 7），可以作为枚举常量的初始化器，这是位标志枚举的常见写法。判断「是否拥有全部权限」必须用 `(p & ALL) == ALL`：先按位与取出 p 中属于 ALL 的那些位，再要求结果恰好等于 ALL，即每一位都存在。\n\n- A 看似可行：当 p 恰好等于 7 时确实为真；但如果 p 还带有将来新增的权限位（比如 8），`p == ALL` 就会误判为假。它要求「权限集合完全相等」，而不是「包含全部」。\n- C 错：`p & ALL` 只要 p 含有任意一位就非 0。本题 p = READ | EXEC = 5，`5 & 7` 非 0，会把「缺少 WRITE」误判成「拥有全部」。\n- D 错：`p | ALL` 恒为非 0（至少 ALL 的位被置上），与「检查」无关。\n\n补充：`p & ALL` 的结果是 int，赋回枚举类型时最好显式转换；`NONE = 0` 常用来表示「无权限」。这类位标志必须保证每个常量只占一位（1、2、4、8…），否则组合与检测都会出错。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "`if (p == ALL)`",
+      "`if ((p & ALL) == ALL)`",
+      "`if (p & ALL)`",
+      "`if (p | ALL)`"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "stem": "有下面的 C++ 代码：\n\n```cpp\nenum class Perm : unsigned {\n    NONE  = 0,\n    READ  = 1,\n    WRITE = 2,\n    EXEC  = 4\n};\n\nconstexpr Perm operator|(Perm a, Perm b)\n{\n    return static_cast<Perm>(static_cast<unsigned>(a) | static_cast<unsigned>(b));\n}\n\nconstexpr Perm operator&(Perm a, Perm b)\n{\n    return static_cast<Perm>(static_cast<unsigned>(a) & static_cast<unsigned>(b));\n}\n\nconstexpr Perm ALL = Perm::READ | Perm::WRITE | Perm::EXEC;\n\nPerm p = Perm::READ | Perm::EXEC;\n```\n\n要判断 p 是否同时拥有三种权限，正确的条件是（ ）。",
+        "options": [
+          "`if (p == ALL)`",
+          "`if ((p & ALL) == ALL)`",
+          "`if (p & ALL)`",
+          "`if (p | ALL)`"
+        ],
+        "answer": 1,
+        "analysis": "B 正确，判断逻辑与 C 相同：先与 ALL 按位与，再要求结果等于 ALL，才能保证三位都存在。\n\nC++ 的 `enum class` 默认不支持按位运算，必须自己重载 `operator|`/`operator&`；而且 `ALL` 不能写在枚举定义内部——定义枚举体时类型还不完整，运算符尚不可用，`READ | WRITE | EXEC` 无法通过类型检查。通常的做法是先定义枚举和运算符，再用 `constexpr Perm ALL = Perm::READ | Perm::WRITE | Perm::EXEC;` 组合出常量，本题代码就是这样写的。\n\nA 只适合「权限集合恰好等于 ALL」；C 只判断「至少有一位」；D 恒为真。即使重载了运算符，这三个条件的语义问题依然存在。\n\n若不想手写运算符，也可以在需要时转成底层整数：`static_cast<unsigned>(p) & static_cast<unsigned>(ALL)`，但这样会丢掉类型信息。C++23 的 `std::to_underlying` 可以简化转换。"
+      },
+      "python": {
+        "stem": "有下面的 Python 代码：\n\n```python\nfrom enum import Flag\n\nclass Perm(Flag):\n    NONE = 0\n    READ = 1\n    WRITE = 2\n    EXEC = 4\n    ALL = READ | WRITE | EXEC\n\np = Perm.READ | Perm.EXEC\n```\n\n要判断 p 是否同时包含三种权限，正确的条件是（ ）。",
+        "options": [
+          "`p == Perm.ALL`",
+          "`(p & Perm.ALL) == Perm.ALL`",
+          "`p & Perm.ALL`",
+          "`p | Perm.ALL`"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。`Flag` 支持按位运算：`p & Perm.ALL` 返回一个 Flag，表示两者共有的位；再与 `Perm.ALL` 比较，只有三位都具备时才相等。\n\n- A 在 p 恰好等于 ALL 时为真，但若 p 还带有其他位（例如将来新增的 `ADMIN = 8`），`p == Perm.ALL` 就会为假，不能表达「包含全部」。\n- C 只判断「至少有一位重合」：本题 p = READ | EXEC，缺少 WRITE，但 `p & Perm.ALL` 非空，条件为真，误判。\n- D 恒为非空，没有判断意义。\n\n补充：`Flag` 的成员值应是 2 的幂（单比特），`NONE = 0` 表示空权限；`ALL` 由按位或组合，定义时 Python 会在类创建阶段计算好。Python 3.11 起还可以写 `Perm.ALL in p` 来判断「包含全部位」，语义更直观，但 3.10 不支持，所以 `(p & Perm.ALL) == Perm.ALL` 兼容性最好。"
+      }
+    }
+  },
+  {
+    "id": "函-31",
+    "module": "函数",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "递归",
+      "static",
+      "生命周期"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\n\nint f(int n)\n{\n    static int cnt = 0;\n\n    cnt++;\n    if (n > 0)\n        f(n - 1);\n    return cnt;\n}\n\nint main(void)\n{\n    int a = f(2);\n    int b = f(0);\n\n    printf(\"%d %d\\n\", a, b);\n    return 0;\n}\n```",
+    "analysis": "A 正确。`static int cnt = 0;` 只初始化一次，且具有静态存储期，整个程序运行期间只有一份 cnt，递归的每一层共享它。\n\n- `f(2)`：cnt 变成 1，递归调用 `f(1)`；cnt 变成 2，再调用 `f(0)`；cnt 变成 3，n = 0 不再递归，返回 3。`f(2)` 返回 3。\n- `f(0)`：cnt 从 3 加到 4，n = 0 不递归，返回 4。\n\n两次赋值都在 printf 之前完成，不存在实参求值顺序问题，所以输出 `3 4`。\n\nB 误以为第二次调用会重置 cnt；C 误以为 static 变量每层递归各有一份；D 把两次返回值的顺序弄反了。\n\n对比：如果 cnt 是普通局部变量 `int cnt = 0;`，每层递归都有自己的副本，`f(2)` 每层都返回 1，结果会完全不同。static 局部变量「只初始化一次、跨调用保持」的特性，正是用它做计数器/缓存的基础。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "3 4",
+      "3 3",
+      "2 1",
+      "4 3"
+    ],
+    "answer": 0,
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint f(int n)\n{\n    static int cnt = 0;\n\n    ++cnt;\n    if (n > 0)\n        f(n - 1);\n    return cnt;\n}\n\nint main()\n{\n    int a = f(2);\n    int b = f(0);\n    std::cout << a << ' ' << b << '\\n';\n}\n```",
+        "options": [
+          "3 4",
+          "3 3",
+          "2 1",
+          "4 3"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。C++ 的 `static` 局部变量与 C 一样只初始化一次、具有静态存储期，递归各层共享同一个 cnt，所以 `f(2)` 返回 3、`f(0)` 返回 4。\n\nC++11 起，函数内静态局部变量的初始化是线程安全的（俗称 magic statics）：多线程首次进入时会保证只初始化一次。这一点常被用来实现 Meyers 单例。但「线程安全的初始化」不等于「线程安全的自增」——多线程同时执行 `++cnt` 仍然有数据竞争，需要加锁或用 `std::atomic`。\n\nB、C、D 的错误与 C 版本相同。若想避免共享状态，C++ 可以把计数器作为参数传入引用，或封装成一个类/闭包，每个实例持有自己的计数。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\ndef f(n):\n    f.cnt += 1\n    if n > 0:\n        f(n - 1)\n    return f.cnt\n\nf.cnt = 0\na = f(2)\nb = f(0)\nprint(a, b)\n```",
+        "options": [
+          "3 3",
+          "4 3",
+          "3 4",
+          "2 1"
+        ],
+        "answer": 2,
+        "analysis": "C 正确。Python 没有 `static` 局部变量；这里用「函数属性」`f.cnt` 模拟：属性挂在函数对象上，跨调用保持，所有递归层共享同一个计数。\n\n- `f(2)`：`f.cnt` 依次变为 1、2、3，最内层 n = 0 时返回 3。\n- `f(0)`：`f.cnt` 变为 4，返回 4。\n\n所以输出 `3 4`。\n\nA 误以为第二次会重置；B 把顺序弄反；D 误以为每层递归各有独立计数。若想为每个调用者维护独立状态，应使用闭包（外层函数的局部变量 + `nonlocal`）或类实例，而不是函数属性——函数属性是全局共享的，和 C 的 static 局部变量在「单实例」这一点上完全一样。"
+      }
+    }
+  },
+  {
+    "id": "函-32",
+    "module": "函数",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "默认参数",
+      "包装函数",
+      "语言差异"
+    ],
+    "stem": "C 语言没有默认参数。要给函数 `void show(int x, int base)` 的 `base` 提供默认值 10，下列做法中最合适的是（ ）。",
+    "analysis": "B 正确。C 不支持默认参数，标准做法是用一个包装函数把默认值补上：`void show_dec(int x) { show(x, 10); }`；也可以用宏 `#define show_dec(x) show((x), 10)`（注意加括号），或用哨兵值（如 base = 0 表示使用默认的 10）在函数内部判断。包装函数有类型检查、可调试，通常最推荐。\n\n- A 错：`int base = 10` 出现在形参列表中，是 C++ 的语法，C 编译器会报错。\n- C 错：同样是 C++ 语法；C 里声明和定义都不能带默认实参。\n- D 错：`static` 修饰的是变量，不是形参；省略形参后调用处的实参无处安放，而且静态变量会被后续调用修改，根本不是「默认值」。\n\n对照 C++：默认参数必须从右向左连续给出，同一作用域只能指定一次；默认实参表达式在每次调用时求值。Python 的默认值则在 `def` 执行时求值一次，可变默认值还有共享陷阱（见 Python 版本）。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "在函数定义中写 `void show(int x, int base = 10)`",
+      "新增一个包装函数 `void show_dec(int x) { show(x, 10); }`，或用一个宏转发；也可以让 `base` 用 0 表示「使用默认值」并在函数内判断",
+      "在函数声明中写 `void show(int x, int base = 10);`，定义处省略默认值",
+      "把 `base` 声明为 `static int base = 10;` 并省略该形参"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "stem": "关于 C++ 的默认参数（default argument），下列说法正确的是（ ）。",
+        "options": [
+          "默认参数必须从右向左连续给出，同一作用域内只能指定一次；调用时实参从左向右依次匹配形参",
+          "可以为中间某个参数指定默认值，而它右边的参数没有默认值",
+          "可以在函数声明和定义中分别写一次默认值",
+          "默认参数的值在程序启动时求值一次"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。C++ 默认参数有两条硬规则：① 一旦某个参数有默认值，它右边的所有参数都必须有默认值；② 同一个作用域内，每个参数的默认值只能指定一次（通常在声明中给，定义处不再重复）。\n\n- B 错：`void f(int a = 1, int b);` 非法，违反「从右向左连续」。\n- C 错：声明和定义都写默认值会造成重定义错误。\n- D 错：默认实参表达式在**每次调用**时求值，而不是程序启动时；因此默认值可以依赖运行期状态（但不要依赖会变化的全局变量，容易产生意外）。\n\n调用匹配规则是实参从左向右填，缺省的用默认值。例如 `void f(int a, int b = 2, int c = 3);`，`f(1)`、`f(1, 5)`、`f(1, 5, 6)` 都合法，但不能只给 c。\n\nPython 的默认值在 `def` 时求值一次，和 C++ 的「每次调用求值」相反，这是两种语言默认参数最容易混淆的差异。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\ndef append_item(x, bucket=[]):\n    bucket.append(x)\n    return bucket\n\nprint(append_item(1))\nprint(append_item(2))\n```",
+        "options": [
+          "`[1]` 和 `[2]`",
+          "`[1]` 和 `[1, 2]`",
+          "`[1, 2]` 和 `[1, 2]`",
+          "抛出 `TypeError`"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。Python 的默认值在 `def` 语句执行时求值**一次**，并保存在函数对象里；之后每次调用只要没传 `bucket`，用的都是同一个列表对象。第一次 append(1) 得到 `[1]`，第二次 append(2) 得到 `[1, 2]`，两次打印分别是 `[1]` 和 `[1, 2]`。\n\n- A 误以为每次调用都会重新创建默认列表。\n- C 误以为第一次打印时就已经有两个元素。\n- D 错：语法和调用都合法。\n\n正确写法是用 `None` 作哨兵：\n\n```python\ndef append_item(x, bucket=None):\n    if bucket is None:\n        bucket = []\n    bucket.append(x)\n    return bucket\n```\n\n对照 C++：C++ 的默认实参在每次调用时重新求值，`void f(std::vector<int> v = {})` 每次都会得到新的空 vector，不会有这个陷阱；C 没有默认参数，只能用包装函数模拟。"
+      }
+    }
+  },
+  {
+    "id": "函-33",
+    "module": "函数",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "函数重载",
+      "名字修饰",
+      "覆盖"
+    ],
+    "stem": "有下面的程序：\n\n```c\n#include <stdio.h>\n\nint f(int x)\n{\n    return x + 1;\n}\n\nint f(double x)\n{\n    return (int)x + 2;\n}\n\nint main(void)\n{\n    printf(\"%d\\n\", f(1));\n    return 0;\n}\n```\n\n这段程序在 C 编译器下的结果是（ ）。",
+    "analysis": "A 正确。C 没有函数重载，也没有名字修饰（name mangling）：同一作用域内不能出现两个同名函数，参数列表不同也不行。第二个 `f` 会被诊断为「函数重定义」或「类型冲突」，编译失败。\n\n- B、C 描述的「按实参类型选择版本」是 C++ 的重载解析，C 没有这个机制。\n- D 错：生成不同内部名字（mangling）是 C++ 编译器的做法；C 编译器不会这么做，符号名就是 `f`，两个定义必然冲突。\n\n想要在 C 中实现类似「同一功能、不同参数类型」的效果，只能起不同的函数名（如 `f_int`、`f_double`），或者用 `_Generic`（C11）、`void *` 加类型标记等办法，但都不如 C++ 的重载自然。\n\n对照：C++ 中这段代码是合法的重载，`f(1)` 精确匹配 `int` 版本并输出 2；Python 中第二个 `def f` 会直接覆盖第一个（见各语言版本）。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "编译错误：C 不支持函数重载，同一作用域内不能有同名函数，即使参数类型不同",
+      "输出 2，`f(1)` 匹配 int 版本",
+      "输出 3，`f(1)` 匹配 double 版本",
+      "输出 2，编译器会自动为两个函数生成不同的内部名字"
+    ],
+    "answer": 0,
+    "variants": {
+      "cpp": {
+        "stem": "有下面的程序：\n\n```cpp\n#include <cstdio>\n\nint f(int x)\n{\n    return x + 1;\n}\n\nint f(double x)\n{\n    return (int)x + 2;\n}\n\nint main()\n{\n    std::printf(\"%d\\n\", f(1));\n    return 0;\n}\n```\n\n这段程序在 C++17 下的结果是（ ）。",
+        "options": [
+          "输出 2，`f(1)` 匹配 int 版本",
+          "编译错误：返回类型相同不能重载",
+          "输出 2：两个函数参数类型不同，构成合法重载，重载解析选中 int 版本",
+          "编译错误：参数个数相同不能重载"
+        ],
+        "answer": 2,
+        "analysis": "C 正确。两个 `f` 的参数类型不同（`int` 与 `double`），构成合法的函数重载；调用 `f(1)` 时实参是 int，与 `int` 版本精确匹配，直接选中它，返回 2。\n\n- A 结论对但理由不完整，没有点出「参数类型不同构成重载」。\n- B 错：返回类型不同不能单独构成重载，但这里参数类型已经不同，返回类型相同完全没问题。\n- D 错：参数个数相同不影响重载，关键是参数类型（或个数、顺序）不同。\n\n重载的判定只看参数列表，**返回类型不参与**：`int f(int)` 与 `double f(int)` 不能共存，编译器无法只凭调用 `f(1)` 决定选哪个。另外，C++ 支持重载的前提是名字修饰——编译器把参数类型编码进符号名；用 `extern \"C\"` 声明的函数会关闭修饰，因此不能重载。"
+      },
+      "python": {
+        "stem": "有下面的 Python 代码：\n\n```python\ndef f(x):\n    return x + 1\n\ndef f(x):\n    return int(x) + 2\n\nprint(f(1))\n```\n\n输出是（ ）。",
+        "options": [
+          "输出 2",
+          "输出 3",
+          "语法错误：Python 不支持同名函数",
+          "根据参数类型自动选择，`f(1)` 用第一个定义"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。Python 没有函数重载：第二个 `def f` 在模块执行时直接覆盖第一个，模块命名空间里只剩后一个 `f`，所以 `f(1)` 计算 `int(1) + 2 = 3`。\n\n- A 误以为第一个定义仍生效。\n- C 错：Python 允许同名函数，后定义覆盖前定义，不报错——这正是它「不支持重载」的表现。\n- D 错：Python 不会按运行时参数类型选择函数；它只有一个 `f`。\n\n如果需要「按类型分派」，可以用 `functools.singledispatch`（按第一个参数的类型注册不同实现），或用默认参数/关键字参数合并成一个函数；但这些都不是 C++ 意义上的重载。\n\n对照 C：C 会直接编译失败（不允许同名函数）；C++ 会做重载解析，`f(1)` 选 int 版本输出 2；Python 则静默覆盖。三种语言对「同名函数」的处理，正好体现了各自的名字解析方案。"
+      }
+    }
+  },
+  {
+    "id": "函-34",
+    "module": "函数",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "闭包",
+      "static",
+      "lambda"
+    ],
+    "stem": "需要一个「每次调用返回递增序号」的计数函数，要求不使用全局变量，并且在 C 语言中实现。下列做法正确的是（ ）。",
+    "analysis": "B 正确。`static int n = 0;` 只初始化一次，函数返回后 n 依然存在，下一次调用接着累加，因此能实现递增计数，且不污染全局命名空间。代价是「只有一个实例」：所有调用者共享同一个 n，无法同时拥有两个独立的计数器。\n\n- A 错：普通局部变量每次调用都重新创建，`n` 总是从 0 开始，返回 1。\n- C 错：`const` 变量不能自增，而且同样是每次调用重建。\n- D 错：C 没有闭包，不能捕获外层函数的局部变量。\n\n需要多个独立计数器时，C 的常规做法是把状态放进结构体，由调用者传入：\n\n```c\nstruct Counter { int n; };\nint next(struct Counter *c) { return ++c->n; }\n```\n\n这实际上就是「显式传递捕获环境」。C++ 用 lambda 捕获、Python 用闭包，把这一步自动化了（见各自版本）。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "用函数内的普通局部变量 `int n = 0;`，同样能在多次调用之间保持状态",
+      "用函数内的 `static int n = 0;`，每次 `return ++n;`；它能工作，但整个程序只有一个计数器状态，不能同时拥有多个互相独立的计数器",
+      "用 `const int n = 0;` 保存状态",
+      "C 支持闭包，可以直接捕获外层函数的局部变量"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "stem": "有下面的 C++ 代码：\n\n```cpp\nauto counter = [n = 0]() mutable { return ++n; };\n```\n\n关于这个 lambda，下列说法正确的是（ ）。",
+        "options": [
+          "每次调用返回 1、2、3…，状态保存在闭包对象里；再创建一个同样的 lambda 会得到另一个独立计数器",
+          "lambda 不能保存状态，每次调用都返回 1",
+          "`[n = 0]` 是按引用捕获，n 销毁后调用会悬空",
+          "`mutable` 是多余的，按值捕获的变量默认就可以修改"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。`[n = 0]` 是初始化捕获（init-capture），在闭包对象里创建一份自己的 n，初值 0；`mutable` 允许 lambda 的函数体修改这份副本。每次调用 `++n` 都会更新闭包内的 n，因此依次返回 1、2、3…；再次定义一个新的 lambda 会得到另一个独立的闭包对象，计数互不影响。\n\n- B 错：捕获的变量就存在闭包对象里，可以跨调用保持。\n- C 错：`[n = 0]` 是按值初始化捕获，不是引用；若写 `[&n]` 才是引用捕获，那样才可能悬空。\n- D 错：按值捕获的变量在 lambda 体内默认是 const 的，必须加 `mutable` 才能修改。\n\n如果捕获的是引用 `[&n]`，要保证 n 的生命周期长于 lambda；返回 lambda 时尤其危险（悬空引用）。需要多个计数器时，可以写一个返回 lambda 的工厂函数，每次调用工厂都创建一个新的闭包。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\ndef make_counter():\n    n = 0\n    def counter():\n        nonlocal n\n        n += 1\n        return n\n    return counter\n\nc1 = make_counter()\nc2 = make_counter()\nprint(c1(), c1(), c2())\n```",
+        "options": [
+          "1 2 1",
+          "1 1 1",
+          "1 2 2",
+          "抛出 `UnboundLocalError`"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。`make_counter` 每次调用都会创建一个新的局部变量 n，并返回一个闭包 counter；`nonlocal n` 让 counter 修改外层函数的 n，而不是把它当成新的局部变量。因此 c1 和 c2 各自持有独立的 n：`c1()` 返回 1，再 `c1()` 返回 2，`c2()` 返回 1，输出 `1 2 1`。\n\n- B 误以为 n 每次重置或共享。\n- C 误以为 c2 与 c1 共享同一个 n。\n- D 错：写了 `nonlocal` 才能修改外层变量；若漏写，`n += 1` 会让 n 被视为局部变量，从而抛 `UnboundLocalError`。\n\n这与 C 的 static 局部变量形成鲜明对比：C 的 static 只有一个实例，所有调用共享；Python 的闭包每次调用外层函数都创建新的捕获环境，天然支持多实例。C++ 的 lambda 捕获也能做到多实例（每个 lambda 对象一份状态）。"
+      }
+    }
+  },
+  {
+    "id": "函-35",
+    "module": "函数",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "static",
+      "链接属性",
+      "模块化"
+    ],
+    "stem": "在一个由多个 .c 文件组成的 C 程序中，某个辅助函数只应该在定义它的源文件内可见。正确的做法是（ ）。",
+    "analysis": "A 正确。`static` 修饰函数时改变的是**链接属性**：该函数具有内部链接，只在当前翻译单元（.c 文件）内可见，其他文件即使写了同名声明也链接不到它。这既能避免不同模块的辅助函数重名冲突，也给编译器更多优化空间。\n\n- B 错：`extern` 表示外部链接，效果与需求相反，会把函数暴露给其他文件。\n- C 错：命名风格不影响链接属性。\n- D 错：在头文件中声明并让所有源文件包含，等于主动扩大可见性。\n\n注意区分 `static` 的两种用法：修饰局部变量时改变的是**存储期**（静态存储期，跨调用保持）；修饰函数/全局变量时改变的是**链接属性**（内部链接）。同一个关键字，作用对象不同，含义也不同。\n\nC++ 中除了 `static`，还可以把辅助函数放进匿名 namespace，效果相同且更符合现代风格；Python 没有链接概念，用下划线命名约定表达「模块内部使用」。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "在函数定义前加 `static`，使它具有内部链接，其他翻译单元无法引用",
+      "在函数声明前加 `extern`",
+      "把函数名首字母大写",
+      "在头文件中声明并包含到所有源文件"
+    ],
+    "answer": 0,
+    "variants": {
+      "cpp": {
+        "stem": "在 C++ 中，要让一个辅助函数只在本翻译单元（.cpp 文件）内可见，下列做法正确的是（ ）。",
+        "options": [
+          "在函数前加 `static`，或把它放进匿名 namespace；两者都给它内部链接，其他翻译单元无法链接到它",
+          "在函数前加 `extern`",
+          "C++ 已经取消了 `static` 函数的内部链接，只能用类私有成员",
+          "把函数声明放进头文件并让所有源文件包含"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。C++ 保留了 C 的规则：`static` 函数具有内部链接，只在本翻译单元可见。更现代的等价写法是匿名 namespace：\n\n```cpp\nnamespace {\nvoid helper() { /* ... */ }\n}\n```\n\n匿名 namespace 里的名字具有内部链接，效果与 static 相同，而且能用于变量、类、模板等更多实体，因此 C++ 社区更推荐它。\n\n- B 错：`extern` 是外部链接。\n- C 错：`static` 函数的内部链接并未取消。\n- D 错：放进头文件反而让所有包含它的翻译单元都看到，还可能导致 ODR 问题。\n\n补充：头文件中的 `inline` 函数具有外部链接，但允许多个翻译单元出现相同定义（ODR 合并），这与「只在本文件可见」是两回事，不要混淆。"
+      },
+      "python": {
+        "stem": "在 Python 中，希望某个辅助函数只供本模块内部使用，下列做法最合适的是（ ）。",
+        "options": [
+          "用 `private` 关键字修饰函数",
+          "以单下划线开头命名，如 `_helper`：这是约定，`from module import *` 默认不会导入它，但并非强制",
+          "用 `static` 关键字修饰函数",
+          "Python 无法表达这种意图"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。Python 的模块没有真正的访问控制，惯例是用单下划线开头表示「内部使用」：`_helper` 不会被 `from module import *` 导入（除非在 `__all__` 中显式列出），读者和静态检查工具也会把它当作私有实现。但它只是约定，仍然可以直接 `module._helper()` 调用。\n\n- A 错：Python 没有 `private` 关键字。\n- C 错：Python 没有 `static` 关键字（类里的 `@staticmethod` 是另一回事，表示不绑定实例）。\n- D 错：约定 + `__all__` 足以表达意图。\n\n在类中，双下划线 `__name` 会触发名字改写，用于避免子类意外覆盖；模块级别则通常只用单下划线。若确实需要强制隔离，可以把实现放进独立模块、只导出公开接口，或使用 `__all__` 明确导出列表。\n\n对照 C：C 用 `static` 在链接层面真正限制可见性；Python 只有约定，这是动态语言在封装上的取舍。"
+      }
+    }
+  },
+  {
+    "id": "函-36",
+    "module": "函数",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "递归",
+      "返回值",
+      "控制流"
+    ],
+    "stem": "有下面的函数：\n\n```c\nint sum_to(int n)\n{\n    if (n == 0)\n        return 0;\n    else if (n > 0)\n        return n + sum_to(n - 1);\n}\n```\n\n当 n < 0 时调用它，主要问题是（ ）。",
+    "analysis": "B 正确。两个分支只覆盖了 n == 0 和 n > 0；当 n < 0 时，两个条件都不成立，控制流走到函数末尾，但函数声明的返回类型是 `int`，于是「有返回值的函数执行到末尾」——C 标准规定这是未定义行为。编译器一般只给警告（control reaches end of non-void function），不阻止编译。\n\n- A 错：n < 0 不满足 `n > 0`，不会递归，直接结束。\n- C 错：C 不会自动把返回值置 0；只有 `main` 函数在 C99 中有「执行到末尾等价于 return 0」的特例，其他函数没有。\n- D 错：这是未定义行为 + 警告，不是编译错误。\n\n修复方式：在函数末尾补 `return 0;`，或把逻辑改成 `if (n <= 0) return 0;` 先处理所有非正数。良好的习惯是：非 void 函数的每条控制流路径都以 return 结束，必要时让编译器用 `-Wreturn-type`（GCC/Clang）或 `/W4`（MSVC）兜底。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "n < 0 时会无限递归，直到栈溢出",
+      "函数没有覆盖所有路径的 return：n < 0 时控制流走到函数末尾却没有返回值，属于未定义行为，编译器通常会给出警告",
+      "n < 0 时返回 0，因为编译器会把返回值默认置 0",
+      "编译一定失败，C 要求每个分支都有 return"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "options": [
+          "n < 0 时会无限递归，直到栈溢出",
+          "函数没有覆盖所有路径的 return：n < 0 时执行到函数末尾却没有返回值，属于未定义行为；C++ 编译器同样会给出警告",
+          "n < 0 时返回 0",
+          "C++ 要求每个分支必须 return，否则编译失败"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。C++ 与 C 一样：非 void 函数（`main` 除外）执行到末尾而没有 return，是未定义行为；编译器通常给 `-Wreturn-type` 警告。\n\n- A 错：n < 0 不会进入递归分支。\n- C 错：不会自动返回 0；C++ 只对 `main` 有「到达末尾等价于 return 0」的特例。\n- D 错：不是编译错误，是警告 + 未定义行为。\n\nC++ 还可以用 `[[nodiscard]]` 提醒调用者使用返回值，用 `std::optional<int>` 表示「可能没有结果」，比返回一个魔法值更清晰。若参数可能为负，更稳妥的写法是先校验：\n\n```cpp\nif (n <= 0) return 0;\nreturn n + sum_to(n - 1);\n```\n\n这样既消除了未定义行为，也让「负数按 0 处理」的语义显式化。",
+        "stem": "有下面的函数：\n\n```cpp\nint sum_to(int n)\n{\n    if (n == 0)\n        return 0;\n    else if (n > 0)\n        return n + sum_to(n - 1);\n}\n```\n\n当 n < 0 时调用它，主要问题是（ ）。"
+      },
+      "python": {
+        "stem": "有下面的函数：\n\n```python\ndef sum_to(n):\n    if n == 0:\n        return 0\n    elif n > 0:\n        return n + sum_to(n - 1)\n```\n\n当 n < 0 时调用 `sum_to(-1)`，结果是（ ）。",
+        "options": [
+          "返回 0",
+          "返回 `None`：函数执行到末尾没有 return 就返回 None，不会报错；后续若拿它做算术才会 TypeError",
+          "无限递归，直到 `RecursionError`",
+          "抛出 `SyntaxError`"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。Python 的函数如果没有执行任何 `return`，就隐式返回 `None`。n = -1 时两个分支都不成立，函数直接结束，返回 `None`；调用本身不报错，只有后续执行 `None + 1` 这类操作时才会抛 `TypeError`。\n\n- A 错：不会默认返回 0。\n- C 错：n < 0 不进入递归分支，不会无限递归。\n- D 错：语法完全合法。\n\n这与 C 的「未定义行为」形成对比：C 读到不确定的返回值，Python 明确返回 None。两者都不是我们想要的语义，所以最好在函数开头处理边界：\n\n```python\nif n <= 0:\n    return 0\n```\n\n或者用类型注解 + 静态检查（mypy 会提示「部分路径返回 None」）。Python 没有编译期返回类型检查，边界条件更依赖测试覆盖。"
+      }
+    }
+  },
+  {
+    "id": "函-37",
+    "module": "函数",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "返回值",
+      "指针参数",
+      "多值返回"
+    ],
+    "stem": "一个函数需要把数组的最大值和最小值同时带回给调用者。在 C 语言里，下列做法最规范的是（ ）。",
+    "analysis": "C 正确。C 函数只能返回一个值，常用的「多值返回」有两种规范做法：① 通过指针形参写回（`void minmax(const int *a, int n, int *pmax, int *pmin)`）；② 返回一个包含多个成员的结构体。前者调用者需要提供变量地址，后者语义更完整、可直接赋值，各有适用场景。\n\n- A 错：逗号表达式只取最后一个值，`return max, min;` 等价于 `return min;`，max 被丢弃。\n- B 错：全局变量能用，但破坏封装、难以复用、多线程下不安全，不是规范做法。\n- D 错：局部数组在函数返回后生命周期结束，返回它的地址是悬空指针，属于未定义行为。\n\n补充：指针形参写回时，函数内要先解引用再赋值（`*pmax = ...`），调用处传 `&max`、`&min`；如果指针可能为 NULL，应先判断。C++ 可用 `std::pair`/`std::tuple` 并配合结构化绑定；Python 可以直接返回元组并解包。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "用 `return max, min;` 逗号表达式一次返回两个值",
+      "把结果放进两个全局变量，函数不需要返回值",
+      "用两个指针形参 `int *pmax, int *pmin`，在函数内通过它们写回结果；也可以返回一个包含两个成员的结构体",
+      "返回一个局部数组 `int r[2]` 的数组名"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "stem": "一个 C++ 函数需要把数组的最大值和最小值同时带回给调用者。下列做法最规范的是（ ）。",
+        "options": [
+          "返回 `std::pair<int, int>` 或 `std::tuple`，C++17 起调用处可以用 `auto [lo, hi] = minmax(a);` 结构化绑定",
+          "只能通过指针形参写回，C++ 没有其他办法",
+          "C++ 函数不能返回多个值，必须用全局变量",
+          "`return {max, min};` 一定编译错误"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。C++ 可以用 `std::pair<int, int>`、`std::tuple<int, int>` 返回多个值；C++17 的结构化绑定让调用处非常自然：\n\n```cpp\nauto [lo, hi] = minmax(a);\n```\n\n`std::pair` 适合两个值，`std::tuple` 适合更多；返回值有明确类型，比指针写回更安全，也不会像全局变量那样破坏封装。\n\n- B 错：指针/引用写回仍可用，但不是唯一办法。\n- C 错：可以返回 `pair`/`tuple`/自定义结构体。\n- D 错：`return {max, min};` 对返回 `std::pair<int,int>` 的函数是合法的，会构造 pair。\n\n如果两个值的语义差异较大，定义一个 `struct MinMax { int lo, hi; };` 比 `pair` 更可读；`std::optional` 还能表达「数组为空、没有结果」的情况。"
+      },
+      "python": {
+        "stem": "一个 Python 函数需要把列表的最大值和最小值同时返回给调用者。下列做法最规范的是（ ）。",
+        "options": [
+          "`return max(a), min(a)` 返回元组，调用处写 `lo, hi = minmax(a)` 解包",
+          "只能返回一个值，另一个必须用全局变量",
+          "必须把结果放进列表，调用处用下标访问",
+          "`return max(a), min(a)` 会报错，因为 return 只能跟一个表达式"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。Python 的 `return a, b` 实际上返回一个元组 `(a, b)`，调用处可以用 `lo, hi = minmax(a)` 解包，也可以用 `result[0]`、`result[1]` 访问。这是 Python 最自然的多值返回方式。\n\n- B 错：不需要全局变量，元组就能带回多个值。\n- C 错：元组比列表更合适（不可变、语义清晰），而且解包比下标更可读。\n- D 错：`return` 后面可以跟任意表达式，`max(a), min(a)` 是合法的元组表达式。\n\n注意区分「返回元组」与「返回多个对象」：Python 函数在语言层面只返回一个对象，只是这个对象可以是元组。若返回值较多，可以用 `NamedTuple` 或 dataclass 让字段有名字：\n\n```python\nfrom typing import NamedTuple\nclass MinMax(NamedTuple):\n    lo: int\n    hi: int\n```\n\n这样既保留解包能力，又能用 `.lo`、`.hi` 访问。"
+      }
+    }
+  },
+  {
+    "id": "函-38",
+    "module": "函数",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "求值顺序",
+      "副作用",
+      "序列点"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\n\nint next(void)\n{\n    static int n = 0;\n\n    return ++n;\n}\n\nint main(void)\n{\n    printf(\"%d %d\\n\", next(), next());\n    return 0;\n}\n```",
+    "analysis": "C 正确。C 标准没有规定函数调用中各个实参的求值顺序（unspecified），只要求它们「不确定顺序地」完成，不能交错求值。也就是说，两个 `next()` 谁先执行由编译器决定：先算左边就输出 `1 2`，先算右边就输出 `2 1`。两种都符合标准，程序行为依赖实现。\n\n- A、B 都把某一种顺序当成了标准保证。\n- D 错：在实参中调用有副作用的函数完全合法，只是结果可能不确定。\n\n这类代码应当改写，把顺序显式化：\n\n```c\nint a = next();\nint b = next();\nprintf(\"%d %d\\n\", a, b);\n```\n\n注意区分几个概念：**未指定行为**（unspecified，标准给出多种可能，实现选一种）、**未定义行为**（undefined，任何结果都可能）、**序列点/顺序关系**。本题属于未指定，不是未定义，但同样应该避免——因为它让程序难以移植、难以测试。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "一定输出 `1 2`",
+      "一定输出 `2 1`",
+      "C 标准没有规定函数实参的求值顺序，输出可能是 `1 2` 也可能是 `2 1`，取决于编译器；这类代码应避免",
+      "编译错误：不能在实参中调用有副作用的函数"
+    ],
+    "answer": 2,
+    "variants": {
+      "cpp": {
+        "options": [
+          "一定输出 `1 2`",
+          "一定输出 `2 1`",
+          "C++ 标准没有规定函数多个实参的求值顺序，输出可能是 `1 2` 也可能是 `2 1`；C++17 以后实参之间仍是「不确定顺序」",
+          "编译错误：不能在实参中调用有副作用的函数"
+        ],
+        "answer": 2,
+        "analysis": "C 正确。C++ 同样不规定函数调用中多个实参的求值顺序；C++17 明确了实参求值之间是「不确定顺序」（indeterminately sequenced），不会交错执行，但谁先谁后仍由实现决定，因此输出可能是 `1 2` 或 `2 1`。\n\n- A、B 把某一种顺序当成保证。\n- D 错：合法，只是结果不确定。\n\n改写方式与 C 相同：先分别调用、存到变量，再输出。C++ 中还要注意，`f(i++, i++)` 这类在一对实参里修改同一对象的写法，在 C++17 之前甚至是未定义行为；C++17 起改为不确定顺序，但依然不该写。\n\n若使用 `std::cout << f() << g()`，C++17 对移位运算符的求值有从左到右的顺序保证，但这是运算符规则，不要与「函数实参顺序」混为一谈。跨语言对照：Python 明确保证实参从左到右求值，同样的代码在 Python 中输出是确定的。",
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <stdio.h>\n\nint next(void)\n{\n    static int n = 0;\n\n    return ++n;\n}\n\nint main(void)\n{\n    printf(\"%d %d\\n\", next(), next());\n    return 0;\n}\n```"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\ndef next_num():\n    global n\n    n += 1\n    return n\n\nn = 0\nprint(next_num(), next_num())\n```",
+        "options": [
+          "`2 1`，因为先算右边的实参",
+          "`1 2`：Python 保证实参从左到右求值",
+          "顺序不确定，可能 `1 2` 也可能 `2 1`",
+          "抛出 `SyntaxError`"
+        ],
+        "answer": 1,
+        "analysis": "B 正确。Python 明确保证表达式从左到右求值，函数调用的实参也按书写顺序依次求值，所以先调用左边的 `next_num()` 得到 1，再调用右边的得到 2，输出 `1 2`。\n\n- A 错：Python 不采用从右到左。\n- C 错：顺序是语言规范保证的，不是实现自由选择；这一点与 C/C++ 不同。\n- D 错：语法完全合法。\n\n虽然结果确定，但在一行里依赖副作用（修改全局 n）仍然不利于阅读。更清晰的写法是：\n\n```python\na = next_num()\nb = next_num()\nprint(a, b)\n```\n\n跨语言对照：C/C++ 的实参求值顺序未指定，同样的程序可能输出 `1 2` 或 `2 1`；Python 从左到右，Java 也是从左到右。这类差异在移植代码时尤其容易踩坑。"
+      }
+    }
+  },
+  {
+    "id": "函-39",
+    "module": "函数",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "递归",
+      "记忆化",
+      "复杂度"
+    ],
+    "stem": "有下面的递归函数：\n\n```c\nlong long fib(int n)\n{\n    if (n < 2)\n        return n;\n    return fib(n - 1) + fib(n - 2);\n}\n```\n\n计算 `fib(40)` 时程序明显变慢，主要原因是（ ）。",
+    "analysis": "B 正确。朴素递归的调用树是指数级的：计算 fib(n) 要算 fib(n-1) 和 fib(n-2)，而 fib(n-2) 又会在 fib(n-1) 的子树里被重新算一遍，重复子问题呈爆炸式增长，时间复杂度约为 O(2^n)（更准确地说是 O(φ^n)），fib(40) 需要上亿次调用。\n\n记忆化（memoization）把「参数 → 结果」存起来，第二次遇到同一参数直接返回，每个 n 只算一次，时间复杂度降为 O(n)，空间 O(n)。自底向上的递推（动态规划）也是 O(n)，还能把空间优化到 O(1)（只保留前两项）。\n\n- A 错：n = 40 的递归深度只有 40，远不到栈溢出的程度；慢的原因是重复计算，不是深度。\n- C 错：`long long` 的加减法开销很小。\n- D 错：斐波那契的朴素递归不是尾递归；即使改写成尾递归形式，不去重仍然是指数级。\n\nC++ 可用 `std::vector<long long> memo(n+1, -1)` 或 `std::unordered_map`；Python 可用 `functools.lru_cache`。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "递归深度太大，导致栈溢出",
+      "存在大量重复子问题：`fib(n-2)` 被重复计算多次，时间复杂度约为 O(2^n)；用数组或哈希表保存已算结果（记忆化）可降到 O(n)",
+      "返回类型 `long long` 的运算太慢",
+      "应该改成尾递归，否则编译器无法优化"
+    ],
+    "answer": 1,
+    "variants": {
+      "cpp": {
+        "stem": "有下面的递归函数：\n\n```cpp\nlong long fib(int n)\n{\n    if (n < 2)\n        return n;\n    return fib(n - 1) + fib(n - 2);\n}\n```\n\n计算 `fib(40)` 很慢。下列改进中最有效的是（ ）。",
+        "options": [
+          "用 `std::vector<long long> memo(n + 1, -1)` 记忆化，命中缓存直接返回；或自底向上递推，复杂度降为 O(n)",
+          "改用 `std::map` 保存结果，因为红黑树比数组快",
+          "把返回类型改成引用，避免拷贝",
+          "现代编译器会自动做记忆化，不需要改代码"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。慢的根源是指数级的重复子问题；用数组（`std::vector`）按下标缓存结果，能把每个 n 的计算次数降到一次，复杂度 O(n)。自底向上递推更简单：\n\n```cpp\nlong long fib(int n) {\n    long long a = 0, b = 1;\n    for (int i = 0; i < n; ++i) { long long t = a + b; a = b; b = t; }\n    return a;\n}\n```\n\n- B 错：`std::map` 的查找是 O(log n)，常数也更大；下标连续且范围已知时，`vector` 更合适。\n- C 错：返回 `long long` 是值类型，改成引用反而会返回悬空引用（局部变量），而且这里没有拷贝开销问题。\n- D 错：编译器不会自动识别并缓存递归结果（除非极少数特定模式），记忆化要程序员显式实现。\n\nC++ 还可以用 `std::unordered_map<int, long long>` 处理稀疏/大范围的参数；Python 的 `functools.lru_cache` 是同类工具。"
+      },
+      "python": {
+        "stem": "有下面的 Python 函数：\n\n```python\ndef fib(n):\n    if n < 2:\n        return n\n    return fib(n - 1) + fib(n - 2)\n```\n\n计算 `fib(40)` 很慢。下列改进中最有效的是（ ）。",
+        "options": [
+          "用 `@functools.lru_cache(maxsize=None)` 装饰，缓存参数到结果的映射，重复子问题直接命中，复杂度降为 O(n)",
+          "调高 `sys.setrecursionlimit` 就能解决",
+          "改用多线程并行计算",
+          "Python 的递归会自动记忆化"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。`functools.lru_cache` 会把「参数元组 → 返回值」缓存起来，第二次用相同参数调用时直接返回缓存结果，避免重复展开递归树，复杂度从指数级降到 O(n)。\n\n- B 错：`setrecursionlimit` 只影响「允许多深」，不减少调用次数；fib(40) 的深度只有 40，根本不是限制问题。\n- C 错：多线程受 GIL 限制，对这个 CPU 密集型递归帮助有限，而且重复计算的问题依然存在。\n- D 错：Python 不会自动记忆化。\n\n也可以手写缓存：\n\n```python\nmemo = {}\ndef fib(n):\n    if n < 2:\n        return n\n    if n not in memo:\n        memo[n] = fib(n - 1) + fib(n - 2)\n    return memo[n]\n```\n\n注意 `lru_cache` 要求参数可哈希；实例方法上使用时还要考虑 `self` 参与缓存键。若 n 很大，递归深度仍是隐患，自底向上递推更稳妥。"
+      }
+    }
+  },
+  {
+    "id": "函-40",
+    "module": "函数",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "宏",
+      "副作用",
+      "内联"
+    ],
+    "stem": "有下面的宏定义：\n\n```c\n#define SQUARE(x) ((x) * (x))\n```\n\n若执行 `SQUARE(i++)`（i 的初值为 1），下列说法正确的是（ ）。",
+    "analysis": "A 正确。宏是预处理阶段的文本替换：`SQUARE(i++)` 展开为 `((i++) * (i++))`，参数出现两次就求值两次，i 被自增两次；更严重的是同一表达式中对 i 的两次修改之间没有序列点，属于未定义行为，结果不可预期（可能得 2、4、6 等不同值）。\n\n即使加足括号（本题已经加了），也只能解决优先级问题，解决不了「多次求值」和「没有类型检查」：`SQUARE(\"ab\")` 会在展开后才报错，错误信息指向宏展开处，调试困难。\n\n推荐做法：用函数或 `static inline` 函数，参数只求值一次，有类型检查，也能被内联优化：\n\n```c\nstatic inline int square(int x) { return x * x; }\n```\n\n- B 把未定义行为当成确定结果；C、D 都误以为宏参数只求值一次。\n\n宏仍有不可替代的场合（条件编译、字符串化、拼接、日志），但凡能用函数表达的计算，都应优先用函数。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "options": [
+      "展开为 `((i++) * (i++))`，i 被自增两次，且两次自增之间没有序列点，属于未定义行为；宏还会丢失类型检查，应优先用函数或 `static inline`",
+      "结果一定是 4，i 变成 3",
+      "结果一定是 1，因为宏先计算 i 的原值",
+      "宏参数只会被求值一次，与函数调用完全等价"
+    ],
+    "answer": 0,
+    "variants": {
+      "cpp": {
+        "options": [
+          "用 `constexpr int square(int x) { return x * x; }` 或 `inline` 函数：参数只求值一次、有类型检查，还能在编译期求值",
+          "宏在 C++ 中同样安全，继续用宏即可",
+          "必须继续用宏才能保证内联，函数一定更慢",
+          "`constexpr` 函数只能用于编译期，不能用于运行期"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。C++ 用 `constexpr`/`inline` 函数替代函数式宏：`constexpr int square(int x) { return x * x; }` 的参数只求值一次，有完整的类型检查，能在编译期求值（如 `constexpr int v = square(5);`），也能在运行期调用，性能与宏相当甚至更好。\n\n- B 错：宏的「多次求值」问题在 C++ 中一样存在，`SQUARE(i++)` 仍然是未定义行为。\n- C 错：`inline` 只是给编译器的提示，现代编译器对小函数会自动内联；函数还能避免宏的调试困难。\n- D 错：`constexpr` 函数既可以编译期求值，也可以运行期调用（参数不是常量表达式时）。\n\nC++ 还有模板和 lambda 可以表达更复杂的「泛型计算」，但要注意模板的实例化错误信息较长。总原则：能用函数、`constexpr`、模板表达的，就不要用宏；宏留给预处理真正擅长的场景。",
+        "stem": "有下面的宏定义：\n\n```cpp\n#define SQUARE(x) ((x) * (x))\n```\n\n若执行 `SQUARE(i++)`（i 的初值为 1），下列说法正确的是（ ）。"
+      },
+      "python": {
+        "stem": "在 Python 中，要实现「求一个数的平方」这个操作：\n\n```python\ndef square(x):\n    return x * x\n```\n\n下列说法正确的是（ ）。",
+        "options": [
+          "用普通函数 `def square(x): return x * x`，参数只求值一次；Python 没有宏，不存在文本替换导致的多次求值问题",
+          "Python 的宏也会把参数展开两次，需要用括号保护",
+          "必须用 lambda 才有类型检查",
+          "用 `eval` 实现最快也最安全"
+        ],
+        "answer": 0,
+        "analysis": "A 正确。Python 没有预处理器和宏，函数调用的实参在调用前求值一次，然后按值（对象引用）传入，因此 `square(i)` 不会出现 `i` 被求值两次的问题。`lambda x: x * x` 与 `def` 函数在这一点上完全一样，只是写法不同。\n\n- B 错：Python 没有宏展开。\n- C 错：lambda 和 def 都没有参数类型检查；类型检查要靠注解 + mypy/pyright。\n- D 错：`eval` 会执行任意代码，有严重安全风险，性能也不见得好，绝不应作为常规实现手段。\n\n对照 C：C 的宏在预处理阶段做文本替换，参数出现几次就求值几次，`SQUARE(i++)` 是典型的未定义行为；C++ 用 `constexpr`/`inline` 函数解决；Python 从一开始就没有这个问题，但代价是运行时开销和缺少编译期类型检查。"
+      }
+    }
+  },
+  {
+    "id": "基-65",
+    "module": "C语言基础",
+    "type": "fill",
+    "difficulty": 2,
+    "tags": [
+      "循环",
+      "累加",
+      "边界"
+    ],
+    "stem": "下面程序计算 `S = 1/1 - 1/2 + 1/3 - 1/4 + … ± 1/n`（n ≥ 1），结果保留 4 位小数，请填空。\n\n```c\n#include <stdio.h>\n\nint main(void)\n{\n    int i, n, sign = 1;\n    double sum = 0.0;\n\n    scanf(\"%d\", &n);\n    for (i = 1; ①; i++) {\n        sum += sign * 1.0 / i;\n        sign = ②;\n    }\n    printf(\"③\\n\", sum);\n    return 0;\n}\n```",
+    "analysis": "① 处是循环条件。要累加到 1/n，循环必须包含 i = n，所以写 `i <= n`；写成 `i < n` 会漏掉最后一项，结果偏小。\n② 处要交替改变符号：第一项用 +1，第二项用 -1，第三项又回到 +1，因此每次执行 `sign = -sign;`。\n③ 处是 printf 的格式串，题目要求保留 4 位小数，写 `%.4f`。\n\n还有两个易错点：累加项必须写成 `sign * 1.0 / i`，若写 `sign * 1 / i`，当 i > 1 时会按整数除法得到 0；sum 要初始化为 0.0，并用 double 保存结果。\n\n例如输入 4，计算 1 - 1/2 + 1/3 - 1/4 ≈ 0.5833，输出 `0.5833`；输入 1 输出 `1.0000`。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "i <= n",
+        "note": "要累加到 1/n，循环必须包含 i = n；写 i < n 会漏掉最后一项，写 i <= n 时注意 n 至少为 1"
+      },
+      {
+        "no": "②",
+        "answer": "-sign",
+        "note": "让符号在 +1 与 -1 之间交替；也可以写成 sign = 0 - sign 或 sign *= -1，但 -sign 最直接"
+      },
+      {
+        "no": "③",
+        "answer": "%.4f",
+        "note": "保留 4 位小数必须写 .4；只写 %f 默认输出 6 位小数"
+      }
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "下面程序计算 `S = 1/1 - 1/2 + 1/3 - 1/4 + … ± 1/n`（n ≥ 1），结果保留 4 位小数，请填空。\n\n```cpp\n#include <iostream>\n#include <iomanip>\n\nint main()\n{\n    int n, sign = 1;\n    double sum = 0.0;\n\n    std::cin >> n;\n    for (int i = 1; ①; ++i) {\n        sum += sign * 1.0 / i;\n        sign = ②;\n    }\n    std::cout << ③ << sum << '\\n';\n    return 0;\n}\n```",
+        "blanks": [
+          {
+            "no": "①",
+            "answer": "i <= n",
+            "note": "循环要包含 i = n，才能累加到 1/n"
+          },
+          {
+            "no": "②",
+            "answer": "-sign",
+            "note": "符号在 +1 与 -1 之间交替"
+          },
+          {
+            "no": "③",
+            "answer": "std::fixed << std::setprecision(4)",
+            "note": "fixed 表示定点输出，setprecision(4) 指定 4 位小数；需要包含 <iomanip>"
+          }
+        ],
+        "analysis": "① 与 C 相同，写 `i <= n`，保证最后一项 1/n 被累加。\n② 写 `-sign`，让符号在 +1 与 -1 之间交替。\n③ 是输出格式：`std::fixed` 固定小数点表示，`std::setprecision(4)` 指定 4 位小数，所以填 `std::fixed << std::setprecision(4)`，并包含 `<iomanip>`。\n\nC++ 中 `sign * 1.0 / i` 同样是 double 除法；如果把 1.0 写成 1，就会退化成整数除法。输入 4 时输出 `0.5833`，输入 1 时输出 `1.0000`。\n\n注意 `std::setprecision` 在不加 `std::fixed` 时表示有效数字位数，加上 `std::fixed` 后才表示小数位数，这是与 C 的 `%.4f` 对应的 C++ 写法。"
+      },
+      "python": {
+        "stem": "下面程序计算 `S = 1/1 - 1/2 + 1/3 - 1/4 + … ± 1/n`（n ≥ 1），结果保留 4 位小数，请填空。\n\n```python\nn = int(input())\ntotal = 0.0\nsign = 1\n\nfor i in range(1, ①):\n    total += sign / i\n    sign = ②\n\nprint(f\"{total:③}\")\n```",
+        "blanks": [
+          {
+            "no": "①",
+            "answer": "n + 1",
+            "note": "range 的结束值不包含，要遍历 1..n 必须写 n + 1；这是 Python 与 C 循环边界最容易混淆的地方"
+          },
+          {
+            "no": "②",
+            "answer": "-sign",
+            "note": "符号交替；也可以写 sign *= -1"
+          },
+          {
+            "no": "③",
+            "answer": ".4f",
+            "note": "f-string 的格式说明符，.4f 表示保留 4 位小数"
+          }
+        ],
+        "analysis": "① 处是 `range` 的结束值（不包含），要遍历 1..n，必须写 `n + 1`；写成 `n` 会漏掉最后一项 1/n。\n② 写 `-sign`，实现 + 和 - 交替。\n③ 是 f-string 的格式说明符，保留 4 位小数写 `.4f`。\n\nPython 3 的 `/` 本来就是浮点除法，`sign / i` 直接得到小数，不需要像 C 那样写 `1.0`；如果写成 `sign // i` 反而会取整。输入 4 输出 `0.5833`，输入 1 输出 `1.0000`。\n\n补充：`range(1, n + 1)` 与 C 的 `for (i = 1; i <= n; i++)` 等价，记住「range 右端不包含」这条规则，可以避免大量边界错误。"
+      }
+    }
+  },
+  {
+    "id": "数-87",
+    "module": "数组",
+    "type": "fill",
+    "difficulty": 2,
+    "tags": [
+      "遍历",
+      "统计",
+      "平均值"
+    ],
+    "stem": "下面程序读入 n 个整数存入数组，统计平均值以及大于平均值的元素个数，输出平均值（保留 2 位小数）和个数，请填空。\n\n```c\n#include <stdio.h>\n\nint main(void)\n{\n    int a[100], n, i, sum = 0, cnt = 0;\n    double avg;\n\n    scanf(\"%d\", &n);\n    for (i = 0; i < n; i++) {\n        scanf(\"%d\", ①);\n        sum += a[i];\n    }\n    avg = ②;\n    for (i = 0; i < n; i++)\n        if (③)\n            cnt++;\n    printf(\"%.2f %d\\n\", avg, cnt);\n    return 0;\n}\n```",
+    "analysis": "① 处要传数组元素的地址给 `%d`，写 `&a[i]`；如果只写 `a[i]`，传的是值，类型和语义都不对。\n② 处求平均值，必须做浮点除法：`(double)sum / n` 或 `sum * 1.0 / n`。若写 `sum / n`，两个 int 相除会丢弃小数部分，再赋给 double 也只是「截断后的整数」，结果错误。\n③ 处统计「大于平均值」的元素，写 `a[i] > avg`；题目说的是「大于」，若写 `>=` 会把等于平均值的元素也算进去，个数可能偏大。\n\n整体算法是两趟遍历：第一趟读入并求和，算出 avg；第二趟逐元素与 avg 比较并计数。这是「先统计、再根据统计量筛选」的常见模式，时间复杂度 O(n)。\n\n例如输入 `5` 和 `1 2 3 4 10`，sum = 20，avg = 4.00，大于 4 的只有 10，输出 `4.00 1`。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "&a[i]",
+        "note": "scanf 需要元素地址；写成 a[i] 是值，类型不匹配"
+      },
+      {
+        "no": "②",
+        "answer": "(double)sum / n",
+        "note": "必须做浮点除法；写成 sum / n 会先按整数除法截断，再转 double"
+      },
+      {
+        "no": "③",
+        "answer": "a[i] > avg",
+        "note": "统计严格大于平均值的元素；写成 >= 会把等于平均值的也算进去"
+      }
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "下面程序读入 n 个整数存入数组，统计平均值以及大于平均值的元素个数，输出平均值（保留 2 位小数）和个数，请填空。\n\n```cpp\n#include <iostream>\n#include <vector>\n#include <iomanip>\n\nint main()\n{\n    int n, sum = 0, cnt = 0;\n    std::cin >> n;\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i) {\n        std::cin >> a[i];\n        sum += a[i];\n    }\n    double avg = ①;\n    for (int i = 0; i < n; ++i)\n        if (②)\n            ++cnt;\n    std::cout << std::fixed << std::setprecision(2) << avg << ' ' << cnt << '\\n';\n    return 0;\n}\n```",
+        "blanks": [
+          {
+            "no": "①",
+            "answer": "static_cast<double>(sum) / n",
+            "note": "C++ 的显式类型转换；写 sum / n 会进行整数除法"
+          },
+          {
+            "no": "②",
+            "answer": "a[i] > avg",
+            "note": "严格大于平均值"
+          }
+        ],
+        "analysis": "① 处求平均值，必须先转成浮点：`static_cast<double>(sum) / n`（也可以写 `sum * 1.0 / n` 或 `double(sum) / n`）。若直接写 `sum / n`，两个 int 相除会截断小数。\n② 处统计严格大于平均值的元素，写 `a[i] > avg`。\n\nC++ 用 `std::vector<int>` 保存数组，长度由 n 决定，不需要像 C 那样预设 100 的上限；`std::fixed << std::setprecision(2)` 对应 C 的 `%.2f`。\n\n算法仍是两趟遍历：先求和得到 avg，再统计。注意 `avg` 的类型必须是 `double`，否则比较时又会遇到整数与浮点的转换问题。输入 `5` 和 `1 2 3 4 10` 时输出 `4.00 1`。"
+      },
+      "python": {
+        "stem": "下面程序读入 n 个整数存入列表，统计平均值以及大于平均值的元素个数，输出平均值（保留 2 位小数）和个数，请填空。\n\n```python\nn = int(input())\na = ①\n\ntotal = 0\nfor x in a:\n    total += x\n\navg = ②\ncnt = 0\nfor x in a:\n    if ③:\n        cnt += 1\n\nprint(f\"{avg:.2f} {cnt}\")\n```",
+        "blanks": [
+          {
+            "no": "①",
+            "answer": "list(map(int, input().split()))",
+            "note": "按空格切分并逐个转成 int；map 对象需要 list 才能重复遍历"
+          },
+          {
+            "no": "②",
+            "answer": "total / n",
+            "note": "Python 3 的 / 是浮点除法；用 // 会取整"
+          },
+          {
+            "no": "③",
+            "answer": "x > avg",
+            "note": "严格大于平均值"
+          }
+        ],
+        "analysis": "① 处把第二行输入切分并转成整数列表：`list(map(int, input().split()))`。`input().split()` 按空白切分成字符串，`map(int, ...)` 逐个转换，外层 `list` 把迭代器物化成列表（也便于后面遍历两次）。\n② 处求平均值，`total / n` 在 Python 3 中就是浮点除法；若误写成 `total // n` 会向下取整。\n③ 处写 `x > avg`，统计严格大于平均值的元素。\n\nPython 的写法比 C 简洁，但要注意 `n` 与列表长度应一致：如果输入的第二行个数不足，`total / n` 仍会按 n 计算，结果不符合预期。实际工程中可以用 `assert len(a) == n` 校验。\n\n例如输入 `5` 和 `1 2 3 4 10`，avg = 4.0，大于 4 的只有 10，输出 `4.00 1`。"
+      }
+    }
+  },
+  {
+    "id": "函-41",
+    "module": "函数",
+    "type": "fill",
+    "difficulty": 2,
+    "tags": [
+      "递归",
+      "函数调用",
+      "数位"
+    ],
+    "stem": "下面程序用递归函数求一个非负整数各位数字之和，请填空。\n\n```c\n#include <stdio.h>\n\nint digit_sum(int n)\n{\n    if (①)\n        return 0;\n    return ②;\n}\n\nint main(void)\n{\n    int n;\n\n    scanf(\"%d\", &n);\n    printf(\"%d\\n\", ③);\n    return 0;\n}\n```",
+    "analysis": "① 处是递归的终止条件：非负整数不断除以 10，最终会变成 0，此时各位数字之和为 0，写 `n == 0`。\n② 处把「各位之和」拆成「个位 + 其余位之和」：`n % 10` 取出个位，`n / 10` 去掉个位，再递归调用 `digit_sum(n / 10)`。因为 n 是 int，`n / 10` 是整数除法，正好实现「去掉最低位」。\n③ 处在 main 中调用函数并输出，写 `digit_sum(n)`。\n\n补全后程序对输入 1234 输出 10（1 + 2 + 3 + 4）。注意递归必须有终止条件，否则会无限递归直到栈溢出；本题的 n 为非负整数，所以 `n == 0` 能保证递归结束。若允许负数，应先取绝对值或单独处理符号位。",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "n == 0",
+        "note": "递归的终止条件；n 为非负整数，n == 0 时返回 0"
+      },
+      {
+        "no": "②",
+        "answer": "n % 10 + digit_sum(n / 10)",
+        "note": "取出个位，再递归求剩余部分；n / 10 是整数除法，去掉个位"
+      },
+      {
+        "no": "③",
+        "answer": "digit_sum(n)",
+        "note": "调用递归函数并输出结果"
+      }
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "下面程序用递归函数求一个非负整数各位数字之和，请填空。\n\n```cpp\n#include <iostream>\n\nint digit_sum(int n)\n{\n    if (①)\n        return 0;\n    return ②;\n}\n\nint main()\n{\n    int n;\n\n    std::cin >> n;\n    std::cout << ③ << '\\n';\n    return 0;\n}\n```",
+        "analysis": "① 写 `n == 0`，作为递归的终止条件。\n② 写 `n % 10 + digit_sum(n / 10)`：`n % 10` 是个位，`n / 10` 去掉个位后继续递归。C++ 的 int 除法同样是向零取整，对非负整数就是「去掉最低位」。\n③ 写 `digit_sum(n)`，调用函数并输出。\n\nC++ 与 C 的表达式完全相同，区别只在输入输出：`std::cin`/`std::cout` 不需要格式串，也不存在 `%d` 与类型不匹配的问题。补全后输入 1234 输出 10。\n\n如果想支持更大的数，可以把参数改成 `long long`；如果 n 可能为负，应先判断符号再对绝对值递归。递归深度约为数字的位数，对 int 最多 10 层，不会栈溢出。"
+      },
+      "python": {
+        "stem": "下面程序用递归函数求一个非负整数各位数字之和，请填空。\n\n```python\ndef digit_sum(n):\n    if ①:\n        return 0\n    return ②\n\nn = int(input())\nprint(③)\n```",
+        "blanks": [
+          {
+            "no": "①",
+            "answer": "n == 0",
+            "note": "递归终止条件；n 为非负整数"
+          },
+          {
+            "no": "②",
+            "answer": "n % 10 + digit_sum(n // 10)",
+            "note": "Python 3 的 / 得到 float，必须用 // 做整数除法，否则递归参数会变成小数、永远到不了 0"
+          },
+          {
+            "no": "③",
+            "answer": "digit_sum(n)",
+            "note": "调用函数并打印返回值"
+          }
+        ],
+        "analysis": "① 写 `n == 0`，作为递归终止条件。\n② 写 `n % 10 + digit_sum(n // 10)`。这里必须用 `//` 而不是 `/`：Python 3 的 `/` 总是返回 float，`digit_sum(123.4)` 会继续产生小数，永远到不了 0，最终触发 `RecursionError`。`//` 是向下取整的整数除法，对非负整数就是去掉个位。\n③ 写 `digit_sum(n)`。\n\n补全后输入 1234 输出 10（1 + 2 + 3 + 4）。Python 没有整数溢出问题，但递归深度默认上限约 1000 层；本题最多十几层，不会触发限制。若 n 可能为负，应先取 `abs(n)` 或单独处理符号。"
+      }
+    }
+  }
+]

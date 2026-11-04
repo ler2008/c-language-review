@@ -1,0 +1,321 @@
+{
+  "数-03": {
+    "stem": "下面 Python 程序读入 8 个整数存入列表，求它们的和与平均值并输出，请填空。\n\n```python\ndata = list(map(int, input().split()))\n\na = [0] * 8\nfor i in range(8):\n    a[i] = ①\n\ntotal = 0\nfor i in range(8):\n    total += ②\n\nprint(f\"sum={total}, avg={③:.2f}\")\n```\n\n输入 `1 2 3 4 5 6 7 8` 时，程序应输出 `sum=36, avg=4.50`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "data[i]",
+        "note": "直接取元素的值；Python 没有取地址符，不能写 &a[i]"
+      },
+      {
+        "no": "②",
+        "answer": "a[i]",
+        "note": "等价写法：直接遍历 for v in a: total += v"
+      },
+      {
+        "no": "③",
+        "answer": "total / 8",
+        "note": "等价写法：total / 8.0、total / len(a)；写成 total // 8 得到整数 4"
+      }
+    ],
+    "analysis": "本题考查一维数组（列表）的读入、遍历和求和。\n\n三处填空与 C 版本的三个空一一对应：① 取当前元素的值，Python 的列表元素本身就是可赋值的对象引用，直接写 `data[i]`，不存在 C 里 `&a[i]` 那种取地址操作；② 累加当前元素 `a[i]`；③ 求平均值，写 `total / 8`。\n\n与 C 的三处关键差异：C 用 `scanf(\"%d\", &a[i])` 在循环里逐个读，Python 先用 `input().split()` 把整行切成若干段字符串，再用 `list(map(int, ...))` 批量转成整数；C 的 `sum / 8` 是整数除法会截断，必须写 `8.0` 强制浮点，而 Python 3 的 `/` 永远是“真除法”，`total / 8` 直接得到 4.5，反而不该写 `//`（地板除会得到 4）；输出用 f-string 的格式说明符 `:.2f`，与 C 的 `%.2f` 等价。\n\n循环结束后 total 为 36，`total / 8` 为 4.5，输出 `sum=36, avg=4.50`。注意变量名用 `total` 而不是 `sum`，是为了不覆盖 Python 内置的 `sum()` 函数。"
+  },
+  "数-06": {
+    "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    a = list(map(int, data[1:1 + n]))\n\n    mx = mn = a[0]\n    max_pos = min_pos = 0\n    for i in range(1, n):\n        if a[i] > mx:\n            mx = a[i]\n            max_pos = i\n        if a[i] < mn:\n            mn = a[i]\n            min_pos = i\n\n    print(f\"max={mx} pos={max_pos} min={mn} pos={min_pos}\")\n\n\nif __name__ == \"__main__\":\n    main()",
+    "analysis": "思路：先把 `a[0]` 同时当作当前最大值和最小值，对应下标都记为 0；再从下标 1 遍历到 n-1，遇到更大的数就更新 max 与 max_pos，遇到更小的数就更新 min 与 min_pos。因为只在“严格大于/严格小于”时才更新，相等的元素不会改写下标，自然保留第一次出现的位置。\n\n复杂度：时间 O(n)，空间 O(n)（保存整个列表）。若不需要保留列表，边读边比较可以做到 O(1) 额外空间。\n\nPython 实现细节：用 `sys.stdin.read().split()` 一次性读入全部 token，既不依赖“所有数字在同一行”，也不会被多余空行影响，比逐行 `input()` 更稳；`list(map(int, data[1:1+n]))` 用切片精确取 n 个元素。输出用 f-string，与 C 的 `printf(\"max=%d pos=%d min=%d pos=%d\\n\", ...)` 逐字符等价。\n\n易错点：① 用 `>=`、`<=` 比较，多个最值时记录成最后一次出现的下标；② `max_pos` 初值写成 1，当最值恰在首个元素时输出错误；③ n = 1 时循环不执行，必须用 `a[0]` 初始化，而不是先设一个极值再扫描；④ 写成 `a = list(map(int, data[1:]))`，会把多余的 token 也读进来，长度可能不等于 n。"
+  },
+  "数-09": {
+    "stem": "下面 Python 程序用冒泡排序把列表按升序排列，请填空。\n\n```python\na = [5, 2, 9, 1, 7, 3]\n\nfor i in range(5):\n    for j in range(①):\n        if a[j] > a[j + 1]:\n            ②\n\nprint(*a)\n```\n\n程序运行后输出 `1 2 3 5 7 9`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "5 - i",
+        "note": "range 的上界不包含，range(5 - i) 让 j 取 0~4-i，对应 C 的 j < 5 - i；也可写 6 - 1 - i"
+      },
+      {
+        "no": "②",
+        "answer": "a[j], a[j + 1] = a[j + 1], a[j]",
+        "note": "元组解包一步完成交换，不需要临时变量 t；右侧先整体求值再赋值，所以不会互相覆盖"
+      }
+    ],
+    "analysis": "本题考查冒泡排序的内层边界与元素交换。\n\n每完成一轮，最大的元素就沉到末尾；第 i 轮（i 从 0 开始）末尾已有 i 个元素就位，所以内层只让 j 取 0~4-i。C 里写成 `j < 5 - i`，Python 的 `range(a, b)` 是左闭右开，因此直接写 `range(5 - i)`，最后一对比较是 a[4-i] 与 a[5-i]，不会越界。\n\n交换是本题的第二个考点：C 需要临时变量分三步（暂存、前移、写回），漏掉第三步就会丢数据；Python 支持“元组解包赋值”，`a[j], a[j + 1] = a[j + 1], a[j]` 一行完成交换，右侧会先算好两个值再同时赋给左边，不存在覆盖问题。注意这里不能用 `a[j] = a[j+1]; a[j+1] = a[j]` 这种 C 式的两步写法，那样两个位置都会变成原来的 a[j+1]。\n\n最后 `print(*a)` 把列表元素按位置参数展开，默认用空格分隔，效果等价于 C 里循环 `printf(\"%d \", a[i])`，而且行末不会多出空格。运行结果为 1 2 3 5 7 9。"
+  },
+  "数-11": {
+    "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    a = list(map(int, data[1:1 + n]))\n    x = int(data[1 + n])\n\n    rest = [v for v in a if v != x]\n\n    print(len(rest))\n    print(\" \".join(map(str, rest)))\n\n\nif __name__ == \"__main__\":\n    main()",
+    "analysis": "思路：扫描原列表，把不等于 x 的元素按原顺序收集到结果列表（这等价于 C 版“读写双下标原地压缩”：读指针 i 扫原数组，写指针 k 指向下一个可写位置）。因为收集是顺序进行的，剩余元素的相对顺序自然保持不变；结果列表的长度就是剩余个数。\n\n复杂度：时间 O(n)，空间 O(n)。C 版本可以原地做到 O(1) 额外空间，Python 若也想原地压缩，可以写 `k = 0; for v in a: if v != x: a[k] = v; k += 1`，但列表推导更符合 Python 习惯。\n\nPython 实现细节：`x` 在读完 n 个元素之后才读，`data[1 + n]` 正好是第 n+1 个 token（下标从 0 开始），顺序不能颠倒。输出用 `\" \".join(map(str, rest))`：join 只接受字符串序列，所以必须先 `map(str, ...)`；它保证元素之间恰好一个空格、行末没有多余空格。当所有元素都被删除时 `rest` 为空，`\" \".join([])` 是空串，`print` 会输出一个空行，正好满足题目“第二行输出一个空行”的要求。\n\n易错点：① 一边遍历一边 `a.remove(x)`，`remove` 会让后面的元素前移，导致紧邻的重复元素被跳过；② 输出写成 `print(*rest)` 虽然也能过，但当 rest 为空时 `print(*[])` 输出的同样是一个空行，两种写法都对；③ 用 `set` 去重——本题不是去重而是删除指定值，用 set 会改变顺序和数量；④ x 与数组的顺序读错。"
+  },
+  "数-14": {
+    "stem": "下面 Python 程序把 2 行 3 列的二维列表转置成 3 行 2 列后输出，请填空。\n\n```python\na = [[1, 2, 3], [4, 5, 6]]\nb = [[0] * 2 for _ in range(3)]\n\nfor i in range(2):\n    for j in range(3):\n        b[①][②] = a[i][j]\n\nfor row in b:\n    print(*row)\n```\n\n程序输出：\n```text\n1 4\n2 5\n3 6\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "j",
+        "note": "转置后的行下标来自原数组的列下标"
+      },
+      {
+        "no": "②",
+        "answer": "i",
+        "note": "转置后的列下标来自原数组的行下标；写成 b[i][j] 会越界或写错位置"
+      }
+    ],
+    "analysis": "本题考查二维数组（嵌套列表）的转置。\n\n转置就是把行列互换：原数组的 `a[i][j]` 应放到目标数组的 `b[j][i]`。原数组 2 行 3 列，转置后是 3 行 2 列，所以 b 的第一维长度取 3、第二维取 2，两侧下标都不能越界。\n\nPython 版本最需要注意的一点是**二维列表必须逐行创建**：`[[0] * 2 for _ in range(3)]` 会生成 3 个互不相同的行；若写成 `[[0] * 2] * 3`，三行其实是同一个列表对象的三个引用，`b[0][0] = 1` 会让三行同时变化，转置结果全错。C 的 `int b[3][2]` 是连续内存的静态数组，不存在这个问题，这是两种语言最容易踩坑的差异。另一个差异是 C 的越界写不会报错（可能悄悄改坏别的内存），而 Python 写 `b[1][2]` 会直接抛 `IndexError: list index out of range`，错误更容易被发现。\n\n映射填 `b[j][i] = a[i][j]`，外层遍历原数组的行（0~1），内层遍历列（0~2）。最后的 `for row in b: print(*row)` 逐行解包输出，每行两个数、空格分隔，与题目给出的输出一致。"
+  },
+  "数-16": {
+    "solution": "import sys\n\n\ndef main():\n    data = list(map(int, sys.stdin.read().split()))\n    m, n = data[0], data[1]\n\n    pos = 2\n    a = []\n    for _ in range(m):\n        a.append(data[pos:pos + n])\n        pos += n\n    b = []\n    for _ in range(m):\n        b.append(data[pos:pos + n])\n        pos += n\n\n    for i in range(m):\n        row = [a[i][j] + b[i][j] for j in range(n)]\n        print(\" \".join(map(str, row)))\n\n\nif __name__ == \"__main__\":\n    main()",
+    "analysis": "思路：矩阵加法就是对应位置元素相加，`C[i][j] = A[i][j] + B[i][j]`。读入 m、n 后按行把 token 切成 m 个长度 n 的切片，先得到 A，再得到 B；输出时逐行拼接，用 `\" \".join(map(str, row))` 保证元素间一个空格、行末无多余空格。\n\n复杂度：时间 O(mn)，空间 O(mn)（A、B 各存一份；也可以只读 A，再边读 B 边累加，把空间降到 O(mn) 的一半）。\n\nPython 实现细节：先把整个输入读成一维整数列表，再用切片“按行切块”，比 C 的双重 `scanf` 更紧凑，也不会因为输入里有换行或多余空格而出错。若想更像 C 的写法，也可以用 `for _ in range(m): a.append(list(map(int, input().split())))`，但那样必须保证每行数据严格按行给出，遇到空行会抛异常。\n\n易错点：① 切片步进写错（如 `pos += m`），导致 B 整体错位；② 用 `[[0] * n] * m` 创建矩阵，行是同一对象的引用，赋值会互相覆盖；③ `print(*row)` 与 `print(\" \".join(...))` 都能输出正确格式，但 `print(row)` 会带出方括号和逗号；④ 循环边界写成常数 10 而不是 m、n。"
+  },
+  "数-19": {
+    "stem": "下面 Python 程序读入一个不含空格的字符串并逆序输出，请填空。\n\n```python\ns = input().strip()\n\nfor i in range(①, -1, -1):\n    print(②, end=\"\")\nprint()\n```\n\n输入 `abcde` 时，程序输出 `edcba`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "len(s) - 1",
+        "note": "最后一个字符的下标；len(s) 统计的是字符个数，不含 C 的 '\\0'"
+      },
+      {
+        "no": "②",
+        "answer": "s[i]",
+        "note": "Python 用下标取值，不能写 &s[i]；end=\"\" 让 print 不换行，相当于 putchar"
+      }
+    ],
+    "analysis": "本题考查字符串长度与逆序输出。\n\nC 版本的 `strlen(s)` 从 s[0] 数到第一个 `'\\0'` 之前；Python 字符串没有结尾符，`len(s)` 直接就是有效字符个数，所以最后一个字符的下标是 `len(s) - 1`。\n\n第二个关键差异在循环写法：C 的 `for (i = len - 1; i >= 0; i--)` 在 Python 里要写成 `range(len(s) - 1, -1, -1)`——`range(start, stop, step)` 是左闭右开，start 取最后一个下标，stop 必须写 -1 才能让 i 走到 0（若写 0，下标 0 不会被访问，输出少一个字符）。`print(s[i], end=\"\")` 对应 C 的 `putchar(s[i])`，`end=\"\"` 取消默认换行；循环结束后单独 `print()` 补上换行。\n\n`input().strip()` 对应 C 的 `scanf(\"%49s\", s)` 并去掉换行：Python 不需要为 `'\\0'` 预留空间（字符串自动管理长度），但 `strip()` 不能省，否则读到的是带换行的整行。此外 Python 还可以直接写 `print(s[::-1])`（切片步长 -1）一次完成逆序，本题为了练习下标循环才用了 range。"
+  },
+  "数-22": {
+    "stem": "下面 Python 程序用直接插入排序把列表按升序排列，请填空。\n\n```python\na = [5, 2, 4, 6, 1, 3]\n\nfor i in range(1, 6):\n    t = a[i]\n    j = i - 1\n    while ①:\n        a[j + 1] = a[j]\n        j -= 1\n    a[②] = t\n\nprint(*a)\n```\n\n程序运行后输出 `1 2 3 4 5 6`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "j >= 0 and a[j] > t",
+        "note": "两个条件顺序不能交换，必须先判断 j >= 0 再访问 a[j]；Python 负数下标不会报错，写反会静默取到末尾元素"
+      },
+      {
+        "no": "②",
+        "answer": "j + 1",
+        "note": "循环结束时 j 指向比 t 小的元素，插入位置是 j + 1"
+      }
+    ],
+    "analysis": "本题考查直接插入排序的核心循环。\n\n外层 i 从 1 开始（只有一个元素的区间天然有序）；每趟把 `a[i]` 暂存到 t，再把前面所有比 t 大的元素依次后移一位（`a[j + 1] = a[j]`），j 不断左移，直到 j < 0 或 `a[j] <= t`。此时 j + 1 就是 t 应该插入的位置，所以第二空填 `j + 1`。\n\n第一空必须写成 `j >= 0 and a[j] > t`。Python 的 `and` 与 C 的 `&&` 一样是短路求值：左边为假时右边不求值，因此 j 变成 -1 后不会去访问 `a[-1]`。这里有一处比 C 更隐蔽的陷阱——**Python 的负下标不会越界报错**，`a[-1]` 取到的是最后一个元素。若把条件顺序写成 `a[j] > t and j >= 0`，C 会因越界读而崩溃或得到垃圾值，Python 却会静默地用末尾元素做比较，排序结果错误且难以察觉，所以顺序务必保持 `j >= 0` 在前。\n\n其余语法差异：C 的 `for (i = 1; i < 6; i++)` 对应 `range(1, 6)`（右开区间）；`j--` 在 Python 里没有自减运算符，写成 `j -= 1`；输出用 `print(*a)` 按空格分隔展开。填空后程序输出 1 2 3 4 5 6。"
+  },
+  "数-25": {
+    "stem": "下面 Python 程序输出 6 行杨辉三角，请填空。\n\n```python\nn = 6\na = [[0] * n for _ in range(n)]\n\nfor i in range(n):\n    a[i][0] = a[i][i] = 1\n\nfor i in range(2, n):\n    for j in range(1, ①):\n        a[i][j] = ②\n\nfor i in range(n):\n    for j in range(i + 1):\n        print(f\"{a[i][j]:4d}\", end=\"\")\n    print()\n```\n\n程序最后一行输出 `   1   5  10  10   5   1`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "i",
+        "note": "j 取 1~i-1；range(1, i) 是右开区间，等价于 C 的 j < i"
+      },
+      {
+        "no": "②",
+        "answer": "a[i - 1][j - 1] + a[i - 1][j]",
+        "note": "等于上一行左边和正上方两个元素之和"
+      }
+    ],
+    "analysis": "本题考查杨辉三角的递推规律与二维列表下标。\n\n杨辉三角每行第一个和最后一个元素都是 1，程序用 `a[i][0] = a[i][i] = 1` 统一处理（Python 支持链式赋值，与 C 的写法相同）；从第 3 行（下标 2）开始，中间的每个元素等于上一行同列元素与上一行前一列元素之和，即 `a[i][j] = a[i - 1][j - 1] + a[i - 1][j]`，所以 ② 填这个表达式。内层 j 只需取 1 到 i-1，程序里写成 `range(1, ①)`；range 是左闭右开，因此 ① 填 `i`。若写成 `i + 1`，j 会取到 i，此时访问 `a[i - 1][i]`，取到的是上一行未初始化的 0，结果错误。\n\nPython 与 C 的两点差异：（1）二维列表必须先建好再填，`[[0] * n for _ in range(n)]` 是列表推导式（逐行新建），不能写 `[[0] * n] * n`（n 行共享同一个列表对象，赋值会互相覆盖）；（2）输出用 f-string 的格式说明符 `f\"{a[i][j]:4d}\"` 对应 C 的 `%4d`，`end=\"\"` 取消换行，内层循环结束后 `print()` 补上行尾换行，效果与 C 里 `printf(\"%4d\", ...)` 加 `printf(\"\\n\")` 一致。\n\n第 6 行为 1 5 10 10 5 1，按宽度 4 右对齐输出即为题目最后一行。"
+  },
+  "数-26": {
+    "solution": "import sys\n\n\ndef main():\n    n = int(sys.stdin.read().split()[0])\n\n    a = [[0] * n for _ in range(n)]\n    for i in range(n):\n        a[i][0] = 1\n        a[i][i] = 1\n    for i in range(2, n):\n        for j in range(1, i):\n            a[i][j] = a[i - 1][j - 1] + a[i - 1][j]\n\n    lines = []\n    for i in range(n):\n        lines.append(\"\".join(f\"{a[i][j]:5d}\" for j in range(i + 1)))\n    print(\"\\n\".join(lines))\n\n\nif __name__ == \"__main__\":\n    main()",
+    "analysis": "思路：杨辉三角第 i 行有 i+1 个数，首尾都是 1，其余元素由上一行相邻两个元素相加得到。先对每一行置 `a[i][0] = a[i][i] = 1`，再从第 3 行（i = 2）开始递推中间的 j = 1~i-1，最后逐行输出。\n\n复杂度：时间 O(n²)，空间 O(n²)。n ≤ 15 时最大元素 3432，C 的 int 够用；Python 的整数是任意精度，n 再大也不会溢出，只是数字会变长、宽度 5 装不下（例题范围不会出现）。\n\nPython 实现细节：① 二维表的创建必须用列表推导 `[[0] * n for _ in range(n)]`，若写 `[[0] * n] * n`，所有行是同一个列表对象，赋值会串行；② 输出宽度用格式说明符 `f\"{v:5d}\"`，右对齐、不足补空格，与 C 的 `%5d` 完全对应，并且行末不会多出空格；③ 每行用 `\"\".join(...)` 拼成一个字符串再统一输出，比逐个数 `print(..., end=\"\")` 少很多次 IO 调用。若写成 `print(f\"{v:5d}\", end=\" \")` 会多出额外的空格，与样例不符。\n\n易错点：① 递推时 j 取到 i（`range(1, i + 1)`），访问未初始化的 `a[i-1][i]`；② 先输出再计算，导致首行缺 1；③ 用左对齐 `<5d`，与样例的右对齐不符；④ n = 1 时只输出一个 1，循环边界要能自然成立（range(2, 1) 为空，正好不递推）。"
+  },
+  "数-28": {
+    "stem": "下面 Python 程序在有序列表中用二分查找查找 14，找到则输出下标，否则输出 -1，请填空。\n\n```python\na = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]\nkey = 14\nlow, high = 0, 9\npos = -1\n\nwhile low <= high:\n    mid = ①\n    if a[mid] == key:\n        pos = mid\n        break\n    elif a[mid] < key:\n        low = ②\n    else:\n        high = ③\n\nprint(pos)\n```\n\n程序输出 `6`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "(low + high) // 2",
+        "note": "必须用整除 //；写成 / 会得到浮点数，a[mid] 抛 TypeError。更稳妥的写法：low + (high - low) // 2"
+      },
+      {
+        "no": "②",
+        "answer": "mid + 1",
+        "note": "a[mid] 已比较过，新区间从 mid 的右边一个开始"
+      },
+      {
+        "no": "③",
+        "answer": "mid - 1",
+        "note": "a[mid] 已比较过，新区间到 mid 的左边一个结束"
+      }
+    ],
+    "analysis": "本题考查二分查找的区间收缩。\n\n每次取中点 `mid = (low + high) // 2` 与 key 比较：相等就记录下标并结束；`a[mid] < key` 说明目标在右半边，令 `low = mid + 1`；否则目标在左半边，令 `high = mid - 1`。两个边界都必须跳过 mid 本身，否则区间可能不再缩小而死循环。循环条件 `low <= high` 保证区间为空（low > high）时退出，此时 pos 仍为 -1，表示没找到。\n\nPython 版本最关键的差异是**必须用整除 `//`**：C 的 `(low + high) / 2` 两边都是 int，结果自动截断；Python 3 的 `/` 永远是浮点除法，`mid` 会变成 7.0，`a[7.0]` 立刻抛 `TypeError: list indices must be integers or slices, not float`。另外 `//` 对正数向下取整，与 C 的截断行为一致（本题下标非负，无需担心负数取整差异）。`elif` 对应 C 的 `else if`，`low, high = 0, 9` 是元组解包式多重赋值。\n\n本题 key = 14，依次比较 10、16、12、14，最终 pos = 6。二分查找要求数组有序，时间复杂度 O(log n)。"
+  },
+  "数-31": {
+    "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    a = list(map(int, data[1:1 + n]))\n\n    seen = set()\n    rest = []\n    for v in a:\n        if v not in seen:\n            seen.add(v)\n            rest.append(v)\n\n    print(len(rest))\n    print(\" \".join(map(str, rest)))\n\n\nif __name__ == \"__main__\":\n    main()",
+    "analysis": "思路：按顺序扫描原列表，用集合 `seen` 记录已经出现过的值，第一次遇到某个值时把它追加到结果列表 `rest`。这样既完成去重，又天然保留了“首次出现”的顺序，最后先输出个数再输出序列。\n\n复杂度：平均时间 O(n)（集合的查找与插入是 O(1) 均摊），空间 O(n)。C 版本是“双重循环在结果数组里查找”，最坏 O(n²)；n ≤ 100 时两者都能过，但 Python 用集合是更地道的写法。\n\nPython 实现细节：① 用 `set` 而不是 `list` 做判重，`v not in seen` 均摊 O(1)；② 若只关心去重、不要求顺序一致，`list(dict.fromkeys(a))` 一行就能做到（Python 3.7+ 字典保持插入顺序），这里为了让步骤更清楚，用了 set + 列表；③ 输出 `\" \".join(map(str, rest))`，join 只接受字符串，必须先把整数转成 str，否则抛 `TypeError: sequence item 0: expected str instance, int found`。\n\n易错点：① 直接 `print(set(a))`——集合无序，输出顺序与“首次出现”不符，而且打印出来还带花括号；② 先 `sort()` 再去重，虽然数量对，但顺序被打乱；③ 忘记 `map(str, ...)`；④ 在遍历 `rest` 的同时修改它（边遍历边 append 是允许的，但边遍历边删除会漏元素）。"
+  },
+  "数-33": {
+    "stem": "下面 Python 程序把列表传给函数求平均值，请填空。\n\n```python\ndef average(a, n):\n    s = 0\n    for i in range(n):\n        s += a[i]\n    return ①\n\n\nx = [3, 5, 7, 9, 11, 14]\nprint(f\"{②:.2f}\")\n```\n\n程序输出 `8.17`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "s / n",
+        "note": "Python 3 的 / 是真除法，49/6 = 8.1666…；写成 s // n 会得到 8，输出 8.00"
+      },
+      {
+        "no": "②",
+        "answer": "average(x, 6)",
+        "note": "列表名直接传引用，长度可以另传，也可以在函数里用 len(a)"
+      }
+    ],
+    "analysis": "本题考查把数组（列表）传给函数以及浮点除法的陷阱。\n\nC 的形参 `int a[]` 实际上退化成指针，函数内部拿不到数组长度，所以必须额外传一个 n；Python 的列表自带长度，函数里本来可以写 `len(a)`，本题保留参数 n 是为了与 C 的写法一一对应，也顺便练习“长度由调用者给出”的接口风格。\n\n第一空是重点：`s / n` 与 `s // n` 只差一个斜杠，结果却完全不同。Python 3 的 `/` 是真除法，即使两边都是 int 也返回 float，49 / 6 ≈ 8.1667，配 `:.2f` 输出 8.17；而 `//` 是地板除，得到整数 8，`:.2f` 会输出 8.00。C 里对应的是 `sum / n`（整数除法，得 8）与 `(double)sum / n`（得 8.1667）的区别，只是 C 需要显式强转，Python 需要显式选择运算符。\n\n第二空调用函数：把列表 x 直接作为实参传入，Python 传的是对象引用，函数内 `a[i]` 读到的就是 x 的元素；长度 6 单独传。`f\"{...:.2f}\"` 的格式说明符与 C 的 `%.2f` 一致，都是四舍五入保留两位小数。注意函数定义中的 `s = 0` 是局部变量，不会影响外部；若在函数里写 `s += 1` 而未先赋值，会触发 `UnboundLocalError`。"
+  },
+  "数-35": {
+    "solution": "import sys\n\n\ndef main():\n    lines = sys.stdin.read().split(\"\\n\")\n    s = lines[0].rstrip(\"\\r\")\n    second = lines[1].rstrip(\"\\r\") if len(lines) > 1 else \"\"\n    c = second[0] if second else \"\"\n\n    print(\"\".join(ch for ch in s if ch != c))\n\n\nif __name__ == \"__main__\":\n    main()",
+    "analysis": "思路：把整行文本（含空格）读进来，逐字符过滤掉等于 c 的字符，其余按原顺序拼接输出。这等价于 C 版的“读写双下标原地压缩 + 末尾补 '\\0'”，只是 Python 字符串不可变，直接生成一个新字符串更自然。\n\n复杂度：时间 O(n)，空间 O(n)（结果字符串）。\n\nPython 实现细节：① 必须用 `sys.stdin.read()` 或 `input()` 读整行，不能用 `input().split()`——`split()` 会按空格切分，把原始空格丢掉；② `input()` 会自动去掉行末换行符，正好对应 C 里 `fgets` 之后“判断并删除末位 '\\n'”那两步，所以本题的 Python 版反而更短；③ 读第二个字符时取该行的**第一个字符**而不是 `strip()` 后的结果，因为 c 本身可能就是空格，`strip()` 会把它变成空串，导致一个字符都删不掉；④ `\"\".join(生成器)` 比在循环里 `res += ch` 更高效（字符串拼接是 O(n²)）；⑤ 末尾不需要补结束符，Python 字符串自带长度信息，`print` 会正常结束，不会像 C 那样越界读。\n\n易错点：① 用 `split()` 读字符串；② 对 c 所在行做 `strip()`；③ 用 `s.replace(c, \"\")` —— 其实这是最短的正确写法，本题用循环是为了练习扫描；④ 忘记处理“第二行只有换行符”这种输入。"
+  },
+  "数-38": {
+    "stem": "下面 Python 程序统计一行字符中数字、字母和其他字符的个数，请填空。\n\n```python\ns = ①\ndigit = alpha = other = 0\n\nfor ch in s:\n    if '0' <= ch <= '9':\n        digit += 1\n    elif ch.isalpha():\n        alpha += 1\n    else:\n        ②\n\nprint(digit, alpha, other)\n```\n\n输入 `C99 is fun!` 时，程序输出 `2 6 3`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "input()",
+        "note": "读入一行并自动去掉行末换行符；也可写 sys.stdin.readline().rstrip('\\n')"
+      },
+      {
+        "no": "②",
+        "answer": "other += 1",
+        "note": "既不是数字也不是字母的字符计入 other；Python 没有 ++ 运算符，写成 other++ 是语法错误"
+      }
+    ],
+    "analysis": "本题考查字符遍历与分类统计。\n\nC 版用 `fgets` 读入，末尾会保留 `'\\n'`，所以循环条件要同时判断 `s[i] != '\\0'` 和 `s[i] != '\\n'`，否则换行符会被算进“其他字符”。Python 的 `input()` 读一行时**自动去掉行末换行符**，字符串也没有 `'\\0'` 结束标志，因此循环可以直接写 `for ch in s` 逐字符遍历，不必处理终止条件——题目中的两个空就变成了“读入”和“计数”本身。\n\n分类判断上，Python 支持链式比较：`'0' <= ch <= '9'` 等价于 C 的 `ch >= '0' && ch <= '9'`，但只能写一次 ch。字母部分用了 `ch.isalpha()`，比手写大小写两段范围更简洁；注意它对中文等 Unicode 字母同样返回 True，本题输入是 ASCII 字符所以无影响，若要求严格只认英文可以写 `'a' <= ch <= 'z' or 'A' <= ch <= 'Z'`。`digit = alpha = other = 0` 是链式赋值，三个变量各自绑定整数 0（int 不可变，不存在共享问题）。\n\n`print(digit, alpha, other)` 用空格分隔多个参数，等价于 C 的 `printf(\"%d %d %d\\n\")`。输入 `C99 is fun!` 时：数字 2 个（9、9），字母 6 个（C、i、s、f、u、n），其他 3 个（两个空格和感叹号），输出 `2 6 3`。"
+  },
+  "数-39": {
+    "solution": "import sys\n\n\ndef main():\n    data = list(map(int, sys.stdin.read().split()))\n    m, n, p = data[0], data[1], data[2]\n\n    pos = 3\n    a = []\n    for _ in range(m):\n        a.append(data[pos:pos + n])\n        pos += n\n    b = []\n    for _ in range(n):\n        b.append(data[pos:pos + p])\n        pos += p\n\n    for i in range(m):\n        row = []\n        for j in range(p):\n            s = 0\n            for k in range(n):\n                s += a[i][k] * b[k][j]\n            row.append(s)\n        print(\" \".join(map(str, row)))\n\n\nif __name__ == \"__main__\":\n    main()",
+    "analysis": "思路：矩阵乘法的定义是 C[i][j] = A 的第 i 行与 B 的第 j 列对应元素乘积之和，因此用三重循环：外层 i 枚举行，中层 j 枚举列，内层 k 在 0~n-1 上累加 `a[i][k] * b[k][j]`。每个 C[i][j] 用局部变量 `s` 从 0 开始累加，天然避免了 C 里“忘记清零”的坑。\n\n复杂度：时间 O(mnp)，m、n、p ≤ 10 时最多 1000 次乘加；空间 O(mn + np + mp)。\n\nPython 实现细节：① 输入按“一维 token 流 + 切片切块”读入，A 是 m 行 n 列、B 是 n 行 p 列，两段的行数不同，步进必须分别用 n 和 p；② 若想更 Pythonic，可以先把 B 转置成 `bt = list(zip(*b))`，再写 `sum(x * y for x, y in zip(a[i], bt[j]))`，内层循环由 zip 完成；③ 输出 `\" \".join(map(str, row))`，行末无多余空格；④ 用 `print(*row)` 也能得到正确格式。\n\n易错点：① 内层写成 `for k in range(m)` 或 `range(p)`，下标越界；② 把 `b[k][j]` 误写成 `b[j][k]`，当 p ≠ n 时越界，相等时则结果错误；③ B 的行数按 m 读入（应该按 n）；④ 在循环外累加 `s` 而没有在每行重置。"
+  },
+  "数-41": {
+    "stem": "下面 Python 程序用埃氏筛法求 50 以内的所有素数，请填空。\n\n```python\nn = 50\nis_prime = [False] * (n + 1)\n\nfor i in range(2, n + 1):\n    is_prime[i] = True\n\nfor i in range(2, int(n ** 0.5) + 1):\n    if is_prime[i]:\n        for j in range(i * i, n + 1, ①):\n            is_prime[j] = ②\n\nfor i in range(2, n + 1):\n    if is_prime[i]:\n        print(i, end=\" \")\n```\n\n程序输出 `2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 `。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "i",
+        "note": "素数的倍数步长为 i，从 i*i 开始标记；range 的第三个参数是步长"
+      },
+      {
+        "no": "②",
+        "answer": "False",
+        "note": "标记为非素数；若把数组改成 0/1 整数，这里填 0，两种写法等价"
+      }
+    ],
+    "analysis": "本题考查用数组（列表）作“标记表”的经典算法。\n\n数组下标代表整数，元素值代表该数是否仍是素数：先把 2~n 全部置 `True`，然后从最小的素数 2 开始，把它的所有倍数标记为 `False`；下一个仍为 `True` 的数就是素数，继续筛。`range(i * i, n + 1, ①)` 的第三个参数是步长，素数的倍数每隔 i 个出现一次，所以 ① 填 `i`；循环体把 `is_prime[j]` 标记为非素数，② 填 `False`（若数组改用 0/1 整数，填 0 也等价）。内层从 `i * i` 开始，因为小于 i² 的 i 的倍数早已被更小的素数筛掉；外层 `range(2, int(n ** 0.5) + 1)` 对应 C 的 `i * i <= n`，保证只用不超过 √n 的素数去筛。\n\nPython 与 C 的三点差异：（1）C 的数组可以声明后不初始化（`int is_prime[51];`），Python 必须先建出 `[False] * (n + 1)`，长度 n+1 保证下标 n 可用；（2）`[True] * (n + 1)` 重复的是同一个不可变布尔值，安全；若元素是可变对象（如列表），必须改用推导式，否则各行共享；（3）布尔值与 0/1 可以互换，`if is_prime[i]` 直接判断真值，不必写 `== 1`。\n\n`print(i, end=\" \")` 与 C 的 `printf(\"%d \", i)` 一致：行末保留一个空格且不换行。"
+  },
+  "数-42": {
+    "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    a = list(map(int, data[1:1 + n]))\n    key = int(data[1 + n])\n\n    low, high = 0, n - 1\n    pos = -1\n    while low <= high:\n        mid = low + (high - low) // 2\n        if a[mid] == key:\n            pos = mid\n            break\n        elif a[mid] < key:\n            low = mid + 1\n        else:\n            high = mid - 1\n\n    print(pos)\n\n\nif __name__ == \"__main__\":\n    main()",
+    "analysis": "思路：二分查找每次取当前区间的中点与 key 比较：相等则找到；中点值小于 key，说明目标只可能在右半区，令 low = mid + 1；中点值大于 key，令 high = mid - 1。区间每轮缩小一半，直到 low > high 说明不存在，此时 pos 仍为 -1。中点写成 `low + (high - low) // 2` 可以避免 low + high 过大（C 里是 int 溢出，Python 里是整数无限精度，但这样写仍是好习惯）。\n\n复杂度：时间 O(log n)，空间 O(n)（保存整个列表；若只需下标也可用迭代器省掉列表，但没必要）。\n\nPython 实现细节：① 必须用整除 `//`，写成 `/` 会得到 float，`a[mid]` 直接抛 TypeError；② `elif` 对应 `else if`，`low, high = 0, n - 1` 是多重赋值；③ 标准库有 `bisect.bisect_left(a, key)` 可以直接求下标（找不到时返回插入位置，需要再判断 `a[i] == key`），但本题要求手写二分；④ `print(pos)` 输出整数，与 C 的 `printf(\"%d\\n\", pos)` 等价。\n\n易错点：① 循环条件写成 `low < high`，会漏掉区间只剩一个元素的情况；② 收缩时写成 `low = mid` 或 `high = mid`，区间不缩小导致死循环；③ 忘记数组必须有序；④ 输出从 1 开始的下标（题目要求从 0 开始）。"
+  },
+  "数-46": {
+    "stem": "下面 Python 程序先读入 n 个整数，再回答 q 次区间和查询（下标从 1 开始），请填空。\n\n```python\nn = int(input())\na = [0] * (n + 1)\npre = [0] * (n + 1)\n\ndata = list(map(int, input().split()))\nfor i in range(1, n + 1):\n    a[i] = data[i - 1]\n\nfor i in range(1, n + 1):\n    pre[i] = ①\n\nq = int(input())\nfor _ in range(q):\n    l, r = map(int, input().split())\n    print(②)\n```\n\n例如依次输入 `5`、`2 4 1 7 3`、`1`、`2 4`，程序应输出 `12`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "pre[i - 1] + a[i]",
+        "note": "等价写法：a[i] + pre[i - 1]；利用前一项的累加结果，建表 O(n)"
+      },
+      {
+        "no": "②",
+        "answer": "pre[r] - pre[l - 1]",
+        "note": "区间 [l, r] 的和 = 前 r 项之和减去前 l-1 项之和；写成 pre[r] - pre[l] 会少算 a[l]"
+      }
+    ],
+    "analysis": "本题考查前缀和数组。\n\n定义 `pre[i] = a[1] + a[2] + ... + a[i]`，于是任意区间和 `sum(l, r) = pre[r] - pre[l-1]`，单次查询 O(1)。① 要利用前一项的结果，写成 `pre[i - 1] + a[i]`；② 若误写成 `pre[r] - pre[l]`，就把 a[l] 自己减掉了，结果偏小，正确写法是 `pre[r] - pre[l - 1]`。\n\nPython 实现细节：（1）列表长度取 n+1，下标 1~n 有效，`pre[0]` 保持 0；C 里靠 `int pre[1005] = {0}` 的初始化器把所有元素清零，Python 用 `[0] * (n + 1)` 达到同样效果；（2）输入按行读取，第一行 n、第二行 n 个整数、第三行 q，之后每行一组 l r；（3）`for _ in range(q)` 用下划线表示不使用的循环变量，对应 C 的 `while (q-- > 0)`；（4）也可以不建 a，直接 `pre[i] = pre[i - 1] + data[i - 1]`，省一个列表。\n\n整段程序建表 O(n)、每次查询 O(1)，总复杂度 O(n + q)，比每次查询都循环累加的 O(nq) 快得多。注意 l = 1 时 l-1 = 0，恰好用到 pre[0]，这正是下标从 1 开始存储的好处；若改成 0 基下标，公式要相应变成 `pre[r + 1] - pre[l]`。"
+  },
+  "数-48": {
+    "solution": "import sys\n\n\ndef main():\n    data = list(map(int, sys.stdin.read().split()))\n    n, k = data[0], data[1]\n    a = data[2:2 + n]\n\n    res = []\n    for i in range(n - k + 1):\n        res.append(max(a[i:i + k]))\n\n    print(\" \".join(map(str, res)))\n\n\nif __name__ == \"__main__\":\n    main()",
+    "analysis": "思路：这是“连续子段 + 逐段求最值”的滑动窗口枚举。窗口起点 i 可以取 0 ~ n-k，共 n-k+1 个；对每个 i，在 a[i] ~ a[i+k-1] 中扫一遍取最大值。C 版用双重循环手写比较，Python 版直接用切片 + 内置 `max()`，语义完全一样。\n\n复杂度：时间 O((n-k+1) × k)，n = 1000 时最坏约 10^6 次比较，完全够用；切片会额外复制 k 个元素，空间 O(k)。若 n 达到 10^5 级别，应改用单调队列（collections.deque）做到 O(n)。\n\nPython 实现细节：① `a[i:i+k]` 是切片，越界不会报错——**这正是与 C 最大的差异**：C 里若循环条件写成 `i < n`，`a[i+k-1]` 会越界读到数组外的内存；Python 切片越界只会静默返回一个更短的列表，`max()` 照样算出一个“答案”，错误更难发现，所以 `range(n - k + 1)` 的边界必须算准。② `max(空列表)` 会抛 ValueError，可用它来自检窗口是否为空。③ 输出 `\" \".join(map(str, res))`，n-k+1 个数、空格分隔、行末无多余空格。\n\n易错点：① 循环上界写成 `range(n)`；② k = n 时只应输出一个值（`range(1)`）；③ 忘记 `map(str, ...)`；④ 用 `max(a[i:i+k])` 时把 k 写成 k-1，窗口少一个元素。"
+  },
+  "数-50": {
+    "stem": "下面 Python 程序判断读入的字符串（不含空格）是否为回文：是则输出 `yes`，否则输出 `no`。请填空。\n\n```python\ns = input().strip()\ni, j = 0, len(s) - 1\n\nwhile i < j and ①:\n    i += 1\n    j -= 1\n\nif ②:\n    print(\"yes\")\nelse:\n    print(\"no\")\n```\n\n例如输入 `level` 输出 `yes`，输入 `levels` 输出 `no`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "s[i] == s[j]",
+        "note": "等价写法：s[j] == s[i]；一旦不相等循环提前退出"
+      },
+      {
+        "no": "②",
+        "answer": "i >= j",
+        "note": "必须是 i >= j；奇数长度回文退出时 i == j，写 i > j 会误判为 no"
+      }
+    ],
+    "analysis": "本题考查用双指针判断回文。\n\ni 从左端、j 从右端向中间靠拢，只要对称位置的字符相等就继续。① 循环继续的条件是 `s[i] == s[j]`；一旦不相等，循环提前退出。\n\n② 循环退出有两种原因：字符不相等（此时仍有 i < j），或者指针交错（i >= j，说明所有对称位置都比较过且相等）。因此判断回文的条件是 `i >= j`。以 level 为例：i=0,j=4 比较 l 与 l，i=1,j=3 比较 e 与 e，之后 i=2,j=2，`i < j` 不再成立而退出，i >= j 成立，输出 yes。\n\nPython 与 C 的差异：（1）`s = input().strip()` 一步拿到不含换行的字符串，不需要 `scanf(\"%99s\")` 和 `strlen`；（2）`while i < j and s[i] == s[j]` 中 `and` 与 C 的 `&&` 一样短路，`i < j` 写在前面可以保证 `s[j]` 不越界（Python 下 `s[len(s)]` 会抛 IndexError，但 `s[-1]` 会取到末尾元素，所以顺序写反的后果与 C 不同）；（3）`i += 1`、`j -= 1` 代替 `i++`、`j--`；（4）最简写法其实是 `print(\"yes\" if s == s[::-1] else \"no\")`，本题用双指针是为了练习算法本身。"
+  },
+  "数-53": {
+    "solution": "import sys\n\n\ndef main():\n    data = list(map(int, sys.stdin.read().split()))\n    m, n = data[0], data[1]\n\n    pos = 2\n    a = []\n    for _ in range(m):\n        a.append(data[pos:pos + n])\n        pos += n\n\n    found = False\n    for i in range(m):\n        row_max = max(a[i])\n        for j in range(n):\n            if a[i][j] != row_max:\n                continue\n            if all(a[k][j] >= a[i][j] for k in range(m)):\n                print(i, j, a[i][j])\n                found = True\n\n    if not found:\n        print(\"none\")\n\n\nif __name__ == \"__main__\":\n    main()",
+    "analysis": "思路：鞍点 = 本行最大值 + 本列最小值。对每一行先求行最大值 row_max，再枚举该行所有等于 row_max 的列 j（并列最大值要全部检查，不能只取第一个），然后扫一遍第 j 列，若列中没有任何元素比 a[i][j] 更小，它同时是列最小，输出 `i j 值`。用一个布尔量 found 记录是否输出过，最后统一处理 `none`。\n\n复杂度：最坏 O(m²n)（每行都有多个并列最大值时，每个候选都要扫一列），m、n ≤ 10 时最多约 1000 次比较，完全够用。若先预处理每列最小值 col_min[j]，再扫描一遍矩阵，可优化到 O(mn)。\n\nPython 实现细节：① `max(a[i])` 直接求行最大，省掉 C 里的手写循环；② `all(a[k][j] >= a[i][j] for k in range(m))` 表达“该列没有更小的元素”，等价于 C 的 `for (k...) if (a[k][j] < a[i][j]) is_col_min = 0;`，生成器表达式配合 all 会在第一个 False 处短路；③ `print(i, j, a[i][j])` 三个参数默认用空格分隔，正好是 `行 列 值` 的格式；④ `found = False` 而不是 C 的 `int found = 0`，`if not found` 直接判断。\n\n易错点：① 行最大并列时只处理第一个，漏掉其他鞍点；② 把“行最大、列最小”记反，或用 `a[i][j] == col_min` 但列最小只取首个位置；③ 无鞍点时忘记输出 `none`；④ 题目要求下标从 0 开始，输出却从 1 开始。样例中 (0,3) 的 4 是第 0 行最大、第 3 列（4、8、12）最小，故输出 `0 3 4`。"
+  },
+  "数-54": {
+    "stem": "下面 Python 程序用二维列表作形参，求 4×4 矩阵最外一圈（边界）元素之和，请填空。\n\n```python\nN = 4\n\n\ndef edge_sum(a, rows):\n    s = 0\n    for i in range(rows):\n        for j in range(N):\n            if ①:\n                s += a[i][j]\n    return s\n\n\na = [[1, 2, 3, 4],\n     [5, 6, 7, 8],\n     [9, 10, 11, 12],\n     [13, 14, 15, 16]]\n\nprint(②)\n```\n\n程序输出 `102`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "i == 0 or i == rows - 1 or j == 0 or j == N - 1",
+        "note": "四个条件顺序任意；必须用 or 连接，写成 and 就只剩四个角（和为 34）"
+      },
+      {
+        "no": "②",
+        "answer": "edge_sum(a, 4)",
+        "note": "二维列表直接传引用，不需要像 C 那样声明第二维长度 int (*)[N]"
+      }
+    ],
+    "analysis": "本题考查二维数组作函数参数以及边界下标的判定。\n\n① 边界元素就是“第一行、最后一行、第一列、最后一列”上的元素，四者取并集，所以用 `or` 连接：`i == 0 or i == rows - 1 or j == 0 or j == N - 1`。若误写成 `and`，就只剩四个角，答案会变成 1 + 4 + 13 + 16 = 34。这种“四个条件一次判断”的写法不会重复累加四个角，因为每个元素只会被判断一次。\n\n② 调用时把二维列表 a 和行数 4 传进去。C 的形参必须写 `int a[][N]`，因为二维数组名退化成 `int (*)[4]`，第二维长度必须与实参一致；Python 的列表是“列表的列表”，函数拿到的是最外层列表的引用，行、列长度都可以在运行时用 `len(a)`、`len(a[0])` 得到，所以形参只写 `a` 就够，本题保留 rows 是为了与 C 对应。\n\n其余差异：`#define N 4` 对应模块级常量 `N = 4`；`s += a[i][j]` 与 C 相同，但 Python 的 int 是任意精度，不会溢出；`print(edge_sum(a, 4))` 直接输出整数。验证结果：全部元素和 136 减去内部 2×2 的 6 + 7 + 10 + 11 = 34，得 102，与程序输出一致。"
+  },
+  "数-57": {
+    "stem": "下面 Python 程序在读入的文本串中查找模式串首次出现的位置（下标从 0 开始，找不到输出 -1），采用朴素匹配，请填空。\n\n```python\ns = input().strip()\np = input().strip()\nn, m = len(s), len(p)\npos = -1\n\nfor i in range(①):\n    for j in range(m):\n        if ②:\n            break\n    else:\n        pos = i\n        break\n\nprint(pos)\n```\n\n例如输入 `ababc` 与 `abc`，输出 `2`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "n - m + 1",
+        "note": "对应 C 的 i + m <= n；range 右开区间，所以要 +1，写成 n - m 会漏掉最后一组对齐"
+      },
+      {
+        "no": "②",
+        "answer": "s[i + j] != p[j]",
+        "note": "等价写法：p[j] != s[i + j]；只要有一个字符不同就跳出内层循环"
+      }
+    ],
+    "analysis": "本题考查朴素（BF）子串匹配。\n\n外层 i 是文本串中本次对齐的起点，内层 j 逐个比较 `s[i + j]` 与 `p[j]`；一旦发现字符不同立即 break，所以 ② 填 `s[i + j] != p[j]`。\n\n这里有一个 Python 特有的陷阱：C 版本用 `if (j == m)` 判断“内层完整走完”，但在 Python 里 `for j in range(m)` 正常结束后 j 的值是 m-1（不是 m），break 时停在断点，照搬 `j == m` 永远不会成立。正确做法是用 **for-else**：`else` 子句只在循环没有被 break 打断时执行，正好表示 m 个字符全部匹配，于是 `pos = i` 后立即 break。\n\n外层边界对应 C 的 `i + m <= n`：range 是左闭右开，所以写成 `range(n - m + 1)`，① 填 `n - m + 1`；若写成 `range(n - m)`，最后一组对齐会被漏掉，`s = \"abc\"`、`p = \"bc\"` 就会错误地返回 -1。这个边界同时保证内层 `s[i + j]` 最大只访问到 `s[n - 1]`，不会越界。\n\n样例 ababc 中找 abc：i=0 时比较到第 3 个字符 a 与 c 不符，break 后跳过 else；i=1 时首字符就不同；i=2 时 abc 全部匹配，内层正常结束触发 else，pos=2 并 break，输出 2。最坏情况（如 aaaaa 中找 aaab）每次都要比较 m 个字符，复杂度 O(nm)；KMP 用 next 数组可把它降到 O(n+m)。另外 Python 的 `s.find(p)` 一行就能完成，但本题要求手写朴素匹配。"
+  },
+  "数-58": {
+    "solution": "import sys\n\n\ndef main():\n    data = list(map(int, sys.stdin.read().split()))\n    n, m = data[0], data[1]\n    a = data[2:2 + n]\n    b = data[2 + n:2 + n + m]\n\n    i = j = 0\n    merged = []\n    while i < n and j < m:\n        if a[i] <= b[j]:\n            merged.append(a[i])\n            i += 1\n        else:\n            merged.append(b[j])\n            j += 1\n    merged.extend(a[i:])\n    merged.extend(b[j:])\n\n    print(\" \".join(map(str, merged)))\n\n\nif __name__ == \"__main__\":\n    main()",
+    "analysis": "思路：这是两个有序序列的归并（双指针）。i 指向第一个序列当前元素，j 指向第二个，每次把较小的那个放进结果列表并让对应指针后移；当其中一个序列先走完时，把另一个序列剩下的部分整体接到结果末尾。\n\n复杂度：时间 O(n+m)，只扫描一遍。如果先把两段拼起来再排序，复杂度是 O((n+m)log(n+m))，白白浪费了“两段已经有序”这个条件。\n\nPython 实现细节：① 收尾用切片 `merged.extend(a[i:])`、`merged.extend(b[j:])` 一次搞定，比 C 的 `while (i < n) c[k++] = a[i++];` 简洁，而且当剩余部分为空时切片是 `[]`，extend 什么都不做，天然安全；② `i = j = 0` 是链式赋值（int 不可变，两个变量互不影响）；③ 输出前统一 `\" \".join(map(str, merged))`；④ 若把 `a[i] <= b[j]` 改成 `<`，相等时取 b 的元素，结果仍然有序，只是相等元素的先后顺序不同。\n\n易错点：① 忘记处理某个序列剩下的元素，导致输出变短；② 比较用 `<` 还是 `<=` 都可以，不影响有序性；③ 用 `merged = a + b; merged.sort()` 虽然结果对，但复杂度更高，且没有体现双指针思想；④ 输出时用 `print(*merged)` 也可，但元素很多时不如 join 高效。"
+  },
+  "数-61": {
+    "stem": "下面 Python 程序把数组循环右移 k 位（k 可以大于 n），采用“整体反转 + 分段反转”的办法，请填空。\n\n```python\ndef reverse(a, left, right):\n    while left < right:\n        a[left], a[right] = a[right], a[left]\n        left += 1\n        right -= 1\n\n\nn, k = map(int, input().split())\na = list(map(int, input().split()))\n\nk = ①\nreverse(a, 0, n - 1)\nreverse(a, 0, ②)\nreverse(a, ③, n - 1)\n\nprint(*a)\n```\n\n例如输入 `5 2` 与 `1 2 3 4 5`，程序应输出 `4 5 1 2 3`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "k % n",
+        "note": "先取模把 k 化到 0~n-1；k 是 n 的倍数时相当于不移位"
+      },
+      {
+        "no": "②",
+        "answer": "k - 1",
+        "note": "反转前 k 个元素，下标从 0 到 k-1"
+      },
+      {
+        "no": "③",
+        "answer": "k",
+        "note": "反转剩下的 n-k 个元素，下标从 k 到 n-1"
+      }
+    ],
+    "analysis": "本题考查用三次反转实现循环右移。\n\n原理：把数组分成前 n-k 个和后 k 个两段，先把整体反转，两段的内部顺序都反了、位置也交换了；再分别把两段各自反转回来，就得到“后 k 个搬到前面、其余后移”的效果。\n\n① 必须先 `k % n`。k 可能大于 n（例如 n=5、k=7 等价于右移 2 位），不取模会让下面的下标越界。k 是 n 的倍数时 k%n = 0，此时 `reverse(a, 0, -1)` 中 left=0、right=-1，`while left < right` 一次都不进，数组保持不变，恰好正确——这是 Python 版需要特别说明的地方：**Python 的负下标不会报错**（a[-1] 指最后一个元素），只是这里靠 while 条件避开了访问，若写成 `if` 或先取值再比较就会误交换首尾元素。\n\n②③ 整体反转后，原来的后 k 个元素跑到了数组开头，需要反转回来的是 [0, k-1] 和 [k, n-1] 两段，所以填 `k - 1` 和 `k`。\n\n其余差异：C 的 `void reverse(int a[], int left, int right)` 在 Python 里是 `def reverse(a, left, right)`，列表按引用传递，函数内的交换会直接作用在原列表上；`a[left], a[right] = a[right], a[left]` 用元组解包交换，不需要临时变量；`print(*a)` 按空格分隔输出。\n\n样例 n=5、k=2：1 2 3 4 5 →（整体反转）5 4 3 2 1 →（反转 [0,1]）4 5 3 2 1 →（反转 [2,4]）4 5 1 2 3。比“逐位右移 k 次”的 O(nk) 更优，这里是 O(n)、额外空间 O(1)。"
+  },
+  "数-62": {
+    "solution": "import sys\n\n\ndef main():\n    data = list(map(int, sys.stdin.read().split()))\n    n = data[0]\n\n    pos = 1\n    a = []\n    for _ in range(n):\n        a.append(data[pos:pos + n])\n        pos += n\n\n    b = [[0] * n for _ in range(n)]\n    for i in range(n):\n        for j in range(n):\n            b[j][n - 1 - i] = a[i][j]\n\n    for row in b:\n        print(\" \".join(map(str, row)))\n\n\nif __name__ == \"__main__\":\n    main()",
+    "analysis": "思路：矩阵顺时针旋转 90° 的下标映射是“原第 i 行变新矩阵的第 n-1-i 列，原第 j 列变新矩阵的第 j 行”，即 `b[j][n - 1 - i] = a[i][j]`。用一个新的 n×n 列表存放结果，最后逐行输出。\n\n复杂度：时间 O(n²)，空间 O(n²)。若要求原地旋转，做法是“先沿主对角线转置（交换 a[i][j] 与 a[j][i]，j > i），再左右翻转每一行”，额外空间 O(1)。\n\nPython 实现细节：① 结果矩阵必须用列表推导 `[[0] * n for _ in range(n)]` 逐行创建，用 `[[0] * n] * n` 会让 n 行共享同一个列表对象，赋值互相覆盖；② 也可以用一行完成：`b = [list(row) for row in zip(*a[::-1])]`——先上下翻转再转置，正好是顺时针 90°，但可读性不如显式映射；③ 输出 `\" \".join(map(str, row))`，行末无多余空格；④ n = 1 时映射为 b[0][0] = a[0][0]，循环边界自然成立。\n\n验证 (0,0) 的 1 到 (0,2) 右上角，(0,1) 的 2 到 (1,2)，(0,2) 的 3 到 (2,2)，(1,0) 的 4 到 (0,1)，与样例一致。\n\n易错点：① 把下标写反成 `b[n-1-i][j]`（那是上下翻转）或 `b[n-1-j][i]`（那是逆时针 90°）；② 边读入边旋转，导致还没读到的元素被覆盖；③ 用共享行的方式建矩阵；④ 输出时 `print(row)` 带出方括号。"
+  },
+  "数-64": {
+    "stem": "下面 Python 程序找出字符串中第一个只出现一次的字符，输出该字符及其下标；若不存在则输出 `none`。请填空。\n\n```python\ns = input().strip()\ncnt = [0] * 26\npos = -1\n\nfor ch in s:\n    cnt[ord(ch) - ord('a')] += 1\n\nfor i in range(len(s)):\n    if cnt[①] == 1:\n        pos = i\n        ②\n\nif pos >= 0:\n    print(s[pos], pos)\nelse:\n    print(\"none\")\n```\n\n例如输入 `abac`，输出 `b 1`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "ord(s[i]) - ord('a')",
+        "note": "把小写字母映射到 0~25 的下标，等价写法 ord(s[i]) - 97"
+      },
+      {
+        "no": "②",
+        "answer": "break",
+        "note": "找到第一个就停止扫描，保证答案是“第一个”"
+      }
+    ],
+    "analysis": "本题考查“计数数组 + 两趟扫描”。\n\n① 用 `ord(s[i]) - ord('a')` 把字母 a~z 映射为下标 0~25，`cnt` 只有 26 个元素，恰好装下全部小写字母，不会越界。C 里字符本身就是整数、可以直接相减，Python 的字符是长度为 1 的字符串，必须先用 `ord()` 取码点才能做算术——这是两种语言最直接的差异；反过来，把码点转回字符用 `chr()`。也可以直接写 `ord(s[i]) - 97`，但 `ord('a')` 可读性更好。\n\n② 第二趟按原字符串顺序检查，第一个 `cnt[...] == 1` 的字符就是答案；找到后必须 `break`，否则 pos 会被后面出现的其他唯一字符覆盖，输出的就不是“第一个”了。\n\n为什么必须扫两趟？如果边统计边判断，第一次遇到某个字符时它的计数还是 1，根本无法确定它后面会不会再出现，会误判。样例 abac：第一趟得 a=2、b=1、c=1；第二趟 i=0 时 a 的计数是 2 跳过，i=1 时 b 的计数是 1，pos=1 并 break，输出 `b 1`。\n\n补充：Python 里也可以直接用 `collections.Counter(s)` 一次统计，用字典保存“字符 → 次数”，不限制字母表大小；若字符串可能含大写字母或数字，用长度 26 的数组就会越界（Python 的列表负下标还会悄悄访问到别的位置），此时应把 cnt 扩到 128 并用 `ord(ch)` 做下标，或干脆用字典——这也说明 C 的定长计数数组在 Python 里并非总是最佳选择。"
+  }
+}

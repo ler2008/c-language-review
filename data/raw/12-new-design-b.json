@@ -1,0 +1,297 @@
+[
+  {
+    "id": "指-97",
+    "module": "指针",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "双指针",
+      "有序数组",
+      "两数之和",
+      "动态内存"
+    ],
+    "stem": "给定一个长度为 n、按非递减顺序排列的整数数组和一个目标值 target。请**只用指向首尾的两个指针**（不额外申请数组）判断是否存在两个不同下标的元素之和恰好等于 target：存在则输出这两个元素的下标（从 1 开始，小的在前），不存在则输出 `NO`。数据保证至多存在一组解。\n\n**输入格式：** 第一行两个整数 n 和 target（1 ≤ n ≤ 100000，|target| ≤ 2×10⁹）；第二行 n 个整数，已按非递减顺序排列，相邻两数之间用一个空格分隔（|a[i]| ≤ 10⁹）。\n\n**输出格式：** 若存在解，输出一行两个整数，依次为较小下标和较大下标（下标从 1 开始）；否则输出一行 `NO`。\n\n**输入样例：**\n```text\n6 10\n1 2 4 5 6 11\n```\n**输出样例：**\n```text\n3 5\n```",
+    "analysis": "思路：数组已经有序，用首尾双指针可以把 O(n²) 的枚举降为 O(n)。让 `left` 指向 `a[0]`、`right` 指向 `a[n-1]`，每次比较 `*left + *right` 与 target：相等即找到答案；和偏小说明左端的数太小，只能把 `left` 右移；和偏大说明右端的数太大，只能把 `right` 左移。\n\n关键步骤：① 用 `malloc` 申请 n 个 `long long` 并检查返回值；② `left`、`right` 用指针算术移动（`left++`、`right--`），用 `left - a` 换算下标；③ 循环结束后用 `left < right` 判断是否真的找到了解——找不到时两指针会相遇或交叉。\n\n复杂度：时间 O(n)，额外空间 O(1)（数组本身占 O(n)）。\n\n易错点：① 两个 10⁹ 相加会超出 `int`，和与数组元素都要用 `long long`；② 循环条件写成 `left <= right`，会把同一个元素用两次；③ 输出下标忘记加 1；④ 找到解后没有及时 `break`，指针继续移动导致下标错误；⑤ `malloc` 之后忘记 `free`。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void)\n{\n    int n, i;\n    long long target;\n    long long *a, *left, *right;\n\n    if (scanf(\"%d %lld\", &n, &target) != 2 || n <= 0)\n        return 0;\n\n    a = (long long *)malloc((size_t)n * sizeof(long long));\n    if (a == NULL)\n        return 1;\n    for (i = 0; i < n; i++)\n        scanf(\"%lld\", &a[i]);\n\n    left = a;              /* 指向第一个元素 */\n    right = a + n - 1;     /* 指向最后一个元素 */\n\n    while (left < right) {\n        long long sum = *left + *right;\n        if (sum == target)\n            break;\n        if (sum < target)\n            left++;        /* 和偏小，左端右移让和变大 */\n        else\n            right--;       /* 和偏大，右端左移让和变小 */\n    }\n\n    if (left < right)\n        printf(\"%d %d\\n\", (int)(left - a) + 1, (int)(right - a) + 1);\n    else\n        puts(\"NO\");\n\n    free(a);\n    return 0;\n}",
+    "points": [
+      "正确读入 n、target 与有序数组，元素和中间结果都用 64 位整数保存",
+      "left、right 两个指针分别指向首元素和尾元素，循环条件为 left < right",
+      "和小于 target 时左指针后移，大于 target 时右指针前移，相等时得到答案",
+      "按下标输出 1-based 的两个位置；无解时输出 NO"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "给定一个长度为 n、按非递减顺序排列的整数序列和一个目标值 target。请用 `std::vector<long long>` 保存这些数，**只用首尾两个下标**（不额外申请数组）判断是否存在两个不同下标的元素之和恰好等于 target：存在则输出这两个元素的下标（从 1 开始，小的在前），不存在则输出 `NO`。数据保证至多存在一组解。\n\n**输入格式：** 第一行两个整数 n 和 target（1 ≤ n ≤ 100000，|target| ≤ 2×10⁹）；第二行 n 个整数，已按非递减顺序排列，相邻两数之间用一个空格分隔（|a[i]| ≤ 10⁹）。\n\n**输出格式：** 若存在解，输出一行两个整数，依次为较小下标和较大下标（下标从 1 开始）；否则输出一行 `NO`。\n\n**输入样例：**\n```text\n6 10\n1 2 4 5 6 11\n```\n**输出样例：**\n```text\n3 5\n```",
+        "solution": "#include <iostream>\n#include <vector>\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n;\n    long long target;\n    if (!(std::cin >> n >> target) || n <= 0)\n        return 0;\n\n    std::vector<long long> a(n);\n    for (long long &x : a)\n        std::cin >> x;\n\n    int left = 0, right = n - 1;\n    while (left < right) {\n        long long sum = a[left] + a[right];\n        if (sum == target)\n            break;\n        if (sum < target)\n            ++left;\n        else\n            --right;\n    }\n\n    if (left < right)\n        std::cout << left + 1 << ' ' << right + 1 << '\\n';\n    else\n        std::cout << \"NO\\n\";\n\n    return 0;\n}",
+        "analysis": "思路与 C 版本完全一致：序列有序，用首尾双指针把 O(n²) 枚举降为一次线性扫描。`left`、`right` 是 `std::vector<long long>` 的下标，循环中比较 `a[left] + a[right]` 与 target，和小则 `++left`，和大则 `--right`，相等就 `break`。\n\n关键步骤：① 用 `std::ios::sync_with_stdio(false); std::cin.tie(nullptr);` 关闭同步以加速输入（n 可达 10 万）；② `std::vector<long long> a(n)` 自动管理内存，等价于 C 里的 `malloc` + `free`，不需要手动释放；③ 用范围 for `for (long long &x : a)` 读入，引用避免拷贝；④ 输出时用 `left + 1`、`right + 1` 换算成 1-based。\n\n复杂度：时间 O(n)，额外空间 O(1)。\n\n易错点：① 用 `int` 存和导致溢出；② `vector::size()` 返回 `size_t`，与 `int` 混用会出现无符号比较告警，本题统一用 `int` 下标；③ 忘记关闭同步导致大数据输入超时；④ 找到答案后继续移动指针，把唯一解的下标弄丢。"
+      },
+      "python": {
+        "stem": "给定一个长度为 n、按非递减顺序排列的整数列表和一个目标值 target。请用 Python 列表保存这些数，**只用首尾两个下标**（不额外申请列表）判断是否存在两个不同下标的元素之和恰好等于 target：存在则输出这两个元素的下标（从 1 开始，小的在前），不存在则输出 `NO`。数据保证至多存在一组解。\n\n**输入格式：** 第一行两个整数 n 和 target（1 ≤ n ≤ 100000，|target| ≤ 2×10⁹）；第二行 n 个整数，已按非递减顺序排列，相邻两数之间用一个空格分隔（|a[i]| ≤ 10⁹）。\n\n**输出格式：** 若存在解，输出一行两个整数，依次为较小下标和较大下标（下标从 1 开始）；否则输出一行 `NO`。\n\n**输入样例：**\n```text\n6 10\n1 2 4 5 6 11\n```\n**输出样例：**\n```text\n3 5\n```",
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    target = int(data[1])\n    a = [int(x) for x in data[2:2 + n]]\n\n    left, right = 0, n - 1\n    while left < right:\n        total = a[left] + a[right]\n        if total == target:\n            break\n        if total < target:\n            left += 1\n        else:\n            right -= 1\n\n    if left < right:\n        print(left + 1, right + 1)\n    else:\n        print(\"NO\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "analysis": "思路：列表有序，用 `left`、`right` 两个下标从两端向中间夹逼。每次比较 `a[left] + a[right]`：等于 target 即得解；小于 target 就让 `left += 1`；大于 target 就让 `right -= 1`。循环条件 `left < right` 保证两个下标不同。\n\n关键步骤：① `sys.stdin.read().split()` 一次性读入并按空白切分，比逐行 `input()` 快得多；② 用列表推导 `[int(x) for x in data[2:2 + n]]` 取出 n 个数；③ `break` 跳出后仍用 `left < right` 判断是否真的找到；④ `print(left + 1, right + 1)` 默认用空格分隔。\n\n复杂度：时间 O(n)（循环内只有常数次操作），额外空间 O(1)（不计输入列表）。\n\n易错点：① Python 整数不会溢出，但下标是 0-based，输出时必须加 1；② 用两层 `for` 写成 O(n²)，10⁵ 数据会超时；③ 空输入没有提前 `return`，`data[0]` 会抛 `IndexError`；④ 把 `while ... else` 与 `break` 混用，判断逻辑容易写反。"
+      }
+    }
+  },
+  {
+    "id": "指-98",
+    "module": "指针",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "动态内存",
+      "指针数组",
+      "字符串",
+      "排序"
+    ],
+    "stem": "输入 n 个不含空白字符的字符串。请**为每个字符串按实际长度动态申请**恰好 `strlen + 1` 字节的堆空间来保存（用 `char **` 指针数组挂接，不要开定长的二维字符数组），然后按“长度升序；长度相同时按字典序升序”的规则输出这些字符串。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；接下来 n 行，每行一个不含空白字符的字符串，长度 1~50。\n\n**输出格式：** 共 n 行，按题目要求的顺序每行输出一个字符串。\n\n**输入样例：**\n```text\n6\npear\nfig\napple\nkiwi\ndate\nplum\n```\n**输出样例：**\n```text\nfig\ndate\nkiwi\npear\nplum\napple\n```",
+    "analysis": "思路：如果开 `char a[100][51]` 这样的定长二维数组，短串会浪费大量空间，题目要求按实际长度申请。做法是用 `char **arr` 作指针数组，每个元素指向一块 `malloc(strlen(buf) + 1)` 得到的内存，再用 `strcpy` 把读入缓冲区 `buf` 的内容复制进去。\n\n关键步骤：① `malloc(n * sizeof(char *))` 申请指针数组；② 每读一个串就用 `strlen` 求长度并 `malloc(len + 1)`，多出的 1 字节放 `'\\0'`；③ 用 `qsort` 排序，比较函数先比 `strlen`，长度相同再 `strcmp`；④ 输出后逐个 `free(arr[i])`，最后 `free(arr)`，先释放内层再释放外层。\n\n复杂度：时间 O(n log n × L)（每次比较最多 O(L) 字符），空间 O(总字符数)。\n\n易错点：① 只申请 `strlen(buf)` 字节，漏掉结尾的 `'\\0'`，`puts` 会越界读到垃圾；② `qsort` 比较函数的参数是“指向元素的指针”，必须写成 `*(const char *const *)pa` 再解引用一层；③ 长度相同时忘记用 `strcmp` 做次级比较；④ 释放顺序写反，先 `free(arr)` 再 `free(arr[i])` 会访问悬空指针；⑤ 用 `%s` 不限制宽度存在缓冲区溢出风险，这里用 `%63s`。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\nstatic void free_all(char **arr, int cnt)\n{\n    int k;\n    for (k = 0; k < cnt; k++)\n        free(arr[k]);\n    free(arr);\n}\n\nstatic int cmp(const void *pa, const void *pb)\n{\n    const char *a = *(const char *const *)pa;\n    const char *b = *(const char *const *)pb;\n    size_t la = strlen(a), lb = strlen(b);\n\n    if (la != lb)\n        return la < lb ? -1 : 1;\n    return strcmp(a, b);\n}\n\nint main(void)\n{\n    int n, i;\n    char buf[64];\n    char **arr;\n\n    if (scanf(\"%d\", &n) != 1 || n <= 0)\n        return 0;\n\n    arr = (char **)malloc((size_t)n * sizeof(char *));\n    if (arr == NULL)\n        return 1;\n\n    for (i = 0; i < n; i++) {\n        size_t len;\n\n        if (scanf(\"%63s\", buf) != 1)\n            buf[0] = '\\0';\n\n        len = strlen(buf);\n        arr[i] = (char *)malloc(len + 1);\n        if (arr[i] == NULL) {\n            free_all(arr, i);\n            return 1;\n        }\n        memcpy(arr[i], buf, len + 1);\n    }\n\n    qsort(arr, (size_t)n, sizeof(char *), cmp);\n\n    for (i = 0; i < n; i++)\n        puts(arr[i]);\n\n    free_all(arr, n);\n    return 0;\n}",
+    "points": [
+      "用 char ** 指针数组管理 n 个字符串，而不是定长二维字符数组",
+      "每个字符串按 strlen + 1 字节动态申请，并正确复制结尾的 '\\0'",
+      "排序比较函数先按长度升序，长度相同时按字典序升序",
+      "按顺序输出 n 行，并逐个 free 内层字符串后再 free 指针数组"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "输入 n 个不含空白字符的字符串。请用 `std::vector<std::string>` 保存它们（`std::string` 会按实际长度自行管理堆内存，等价于 C 里为每个串 `malloc(strlen + 1)` 字节），然后按“长度升序；长度相同时按字典序升序”的规则输出这些字符串。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；接下来 n 行，每行一个不含空白字符的字符串，长度 1~50。\n\n**输出格式：** 共 n 行，按题目要求的顺序每行输出一个字符串。\n\n**输入样例：**\n```text\n6\npear\nfig\napple\nkiwi\ndate\nplum\n```\n**输出样例：**\n```text\nfig\ndate\nkiwi\npear\nplum\napple\n```",
+        "solution": "#include <algorithm>\n#include <iostream>\n#include <string>\n#include <vector>\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n;\n    if (!(std::cin >> n) || n <= 0)\n        return 0;\n\n    std::vector<std::string> words;\n    words.reserve(static_cast<std::size_t>(n));\n    for (int i = 0; i < n; ++i) {\n        std::string s;\n        std::cin >> s;\n        words.push_back(s);\n    }\n\n    std::sort(words.begin(), words.end(),\n              [](const std::string &a, const std::string &b) {\n                  if (a.size() != b.size())\n                      return a.size() < b.size();\n                  return a < b;\n              });\n\n    for (const std::string &w : words)\n        std::cout << w << '\\n';\n\n    return 0;\n}",
+        "analysis": "思路：C++ 里不需要手写 `malloc`/`free`，`std::string` 自己按实际长度在堆上分配并在析构时释放，效果等价于 C 版本的“每个串申请 strlen + 1 字节”；`std::vector<std::string>` 则代替了 `char **` 指针数组。\n\n关键步骤：① `words.reserve(n)` 预分配指针槽位，避免多次扩容；② 用 `std::cin >> s` 逐个读入（自动跳过空白，正好对应“不含空白字符”的输入）；③ `std::sort` 配合 lambda：先比 `a.size()`，相等再比 `a < b`（`std::string` 的 `<` 就是字典序）；④ 范围 for 输出每个串。\n\n复杂度：时间 O(n log n × L)，空间 O(总字符数)。\n\n易错点：① lambda 里用 `<=` 造成排序比较不满足严格弱序，`std::sort` 可能越界崩溃；② 用 `a.size() - b.size()` 强转 `int`，无符号相减会回绕；③ 忘记 `reserve` 在极端数据下多次重分配（性能问题）；④ 用 `std::getline` 读入会把行尾的 `\\r` 也带进字符串，导致长度比较出错——本题按空白切分读入可以规避。"
+      },
+      "python": {
+        "stem": "输入 n 个不含空白字符的字符串。请把它们放进一个 Python 列表（每个字符串对象由解释器按实际长度分配内存，等价于 C 里为每个串 `malloc(strlen + 1)` 字节），然后按“长度升序；长度相同时按字典序升序”的规则输出这些字符串。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；接下来 n 行，每行一个不含空白字符的字符串，长度 1~50。\n\n**输出格式：** 共 n 行，按题目要求的顺序每行输出一个字符串。\n\n**输入样例：**\n```text\n6\npear\nfig\napple\nkiwi\ndate\nplum\n```\n**输出样例：**\n```text\nfig\ndate\nkiwi\npear\nplum\napple\n```",
+        "solution": "import sys\n\n\ndef main() -> None:\n    tokens = sys.stdin.read().split()\n    if not tokens:\n        return\n\n    n = int(tokens[0])\n    words = tokens[1:1 + n]\n\n    words.sort(key=lambda s: (len(s), s))\n\n    sys.stdout.write(\"\\n\".join(words) + \"\\n\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "analysis": "思路：Python 的 `str` 本身就是变长对象，内存由解释器按实际长度分配，所以 C 里“为每个串 malloc(strlen + 1)”的工作由列表里的字符串对象自动完成；排序时用 `key` 把“长度、字典序”两个关键字打包成元组交给 `sort`。\n\n关键步骤：① `sys.stdin.read().split()` 按空白切分，天然处理每行一个串的格式；② `tokens[1:1 + n]` 取出 n 个串（切片不会因多余空白报错）；③ `key=lambda s: (len(s), s)` 让元组按“先长度、后字典序”比较，`sort` 是稳定排序；④ `\"\\n\".join(words)` 一次性写出，比循环 `print` 快。\n\n复杂度：时间 O(n log n × L)（比较两个串最多 O(L)），空间 O(总字符数)。\n\n易错点：① 写成 `key=len` 只按长度排，长度相同时顺序错了；② 用 `print(*words, sep=\"\\n\")` 也可以，但 `join` 在大数据下更稳；③ 忽略 `n` 直接对全部 token 排序，遇到多余空白会把非字符串内容排进去；④ 空输入没有判断，`tokens[0]` 抛 `IndexError`。"
+      }
+    }
+  },
+  {
+    "id": "结-77",
+    "module": "结构体",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "单链表",
+      "去重",
+      "结点删除",
+      "动态内存"
+    ],
+    "stem": "读入一串整数（以 -1 结束，-1 不存入链表），用**尾插法**建立单链表；然后删除所有重复出现的结点——同一个值只保留**第一次**出现的那个结点，后续相同值的结点全部删除并释放。最后输出链表中剩余的结点个数和各结点的值。\n\n**输入格式：** 一行若干整数，以 -1 结束（-1 不计入链表），相邻整数之间用一个空格分隔；除 -1 外每个整数的绝对值不超过 10⁹，个数不超过 1000。\n\n**输出格式：** 第一行输出剩余结点个数 m；若 m > 0，第二行按原顺序输出 m 个整数，相邻整数之间一个空格，行末换行；若 m = 0（输入直接以 -1 结束），只输出一行 `0`。\n\n**输入样例：**\n```text\n1 3 5 3 7 1 9 -1\n```\n**输出样例：**\n```text\n5\n1 3 5 7 9\n```",
+    "analysis": "思路：先用尾插法建表（保存 `head` 与 `tail`，每次把新结点挂到 `tail->next`），再用“对每个结点回看它前面是否出现过相同值”的办法删除重复结点。因为要修改 `next` 指针，必须同时保留前驱 `pre` 和当前结点 `p`：`pre->next = p->next; free(p); p = pre->next;`。\n\n关键步骤：① `create_node` 封装 `malloc` 与初始化；② 读入时用 `tail` 尾插，保证链表顺序与输入一致；③ 去重时内层指针 `q` 从 `head` 走到 `p` 之前，一旦发现 `q->val == p->val` 就删除 `p`（此时 `p` 一定不是首结点，`pre` 非空）；④ 遍历计数后先输出个数，再按格式输出各值；⑤ 结束时 `destroy` 逐个 `free`。\n\n复杂度：时间 O(n²)（n ≤ 1000 足够），额外空间 O(1)（不计链表本身）。\n\n易错点：① 删除结点后忘记把 `p` 重新接到 `pre->next`，造成结点丢失或死循环；② 删除时只写了 `free(p)` 却没改 `pre->next`，链表断裂；③ 把首结点也纳入删除判断，导致 `pre` 为空时解引用崩溃；④ 输出个数和值之间少换行，或者 `m = 0` 时多输出一个空行；⑤ 忘记释放链表造成内存泄漏。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct Node {\n    int val;\n    struct Node *next;\n} Node;\n\nstatic Node *create_node(int v)\n{\n    Node *p = (Node *)malloc(sizeof(Node));\n    if (p != NULL) {\n        p->val = v;\n        p->next = NULL;\n    }\n    return p;\n}\n\nstatic void destroy(Node *head)\n{\n    while (head != NULL) {\n        Node *next = head->next;\n        free(head);\n        head = next;\n    }\n}\n\nint main(void)\n{\n    Node *head = NULL, *tail = NULL;\n    Node *p, *pre;\n    int v, count = 0;\n\n    /* 尾插法建表 */\n    while (scanf(\"%d\", &v) == 1 && v != -1) {\n        Node *node = create_node(v);\n        if (node == NULL) {\n            destroy(head);\n            return 1;\n        }\n        if (head == NULL)\n            head = node;\n        else\n            tail->next = node;\n        tail = node;\n    }\n\n    /* 对每个结点，回看它前面是否出现过相同的值 */\n    pre = NULL;\n    p = head;\n    while (p != NULL) {\n        Node *q = head;\n        int dup = 0;\n\n        while (q != p) {\n            if (q->val == p->val) {\n                dup = 1;\n                break;\n            }\n            q = q->next;\n        }\n\n        if (dup) {\n            pre->next = p->next;   /* p 不是首结点，pre 一定非空 */\n            free(p);\n            p = pre->next;\n        } else {\n            pre = p;\n            p = p->next;\n        }\n    }\n\n    for (p = head; p != NULL; p = p->next)\n        count++;\n    printf(\"%d\\n\", count);\n\n    if (count > 0) {\n        int first = 1;\n        for (p = head; p != NULL; p = p->next) {\n            if (!first)\n                putchar(' ');\n            printf(\"%d\", p->val);\n            first = 0;\n        }\n        putchar('\\n');\n    }\n\n    destroy(head);\n    return 0;\n}",
+    "points": [
+      "用尾插法建立单链表，head 与 tail 维护正确，-1 不入表",
+      "去重时保留每个值第一次出现的结点，删除后续重复结点",
+      "删除结点时正确修改前驱的 next 指针，且不会误删首结点",
+      "输出剩余结点个数与去重后的序列，并释放整条链表"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "读入一串整数（以 -1 结束，-1 不存入链表），用**尾插法**建立单链表（结点用 `new` 申请）；然后删除所有重复出现的结点——同一个值只保留**第一次**出现的那个结点，后续相同值的结点全部 `delete`。最后输出链表中剩余的结点个数和各结点的值。\n\n**输入格式：** 一行若干整数，以 -1 结束（-1 不计入链表），相邻整数之间用一个空格分隔；除 -1 外每个整数的绝对值不超过 10⁹，个数不超过 1000。\n\n**输出格式：** 第一行输出剩余结点个数 m；若 m > 0，第二行按原顺序输出 m 个整数，相邻整数之间一个空格，行末换行；若 m = 0（输入直接以 -1 结束），只输出一行 `0`。\n\n**输入样例：**\n```text\n1 3 5 3 7 1 9 -1\n```\n**输出样例：**\n```text\n5\n1 3 5 7 9\n```",
+        "solution": "#include <iostream>\n#include <unordered_set>\n\nstruct Node {\n    int val;\n    Node *next;\n    explicit Node(int v) : val(v), next(nullptr) {}\n};\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    Node *head = nullptr, *tail = nullptr;\n    int v;\n    while (std::cin >> v && v != -1) {\n        Node *node = new Node(v);\n        if (head == nullptr)\n            head = node;\n        else\n            tail->next = node;\n        tail = node;\n    }\n\n    std::unordered_set<int> seen;\n    Node *pre = nullptr, *cur = head;\n    while (cur != nullptr) {\n        if (!seen.insert(cur->val).second) {   /* 已经出现过，删除 */\n            pre->next = cur->next;\n            delete cur;\n            cur = pre->next;\n        } else {\n            pre = cur;\n            cur = cur->next;\n        }\n    }\n\n    int count = 0;\n    for (Node *p = head; p != nullptr; p = p->next)\n        ++count;\n    std::cout << count << '\\n';\n\n    if (count > 0) {\n        bool first = true;\n        for (Node *p = head; p != nullptr; p = p->next) {\n            if (!first)\n                std::cout << ' ';\n            std::cout << p->val;\n            first = false;\n        }\n        std::cout << '\\n';\n    }\n\n    while (head != nullptr) {\n        Node *next = head->next;\n        delete head;\n        head = next;\n    }\n    return 0;\n}",
+        "analysis": "思路：建表部分与 C 相同，用 `new Node(v)` 申请结点、`tail->next` 尾插。去重时用 `std::unordered_set<int>` 记录已经保留的值，`seen.insert(x).second` 为 `false` 说明这个值出现过，于是把当前结点摘掉并 `delete`；这样把 C 版本的两重循环 O(n²) 优化成平均 O(n)。\n\n关键步骤：① `explicit Node(int v) : val(v), next(nullptr) {}` 完成初始化，避免野指针；② 用 `pre`、`cur` 双指针完成摘链，注意摘掉的是 `cur` 而不是 `pre`；③ 计数与输出都只遍历一次链表；④ 最后用 `while (head)` 逐个 `delete`，防止内存泄漏（C++ 没有 GC）。\n\n复杂度：平均时间 O(n)，额外空间 O(n)（哈希表）。\n\n易错点：① `insert` 返回的是 `pair<iterator, bool>`，漏写 `.second` 判断会编译不过；② 删除 `cur` 后继续用 `cur->next`，属于访问已释放内存；③ 用 `std::set` 也能做但常数更大，本题数据量小无所谓；④ 忘了 `delete` 结点，虽然程序结束操作系统会回收，但工程代码里属于内存泄漏。"
+      },
+      "python": {
+        "stem": "读入一串整数（以 -1 结束，-1 不存入链表），用**尾插法**建立单链表（自定义 `Node` 类，含 `val` 与 `next`）；然后删除所有重复出现的结点——同一个值只保留**第一次**出现的那个结点。最后输出链表中剩余的结点个数和各结点的值。\n\n**输入格式：** 一行若干整数，以 -1 结束（-1 不计入链表），相邻整数之间用一个空格分隔；除 -1 外每个整数的绝对值不超过 10⁹，个数不超过 1000。\n\n**输出格式：** 第一行输出剩余结点个数 m；若 m > 0，第二行按原顺序输出 m 个整数，相邻整数之间一个空格，行末换行；若 m = 0（输入直接以 -1 结束），只输出一行 `0`。\n\n**输入样例：**\n```text\n1 3 5 3 7 1 9 -1\n```\n**输出样例：**\n```text\n5\n1 3 5 7 9\n```",
+        "solution": "import sys\n\n\nclass Node:\n    __slots__ = (\"val\", \"next\")\n\n    def __init__(self, val: int) -> None:\n        self.val = val\n        self.next = None\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n\n    head = None\n    tail = None\n    for token in data:\n        v = int(token)\n        if v == -1:\n            break\n        node = Node(v)\n        if head is None:\n            head = node\n        else:\n            tail.next = node\n        tail = node\n\n    # 去重：保留每个值第一次出现的结点\n    seen = set()\n    pre = None\n    cur = head\n    while cur is not None:\n        if cur.val in seen:\n            pre.next = cur.next\n            cur = pre.next\n        else:\n            seen.add(cur.val)\n            pre = cur\n            cur = cur.next\n\n    values = []\n    cur = head\n    while cur is not None:\n        values.append(str(cur.val))\n        cur = cur.next\n\n    print(len(values))\n    if values:\n        print(\" \".join(values))\n\n\nif __name__ == \"__main__\":\n    main()",
+        "analysis": "思路：Python 没有指针，用 `class Node` 的 `next` 属性模拟链式结构，`__slots__` 限制属性表、减少每个结点的内存开销。建表同样用 `tail` 尾插；去重时用 `set` 记录已保留的值，命中重复就把 `pre.next` 指向 `cur.next`，跳过当前结点（Python 有引用计数，跳过即被回收，不需要手动 `free`）。\n\n关键步骤：① 遍历 `data` 时遇到 `-1` 立即 `break`；② `pre` 记录前驱，删除时只改指针不移动 `pre`；③ 重新遍历链表收集值，先输出个数再输出序列；④ `\" \".join(values)` 保证行末无多余空格。\n\n复杂度：时间 O(n)，额外空间 O(n)（`seen` 集合）。\n\n易错点：① 删除后写成 `cur = cur.next`，由于 `cur` 已被跳过，会漏掉紧随其后的重复结点；② `pre` 初始化为 `None`，若首结点被判为重复会触发 `AttributeError`（本算法首结点一定先入 `seen`，不会发生，但逻辑上要交代清楚）；③ 用列表推导时忘记 `-1` 的截断位置；④ 结点个数为 0 时仍执行 `print(\"\")`，会多输出一个空行。"
+      }
+    }
+  },
+  {
+    "id": "结-78",
+    "module": "结构体",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "结构体数组",
+      "排序",
+      "并列名次"
+    ],
+    "stem": "读入 n 名学生的学号、姓名和成绩，按成绩从高到低排序后输出；成绩相同时按**学号字典序升序**排列。名次采用“并列名次”规则：成绩相同的学生名次相同，且下一档名次等于它前面的人数加 1（例如成绩 95、95、88 对应的名次是 1、1、3）。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；接下来 n 行，每行依次为学号、姓名、成绩，学号和姓名都是不含空白的字符串（长度小于 20），成绩是 0~100 的整数，三者之间用一个空格分隔。\n\n**输出格式：** 共 n 行，每行依次为：名次、学号、姓名、成绩，两两之间一个空格。\n\n**输入样例：**\n```text\n6\n2023003 Zhao 88\n2023001 Qian 95\n2023002 Sun 88\n2023005 Li 95\n2023004 Zhou 72\n2023006 Wu 60\n```\n**输出样例：**\n```text\n1 2023001 Qian 95\n1 2023005 Li 95\n3 2023002 Sun 88\n3 2023003 Zhao 88\n5 2023004 Zhou 72\n6 2023006 Wu 60\n```",
+    "analysis": "思路：用结构体数组保存学号、姓名、成绩，先用 `qsort` 按“成绩降序、学号升序”排好序，再顺序扫描一遍计算名次：`i == 0` 或当前成绩不等于前一个成绩时，名次就是 `i + 1`，否则沿用上一个名次。\n\n关键步骤：① 结构体里学号、姓名用定长字符数组 `char id[20]`、`char name[20]`，读入时用 `%19s` 限制宽度；② `qsort` 比较函数先比 `score`（大的在前），分数相同再 `strcmp(a->id, b->id)`；③ 名次用一个变量 `rank` 记住，遇到分数变化才更新为 `i + 1`；④ 输出用 `%d %s %s %d` 一次打完一行。\n\n复杂度：时间 O(n log n)，额外空间 O(n)（结构体数组）。\n\n易错点：① 成绩相同时没有按学号排序，样例输出顺序就对不上；② 名次写成 `i + 1` 后忘记在并列时保持不变，出现 1、2、3 而不是 1、1、3；③ `qsort` 比较函数里返回 `a->score - b->score` 可能溢出且方向写反；④ 学号按数值比较（如 `atoi`）会丢掉前导 0，必须按字符串比；⑤ `char id[20]` 读入时不限宽导致越界。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\ntypedef struct {\n    char id[20];\n    char name[20];\n    int score;\n} Student;\n\nstatic int cmp(const void *pa, const void *pb)\n{\n    const Student *a = (const Student *)pa;\n    const Student *b = (const Student *)pb;\n\n    if (a->score != b->score)\n        return a->score > b->score ? -1 : 1;   /* 成绩高的在前 */\n    return strcmp(a->id, b->id);               /* 成绩相同按学号升序 */\n}\n\nint main(void)\n{\n    int n, i, rank = 0;\n    Student stu[100];\n\n    if (scanf(\"%d\", &n) != 1 || n <= 0 || n > 100)\n        return 0;\n\n    for (i = 0; i < n; i++)\n        scanf(\"%19s %19s %d\", stu[i].id, stu[i].name, &stu[i].score);\n\n    qsort(stu, (size_t)n, sizeof(Student), cmp);\n\n    for (i = 0; i < n; i++) {\n        if (i == 0 || stu[i].score != stu[i - 1].score)\n            rank = i + 1;\n        printf(\"%d %s %s %d\\n\", rank, stu[i].id, stu[i].name, stu[i].score);\n    }\n\n    return 0;\n}",
+    "points": [
+      "正确用结构体数组存放学号、姓名与成绩，并按宽度限制读入字符串",
+      "排序规则为成绩降序、成绩相同时学号字典序升序",
+      "并列名次计算正确：成绩变化时名次取 i + 1，否则沿用",
+      "按“名次 学号 姓名 成绩”的格式输出 n 行"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "读入 n 名学生的学号、姓名和成绩，按成绩从高到低排序后输出；成绩相同时按**学号字典序升序**排列。名次采用“并列名次”规则：成绩相同的学生名次相同，且下一档名次等于它前面的人数加 1（例如成绩 95、95、88 对应的名次是 1、1、3）。请用 `struct` + `std::vector` + `std::sort` 完成。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；接下来 n 行，每行依次为学号、姓名、成绩，学号和姓名都是不含空白的字符串（长度小于 20），成绩是 0~100 的整数，三者之间用一个空格分隔。\n\n**输出格式：** 共 n 行，每行依次为：名次、学号、姓名、成绩，两两之间一个空格。\n\n**输入样例：**\n```text\n6\n2023003 Zhao 88\n2023001 Qian 95\n2023002 Sun 88\n2023005 Li 95\n2023004 Zhou 72\n2023006 Wu 60\n```\n**输出样例：**\n```text\n1 2023001 Qian 95\n1 2023005 Li 95\n3 2023002 Sun 88\n3 2023003 Zhao 88\n5 2023004 Zhou 72\n6 2023006 Wu 60\n```",
+        "solution": "#include <algorithm>\n#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Student {\n    std::string id;\n    std::string name;\n    int score;\n};\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n;\n    if (!(std::cin >> n) || n <= 0)\n        return 0;\n\n    std::vector<Student> stu(n);\n    for (Student &s : stu)\n        std::cin >> s.id >> s.name >> s.score;\n\n    std::sort(stu.begin(), stu.end(), [](const Student &a, const Student &b) {\n        if (a.score != b.score)\n            return a.score > b.score;   /* 成绩降序 */\n        return a.id < b.id;             /* 学号升序 */\n    });\n\n    int rank = 0;\n    for (int i = 0; i < n; ++i) {\n        if (i == 0 || stu[i].score != stu[i - 1].score)\n            rank = i + 1;\n        std::cout << rank << ' ' << stu[i].id << ' ' << stu[i].name\n                  << ' ' << stu[i].score << '\\n';\n    }\n\n    return 0;\n}",
+        "analysis": "思路：`std::string` 代替定长字符数组，`std::vector<Student>` 代替 C 的结构体数组，`std::sort` 加 lambda 代替 `qsort` + 函数指针；名次扫描逻辑与 C 版本完全一致。\n\n关键步骤：① `struct Student` 里直接放 `std::string`，不必再操心数组越界和 `%19s`；② lambda 返回 `a.score > b.score` 表示降序，分数相同返回 `a.id < b.id`（`std::string` 的 `<` 按字典序）；③ 名次变量 `rank` 只在分数变化时更新；④ `std::sort` 要求比较函数是严格弱序，因此绝不能写 `>=`。\n\n复杂度：时间 O(n log n)（字符串比较最多 O(20)），额外空间 O(n)。\n\n易错点：① lambda 里写成 `return a.score >= b.score;`，相等时返回 `true` 违反严格弱序，`std::sort` 可能越界崩溃；② 用 `int` 存学号把前导 0 丢了；③ 名次在并列时也被更新，输出 1、2、3；④ 忘记 `std::ios::sync_with_stdio(false)`，大数据下 I/O 变慢。"
+      },
+      "python": {
+        "stem": "读入 n 名学生的学号、姓名和成绩，按成绩从高到低排序后输出；成绩相同时按**学号字典序升序**排列。名次采用“并列名次”规则：成绩相同的学生名次相同，且下一档名次等于它前面的人数加 1（例如成绩 95、95、88 对应的名次是 1、1、3）。请用“元组列表 + 排序 + 一次扫描”完成。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；接下来 n 行，每行依次为学号、姓名、成绩，学号和姓名都是不含空白的字符串（长度小于 20），成绩是 0~100 的整数，三者之间用一个空格分隔。\n\n**输出格式：** 共 n 行，每行依次为：名次、学号、姓名、成绩，两两之间一个空格。\n\n**输入样例：**\n```text\n6\n2023003 Zhao 88\n2023001 Qian 95\n2023002 Sun 88\n2023005 Li 95\n2023004 Zhou 72\n2023006 Wu 60\n```\n**输出样例：**\n```text\n1 2023001 Qian 95\n1 2023005 Li 95\n3 2023002 Sun 88\n3 2023003 Zhao 88\n5 2023004 Zhou 72\n6 2023006 Wu 60\n```",
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    students = []\n    pos = 1\n    for _ in range(n):\n        sid = data[pos]\n        name = data[pos + 1]\n        score = int(data[pos + 2])\n        pos += 3\n        students.append((sid, name, score))\n\n    # 成绩降序、学号升序：用 (-score, sid) 作为排序关键字\n    students.sort(key=lambda t: (-t[2], t[0]))\n\n    rank = 0\n    out = []\n    for i, (sid, name, score) in enumerate(students):\n        if i == 0 or score != students[i - 1][2]:\n            rank = i + 1\n        out.append(f\"{rank} {sid} {name} {score}\")\n\n    sys.stdout.write(\"\\n\".join(out) + \"\\n\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "analysis": "思路：用 `(学号, 姓名, 成绩)` 元组组成的列表保存学生，`sort` 的 `key` 返回 `(-成绩, 学号)`：负号把“降序”变成“升序”，第二个元素让同分者按学号升序，一次排序同时满足两个条件。名次扫描时用 `enumerate` 拿到下标，只需和前一名的成绩比较。\n\n关键步骤：① `sys.stdin.read().split()` 后按每 3 个 token 一组切片，比逐行 `input()` 稳；② `key=lambda t: (-t[2], t[0])` 是关键，注意不要写成 `reverse=True`，那会把学号也倒序；③ `rank` 只在分数变化时更新为 `i + 1`；④ 用 f-string 拼好每行再 `join`，避免多次 `print` 的换行差异。\n\n复杂度：时间 O(n log n)（键是整数和短字符串），额外空间 O(n)。\n\n易错点：① 用 `sort(key=..., reverse=True)` 导致同学号也降序；② 把成绩转成 `int` 之外的类型（如字符串）后比较变成字典序，`100` 会排在 `95` 前面；③ 名次写成 `rank += 1`，遇到并列就错；④ 学号若被 `int()` 转换会丢掉前导 0。"
+      }
+    }
+  },
+  {
+    "id": "函-42",
+    "module": "函数",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "递归",
+      "快速幂",
+      "分治",
+      "取模"
+    ],
+    "stem": "给定正整数 a、非负整数 n 和正整数 m，请用**递归**的分治方法计算 aⁿ mod m 并输出。要求时间复杂度为 O(log n)，不能用循环逐次相乘，也不能调用库函数 `pow`。\n\n**输入格式：** 一行三个整数 a、n、m（1 ≤ a ≤ 10⁹，0 ≤ n ≤ 10¹⁸，1 ≤ m ≤ 10⁹），用空格分隔。\n\n**输出格式：** 一行一个整数，表示 aⁿ mod m 的结果（0 ≤ 结果 < m）。\n\n**输入样例：**\n```text\n3 13 1000\n```\n**输出样例：**\n```text\n323\n```",
+    "analysis": "思路：直接循环乘 n 次是 O(n)，n 可达 10¹⁸ 必然超时。利用分治恒等式：n 为偶数时 aⁿ = (a^(n/2))²；n 为奇数时 aⁿ = (a^(n/2))² × a。递归求出 `half = a^(n/2) mod m`，平方取模后再按奇偶补乘一次 a 即可，递归深度只有 O(log n)。\n\n关键步骤：① 递归出口 `n == 0` 返回 `1 % m`——写成 `1` 在 m = 1 时会错，因为结果必须落在 [0, m) 内；② `half * half % m` 中 `half < m ≤ 10⁹`，乘积最大 10¹⁸，必须用 `long long` 才不溢出；③ 奇数分支乘的是 `a % m`，先取模避免溢出；④ 主函数里先把 a 对 m 取模再传入。\n\n复杂度：时间 O(log n)，递归栈空间 O(log n)。\n\n易错点：① 用 `int` 存中间乘积导致溢出；② n 用 `int` 读入，10¹⁸ 直接溢出（必须 `unsigned long long` 或 `long long`）；③ 出口返回 `1` 而不是 `1 % m`，m = 1 时输出 1 而不是 0；④ 写成 `res = pow_mod(a, n/2, m) * pow_mod(a, n/2, m) % m` 重复递归，复杂度退化成 O(n)；⑤ 忘记对 a 取模，a 很大时乘法溢出。",
+    "solution": "#include <stdio.h>\n\n/* 递归快速幂：返回 a^n mod m */\nstatic long long pow_mod(long long a, unsigned long long n, long long m)\n{\n    long long half, res;\n\n    if (n == 0)\n        return 1 % m;              /* m == 1 时结果应为 0 */\n\n    half = pow_mod(a, n / 2, m);   /* 只递归一次，避免重复计算 */\n    res = half * half % m;         /* half < m，乘积不超过 10^18 */\n\n    if (n & 1ULL)\n        res = res * (a % m) % m;   /* 奇数还要再乘一个 a */\n\n    return res;\n}\n\nint main(void)\n{\n    long long a, m;\n    unsigned long long n;\n\n    if (scanf(\"%lld %llu %lld\", &a, &n, &m) != 3 || m <= 0)\n        return 0;\n\n    printf(\"%lld\\n\", pow_mod(a % m, n, m));\n    return 0;\n}",
+    "points": [
+      "递归出口返回 1 % m，正确处理 m = 1 的边界",
+      "每层只递归一次，用 half 的平方把复杂度降到 O(log n)",
+      "中间乘积与 n 都用 64 位整数，避免溢出",
+      "对 a 先取模，奇数分支补乘 a % m"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "给定正整数 a、非负整数 n 和正整数 m，请用**递归**的分治方法计算 aⁿ mod m 并输出。要求时间复杂度为 O(log n)，不能用循环逐次相乘，也不能调用 `std::pow`。函数建议写成 `long long pow_mod(long long a, unsigned long long n, long long m)`。\n\n**输入格式：** 一行三个整数 a、n、m（1 ≤ a ≤ 10⁹，0 ≤ n ≤ 10¹⁸，1 ≤ m ≤ 10⁹），用空格分隔。\n\n**输出格式：** 一行一个整数，表示 aⁿ mod m 的结果（0 ≤ 结果 < m）。\n\n**输入样例：**\n```text\n3 13 1000\n```\n**输出样例：**\n```text\n323\n```",
+        "solution": "#include <iostream>\n\nstatic long long pow_mod(long long a, unsigned long long n, long long m)\n{\n    if (n == 0)\n        return 1 % m;\n\n    long long half = pow_mod(a, n / 2, m);\n    long long res = half * half % m;\n    if (n & 1ULL)\n        res = res * (a % m) % m;\n    return res;\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    long long a, m;\n    unsigned long long n;\n    if (!(std::cin >> a >> n >> m) || m <= 0)\n        return 0;\n\n    std::cout << pow_mod(a % m, n, m) << '\\n';\n    return 0;\n}",
+        "analysis": "思路与 C 版本相同：递归分治，`n` 每层减半，`n` 为奇数时多乘一个 `a`。C++ 里把递归函数写成文件内的 `static` 函数（内部链接），并把 `n` 声明为 `unsigned long long` 以承载 10¹⁸。\n\n关键步骤：① `std::cin >> a >> n >> m` 会按参数类型解析，`unsigned long long` 最大约 1.8×10¹⁹，放得下 10¹⁸；② `half * half % m` 两个操作数都小于 10⁹，乘积小于 10¹⁸，`long long` 安全；③ `if (n & 1ULL)` 判断奇偶，比 `n % 2` 更快且不涉及取模；④ 输出用 `'\\n'` 而不是 `std::endl`，避免不必要的刷新。\n\n复杂度：时间 O(log n)，空间 O(log n)（递归栈）。\n\n易错点：① 把 `n` 声明成 `int`，读入 10¹⁸ 直接溢出成负数或截断；② 在 lambda/函数里用 `pow` 的浮点版本，10¹⁸ 量级精度完全不够；③ 出口写 `return 1;`，`m = 1` 时答案错；④ 重复调用两次递归，复杂度退化。"
+      },
+      "python": {
+        "stem": "给定正整数 a、非负整数 n 和正整数 m，请用**递归**的分治方法计算 aⁿ mod m 并输出。要求时间复杂度为 O(log n)，不能用循环逐次相乘，也不能直接用 `pow(a, n, m)` 这个内置三参数写法。\n\n**输入格式：** 一行三个整数 a、n、m（1 ≤ a ≤ 10⁹，0 ≤ n ≤ 10¹⁸，1 ≤ m ≤ 10⁹），用空格分隔。\n\n**输出格式：** 一行一个整数，表示 aⁿ mod m 的结果（0 ≤ 结果 < m）。\n\n**输入样例：**\n```text\n3 13 1000\n```\n**输出样例：**\n```text\n323\n```",
+        "solution": "import sys\n\n\ndef pow_mod(a: int, n: int, m: int) -> int:\n    if n == 0:\n        return 1 % m\n    half = pow_mod(a, n // 2, m)\n    res = half * half % m\n    if n & 1:\n        res = res * (a % m) % m\n    return res\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    a, n, m = int(data[0]), int(data[1]), int(data[2])\n    print(pow_mod(a % m, n, m))\n\n\nif __name__ == \"__main__\":\n    main()",
+        "analysis": "思路：Python 的 `int` 是任意精度，不存在溢出问题，但算法结构仍要按分治写：`n` 为偶数时 `a^n = (a^(n/2))^2`，为奇数时再乘一个 `a`，每层 `n // 2`，共 O(log n) 层。\n\n关键步骤：① 出口 `return 1 % m`，兼顾 m = 1；② `n // 2` 用整除（`/` 会得到浮点数，10¹⁸ 会丢精度）；③ `n & 1` 判断奇偶；④ 主函数里先把 `a % m` 再传参，减少大数乘法规模。\n\n复杂度：时间 O(log n)（大整数乘法另计），递归深度 O(log n)，Python 3.10 默认递归上限 1000 足够。\n\n易错点：① 用 `n / 2` 得到 float，`n` 很大时精度丢失（超过 2⁵³）会算出错误结果；② 递归写成 `pow_mod(a, n - 1, m) * a`，退化成 O(n) 且必然栈溢出；③ 直接写 `pow(a, n, m)` 虽然正确，但本题要求手写递归分治；④ 忘记 `% m`，10¹⁸ 次幂的整数会大到耗尽内存。"
+      }
+    }
+  },
+  {
+    "id": "函-43",
+    "module": "函数",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "二分查找",
+      "边界处理",
+      "复杂度"
+    ],
+    "stem": "给定一个长度为 n 的非递减整数序列和 m 个查询，对每个查询值 x，用**二分查找**输出它在序列中第一次和最后一次出现的下标（下标从 0 开始）；若 x 不存在，输出 `-1 -1`。要求每个查询的时间复杂度为 O(log n)，不能逐个扫描。\n\n**输入格式：** 第一行两个整数 n 和 m（1 ≤ n ≤ 100000，1 ≤ m ≤ 100000）；第二行 n 个整数，非递减排列，用空格分隔；第三行 m 个整数，为 m 个查询值，用空格分隔。所有整数的绝对值不超过 10⁹。\n\n**输出格式：** 共 m 行，每行两个整数，依次为第一次和最后一次出现的下标（下标从 0 开始）；不存在时输出 `-1 -1`。\n\n**输入样例：**\n```text\n8 3\n1 3 3 3 5 7 7 9\n3 7 4\n```\n**输出样例：**\n```text\n1 3\n5 6\n-1 -1\n```",
+    "analysis": "思路：用两次二分分别求“第一个 ≥ x 的位置”（下界）和“第一个 > x 的位置”（上界）。若下界等于 n 或 `a[下界] != x`，说明 x 不存在，输出 `-1 -1`；否则第一次出现的下标就是下界，最后一次出现的下标是上界减 1。\n\n关键步骤：① 下界二分：`a[mid] < x` 时 `lo = mid + 1`，否则 `hi = mid`；② 上界二分：`a[mid] <= x` 时 `lo = mid + 1`，否则 `hi = mid`——注意两处比较符号的差别；③ `mid = lo + (hi - lo) / 2` 防止 `lo + hi` 溢出；④ 判存在性时必须同时检查 `first == n` 和 `a[first] != x`。\n\n复杂度：时间 O((n + m) log n)，额外空间 O(n)（存放数组）。\n\n易错点：① 上界二分误写成 `a[mid] < x`，结果和下界相同，`last` 恒等于 `first`；② 循环条件写 `lo <= hi` 又配 `hi = mid`，会死循环；③ 只判断 `a[first] != x` 而不判断 `first == n`，越界访问；④ 输出下标时用 1-based，整体偏移 1；⑤ 每次查询都用 `for` 线性扫描，10⁵ × 10⁵ 必然超时。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\n/* 第一个 >= x 的下标，返回值可能等于 n */\nstatic int lower_bound(const int *a, int n, int x)\n{\n    int lo = 0, hi = n;\n\n    while (lo < hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (a[mid] < x)\n            lo = mid + 1;\n        else\n            hi = mid;\n    }\n    return lo;\n}\n\n/* 第一个 > x 的下标，返回值可能等于 n */\nstatic int upper_bound(const int *a, int n, int x)\n{\n    int lo = 0, hi = n;\n\n    while (lo < hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (a[mid] <= x)\n            lo = mid + 1;\n        else\n            hi = mid;\n    }\n    return lo;\n}\n\nint main(void)\n{\n    int n, m, i, x;\n    int *a;\n\n    if (scanf(\"%d %d\", &n, &m) != 2 || n <= 0)\n        return 0;\n\n    a = (int *)malloc((size_t)n * sizeof(int));\n    if (a == NULL)\n        return 1;\n    for (i = 0; i < n; i++)\n        scanf(\"%d\", &a[i]);\n\n    for (i = 0; i < m; i++) {\n        int first, last;\n\n        if (scanf(\"%d\", &x) != 1)\n            break;\n        first = lower_bound(a, n, x);\n        if (first == n || a[first] != x) {\n            puts(\"-1 -1\");\n        } else {\n            last = upper_bound(a, n, x) - 1;\n            printf(\"%d %d\\n\", first, last);\n        }\n    }\n\n    free(a);\n    return 0;\n}",
+    "points": [
+      "实现下界二分（第一个 ≥ x）与上界二分（第一个 > x），比较符号不同",
+      "用 first == n || a[first] != x 正确判断元素不存在",
+      "最后一次出现的下标为上界减 1，边界区间也正确",
+      "每个查询 O(log n)，整体不超过 O((n + m) log n)"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "给定一个长度为 n 的非递减整数序列和 m 个查询，对每个查询值 x，用**二分查找**输出它在序列中第一次和最后一次出现的下标（下标从 0 开始）；若 x 不存在，输出 `-1 -1`。要求每个查询的时间复杂度为 O(log n)，可使用 `std::lower_bound` / `std::upper_bound`。\n\n**输入格式：** 第一行两个整数 n 和 m（1 ≤ n ≤ 100000，1 ≤ m ≤ 100000）；第二行 n 个整数，非递减排列，用空格分隔；第三行 m 个整数，为 m 个查询值，用空格分隔。所有整数的绝对值不超过 10⁹。\n\n**输出格式：** 共 m 行，每行两个整数，依次为第一次和最后一次出现的下标（下标从 0 开始）；不存在时输出 `-1 -1`。\n\n**输入样例：**\n```text\n8 3\n1 3 3 3 5 7 7 9\n3 7 4\n```\n**输出样例：**\n```text\n1 3\n5 6\n-1 -1\n```",
+        "solution": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n, m;\n    if (!(std::cin >> n >> m) || n <= 0)\n        return 0;\n\n    std::vector<int> a(n);\n    for (int &v : a)\n        std::cin >> v;\n\n    for (int q = 0; q < m; ++q) {\n        int x;\n        if (!(std::cin >> x))\n            break;\n\n        auto first = std::lower_bound(a.begin(), a.end(), x);\n        if (first == a.end() || *first != x) {\n            std::cout << \"-1 -1\\n\";\n        } else {\n            auto last = std::upper_bound(a.begin(), a.end(), x);\n            std::cout << (first - a.begin()) << ' '\n                      << (last - a.begin() - 1) << '\\n';\n        }\n    }\n\n    return 0;\n}",
+        "analysis": "思路：`std::lower_bound` 返回第一个“不小于 x”的位置（第一个 ≥ x），`std::upper_bound` 返回第一个“大于 x”的位置，两者相减就是 x 的出现次数；本题只输出首末下标，所以 `last = upper_bound - 1`。\n\n关键步骤：① 用迭代器 `first`、`last` 定位，`first - a.begin()` 把迭代器差转换成 0-based 下标（`difference_type`，输出时由 `operator<<` 处理）；② 判存在性必须同时检查 `first == a.end()` 和 `*first != x`；③ 输入用 `std::cin >> x`，失败就 `break`；④ 关闭流同步加速。\n\n复杂度：时间 O((n + m) log n)，空间 O(n)。\n\n易错点：① 只用 `lower_bound` 求 `last`，得到的是“第一个 ≥ x”而不是最后一个 x；② `*first` 在 `first == a.end()` 时先解引用，属于未定义行为，短路顺序必须是 `first == a.end() || *first != x`；③ 把迭代器差直接 `int` 强转在极端情况下丢精度（本题 n ≤ 10⁵ 安全）；④ 忘记 `upper_bound` 减 1，输出越界下标。"
+      },
+      "python": {
+        "stem": "给定一个长度为 n 的非递减整数序列和 m 个查询，对每个查询值 x，用**二分查找**输出它在序列中第一次和最后一次出现的下标（下标从 0 开始）；若 x 不存在，输出 `-1 -1`。要求每个查询的时间复杂度为 O(log n)，可以使用标准库 `bisect`。\n\n**输入格式：** 第一行两个整数 n 和 m（1 ≤ n ≤ 100000，1 ≤ m ≤ 100000）；第二行 n 个整数，非递减排列，用空格分隔；第三行 m 个整数，为 m 个查询值，用空格分隔。所有整数的绝对值不超过 10⁹。\n\n**输出格式：** 共 m 行，每行两个整数，依次为第一次和最后一次出现的下标（下标从 0 开始）；不存在时输出 `-1 -1`。\n\n**输入样例：**\n```text\n8 3\n1 3 3 3 5 7 7 9\n3 7 4\n```\n**输出样例：**\n```text\n1 3\n5 6\n-1 -1\n```",
+        "solution": "import sys\nfrom bisect import bisect_left, bisect_right\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    m = int(data[1])\n    a = [int(x) for x in data[2:2 + n]]\n    queries = [int(x) for x in data[2 + n:2 + n + m]]\n\n    out = []\n    for x in queries:\n        first = bisect_left(a, x)      # 第一个 >= x\n        if first == n or a[first] != x:\n            out.append(\"-1 -1\")\n        else:\n            last = bisect_right(a, x) - 1   # 第一个 > x 再减 1\n            out.append(f\"{first} {last}\")\n\n    sys.stdout.write(\"\\n\".join(out) + \"\\n\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "analysis": "思路：`bisect_left(a, x)` 返回第一个 ≥ x 的位置，`bisect_right(a, x)` 返回第一个 > x 的位置，二者都基于二分，单次 O(log n)。首下标取 `bisect_left`，末下标取 `bisect_right - 1`。\n\n关键步骤：① 用 `sys.stdin.buffer.read().split()` 读入字节串再 `int()`，比 `input()` 快一个量级；② 切片分别取出数组和查询；③ 判存在时先看 `first == n`，再访问 `a[first]`（`or` 的短路保证不越界）；④ 用列表收集结果后一次性 `join` 输出。\n\n复杂度：时间 O((n + m) log n)，空间 O(n + m)。\n\n易错点：① 两个都用 `bisect_left`，末下标永远等于首下标；② 忘记 `-1` 减一；③ 写成 `if a[first] != x or first == n`，短路顺序反了，`first == n` 时先访问 `a[n]` 抛 `IndexError`；④ 每次查询用 `a.count(x)` 或 `in` 扫描，10⁵ × 10⁵ 超时；⑤ 输出用 1-based 下标。"
+      }
+    }
+  },
+  {
+    "id": "函-44",
+    "module": "函数",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "递归",
+      "最大公约数",
+      "扩展欧几里得",
+      "最小公倍数"
+    ],
+    "stem": "输入两个正整数 a 和 b，用**递归**的欧几里得算法求它们的最大公约数 g，并依次输出：① g；② 最小公倍数 lcm（用 `a / g * b` 计算，避免先乘后除溢出）；③ 一组整数解 x、y，满足 a·x + b·y = g（用递归的**扩展欧几里得**算法求出）。\n\n本题数据保证按“先递归 b、再用 x = y₁、y = x₁ - (a/b)·y₁ 回代”的标准写法得到的解唯一，且 |x|、|y| 不超过 10¹⁸。\n\n**输入格式：** 一行两个正整数 a、b（1 ≤ a, b ≤ 2×10⁹），用空格分隔。\n\n**输出格式：** 共三行：第一行输出最大公约数 g；第二行输出最小公倍数 lcm；第三行输出一组整数解 x 和 y（用空格分隔，负数保留负号），满足 a·x + b·y = g。\n\n**输入样例：**\n```text\n240 46\n```\n**输出样例：**\n```text\n2\n5520\n-9 47\n```",
+    "analysis": "思路：欧几里得算法基于 gcd(a, b) = gcd(b, a % b)，递归出口是 b == 0 时 gcd = a。扩展欧几里得在回溯时顺便求出系数：若已知 b·x₁ + (a%b)·y₁ = g，把 a % b 写成 a - (a/b)·b，整理得 a·y₁ + b·(x₁ - (a/b)·y₁) = g，所以 x = y₁、y = x₁ - (a/b)·y₁。\n\n关键步骤：① 递归函数用两个 `long long *` 出参带回 x、y（C 没有多返回值）；② 出口置 `*x = 1, *y = 0`；③ 回溯时先保存 `x1、y1` 再算 `*x`、`*y`，顺序不能反；④ lcm 用 `a / g * b`，先除后乘避免 a×b 溢出；⑤ `%lld` 输出三元结果。\n\n复杂度：时间 O(log min(a, b))，递归栈 O(log min(a, b))。\n\n易错点：① 先算 `a * b` 再除以 g，两个 2×10⁹ 相乘会溢出 32 位、甚至逼近 64 位上限；② 回溯时写成 `*x = x1; *y = y1 - (a/b) * x1;` 公式错位；③ 用 `int` 存系数和乘积；④ 递归出口写成 `a == 0` 而不是 `b == 0`，导致死递归；⑤ 输出 y 为负时用 `%u` 之类的格式符。",
+    "solution": "#include <stdio.h>\n\n/* 扩展欧几里得：返回 gcd(a, b)，并通过出参带回 x、y 使 a*x + b*y = gcd */\nstatic long long ext_gcd(long long a, long long b, long long *x, long long *y)\n{\n    long long x1, y1, g;\n\n    if (b == 0) {\n        *x = 1;\n        *y = 0;\n        return a;\n    }\n\n    g = ext_gcd(b, a % b, &x1, &y1);\n    *x = y1;\n    *y = x1 - (a / b) * y1;\n    return g;\n}\n\nint main(void)\n{\n    long long a, b, x = 0, y = 0, g;\n\n    if (scanf(\"%lld %lld\", &a, &b) != 2 || a <= 0 || b <= 0)\n        return 0;\n\n    g = ext_gcd(a, b, &x, &y);\n\n    printf(\"%lld\\n\", g);\n    printf(\"%lld\\n\", a / g * b);   /* 先除后乘，防止溢出 */\n    printf(\"%lld %lld\\n\", x, y);\n\n    return 0;\n}",
+    "points": [
+      "递归实现 gcd，出口为 b == 0 时返回 a",
+      "回溯时正确回代 x = y1、y = x1 - (a / b) * y1",
+      "lcm 用 a / g * b 计算，避免中间乘积溢出",
+      "按三行格式输出 g、lcm 与一组整数解 x y"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "输入两个正整数 a 和 b，用**递归**的欧几里得算法求它们的最大公约数 g，并依次输出：① g；② 最小公倍数 lcm（用 `a / g * b` 计算，避免先乘后除溢出）；③ 一组整数解 x、y，满足 a·x + b·y = g（用递归的**扩展欧几里得**算法求出，函数签名建议 `long long ext_gcd(long long a, long long b, long long &x, long long &y)`）。\n\n**输入格式：** 一行两个正整数 a、b（1 ≤ a, b ≤ 2×10⁹），用空格分隔。\n\n**输出格式：** 共三行：第一行输出最大公约数 g；第二行输出最小公倍数 lcm；第三行输出一组整数解 x 和 y（用空格分隔，负数保留负号），满足 a·x + b·y = g。\n\n**输入样例：**\n```text\n240 46\n```\n**输出样例：**\n```text\n2\n5520\n-9 47\n```",
+        "solution": "#include <iostream>\n\nstatic long long ext_gcd(long long a, long long b, long long &x, long long &y)\n{\n    if (b == 0) {\n        x = 1;\n        y = 0;\n        return a;\n    }\n\n    long long x1 = 0, y1 = 0;\n    long long g = ext_gcd(b, a % b, x1, y1);\n    x = y1;\n    y = x1 - (a / b) * y1;\n    return g;\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    long long a, b;\n    if (!(std::cin >> a >> b) || a <= 0 || b <= 0)\n        return 0;\n\n    long long x = 0, y = 0;\n    long long g = ext_gcd(a, b, x, y);\n\n    std::cout << g << '\\n';\n    std::cout << a / g * b << '\\n';\n    std::cout << x << ' ' << y << '\\n';\n\n    return 0;\n}",
+        "analysis": "思路：与 C 版本相同的递归回溯，只是用**引用参数** `long long &x, long long &y` 代替指针出参，调用处不必再写 `&x`，可读性更好。\n\n关键步骤：① 递归前先给 `x1、y1` 初始化，避免未定义值参与计算；② `g = ext_gcd(b, a % b, x1, y1)` 拿回子问题的解；③ `x = y1; y = x1 - (a / b) * y1;` 完成回代，顺序不能颠倒；④ 输出 `a / g * b` 先除后乘。\n\n复杂度：时间 O(log min(a, b))，空间 O(log min(a, b))。\n\n易错点：① 引用参数写成传值，主函数里的 x、y 永远是 0；② 先写 `y = ...` 再写 `x = y1` 是对的，但如果先改 `x` 又用 `x` 推 `y` 就会用错变量；③ 用 `std::abs` 之外的取模方式处理负数（本题 a、b 均为正，a % b 恒非负）；④ 用 `int` 接收 lcm，2×10⁹ 级别会溢出。"
+      },
+      "python": {
+        "stem": "输入两个正整数 a 和 b，用**递归**的欧几里得算法求它们的最大公约数 g，并依次输出：① g；② 最小公倍数 lcm（用 `a // g * b` 计算）；③ 一组整数解 x、y，满足 a·x + b·y = g（用递归的**扩展欧几里得**算法求出，函数返回 `(g, x, y)` 三元组）。\n\n**输入格式：** 一行两个正整数 a、b（1 ≤ a, b ≤ 2×10⁹），用空格分隔。\n\n**输出格式：** 共三行：第一行输出最大公约数 g；第二行输出最小公倍数 lcm；第三行输出一组整数解 x 和 y（用空格分隔，负数保留负号），满足 a·x + b·y = g。\n\n**输入样例：**\n```text\n240 46\n```\n**输出样例：**\n```text\n2\n5520\n-9 47\n```",
+        "solution": "import sys\n\n\ndef ext_gcd(a: int, b: int):\n    '''返回 (g, x, y)，满足 a*x + b*y = g = gcd(a, b)。'''\n    if b == 0:\n        return a, 1, 0\n\n    g, x1, y1 = ext_gcd(b, a % b)\n    return g, y1, x1 - (a // b) * y1\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    a, b = int(data[0]), int(data[1])\n    g, x, y = ext_gcd(a, b)\n\n    print(g)\n    print(a // g * b)\n    print(x, y)\n\n\nif __name__ == \"__main__\":\n    main()",
+        "analysis": "思路：Python 可以直接返回元组，因此扩展欧几里得写成 `return g, x1 - (a // b) * y1` 这样的三元组，无需指针或引用；回溯公式与 C 版本一致。\n\n关键步骤：① 出口 `if b == 0: return a, 1, 0`；② `g, x1, y1 = ext_gcd(b, a % b)` 一次解包拿到子问题结果；③ `a // b` 必须用整除，`/` 会得到浮点数；④ 主函数依次打印 g、lcm、x、y。\n\n复杂度：时间 O(log min(a, b))，递归深度约 45 层，远小于默认 1000 的上限。\n\n易错点：① 用 `/` 做整除，`a / b` 变成 float，大数时精度丢失；② 把返回值顺序写成 `(x, y, g)`，调用处解包错位；③ `a // g * b` 写成 `a * b // g`，Python 大整数不会溢出但会多算一次大数乘法；④ 直接调用 `math.gcd` 或 `pow(a, -1, b)` 绕过递归，不符合题目要求。"
+      }
+    }
+  },
+  {
+    "id": "函-45",
+    "module": "函数",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "归并排序",
+      "逆序对",
+      "分治",
+      "复杂度"
+    ],
+    "stem": "输入 n 个整数，用**归并排序**把它们按升序排好，并同时统计逆序对的个数（逆序对指满足 i < j 且 a[i] > a[j] 的数对 (i, j)）。要求时间复杂度 O(n log n)，不能使用冒泡、选择、插入等 O(n²) 的排序。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100000）；第二行 n 个整数，用空格分隔，每个整数的绝对值不超过 10⁹。\n\n**输出格式：** 第一行输出升序排序后的 n 个整数，相邻整数之间一个空格，行末换行；第二行输出逆序对的个数。\n\n**输入样例：**\n```text\n6\n5 2 6 1 3 4\n```\n**输出样例：**\n```text\n1 2 3 4 5 6\n8\n```",
+    "analysis": "思路：归并排序的“合并”阶段天然适合统计逆序对。合并左右两个已排好序的子数组时，若右半的 `a[j]` 比左半的 `a[i]` 小，那么左半从 `i` 到 `mid - 1` 的所有元素都大于 `a[j]`，一次就能贡献 `mid - i` 个逆序对；逐层累加即得总数。\n\n关键步骤：① 递归划分区间 `[lo, hi)`，`mid = lo + (hi - lo) / 2`；② 先递归左右两半并把各自的逆序对数相加；③ 合并到临时数组 `tmp`，遇到 `a[i] > a[j]` 时 `cnt += mid - i`；④ 把 `tmp` 拷回原数组；⑤ 逆序对最多 n(n-1)/2 ≈ 5×10⁹，必须用 `long long`。\n\n复杂度：时间 O(n log n)，额外空间 O(n)（临时数组 + 递归栈）。\n\n易错点：① 比较写成 `a[i] < a[j]` 而不是 `<=`，相等元素会被算成逆序对（相等不构成逆序对）；② 忘记 `cnt += mid - i` 里的 `mid - i`，只加 1；③ 用 `int` 统计逆序对，10⁵ 个降序数据会溢出；④ 合并后忘记把 `tmp` 拷回 `a`；⑤ 递归出口写成 `hi - lo == 0`，漏掉单元素区间导致死递归。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\n/* 归并排序 [lo, hi)，返回该区间内的逆序对个数 */\nstatic long long merge_count(int *a, int *tmp, int lo, int hi)\n{\n    int mid, i, j, k;\n    long long cnt;\n\n    if (hi - lo <= 1)\n        return 0;\n\n    mid = lo + (hi - lo) / 2;\n    cnt = merge_count(a, tmp, lo, mid) + merge_count(a, tmp, mid, hi);\n\n    i = lo;\n    j = mid;\n    k = lo;\n    while (i < mid && j < hi) {\n        if (a[i] <= a[j]) {\n            tmp[k++] = a[i++];\n        } else {\n            tmp[k++] = a[j++];\n            cnt += mid - i;    /* a[i..mid-1] 都大于 a[j] */\n        }\n    }\n    while (i < mid)\n        tmp[k++] = a[i++];\n    while (j < hi)\n        tmp[k++] = a[j++];\n    for (i = lo; i < hi; i++)\n        a[i] = tmp[i];\n\n    return cnt;\n}\n\nint main(void)\n{\n    int n, i;\n    int *a, *tmp;\n    long long inv;\n\n    if (scanf(\"%d\", &n) != 1 || n <= 0)\n        return 0;\n\n    a = (int *)malloc((size_t)n * sizeof(int));\n    tmp = (int *)malloc((size_t)n * sizeof(int));\n    if (a == NULL || tmp == NULL) {\n        free(a);\n        free(tmp);\n        return 1;\n    }\n\n    for (i = 0; i < n; i++)\n        scanf(\"%d\", &a[i]);\n\n    inv = merge_count(a, tmp, 0, n);\n\n    for (i = 0; i < n; i++)\n        printf(\"%d%c\", a[i], i + 1 < n ? ' ' : '\\n');\n    printf(\"%lld\\n\", inv);\n\n    free(a);\n    free(tmp);\n    return 0;\n}",
+    "points": [
+      "递归划分区间，左右两半各自排序并分别统计逆序对",
+      "合并时 a[i] > a[j] 则一次累加 mid - i 个逆序对",
+      "相等元素按 a[i] <= a[j] 处理，不计入逆序对",
+      "逆序对用 long long 保存，输出排序结果与个数两行"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "输入 n 个整数，用**归并排序**把它们按升序排好，并同时统计逆序对的个数（逆序对指满足 i < j 且 a[i] > a[j] 的数对 (i, j)）。要求时间复杂度 O(n log n)，不能使用冒泡、选择、插入等 O(n²) 的排序，也不能调用 `std::sort`。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100000）；第二行 n 个整数，用空格分隔，每个整数的绝对值不超过 10⁹。\n\n**输出格式：** 第一行输出升序排序后的 n 个整数，相邻整数之间一个空格，行末换行；第二行输出逆序对的个数。\n\n**输入样例：**\n```text\n6\n5 2 6 1 3 4\n```\n**输出样例：**\n```text\n1 2 3 4 5 6\n8\n```",
+        "solution": "#include <iostream>\n#include <vector>\n\nstatic long long merge_count(std::vector<long long> &a, std::vector<long long> &tmp,\n                             int lo, int hi)\n{\n    if (hi - lo <= 1)\n        return 0;\n\n    int mid = lo + (hi - lo) / 2;\n    long long cnt = merge_count(a, tmp, lo, mid) + merge_count(a, tmp, mid, hi);\n\n    int i = lo, j = mid, k = lo;\n    while (i < mid && j < hi) {\n        if (a[i] <= a[j]) {\n            tmp[k++] = a[i++];\n        } else {\n            tmp[k++] = a[j++];\n            cnt += mid - i;\n        }\n    }\n    while (i < mid)\n        tmp[k++] = a[i++];\n    while (j < hi)\n        tmp[k++] = a[j++];\n    for (k = lo; k < hi; ++k)\n        a[k] = tmp[k];\n\n    return cnt;\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n;\n    if (!(std::cin >> n) || n <= 0)\n        return 0;\n\n    std::vector<long long> a(n), tmp(n);\n    for (long long &v : a)\n        std::cin >> v;\n\n    long long inv = merge_count(a, tmp, 0, n);\n\n    for (int i = 0; i < n; ++i)\n        std::cout << a[i] << (i + 1 < n ? ' ' : '\\n');\n    std::cout << inv << '\\n';\n\n    return 0;\n}",
+        "analysis": "思路：与 C 版本相同的自顶向下归并，只是把数组换成 `std::vector<long long>`，临时数组也一次分配好复用，不再手动 `malloc/free`。\n\n关键步骤：① 递归函数以引用方式接收 `a` 和 `tmp`，避免每层拷贝（`std::vector` 按值传参会整体复制，直接导致超时）；② `mid = lo + (hi - lo) / 2` 防止 `lo + hi` 溢出；③ 合并时 `a[i] <= a[j]` 取左半，保证稳定性且相等不计数；④ 每层合并后把 `tmp[lo, hi)` 复制回 `a`。\n\n复杂度：时间 O(n log n)，额外空间 O(n)。\n\n易错点：① 参数写成按值传递 `std::vector<long long> a`，每层复制整段数据，复杂度退化且必然超时；② 用 `std::sort` + 树状数组求逆序对虽然也对，但本题要求归并排序；③ `cnt += mid - i` 中 `mid - i` 是 `int`，与 `long long` 相加没问题，但整体必须用 `long long` 接收；④ 输出第一行行末多打空格。"
+      },
+      "python": {
+        "stem": "输入 n 个整数，用**归并排序**把它们按升序排好，并同时统计逆序对的个数（逆序对指满足 i < j 且 a[i] > a[j] 的数对 (i, j)）。要求时间复杂度 O(n log n)，不能使用 `list.sort` 或 `sorted` 直接排序。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100000）；第二行 n 个整数，用空格分隔，每个整数的绝对值不超过 10⁹。\n\n**输出格式：** 第一行输出升序排序后的 n 个整数，相邻整数之间一个空格，行末换行；第二行输出逆序对的个数。\n\n**输入样例：**\n```text\n6\n5 2 6 1 3 4\n```\n**输出样例：**\n```text\n1 2 3 4 5 6\n8\n```",
+        "solution": "import sys\n\nsys.setrecursionlimit(1 << 20)\n\n\ndef merge_count(a: list) -> int:\n    '''原地归并排序 a，返回逆序对个数。'''\n    n = len(a)\n    if n <= 1:\n        return 0\n\n    mid = n // 2\n    left = a[:mid]\n    right = a[mid:]\n\n    cnt = merge_count(left) + merge_count(right)\n\n    i = j = k = 0\n    while i < len(left) and j < len(right):\n        if left[i] <= right[j]:\n            a[k] = left[i]\n            i += 1\n        else:\n            a[k] = right[j]\n            j += 1\n            cnt += len(left) - i\n        k += 1\n\n    while i < len(left):\n        a[k] = left[i]\n        i += 1\n        k += 1\n    while j < len(right):\n        a[k] = right[j]\n        j += 1\n        k += 1\n\n    return cnt\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    a = [int(x) for x in data[1:1 + n]]\n\n    inv = merge_count(a)\n\n    sys.stdout.write(\" \".join(map(str, a)) + \"\\n\")\n    sys.stdout.write(str(inv) + \"\\n\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "analysis": "思路：把数组对半切开，分别递归排序并统计左右内部的逆序对，再在合并时统计“左半元素 > 右半元素”的跨区间逆序对：一旦 `left[i] > right[j]`，左半从 `i` 到末尾都大于 `right[j]`，一次加 `len(left) - i`。\n\n关键步骤：① 用切片 `a[:mid]`、`a[mid:]` 得到两个子列表，再把合并结果写回 `a` 的对应位置，做到“原地”排序；② 递归返回子问题的逆序对数并相加；③ 合并时严格用 `<=` 走左半，保证相等不算逆序对；④ 逆序对是 Python 的任意精度整数，不存在溢出。\n\n复杂度：时间 O(n log n)，额外空间 O(n log n)（每层切片，峰值约 2n）。\n\n易错点：① 递归里对切片排序却忘了写回 `a[k]`，原数组没有变化；② `cnt += len(left) - i` 写成 `+1`，只统计了一个；③ 合并时用 `<` 而不是 `<=`，相等元素被误算成逆序对；④ 递归深度 log₂(10⁵) ≈ 17 层本不会超限，但若误写成逐元素递归就要调大 `setrecursionlimit`；⑤ 用 `sorted` 或 `list.sort` 直接排，属于违反题目要求。"
+      }
+    }
+  },
+  {
+    "id": "函-46",
+    "module": "函数",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "区间合并",
+      "排序",
+      "贪心",
+      "综合应用"
+    ],
+    "stem": "输入 n 个闭区间 [l, r]（l ≤ r），把其中所有“有公共点”的区间合并成尽量少的互不重叠区间，并按左端点从小到大输出合并结果。这是典型的综合应用题：先按左端点排序，再一次线性扫描合并，整体复杂度 O(n log n)。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100000）；接下来 n 行，每行两个整数 l、r（-10⁹ ≤ l ≤ r ≤ 10⁹），表示闭区间 [l, r]，用空格分隔。\n\n**输出格式：** 第一行输出合并后的区间个数 k；接下来 k 行，每行两个整数，表示一个合并后的区间（按左端点升序），共 k 行。\n\n**输入样例：**\n```text\n5\n1 3\n8 10\n2 6\n15 18\n17 20\n```\n**输出样例：**\n```text\n3\n1 6\n8 10\n15 20\n```",
+    "analysis": "思路：把所有区间按左端点升序排好，维护一个“当前合并区间”`[cur_l, cur_r]`。扫描到 `[l, r]` 时：若 `l <= cur_r`，说明它与当前区间有公共点，合并为 `[cur_l, max(cur_r, r)]`；否则当前区间已经无法再延长，输出（或存入结果数组）后把当前区间换成 `[l, r]`。\n\n关键步骤：① 结构体 `Interval` 保存 l、r，`qsort` 比较函数先比 l，再比 r；② 第一个区间直接作为当前区间；③ 扫描时只更新右端点（左端点已经有序，不会变小）；④ 最后再输出最后一个当前区间；⑤ 坐标可到 ±10⁹，用 `long long` 保存。\n\n复杂度：时间 O(n log n)（排序主导），额外空间 O(n)。\n\n易错点：① 判断条件写成 `l < cur_r`，把“只在端点相接”的区间漏掉；② 合并时忘记取 `max(cur_r, r)`，遇到被包含的区间（如 [1,10] 之后来 [2,3]）会把右端点缩小；③ 忘记输出最后一段；④ 用 `int` 存坐标，读入 -10⁹ 时溢出；⑤ 输出顺序没有按左端点升序（未排序就直接扫描）。",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct {\n    long long l, r;\n} Interval;\n\nstatic int cmp(const void *pa, const void *pb)\n{\n    const Interval *a = (const Interval *)pa;\n    const Interval *b = (const Interval *)pb;\n\n    if (a->l != b->l)\n        return a->l < b->l ? -1 : 1;\n    if (a->r != b->r)\n        return a->r < b->r ? -1 : 1;\n    return 0;\n}\n\nint main(void)\n{\n    int n, i, k = 0;\n    Interval *seg, *res;\n\n    if (scanf(\"%d\", &n) != 1 || n <= 0)\n        return 0;\n\n    seg = (Interval *)malloc((size_t)n * sizeof(Interval));\n    res = (Interval *)malloc((size_t)n * sizeof(Interval));\n    if (seg == NULL || res == NULL) {\n        free(seg);\n        free(res);\n        return 1;\n    }\n\n    for (i = 0; i < n; i++)\n        scanf(\"%lld %lld\", &seg[i].l, &seg[i].r);\n\n    qsort(seg, (size_t)n, sizeof(Interval), cmp);\n\n    res[0] = seg[0];\n    k = 1;\n    for (i = 1; i < n; i++) {\n        if (seg[i].l <= res[k - 1].r) {\n            if (seg[i].r > res[k - 1].r)\n                res[k - 1].r = seg[i].r;\n        } else {\n            res[k++] = seg[i];\n        }\n    }\n\n    printf(\"%d\\n\", k);\n    for (i = 0; i < k; i++)\n        printf(\"%lld %lld\\n\", res[i].l, res[i].r);\n\n    free(seg);\n    free(res);\n    return 0;\n}",
+    "points": [
+      "按左端点升序（左端点相同再按右端点）排序所有区间",
+      "扫描时用 l <= 当前右端点 判断是否有公共点并合并",
+      "合并时右端点取较大值，正确处理被包含的区间",
+      "输出合并后的区间个数与每个区间，并释放动态内存"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "输入 n 个闭区间 [l, r]（l ≤ r），把其中所有“有公共点”的区间合并成尽量少的互不重叠区间，并按左端点从小到大输出合并结果。请用 `struct` + `std::vector` + `std::sort` 实现，整体复杂度 O(n log n)。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100000）；接下来 n 行，每行两个整数 l、r（-10⁹ ≤ l ≤ r ≤ 10⁹），表示闭区间 [l, r]，用空格分隔。\n\n**输出格式：** 第一行输出合并后的区间个数 k；接下来 k 行，每行两个整数，表示一个合并后的区间（按左端点升序），共 k 行。\n\n**输入样例：**\n```text\n5\n1 3\n8 10\n2 6\n15 18\n17 20\n```\n**输出样例：**\n```text\n3\n1 6\n8 10\n15 20\n```",
+        "solution": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nstruct Interval {\n    long long l, r;\n};\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n;\n    if (!(std::cin >> n) || n <= 0)\n        return 0;\n\n    std::vector<Interval> seg(n);\n    for (Interval &s : seg)\n        std::cin >> s.l >> s.r;\n\n    std::sort(seg.begin(), seg.end(), [](const Interval &a, const Interval &b) {\n        if (a.l != b.l)\n            return a.l < b.l;\n        return a.r < b.r;\n    });\n\n    std::vector<Interval> merged;\n    merged.push_back(seg[0]);\n    for (int i = 1; i < n; ++i) {\n        if (seg[i].l <= merged.back().r) {\n            if (seg[i].r > merged.back().r)\n                merged.back().r = seg[i].r;\n        } else {\n            merged.push_back(seg[i]);\n        }\n    }\n\n    std::cout << merged.size() << '\\n';\n    for (const Interval &s : merged)\n        std::cout << s.l << ' ' << s.r << '\\n';\n\n    return 0;\n}",
+        "analysis": "思路：`std::sort` 按左端点（相同再按右端点）排序后线性扫描，用 `merged` 保存结果，`merged.back()` 就是当前正在延长的区间。\n\n关键步骤：① 自定义 `struct Interval`，`std::vector<Interval> seg(n)` 一次分配；② `std::sort` 的 lambda 必须满足严格弱序（不能写 `<=`）；③ 合并条件 `seg[i].l <= merged.back().r`，相交或端点相接都合并；④ 右端点取较大值，处理区间包含；⑤ `merged.size()` 返回 `size_t`，输出个数没问题。\n\n复杂度：时间 O(n log n)，额外空间 O(n)。\n\n易错点：① lambda 里用 `a.l <= b.l` 违反严格弱序，`std::sort` 可能越界崩溃；② `merged.back().r` 忘记加 `()`，编译不过；③ 用引用 `for (Interval &s : seg)` 读入，若漏写 `&` 则数据写进临时副本；④ 输出区间个数用 `%d` 而 `size()` 是 `size_t`（C++ 里用 `std::cout` 无此问题）。"
+      },
+      "python": {
+        "stem": "输入 n 个闭区间 [l, r]（l ≤ r），把其中所有“有公共点”的区间合并成尽量少的互不重叠区间，并按左端点从小到大输出合并结果。请用列表 + `sort` + 一次线性扫描实现，整体复杂度 O(n log n)。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100000）；接下来 n 行，每行两个整数 l、r（-10⁹ ≤ l ≤ r ≤ 10⁹），表示闭区间 [l, r]，用空格分隔。\n\n**输出格式：** 第一行输出合并后的区间个数 k；接下来 k 行，每行两个整数，表示一个合并后的区间（按左端点升序），共 k 行。\n\n**输入样例：**\n```text\n5\n1 3\n8 10\n2 6\n15 18\n17 20\n```\n**输出样例：**\n```text\n3\n1 6\n8 10\n15 20\n```",
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    intervals = []\n    pos = 1\n    for _ in range(n):\n        left = int(data[pos])\n        right = int(data[pos + 1])\n        pos += 2\n        intervals.append((left, right))\n\n    intervals.sort()          # 先按左端点，再按右端点\n\n    merged = []\n    for left, right in intervals:\n        if merged and left <= merged[-1][1]:\n            if right > merged[-1][1]:\n                merged[-1][1] = right\n        else:\n            merged.append([left, right])\n\n    out = [str(len(merged))]\n    out.extend(f\"{left} {right}\" for left, right in merged)\n    sys.stdout.write(\"\\n\".join(out) + \"\\n\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "analysis": "思路：元组列表直接 `sort()` 就会先按第一个元素、再按第二个元素升序；用 `merged` 列表保存结果，`merged[-1]` 是当前正在延长的区间，`left <= merged[-1][1]` 说明有公共点。\n\n关键步骤：① 每两个 token 组成一个 `(l, r)` 元组；② `intervals.sort()` 依赖元组的字典序比较，正好是“左端点升序、右端点升序”；③ 合并时用 `merged[-1][1] = right` 原地修改列表元素（元组不可变，所以结果用列表存）；④ 先用 `str(len(merged))` 输出个数，再用生成器拼出每一行。\n\n复杂度：时间 O(n log n)，额外空间 O(n)。\n\n易错点：① 把合并结果存成元组，`merged[-1][1] = right` 会抛 `TypeError`；② 判断条件写成 `left < merged[-1][1]`，端点相接的区间不会被合并；③ 忘记 `if merged` 判断，第一个区间就访问 `merged[-1]` 抛 `IndexError`；④ 用 `left <= merged[-1][1]` 却忘记更新右端点，导致后续区间无法合并；⑤ 读取时下标步长写错，把区间读串位。"
+      }
+    }
+  }
+]

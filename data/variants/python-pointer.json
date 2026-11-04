@@ -1,0 +1,492 @@
+{
+  "指-03": {
+    "stem": "下面程序用「可变列表 + 下标」模拟指针参数，交换两个整数的值，请填空。\n\n```python\ndef swap(a, i, j):\n    t = ①\n    a[i] = ②\n    a[j] = t\n\na = [3, 8]\nswap(a, ③, 1)\nprint(a[0], a[1])\n```\n\n补全后程序输出 `8 3`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "a[i]",
+        "note": "先保存 a[i] 的旧值，相当于 C 里的 int t = *pa;"
+      },
+      {
+        "no": "②",
+        "answer": "a[j]",
+        "note": "把 a[j] 写到 a[i] 这个存储格，相当于 *pa = *pb;"
+      },
+      {
+        "no": "③",
+        "answer": "0",
+        "note": "实参要给出「要交换的那个位置」：x 存在下标 0。C 里写 &x，Python 里写下标 0"
+      }
+    ],
+    "analysis": "知识点：C 语言只有值传递，函数内无法直接改掉调用者的变量，必须传地址，再在函数内用 `*` 间接访问。**Python 没有 C 指针，这里用列表/对象引用模拟**：`a` 是一个可变的 list，相当于一块连续内存；把 `a` 传进函数传的是同一个对象的引用（等价于把首地址交出去），`a[i]`、`a[j]` 就是「地址 + 偏移」再解引用得到的存储格。\n\n三步交换的顺序不能颠倒：先用 `t` 保存 `a[i]` 的旧值，再把 `a[j]` 写进 `a[i]`，最后把 `t` 写回 `a[j]`。若先写 `a[i] = a[j]` 而不备份旧值，`a[i]` 的原值立刻被覆盖，再也无法还原。第三空必须给出「位置」而不是变量本身：C 里写 `&x`，Python 里写 `x` 所在的下标 `0`——因为整数是不可变对象，函数内改不了调用者手里的 `x`，只能改它所在的那个存储格。\n\n补全后输出 `8 3`。易错点：① 第三空写成 `a`（传了整个列表，参数个数不对）；② 交换顺序写错，两个位置最后变成同一个值；③ 在函数里写 `a = [a[1], a[0]]`——那只是让局部名字 `a` 指向一个新列表，调用者的列表毫无变化，正是 C 里「只交换了形参副本」的翻版。"
+  },
+  "指-07": {
+    "stem": "下面程序按「字符指针」的思路实现字符串复制，请填空。\n\n```python\ndef my_copy(dst, src):\n    i = 0\n    j = 0\n    while ①:\n        dst[j] = ②\n        i += 1\n        j += 1\n    dst[j] = ③\n\nt = ['?'] * 8\nmy_copy(t, list('abc'))\ns = ''.join(t)\nprint(s[:s.index('\\0')])\n```\n\n补全后程序输出 `abc`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "i < len(src)",
+        "note": "源串还没走到结尾；C 里写 *src != '\\0'"
+      },
+      {
+        "no": "②",
+        "answer": "src[i]",
+        "note": "把源串当前字符写到目的缓冲区的当前位置，相当于 *dst = *src"
+      },
+      {
+        "no": "③",
+        "answer": "'\\0'",
+        "note": "复制结束必须补上字符串结束符，C 里同样写 *dst = '\\0'"
+      }
+    ],
+    "analysis": "知识点：用「源下标 i / 目的下标 j」模拟两个字符指针，逐字符复制字符串。**Python 没有 C 指针，这里用列表/对象引用模拟**：`list('abc')` 相当于 `char src[]`，`['?'] * 8` 相当于 `char dst[8]`，下标 i、j 就是「指针当前位置」；Python 的 `str` 不可变，无法像 C 那样在缓冲区上原地改写，所以必须用字符列表。\n\n每轮先把 `src[i]` 写到 `dst[j]`，再让两个下标各自前进一格；循环条件是「源串还没到结尾」，C 里写成 `*src != '\\0'`，而 Python 的 str 不保存结束符，所以改成「下标小于长度」。循环结束后仍要手动补 `'\\0'`：C 靠结束符告诉 `printf(\"%s\")` 停在哪，Python 的 `print`/`join` 并不认结束符，因此示例里用 `s[:s.index('\\0')]` 显式截断，复现同样的语义。\n\n补全后输出 `abc`。易错点：① 漏补结束符，示例中的截断就找不到终止位置（`index` 抛异常）；② 只让 j 前进、忘记 i 前进，会一直复制同一个字符；③ 把 `i < len(src)` 写成 `i <= len(src)`，最后一轮越界。"
+  },
+  "指-10": {
+    "stem": "读入 8 个整数，求出最大值与最小值并输出。要求编写函数 `max_min(a, n, res)`：`a` 是整数列表（相当于数组首地址），`n` 是元素个数，`res` 是长度为 2 的可变列表，函数把最大值写入 `res[0]`、最小值写入 `res[1]` 带回调用者（Python 没有 C 指针，这里用可变列表模拟「输出参数」）。\n\n**输入格式：** 一行 8 个整数，用空格分隔。\n\n**输出格式：** `最大值 最小值`，中间一个空格。\n\n**输入样例：**\n```text\n5 3 9 1 7 2 8 4\n```\n**输出样例：**\n```text\n9 1\n```",
+    "solution": "import sys\n\n\ndef max_min(a, n, res):\n    # res[0]、res[1] 相当于 C 里的两个 int * 输出参数\n    res[0] = res[1] = a[0]\n    for i in range(1, n):\n        if a[i] > res[0]:\n            res[0] = a[i]\n        if a[i] < res[1]:\n            res[1] = a[i]\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 8:\n        return\n    a = [int(v) for v in data[:8]]\n    res = [0, 0]\n    max_min(a, 8, res)\n    print(res[0], res[1])\n\n\nmain()\n",
+    "points": [
+      "正确定义 max_min(a, n, res)，用可变列表 res 模拟两个输出参数",
+      "先以首元素初始化 max 与 min，再线性扫描逐个比较",
+      "主函数正确读入 8 个整数，并以 res 作为输出参数调用函数",
+      "按「最大值 最小值」格式输出，中间恰好一个空格"
+    ],
+    "analysis": "思路：把数组（Python 里是 list，相当于首地址）和长度交给函数，用下标从 0 扫到 n-1，同时维护最大值与最小值；两个结果写进 `res[0]`、`res[1]` 带回主函数。**Python 没有 C 指针，这里用列表/对象引用模拟**：C 里是 `int *pmax, int *pmin` 两个指针参数，Python 里是一个长度 2 的可变 list——函数收到的是同一个对象的引用，`res[0] = ...` 直接改动调用者看得见的那格内存，效果与 `*pmax = ...` 完全一致。\n\n初始化写 `res[0] = res[1] = a[0]` 保证首元素不会被漏掉，也避免用未初始化的值参与比较。\n\n复杂度：时间 O(n)，额外空间 O(1)。\n\n易错点：① 函数内写 `res = [a[i] ...]` 重新绑定局部名字，调用者的列表毫无变化（子函数只拿到一个新名字）；② 忘记初始化就与 `res[0]` 里原有的 0 比较，负数全被漏掉；③ 循环写成 `range(1, n + 1)` 造成越界；④ 主函数传 `res[0]` 而不是 `res`，整数是不可变对象，改不动原值。"
+  },
+  "指-12": {
+    "stem": "下面程序用「两个下标相减」模拟指针相减，求字符串长度，请填空。\n\n```python\ndef my_strlen(s):\n    start = 0\n    p = 0\n    while ①:\n        p += 1\n    return ②\n\ns = input().strip()\nprint(my_strlen(③))\n```\n\n输入 `hello` 时输出 `5`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "p < len(s)",
+        "note": "只要还没越过结尾就前进；C 里写 *p != '\\0'"
+      },
+      {
+        "no": "②",
+        "answer": "p - start",
+        "note": "两个「指针」相减得到它们之间的元素个数；C 里写 (int)(p - s)"
+      },
+      {
+        "no": "③",
+        "answer": "s",
+        "note": "把字符串交给函数，相当于把首地址传进去"
+      }
+    ],
+    "analysis": "知识点：用两个指向同一序列的位置相减，得到它们之间相隔的「元素个数」，这是求长度的指针写法。**Python 没有 C 指针，这里用列表/对象引用模拟**：`start` 与 `p` 是两个整数下标，分别相当于 `const char *s` 和 `const char *p`，`p - start` 正是 C 里 `p - s` 的等价物。\n\np 从 0 出发，只要还没到字符串末尾就前进；循环结束时 p 恰好等于长度，所以 `p - start` 就是字符个数（不含结束符）。C 版本里 `p - s` 的类型是 `ptrdiff_t`，函数返回 `int`，因此写 `(int)(p - s)` 消除转换告警；Python 的整数没有宽度限制，不需要强转。第三空把字符串 `s` 传进去：C 里数组名在实参位置退化为首元素地址，Python 里传的是字符串对象本身，函数只读它、不修改它，行为与 `const char *` 一致。\n\n输入 `hello` 输出 `5`。易错点：① 返回 `p - start + 1`，把结束符也算进去了；② 循环写成 `while p < len(s) + 1` 越界；③ 返回 `p` 的地址式概念（在 C 里是返回指针而不是长度）。"
+  },
+  "指-14": {
+    "stem": "输入一行不含空白的字符串（长度小于 100），用首尾两个下标（模拟左右指针）原地把它反转后输出。要求不申请额外的字符数组：先把字符串转成 `list`，在所有交换都完成后 `join` 回字符串。\n\n**输入格式：** 一行字符串，不含空白字符。\n\n**输出格式：** 反转后的字符串，占一行。\n\n**输入样例：**\n```text\npointer\n```\n**输出样例：**\n```text\nretniop\n```",
+    "solution": "import sys\n\n\ndef reverse(s):\n    left = 0\n    right = len(s) - 1\n    while left < right:\n        s[left], s[right] = s[right], s[left]\n        left += 1\n        right -= 1\n\n\ndef main():\n    line = sys.stdin.readline().strip()\n    if not line:\n        return\n    s = list(line)      # 相当于 char s[]\n    reverse(s)\n    print(''.join(s))\n\n\nmain()\n",
+    "points": [
+      "用 left、right 两个下标定位首字符与末字符（right 从 len-1 开始）",
+      "循环条件与下标移动正确，不发生越界访问",
+      "三步交换（或元组同时赋值）完成原地反转，未申请额外字符数组",
+      "输出反转后的字符串"
+    ],
+    "analysis": "思路：用 `left`、`right` 两个下标分别指向首字符和末字符，相向而行，交换所指字符，直到 `left >= right`。**Python 没有 C 指针，这里用列表/对象引用模拟**：`s = list(line)` 是一块可变的字符缓冲区（相当于 `char s[]`），`left`、`right` 就是两个整数「指针」；`s[left], s[right] = s[right], s[left]` 是 C 里 `t = *left; *left = *right; *right = t;` 的等价写法（Python 的元组赋值由解释器保证右值先全部求值，不会丢中间值）。\n\n必须先把 `str` 转成 `list` 才能原地交换——Python 的字符串不可变，`s[i] = ...` 会直接抛 TypeError。\n\n复杂度：时间 O(n)，额外空间 O(1)（只多了两个下标变量），所有交换都在原列表内完成。\n\n易错点：① `right` 初值写成 `len(s)`，第一次就下标越界（C 里对应忘记 `right--`）；② 循环条件写成 `left <= right`，长度为奇数时多做一次自我交换（结果仍对，但边界理解不清容易越界，推荐 `left < right`）；③ 直接对输入字符串做 `s[left] = ...`，触发 `TypeError: 'str' object does not support item assignment`；④ 字符串中含空格时 `readline().strip()` 能读到整行，但本题已约定不含空白。"
+  },
+  "指-17": {
+    "stem": "下面程序用下标指针遍历列表并求和，请填空。\n\n```python\na = [2, 4, 6, 8, 10, 12]\np = 0\ntotal = 0\nwhile ①:\n    total += ②\n    p += 1\nprint(③)\n```\n\n补全后程序输出 `42`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "p < len(a)",
+        "note": "指针还没走到数组末尾之后；C 里写 p < a + 6"
+      },
+      {
+        "no": "②",
+        "answer": "a[p]",
+        "note": "取指针当前所指元素的值，相当于 *p"
+      },
+      {
+        "no": "③",
+        "answer": "total",
+        "note": "输出累加结果 42"
+      }
+    ],
+    "analysis": "知识点：用一个下标模拟指向数组元素的指针，从头到尾扫一遍即可完成遍历。**Python 没有 C 指针，这里用列表/对象引用模拟**：`a` 是 list，`p` 是整数下标；C 里 `p++` 让指针前进一个 `int`（4 字节），Python 里 `p += 1` 让下标前进一个元素——两者都是「移动一个元素的位置」。\n\n循环条件是「下标还没到长度」：C 里 `a + 6` 是尾后位置（可以取、不能解引用），因此写 `p < a + 6`；Python 里长度用 `len(a)` 直接给出（本题也可写 `p < 6`）。循环体累加 `a[p]`，数组元素之和为 2+4+6+8+10+12 = 42。\n\n易错点：① 写成 `p <= len(a)`，多读一个元素造成越界（C 里对应 `p <= a + 6`）；② 累加写成 `total += p`，把「地址」当数据累加；③ 循环体内又写一次 `p += 1`，导致隔一个元素取一个；④ 忘记初始化 `total = 0`。"
+  },
+  "指-19": {
+    "stem": "第一行输入整数 n（1 ≤ n ≤ 100），第二行输入 n 个整数。先申请**恰好 n 个元素**的空间存放这些数（相当于 `malloc(n * sizeof(int))`，Python 用 `[0] * n` 模拟），逆序输出后释放这块内存（相当于 `free`，Python 用 `del`）。\n\n**输入格式：** 第一行一个整数 n；第二行 n 个整数，用空格分隔。\n\n**输出格式：** 逆序输出 n 个整数，相邻整数之间一个空格，行末换行。\n\n**输入样例：**\n```text\n5\n1 2 3 4 5\n```\n**输出样例：**\n```text\n5 4 3 2 1\n```",
+    "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    if n <= 0 or len(data) < n + 1:\n        return\n\n    a = [0] * n                     # 相当于 malloc(n * sizeof(int))\n    for i in range(n):\n        a[i] = int(data[1 + i])\n\n    out = [str(a[i]) for i in range(n - 1, -1, -1)]\n    print(' '.join(out))\n\n    del a                           # 相当于 free(a)\n\n\nmain()\n",
+    "points": [
+      "正确读入 n，并按 n 申请恰好 n 个元素的存储空间",
+      "读入失败或 n 非法时安全返回（对应 C 里的 malloc 判空）",
+      "逆序输出，相邻整数之间恰好一个空格且行末换行",
+      "使用 del 释放动态内存，说明无需手动 free 的原因"
+    ],
+    "analysis": "思路：先读 n，再申请恰好 n 个元素的空间，随后顺序读入，最后按下标从 n-1 递减到 0 输出。**Python 没有 C 指针，这里用列表/对象引用模拟**：C 里 `malloc((size_t)n * sizeof(int))` 得到一个 `int *`，Python 里 `[0] * n` 得到一个长度 n 的 list，`a[i]` 就是 `*(a + i)`；C 里必须处理 `malloc` 返回 `NULL`，Python 里用 `if n <= 0 or len(data) < n + 1: return` 处理「数据不够、无法构造」的异常情况。\n\n输出用列表推导生成字符串列表再 `' '.join(...)`，天然保证元素之间恰好一个空格且行末无多余空格（对应 C 里 `i > 0 ? ' ' : '\\n'` 的分隔控制）。最后 `del a` 去掉引用，让 GC 回收——C 里对应 `free(a)`。\n\n复杂度：时间 O(n)，空间 O(n)。\n\n易错点：① 用 `a = [0]` 再一路 append，虽然能跑，但没有体现「按 n 一次性申请」这个考点；② 输出用 `print(a[i], end=' ')` 导致行末多一个空格（多数 PTA 题判格式错误）；③ 读入时用 `input()` 逐行读、第二行被空行打断；④ 忘记释放（C 里就是内存泄漏）。"
+  },
+  "指-21": {
+    "stem": "下面程序把「比较规则」作为函数对象传入，请填空。\n\n```python\ndef my_max(a, b):\n    return a if a > b else b\n\ndef fold(a, ①):\n    r = a[0]\n    for i in range(1, len(a)):\n        r = ②        # 约定：累计值 r 作为第一个实参\n    return r\n\na = [3, 9, 2, 7, 5]\nprint(fold(a, ③))\n```\n\n补全后输出 `9`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "op",
+        "note": "形参名，接收一个「两个参数进、一个结果出」的函数对象；C 里写 int (*op)(int, int)"
+      },
+      {
+        "no": "②",
+        "answer": "op(r, a[i])",
+        "note": "通过函数对象调用回调，累计值必须在第一个实参位置"
+      },
+      {
+        "no": "③",
+        "answer": "my_max",
+        "note": "函数名本身就是对象，直接传即可；C 里写 my_max 或 &my_max"
+      }
+    ],
+    "analysis": "知识点：函数指针作参数实现「回调」——把「做什么运算」和「怎么遍历」解耦，同一个 fold 可以配不同的 op。**Python 没有 C 指针，这里用列表/对象引用模拟**：Python 的函数本身就是一等对象（可以赋值、可以传参），所以形参位置只写名字 `op` 即可，不需要像 C 那样声明 `int (*op)(int, int)`——这已经天然等价于「传一个函数指针」。\n\n循环中把当前累积结果 r 与下一个元素交给 op 处理，即 `op(r, a[i])`。题目注释约定累计值 r 必须作为第一个实参，避免把对称函数写成 `op(a[i], r)`（对求最大值结果一样，但对减法、除法这类运算语义就变了）。调用时把函数名 `my_max` 传进去即可；C 里函数名在表达式中会退化为函数指针，Python 里函数名本来就是对象引用。\n\n补全后输出 9。易错点：① ② 写成 `op(a[i], r)`，违反题目的实参顺序约定；② 调用写成 `op(a[i])`，参数个数不对；③ ③ 写成 `my_max()`——那是先调用再把返回值（这里还会因为少参数报错）传进去；④ 在 fold 里直接写死 `my_max`，就失去了回调的意义。"
+  },
+  "指-24": {
+    "stem": "输入两行字符串（每行不含空白字符，长度小于 100），用两个下标模拟字符指针**逐字符**实现字符串比较（不要直接写 `s1 < s2` 比较整串），按字典序输出比较结果。\n\n**输入格式：** 两行，每行一个不含空白字符的字符串。\n\n**输出格式：** 若第一行小于第二行输出 `-1`，相等输出 `0`，大于输出 `1`。\n\n**输入样例：**\n```text\nabc\nabd\n```\n**输出样例：**\n```text\n-1\n```",
+    "solution": "import sys\n\n\ndef my_strcmp(s1, s2):\n    i = 0\n    j = 0\n    while i < len(s1) and j < len(s2) and s1[i] == s2[j]:\n        i += 1\n        j += 1\n    c1 = s1[i] if i < len(s1) else ''\n    c2 = s2[j] if j < len(s2) else ''\n    if c1 == c2:\n        return 0\n    return -1 if c1 < c2 else 1\n\n\ndef main():\n    lines = sys.stdin.read().split()\n    if len(lines) < 2:\n        return\n    print(my_strcmp(lines[0], lines[1]))\n\n\nmain()\n",
+    "points": [
+      "用两个下标同步前进，循环条件同时判断两个串是否结束",
+      "两串完全相同时返回 0",
+      "按第一个不同字符的大小关系返回 -1 或 1",
+      "正确读入两行字符串并输出结果"
+    ],
+    "analysis": "思路：两个下标同步前进，只要「两串都没结束且当前字符相同」就继续；退出循环后比较当前字符——若相等说明两串同时结束，返回 0；否则按大小关系返回 -1 或 1。这样先比到第一个不同字符，正好符合字典序定义。\n\n**Python 没有 C 指针，这里用列表/对象引用模拟**：`i`、`j` 是两个整数下标，相当于 `const char *s1`、`const char *s2`；`i += 1`、`j += 1` 就是 `s1++`、`s2++`。末尾取不到字符时用空串 `''` 顶替，这与 C 里读到 `'\\0'` 的效果一致：空串比任何字符都小，所以 `abc` 一定排在 `abcd` 前面。\n\n复杂度：时间 O(min(len1, len2))，最坏 O(n)；空间 O(1)。\n\n易错点：① 循环条件只写 `i < len(s1)`，当 s2 先结束时继续取 `s2[j]` 会抛 IndexError（C 里是越界读）；② 用 `while s1[i] == s2[j]: i += 1; j += 1` 而不判边界；③ 返回字符差值（符号虽然对，但题目只要求 -1/0/1）；④ 直接写 `(s1 > s2) - (s1 < s2)`，虽然能得出正确结果，却绕过了「逐字符比较」这个考点；⑤ 用 `sys.stdin.readline()` 读两行时忘记 `strip()`，换行符被当成字符参与比较。"
+  },
+  "指-28": {
+    "stem": "输入 3 行 4 列的整数矩阵，用「行指针」的方式遍历：把矩阵存成由 3 个长度为 4 的列表组成的列表（相当于 `int a[3][4]` 与行指针 `int (*p)[4]`），逐行取出后再输出每一行的最大值。\n\n**输入格式：** 共 3 行，每行 4 个整数，用空格分隔。\n\n**输出格式：** 一行 3 个整数，依次为第 1~3 行的最大值，相邻整数之间一个空格。\n\n**输入样例：**\n```text\n1 2 3 4\n9 8 7 6\n2 5 1 3\n```\n**输出样例：**\n```text\n4 9 5\n```",
+    "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 12:\n        return\n    a = [[int(data[i * 4 + j]) for j in range(4)] for i in range(3)]\n\n    best = []\n    for row in a:               # row 相当于行指针 int (*p)[4]\n        m = row[0]\n        for j in range(1, 4):\n            if row[j] > m:\n                m = row[j]\n        best.append(m)\n\n    print(' '.join(str(v) for v in best))\n\n\nmain()\n",
+    "points": [
+      "把 3×4 矩阵正确组织成「行列表 + 行内列表」的结构",
+      "用行的整体（row）遍历，而不是把矩阵摊平成一维",
+      "每行重新初始化最大值并正确比较 4 个元素",
+      "按空格分隔输出 3 个最大值，行末换行"
+    ],
+    "analysis": "思路：`a = [[...4 个元素...], ...3 行...]` 对应 C 的 `int a[3][4]`；`for row in a` 每次取出的一整行 `row`（长度 4 的 list），就是 C 里的行指针 `int (*p)[4]`——它「指向一行 4 个 int」，因此 `row[j]` 等价于 `p[i][j]`，也等价于 `*(*(p + i) + j)`。外层枚举行，进入每一行时先用 `row[0]` 初始化该行最大值，内层从 j = 1 比较到 3。\n\n**Python 没有 C 指针，这里用列表/对象引用模拟**：行列表本身就是「一行连续内存」的引用，外层 list 相当于「行指针数组」，`a[i]` 取到的就是第 i 行的引用；C 里 `int (*p)[4]` 与 `int *` 的区别（步长是 4 个 int 还是 1 个 int）在 Python 里由「列表的嵌套层级」自然体现。\n\n复杂度：时间 O(m × n)（本题 3 行、每行比较 3 次，共 9 次比较），空间 O(1)。\n\n易错点：① 把矩阵摊平成一维后忘记 `i * 4 + j` 换算（那就成了另一道题）；② 每行最大值忘记重新初始化，沿用上一行的结果；③ 内层 `range(1, 4)` 写成 `range(1, 3)`，漏掉最后一列；④ 输出用 `print(m, end=' ')` 导致行末多一个空格。"
+  },
+  "指-30": {
+    "stem": "下面程序读入任意个整数，容量不足时「扩容」，请填空。\n\n```python\nimport sys\n\ncap = 2\nn = 0\na = [0] * cap\nfor tok in sys.stdin.read().split():\n    x = int(tok)\n    if n == cap:\n        new_cap = ①\n        b = [0] * new_cap\n        b[:n] = a[:n]        # 相当于 realloc 把旧数据搬到新块\n        a = ②\n        cap = new_cap\n    a[n] = x\n    n += 1\nprint(' '.join(str(v) for v in a[:n]))\n③\n```\n\n输入 `1 2 3 4 5` 时输出 `1 2 3 4 5`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "cap * 2",
+        "note": "新容量是原来的 2 倍；C 里要写成 cap * 2 * sizeof(int)（换算成字节）"
+      },
+      {
+        "no": "②",
+        "answer": "b",
+        "note": "扩容成功后让 a 指向新块；C 里写 a = t，必须用临时指针接 realloc 的返回值"
+      },
+      {
+        "no": "③",
+        "answer": "del a",
+        "note": "释放整块内存；Python 由引用计数/GC 回收，del a 相当于 C 的 free(a)"
+      }
+    ],
+    "analysis": "知识点：动态数组「容量翻倍」的扩容策略——每次容量不足就申请一块两倍大的新空间，把旧数据搬过去，再让指针指向新块。**Python 没有 C 指针，这里用列表/对象引用模拟**：`a` 这个名字相当于 `int *a`（保存一块内存的地址），`b = [0] * new_cap` 相当于 `realloc` 返回的新块，`b[:n] = a[:n]` 就是 realloc 内部把旧数据搬过去的那一步，`a = b` 相当于 `a = t`。\n\n① 新容量是 `cap * 2`。C 版必须把容量换算成字节数 `cap * 2 * sizeof(int)`，否则只扩了 4 个字节；Python 的 list 自己记录长度，不需要乘元素大小。② 必须先把新块赋给临时名 b 再把 a 指过去：C 里若直接写 `a = realloc(a, ...)`，一旦失败 a 被置为 `NULL`，原来那块内存的地址就丢了，造成内存泄漏——这里的 b 正是那个「临时指针」。③ 程序结束前释放：C 写 `free(a)`，Python 由 GC 自动回收，`del a` 去掉最后一个引用即可（考试里也可以只说明「无需手动释放」）。\n\n输入 `1 2 3 4 5` 输出 `1 2 3 4 5`。易错点：① 忘记更新 cap，导致每次插入都扩容或死循环；② 直接把 `a` 换成新列表却忘了搬旧数据（`b[:n] = a[:n]` 漏写），前面的输入全丢；③ 扩容后仍写 `a[n]` 却把 n 与 cap 弄混，越界。"
+  },
+  "指-32": {
+    "stem": "下面程序统计字符串中字母、数字和其他字符的个数，结果通过「输出参数」带回，请填空。\n\n```python\ndef count(s, ①):\n    cnt[0] = cnt[1] = cnt[2] = 0\n    for ch in s:\n        if ('a' <= ch <= 'z') or ('A' <= ch <= 'Z'):\n            cnt[0] += 1\n        elif '0' <= ch <= '9':\n            cnt[1] += 1\n        else:\n            ②\n\ncnt = [0, 0, 0]\ns = input().strip()\ncount(s, cnt)\nprint(③)\n```\n\n输入 `Hello2024!` 时输出 `5 4 1`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "cnt",
+        "note": "形参名，接收一个长度 3 的可变列表，充当三个 int * 输出参数"
+      },
+      {
+        "no": "②",
+        "answer": "cnt[2] += 1",
+        "note": "其他字符计数器加一；C 里写 (*others)++，括号不能省"
+      },
+      {
+        "no": "③",
+        "answer": "cnt[0], cnt[1], cnt[2]",
+        "note": "三个结果都在 cnt 里带回来了，一次打印；C 里由 L、D、O 三个变量带回"
+      }
+    ],
+    "analysis": "知识点：通过「输出参数」把多个统计结果带回调用者，是 C 语言实现「一个函数返回多个值」的标准做法。**Python 没有 C 指针，这里用列表/对象引用模拟**：形参 `cnt` 收到的是同一个 list 对象（相当于同时拿到三个 int 变量的地址），`cnt[0]`、`cnt[1]`、`cnt[2]` 就是三个计数器所在的存储格。\n\n循环里按字符类别分别让对应计数器自增：字母进 `cnt[0]`，数字进 `cnt[1]`，其余进 `cnt[2]`。C 版第二空必须写 `(*others)++`，因为后置 `++` 的优先级高于 `*`，`*others++` 的实际语义是「取 `*others` 后再让指针后移」，计数器根本不会增加；Python 里没有这个优先级陷阱，写 `cnt[2] += 1` 即可。函数开头 `cnt[0] = cnt[1] = cnt[2] = 0` 完成初始化，避免用上一次调用的残留值累加。\n\n输入 `Hello2024!` 输出 `5 4 1`（5 个字母、4 个数字、1 个感叹号）。易错点：① 在函数里写 `cnt = [0, 0, 0]`（重新绑定局部名字），调用者的列表一点没变——这就是 C 里「传值而不是传地址」的翻版；② 用三个独立的整数形参接收结果；③ 忘记先清零。"
+  },
+  "指-34": {
+    "stem": "下面程序用双下标模拟字符指针，自己实现字符串比较，请填空。\n\n```python\ndef cmp(s1, s2):\n    i = 0\n    j = 0\n    while i < len(s1) and j < len(s2) and s1[i] == s2[j]:\n        i += 1\n        ①\n    c1 = s1[i] if i < len(s1) else ''\n    c2 = s2[j] if j < len(s2) else ''\n    if c1 == c2:\n        return 0\n    return ②\n\na = input().strip()\nb = input().strip()\nprint(cmp(③))\n```\n\n输入 `abc` 与 `abd` 时输出 `-1`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "j += 1",
+        "note": "两个「指针」必须同步前进；C 里写 s2++"
+      },
+      {
+        "no": "②",
+        "answer": "-1 if c1 < c2 else 1",
+        "note": "按第一个不同字符的大小关系返回；C 里写 *s1 < *s2 ? -1 : 1"
+      },
+      {
+        "no": "③",
+        "answer": "a, b",
+        "note": "两个字符串作为实参；C 里写 cmp(a, b)，数组名退化为首地址"
+      }
+    ],
+    "analysis": "知识点：字符串比较的本质是「逐字符比较，遇到第一个不同字符就定胜负；若都到结尾则相等」。**Python 没有 C 指针，这里用列表/对象引用模拟**：`i`、`j` 是两个整数下标，相当于 `const char *s1`、`const char *s2`；`i += 1`、`j += 1` 就是 `s1++`、`s2++`。\n\n循环条件是「两串都没结束且当前字符相同」，所以无论如何都不会越界——C 版若只写 `*s1 != '\\0'`，当 s2 先结束时继续读取就会越界。退出循环后用三目表达式取出「当前字符」，某一串已经结束时取空串 `''`，这与 C 里读到 `'\\0'` 的效果一致：空串比任何字符都小，因此 `abc` 排在 `abcd` 前面。若两个当前字符相等（说明同时结束），返回 0；否则按大小关系返回 -1 或 1。\n\n输入 `abc` / `abd` 输出 `-1`；输入 `abc` / `abc` 输出 `0`。易错点：① 只写 `i += 1` 忘记 `j += 1`；② 返回字符差值（符号虽然对，但题目只要求 -1/0/1）；③ 直接用 `a < b` 这种整串比较，绕过了「逐字符比较」这个考点；④ 忘记处理「某一串提前结束」的边界。"
+  },
+  "指-36": {
+    "stem": "第一行输入 n（1 ≤ n ≤ 50），第二行输入 n 个整数。要求用**函数（回调）作比较器**实现选择排序，把数组升序排序后输出。排序函数签名为 `sort(a, cmp)`，约定 `cmp(x, y)` 返回真表示 x 应排在 y 前面（对应 C 里的函数指针参数 `int (*cmp)(int, int)`）。\n\n**输入格式：** 第一行一个整数 n；第二行 n 个整数，用空格分隔。\n\n**输出格式：** 升序输出 n 个整数，相邻整数之间一个空格，行末换行。\n\n**输入样例：**\n```text\n5\n5 -2 9 0 3\n```\n**输出样例：**\n```text\n-2 0 3 5 9\n```",
+    "solution": "import sys\n\n\ndef less_than(x, y):\n    return x < y\n\n\ndef sort(a, cmp):\n    n = len(a)\n    for i in range(n - 1):\n        best = i\n        for j in range(i + 1, n):\n            if cmp(a[j], a[best]):\n                best = j\n        if best != i:\n            a[i], a[best] = a[best], a[i]\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    if n <= 0 or len(data) < n + 1:\n        return\n    a = [int(v) for v in data[1:1 + n]]\n    sort(a, less_than)\n    print(' '.join(str(v) for v in a))\n\n\nmain()\n",
+    "points": [
+      "排序函数把比较规则抽成参数 cmp，内部只调用 cmp 而不写死比较符号",
+      "选择排序框架正确，用比较器的返回值决定是否更新 best",
+      "提供升序比较器 less_than，并以函数名作为实参传入",
+      "按格式输出排序结果"
+    ],
+    "analysis": "思路：把「比较规则」抽成参数 `cmp`，排序函数只负责选择排序的框架：每轮从 i 到 n-1 中选出「应该排在最前面」的元素，而下标 best 的更新条件是 `cmp(a[j], a[best])` 为真。这样同一份排序代码只要换一个比较器，就能变成升序或降序。\n\n**Python 没有 C 指针，这里用列表/对象引用模拟**：C 里形参是 `int (*cmp)(int, int)`，调用时传函数名 `less_than`（退化为函数指针）；Python 里函数是普通对象，形参 `cmp` 直接接收 `less_than` 这个对象，`cmp(a[j], a[best])` 就是一次间接调用。排序对列表的修改是原地进行的——list 是可变的，传进函数的是同一个对象的引用，函数内交换元素调用者立刻可见，这与 C 传数组首地址的语义一致。\n\n复杂度：时间 O(n²)，额外空间 O(1)，适合 n ≤ 50 的规模。\n\n易错点：① 在 sort 里写死 `a[j] < a[best]`，比较器参数形同虚设（没有体现回调）；② 比较器语义写反（把「x 在前」写成 x > y）导致降序；③ 调用写成 `sort(a, less_than())`——那是先调用再传返回值；④ 在函数内用 `a = sorted(a)` 重新绑定名字，调用者的列表不会变；⑤ 输出行末多一个空格。"
+  },
+  "指-38": {
+    "stem": "下面程序在函数内部分配数组，并通过「二级指针」把首地址带回主函数，请填空。\n\n```python\ndef get_array(pp, n):\n    pp[0] = [0] * n            # 相当于 *pp = malloc(n * sizeof(int))\n    if pp[0] is None:\n        return\n    for i in range(n):\n        ① = i * i\n\na = [None]                    # 相当于 int *a = NULL\nn = 5\nget_array(②, n)               # 传「a 的地址」，函数里才能改掉 a 本身\nif a[0] is not None:\n    print(' '.join(str(v) for v in a[0]))\n③\n```\n\n补全后输出 `0 1 4 9 16`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "pp[0][i]",
+        "note": "先取 pp[0] 拿到 int *，再按下标访问；C 里写 (*pp)[i]"
+      },
+      {
+        "no": "②",
+        "answer": "a",
+        "note": "把「装着指针的单元格」交出去；C 里写 &a"
+      },
+      {
+        "no": "③",
+        "answer": "a[0] = None",
+        "note": "用完释放：C 里写 free(a)，Python 去掉引用交给 GC"
+      }
+    ],
+    "analysis": "知识点：如果函数要修改调用者的「指针变量本身」（而不只是它指向的内容），形参就必须是二级指针，实参要传指针的地址。**Python 没有 C 指针，这里用列表/对象引用模拟**：`a = [None]` 是一个长度 1 的 list，它的第 0 个格子里放着「真正的数组」——这正好对应 `int *a` 那个变量本身；把 `a`（整个 list）传进去，函数里 `pp[0] = ...` 改的就是那个格子，效果等于 `*pp = malloc(...)`。C 里传的是 `&a`。\n\n① 函数里 `pp[0]` 就是主函数的 `a`（类型相当于 `int *`），要访问第 i 个元素应写 `pp[0][i]`，即 C 的 `(*pp)[i]`；若在 C 里写 `*pp[i]`，由于 `[]` 优先级高于 `*`，实际是 `*(pp[i])`，语义完全不同。② 调用时要传 `a`（装着指针的格子），C 里写 `&a`，否则函数里改不到主函数的指针。③ 用完释放：C 写 `free(a)`；Python 把格子里的引用置 None，让那块列表失去最后一个引用，交给 GC 回收。\n\n补全后输出 `0 1 4 9 16`（i² 序列）。易错点：① 第二空写成 `a[0]`，函数里改到的是 list 内层的另一个对象，主函数的 a 还是 None；② 第一空写成 `pp[i]`，越界；③ 忘记释放；④ 分配失败时直接返回，主函数靠 `a[0] is None` 判断，逻辑才完整。"
+  },
+  "指-40": {
+    "stem": "第一行输入行数 m 和列数 n（1 ≤ m, n ≤ 50），接下来 m 行每行 n 个整数。要求用「行指针数组 + 每行单独申请」的方式动态构造二维数组（Python 用外层 `list` 套内层 `list` 模拟 `int **`），求所有元素之和，最后把所有动态内存都释放。\n\n**输入格式：** 第一行两个整数 m 和 n；随后 m 行，每行 n 个整数。\n\n**输出格式：** 一个整数，表示矩阵所有元素之和。\n\n**输入样例：**\n```text\n2 3\n1 2 3\n4 5 6\n```\n**输出样例：**\n```text\n21\n```",
+    "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n    m = int(data[0])\n    n = int(data[1])\n    if m <= 0 or n <= 0 or len(data) < 2 + m * n:\n        return\n\n    ptr = []                    # 行指针数组，相当于 int **a\n    total = 0\n    k = 2\n    for i in range(m):\n        row = [0] * n           # 每一行单独申请 n 个 int\n        for j in range(n):\n            row[j] = int(data[k])\n            k += 1\n            total += row[j]\n        ptr.append(row)\n\n    print(total)\n\n    for i in range(m):\n        ptr[i] = None           # 逐行释放\n    del ptr                     # 释放行指针数组\n\n\nmain()\n",
+    "points": [
+      "用「外层行列表 + 内层每行列表」正确构造 m 行 n 列的二维数组",
+      "逐行构造，数据越界或维度非法时安全返回",
+      "正确读入矩阵并累加所有元素",
+      "先清空每一行，再删除行指针数组，释放顺序与 C 的 free 一致"
+    ],
+    "analysis": "思路：先准备一个「行指针数组」`ptr`（对应 `int **a = malloc(m * sizeof(int *))`），再为每一行单独申请 n 个元素（对应 `a[i] = malloc(n * sizeof(int))`），这样就得到一个可以写 `ptr[i][j]` 的动态二维数组。读入并累加后，释放顺序必须与申请顺序相反：先逐行释放，最后释放行指针数组。\n\n**Python 没有 C 指针，这里用列表/对象引用模拟**：`ptr` 是外层 list，每个元素是对应行的 list 的引用——这正是「指针数组」；`ptr[i] = None` 相当于 `free(a[i])`，`del ptr` 相当于 `free(a)`。Python 里即使漏掉释放也不会崩溃（GC 兜底），但考试要求写出来，是因为要表达「谁申请谁释放、逆序释放」的资源管理规则。\n\n复杂度：时间 O(m × n)，空间 O(m × n)。\n\n易错点：① 只写 `del ptr` 而不逐行释放，释放顺序的考点就丢了；② 用 `[[0] * n] * m` 构造——m 行指向同一个列表，改一行等于改所有行（这是 Python 里最典型的「浅拷贝」陷阱，等价于 C 里所有行指针指向同一块内存）；③ 维度声明时把 m、n 写反；④ 读入时忘记推进下标 k；⑤ 求和写成对每行求和再相加时漏掉某行。"
+  },
+  "指-42": {
+    "stem": "下面程序用「指针数组」对 5 个字符串按字典序排序（只交换引用，不复制字符），请填空。\n\n```python\ns = ['pear', 'apple', 'orange', 'banana', 'grape']\n\nfor i in range(4):\n    k = i\n    for j in range(i + 1, 5):\n        if s[k] ① s[j]:\n            k = j\n    if k != i:\n        t = s[i]\n        s[i] = ②\n        s[k] = ③\n\nprint(' '.join(s))\n```\n\n补全后输出 `apple banana grape orange pear`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": ">",
+        "note": "前面的串更大就要换到后面，才能升序；C 里写 strcmp(s[k], s[j]) > 0"
+      },
+      {
+        "no": "②",
+        "answer": "s[k]",
+        "note": "把较小的串换到位置 i"
+      },
+      {
+        "no": "③",
+        "answer": "t",
+        "note": "把原来 s[i] 的引用放到位置 k"
+      }
+    ],
+    "analysis": "知识点：`char *s[5]` 是指针数组，每个元素保存一个字符串的首地址；排序时只交换这些指针（64 位平台每个 8 字节），不搬运字符内容。**Python 没有 C 指针，这里用列表/对象引用模拟**：`s` 是 list，每个元素是一个 `str` 对象的引用——给 `s[i]` 赋值只是换掉「指向哪个字符串对象」，正是交换指针的等价操作，字符串本身一个字节都没动。\n\n选择排序外层固定位置 i，内层用 `s[k] > s[j]` 找剩余元素中最小的串并记下下标 k；然后借助临时名 t 完成三者轮换：`t = s[i]; s[i] = s[k]; s[k] = t`。注意 t 保存的是 `s[i]` 的旧引用，所以第三空写 t。Python 的字符串比较本身就是按字典序（逐字符比较码位），与 `strcmp` 的语义一致，所以 ① 处直接写比较运算符即可。\n\n补全后输出 `apple banana grape orange pear`。易错点：① 比较符号写反（写成 `<` 变成降序）；② 交换时漏掉一个赋值，两个位置指向同一个字符串；③ 试图用切片赋值 `s[i] = list(s[k])` 把字符串拆成字符，类型就乱了——那就变成「复制内容」而不是「交换指针」；④ 内层循环上界写成 4，漏掉最后一个元素。"
+  },
+  "指-44": {
+    "stem": "输入一行可能含空格的字符串（长度小于 100），再输入一个非空格字符 c。要求用「读写双下标」原地删除字符串中所有 c 字符（不申请额外的字符串数组），输出处理后的字符串。\n\n**输入格式：** 第一行为原字符串（可能含空格）；第二行为一个非空格字符。\n\n**输出格式：** 删除后的字符串占一行。\n\n**输入样例：**\n```text\nhello world\nl\n```\n**输出样例：**\n```text\nheo word\n```",
+    "solution": "import sys\n\n\ndef remove_char(s, c):\n    q = 0\n    for p in range(len(s)):\n        if s[p] != c:\n            s[q] = s[p]\n            q += 1\n    del s[q:]           # 相当于在 q 处补 '\\0'\n\n\ndef main():\n    lines = sys.stdin.read().split('\\n')\n    if len(lines) < 2:\n        return\n    s = list(lines[0].rstrip('\\r'))\n    c = lines[1].strip()[:1]\n    if not c:\n        return\n    remove_char(s, c)\n    print(''.join(s))\n\n\nmain()\n",
+    "points": [
+      "用读写双下标原地删除，未申请额外的字符串数组",
+      "正确读入含空格的整行与目标字符（去掉行末换行）",
+      "删除完成后截断尾部残留（相当于补结束符）",
+      "输出删除后的字符串，格式与输入行一致"
+    ],
+    "analysis": "思路：双下标「读写分离」——`p` 负责读，`q` 负责写。遇到不是待删字符的字符，就写到 `s[q]` 并让 q 前进；无论是否写入，p 都前进一格。遍历结束后截掉 q 之后的残留字符，字符串就在原列表内被压缩，没有申请额外数组。\n\n**Python 没有 C 指针，这里用列表/对象引用模拟**：`s = list(line)` 是可变的字符缓冲区（相当于 `char s[]`），`p`、`q` 是两个整数下标（相当于 `char *p`、`char *q`）；`s[q] = s[p]` 就是 `*q++ = *p` 的那次写入，`del s[q:]` 等价于 C 里的 `*q = '\\0'`——C 靠结束符截断，Python 靠删掉多余元素截断。\n\n读入必须用 `split('\\n')` 而不是 `split()`：`split()` 会按所有空白切分，含空格的整行就被切碎了（对应 C 里 `scanf(\"%s\")` 只能读到一个词，必须用 `fgets`）。\n\n复杂度：时间 O(n)，空间 O(1)（原地操作）。\n\n易错点：① 用 `''.join(ch for ch in s if ch != c)`——这申请了新字符串，违反「原地」要求；② 忘记 `del s[q:]`，输出尾部带出原串残留；③ 用 `input().split()` 读第一行，空格被吃掉；④ 每删一个字符就搬一次后续内容，复杂度退化到 O(n²)；⑤ 目标字符没去掉换行，读成了 `'l\\n'`。"
+  },
+  "指-51": {
+    "stem": "下面程序让 `pick` 根据运算符返回对应的函数对象，请填空。\n\n```python\ndef add(a, b):\n    return a + b\n\ndef sub(a, b):\n    return a - b\n\ndef apply(fn, x, y):\n    return fn(x, y)\n\ndef pick(op):\n    if op == '+':\n        return ①\n    return sub\n\nf = ②\nprint(apply(f, 9, 4))\nf = pick('+')\nprint(③)\n```\n\n补全后输出两行：`5` 和 `13`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "add",
+        "note": "返回函数对象本身；C 里写 add 或 &add，不能加括号"
+      },
+      {
+        "no": "②",
+        "answer": "pick('-')",
+        "note": "让 f 指向 sub（字符常量用单引号）"
+      },
+      {
+        "no": "③",
+        "answer": "apply(f, 9, 4)",
+        "note": "此时 f 指向 add，9 + 4 = 13"
+      }
+    ],
+    "analysis": "知识点：函数可以返回函数指针，C 的声明形式是 `返回类型 (*函数名(参数列表))(函数指针的参数列表)`，读法是「先看函数名和它的参数，再看它返回的指针指向什么函数」。**Python 没有 C 指针，这里用列表/对象引用模拟**：Python 的函数是普通对象，`return add` 直接返回函数对象的引用，`pick('-')` 得到的就是 `sub` 这个对象——没有那套绕口的声明语法。\n\n`pick` 接受一个字符，返回对应的二元运算函数：遇到 `'+'` 返回 `add`，否则返回 `sub`。主函数先用 `pick('-')` 让 f 指向 sub，再通过 `apply(f, 9, 4)` 调用（9 - 4 = 5）；随后 `f = pick('+')` 让 f 指向 add，第二次 apply 得 13。`apply(fn, x, y)` 就是 C 里那个 `apply(int (*fn)(int,int), int, int)`，形参 fn 拿到函数对象后直接 `fn(x, y)` 调用。\n\n补全后输出 5 和 13。易错点：① ① 写成 `add()`（那是调用并返回结果，参数还不对）；② ② 写成 `pick(\"-\")`（字符串与字符不是一回事）；③ ③ 写成 `f(9, 4)` 虽然也能算出 13，但题目要求通过 apply 这个「高阶函数」调用；④ 以为 Python 需要先解引用才能调用——`f(x, y)` 就够了，C 里 `f(x, y)` 与 `(*f)(x, y)` 也等价。"
+  },
+  "指-53": {
+    "stem": "输入 n（1 ≤ n ≤ 100）个整数，用标准库排序函数配合**自己编写的比较函数**排序后输出。排序规则：按绝对值从小到大；绝对值相同时，数值小的排在前面（例如 `-2` 排在 `2` 前面）。\n\n要求写出 `cmp(a, b)`（返回负数 / 0 / 正数），并用 `functools.cmp_to_key` 把它交给 `list.sort`——这相当于 C 里把 `cmp` 函数指针传给 `qsort`。\n\n**输入格式：** 第一行一个整数 n；第二行 n 个整数，用空格分隔。\n\n**输出格式：** 排序后的 n 个整数，相邻整数之间一个空格，行末换行。\n\n**输入样例：**\n```text\n5\n-3 2 -1 4 -2\n```\n**输出样例：**\n```text\n-1 -2 2 -3 4\n```",
+    "solution": "import sys\nfrom functools import cmp_to_key\n\n\ndef cmp(a, b):\n    aa = abs(a)\n    bb = abs(b)\n    if aa != bb:\n        return -1 if aa < bb else 1\n    if a == b:\n        return 0\n    return -1 if a < b else 1\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    if n <= 0 or len(data) < n + 1:\n        return\n    a = [int(v) for v in data[1:1 + n]]\n    a.sort(key=cmp_to_key(cmp))\n    print(' '.join(str(v) for v in a))\n\n\nmain()\n",
+    "points": [
+      "正确定义 cmp(a, b)，按规则返回负数 / 0 / 正数",
+      "绝对值不同时按绝对值定序，相同时再按数值定序",
+      "用 functools.cmp_to_key 把比较函数交给 list.sort（等价于传函数指针给 qsort）",
+      "输出格式正确（相邻整数一个空格，行末换行）"
+    ],
+    "analysis": "思路：排序函数本身不知道「按什么排」，排序规则完全由比较函数决定：先比绝对值；绝对值不同就按绝对值决定先后；绝对值相同时再用数值本身比较，保证结果唯一（例如 -2 一定排在 2 前面）。\n\n**Python 没有 C 指针，这里用列表/对象引用模拟**：C 里 `qsort(a, n, sizeof(int), cmp)` 把 `cmp` 的函数指针传进去，比较函数再用 `*(const int *)pa` 把 `void *` 还原成 int；Python 里 `list.sort` 要求 key 函数（单参数），因此用 `functools.cmp_to_key` 把「返回 -1/0/1 的三态比较函数」包装成 key——它在语义上就是 C 的比较器。比较函数直接拿到两个元素本身（`a`、`b` 是 int），不需要像 C 那样先做 `void *` 转换再解引用。\n\n复杂度：排序平均 O(n log n)；比较函数 O(1)。注意比较函数会被调用很多次，里面不要做分配内存之类的重操作。\n\n易错点：① 只比较绝对值，导致 -2 与 2 的先后不确定（不同算法实现结果可能不同，评测会判错）；② 用 `return aa - bb`，在绝对值相等时返回 0，漏掉了第二关键字；③ 用 `key=abs` 直接排序，那就无法保证 -2 在 2 前面；④ 把 `cmp_to_key(cmp)` 误写成 `cmp`（`list.sort` 会把 cmp 当单参数 key 调用，直接 TypeError）；⑤ 符号写反，把升序写成降序。"
+  },
+  "指-54": {
+    "stem": "下面程序把字符串中连续重复的字符压缩成一个，请填空。\n\n```python\ndef compress(s):\n    p = 0\n    q = 0\n    while p < len(s):\n        if q == 0 or s[p] != ①:\n            s[q] = s[p]\n            q += 1\n        p += 1\n    ②\n    return q\n\ns = list('aaabbbcccd')\nn = compress(s)\nprint(''.join(s), ③)\n```\n\n补全后输出 `abcd 4`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "s[q - 1]",
+        "note": "q 前面刚写入的字符；C 里写 *(q - 1)，也可写 q[-1]"
+      },
+      {
+        "no": "②",
+        "answer": "del s[q:]",
+        "note": "压缩后必须截断尾部残留；C 里写 *q = '\\0' 补结束符"
+      },
+      {
+        "no": "③",
+        "answer": "n",
+        "note": "新字符串的长度，也就是 C 里的 q - s"
+      }
+    ],
+    "analysis": "知识点：双指针「读写分离」是原地压缩的通用套路：p 负责读原始字符，q 负责写压缩后的结果，q 永远不超过 p，所以不会覆盖还没读到的字符。**Python 没有 C 指针，这里用列表/对象引用模拟**：`s` 是字符列表（相当于 `char s[]`），`p`、`q` 是两个整数下标（相当于 `char *p`、`char *q`）。\n\n判定条件是「当前字符与上一个已写入的字符不同」：第一个字符没有「上一个」，因此用 `q == 0` 单独放行；其余情况与 `s[q - 1]` 比较（`q - 1` 指向刚写入的那个字符，C 里写 `*(q - 1)`，也可写 `q[-1]`）。循环结束后必须截断：C 在 q 处补 `'\\0'` 让 `printf(\"%s\")` 停下，Python 的字符串不认结束符，所以直接 `del s[q:]` 把尾部多余字符删掉——效果完全等价。\n\n补全后 `\"aaabbbcccd\"` 变成 `\"abcd\"`，长度 4，输出 `abcd 4`。易错点：① 写成 `s[p] != s[q]`（p、q 同步时比较的是同一位置，判断恒假）；② 漏掉 `q == 0` 的首字符特判，`s[-1]` 会取到列表最后一个字符，结果错乱；③ 忘记截断，输出变成 `abcdcccd` 之类的残留；④ 把 `p += 1` 写进 if 里，导致跳字符。"
+  },
+  "指-57": {
+    "stem": "下面程序用「左右双下标」判断字符串是否为回文，请填空。\n\n```python\ndef is_palindrome(s):\n    left = 0\n    right = len(s) - 1\n\n    while left < right:\n        if ①:\n            return 0\n        left += 1\n        ②\n    return 1\n\ns = input().strip()\nprint('YES' if ③ else 'NO')\n```\n\n输入 `level` 输出 `YES`，输入 `hello` 输出 `NO`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "s[left] != s[right]",
+        "note": "两端字符不同就不是回文；C 里写 *left != *right"
+      },
+      {
+        "no": "②",
+        "answer": "right -= 1",
+        "note": "右「指针」向中间移动；C 里写 right--"
+      },
+      {
+        "no": "③",
+        "answer": "is_palindrome(s)",
+        "note": "返回 1 表示是回文，1 为真所以输出 YES"
+      }
+    ],
+    "analysis": "知识点：回文判断的经典双指针法——left 从首字符出发、right 从末字符出发，向中间靠拢，每次比较两端字符。**Python 没有 C 指针，这里用列表/对象引用模拟**：`left`、`right` 是两个整数下标，相当于 `const char *left`、`const char *right`；`right = len(s) - 1` 相当于 C 里的 `s + strlen(s) - 1`（先走到结束符再退一格）。\n\n循环条件 `left < right` 保证两个位置不相交：长度为奇数时中间那个字符不用和自己比较；长度为 1 或空串时循环体一次也不执行，直接返回 1。发现字符不同立即返回 0；全部匹配返回 1。主函数用条件表达式把返回值转成 YES/NO。\n\n输入 `level` 输出 YES；`hello` 输出 NO。易错点：① `right` 初值忘记减 1，拿「越界位置」去比较（C 里就是拿 `'\\0'` 去比）；② 循环条件写成 `left != right`，偶数长度时两下标会交错；③ ② 写成 `right += 1`，方向反了；④ 读入含空格的句子时只取到第一个词（本题约定不含空白）。"
+  },
+  "指-59": {
+    "stem": "输入 m 和 n（1 ≤ m, n ≤ 50），再输入 m 行 n 列的整数矩阵。要求**只申请一次**连续内存\n\n```python\na = [0] * (m * n)          # 对应 C 的 malloc(m * n * sizeof(int))\n```\n\n存放整个矩阵，用 `a[i * n + j]` 访问元素，输出它的转置矩阵（共 n 行，每行 m 列），最后释放内存。\n\n**输入格式：** 第一行两个整数 m 和 n；随后 m 行，每行 n 个整数。\n\n**输出格式：** 转置后的 n 行，每行 m 个整数，相邻整数之间一个空格。\n\n**输入样例：**\n```text\n2 3\n1 2 3\n4 5 6\n```\n**输出样例：**\n```text\n1 4\n2 5\n3 6\n```",
+    "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n    m = int(data[0])\n    n = int(data[1])\n    if m <= 0 or n <= 0 or len(data) < 2 + m * n:\n        return\n\n    a = [0] * (m * n)           # 一次申请 m*n 个 int 的连续内存\n    k = 2\n    for i in range(m):\n        for j in range(n):\n            a[i * n + j] = int(data[k])\n            k += 1\n\n    rows = []\n    for j in range(n):\n        rows.append(' '.join(str(a[i * n + j]) for i in range(m)))\n    print('\\n'.join(rows))\n\n    del a                       # 相当于 free(a)\n\n\nmain()\n",
+    "points": [
+      "只申请一次 m*n 个元素的连续空间，并检查维度与数据合法性",
+      "用 i*n+j 正确完成行列下标到一维下标的换算",
+      "按 n 行 m 列输出转置结果，元素间一个空格",
+      "使用 del 释放整块内存"
+    ],
+    "analysis": "思路：把 m×n 的矩阵压成一维连续数组，元素 a[i][j] 存在下标 `i * n + j` 处（i 是行、n 是列数）。转置就是输出 n 行 m 列：外层枚举原列 j（0..n-1），内层枚举原行 i（0..m-1），输出 `a[i * n + j]`。\n\n**Python 没有 C 指针，这里用列表/对象引用模拟**：C 里 `malloc((size_t)m * n * sizeof(int))` 返回一个 `int *`，Python 里 `[0] * (m * n)` 得到一块长度 m*n 的连续 list；下标运算 `i * n + j` 在两种语言里完全一致，都是「基地址 + 偏移」。行优先布局决定了转置不能靠「换个循环顺序读」蒙混：必须按同一套下标公式取值，只是遍历顺序换成列在外、行在内。\n\n复杂度：时间 O(m×n)，空间 O(m×n)，只有一次申请和一次释放。\n\n易错点：① 下标写成 `i * m + j`（行列搞反，m 是行数不是列数）；② 转置时双重循环边界写反，仍按 m 行 n 列输出；③ 用嵌套 list 构造 `[[0] * n for _ in range(m)]`，虽然结果正确，但没有满足「只申请一次连续内存」的要求；④ 忘记释放；⑤ 输出行末多一个空格（用 `' '.join` 可自然避免）。"
+  },
+  "指-60": {
+    "stem": "下面程序用「函数对象数组」实现一个极简计算器，请填空。\n\n```python\ndef add(a, b):\n    return a + b\n\ndef sub(a, b):\n    return a - b\n\ndef mul(a, b):\n    return a * b\n\nop = [①]                # 等价于 int (*op[3])(int, int) = {...}\nsym = ['+', '-', '*']\n\nx, y, c = input().split()\nx, y = int(x), int(y)\n\nfor i in range(②):\n    if sym[i] == c:\n        print(③)\n        break\n```\n\n输入 `6 3 *` 时输出 `18`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "add, sub, mul",
+        "note": "依次对应 sym 里的 + - *，顺序不能错"
+      },
+      {
+        "no": "②",
+        "answer": "len(op)",
+        "note": "元素个数；C 里写 sizeof(op) / sizeof(op[0])"
+      },
+      {
+        "no": "③",
+        "answer": "op[i](x, y)",
+        "note": "取出函数对象并调用；C 里写 op[i](x, y) 或 (*op[i])(x, y)"
+      }
+    ],
+    "analysis": "知识点：函数指针数组把「符号」和「要执行的函数」用同一个下标关联起来，是消除长串 if-else / switch 的常用手法。**Python 没有 C 指针，这里用列表/对象引用模拟**：`op` 是 list，每个元素是一个函数对象，`op[i]` 取出的就是函数本身——与 `int (*op[3])(int, int)` 里 `op[i]` 得到一个函数指针完全同构。\n\n初始化列表的顺序必须与 `sym` 一一对应，否则按符号取函数会张冠李戴。循环里找到匹配的符号后执行 `op[i](x, y)`。元素个数用 `len(op)`：C 里写 `sizeof(op) / sizeof(op[0])`——`sizeof(op)` 是整个数组的字节数（3 × 8 = 24），`sizeof(op[0])` 是单个函数指针的字节数（8），相除得 3。Python 没有 `sizeof`，`len` 直接给元素个数，而且把列表传进别的函数后依然能拿到正确长度（C 里不能，数组参数会退化成指针）。\n\n输入 `6 3 *` 输出 18。易错点：① 初始化顺序与 sym 不一致（比如把 mul 放在第一位）；② 写成 `op(x, y)`（op 是列表不是函数）；③ 忘记 `break` 导致继续匹配；④ 下标越界。"
+  },
+  "指-61": {
+    "stem": "下面程序用一块连续内存模拟 3 行 4 列的二维数组，请填空。\n\n```python\nm, n = 3, 4\na = [0] * (m * n)          # 相当于 malloc(m * n * sizeof(int))\n\nfor i in range(m):\n    for j in range(n):\n        a[①] = i * 10 + j\n\nfor i in range(m):\n    for j in range(n):\n        print(a[i * n + j], end=' ' if j < n - 1 else '\\n')\n\nprint(a[②])\n③\n```\n\n程序输出前 3 行为 0~23 的矩阵，第 4 行是 `21`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "i * n + j",
+        "note": "行优先：每行 n 个元素，行号 × 列数 + 列号"
+      },
+      {
+        "no": "②",
+        "answer": "2 * n + 1",
+        "note": "第 2 行第 1 列（从 0 计数），代入公式得 9，值为 21"
+      },
+      {
+        "no": "③",
+        "answer": "del a",
+        "note": "释放整块内存；C 里写 free(a)"
+      }
+    ],
+    "analysis": "知识点：一维数组模拟二维数组的核心是行优先下标换算 `i * 列数 + j`。这里列数是 n，因此 `a[i * n + j]` 对应逻辑上的第 i 行第 j 列。**Python 没有 C 指针，这里用列表/对象引用模拟**：`a` 是一块长度为 m*n 的连续 list（相当于 `int *a`），整数下标就是「基地址 + 偏移」，与 C 的 `a[i * n + j]` 逐字同构。\n\n① 是写入时的下标换算；② 要取第 2 行第 1 列（从 0 开始计数），代入公式得 `2 * n + 1 = 9`，该位置存的是 `2 * 10 + 1 = 21`；③ 程序结束前释放：C 写 `free(a)`，Python 用 `del a` 去掉引用，内存交给 GC。\n\n输出：\n```text\n0 1 2 3\n10 11 12 13\n20 21 22 23\n21\n```\n\n易错点：① 写成 `i * m + j`（m 是行数，混淆了行列）；② 写成 `j * m + i`（变成列优先，布局就错了）；③ 忘记释放；④ 把这块内存传给别的函数时忘了同时传 m、n——函数内部无法从指针推出形状，这一点 C 和 Python 一样。"
+  },
+  "指-63": {
+    "stem": "输入一行可能含空格的字符串（长度小于 200），要求**原地**删除其中所有的空格字符（不申请新的字符串数组），然后输出处理后的字符串和它的长度。\n\n**输入格式：** 一行字符串（可能含空格）。\n\n**输出格式：** 第一行为删除空格后的字符串；第二行为该字符串的长度。\n\n**输入样例：**\n```text\na b  c   d\n```\n**输出样例：**\n```text\nabcd\n4\n```",
+    "solution": "import sys\n\n\ndef squeeze(s):\n    q = 0\n    for p in range(len(s)):\n        if s[p] != ' ':\n            s[q] = s[p]\n            q += 1\n    del s[q:]               # 相当于在 q 处补 '\\0'\n    return q\n\n\ndef main():\n    line = sys.stdin.readline()\n    if line == '':\n        return\n    s = list(line.rstrip('\\n').rstrip('\\r'))\n    n = squeeze(s)\n    print(''.join(s))\n    print(n)\n\n\nmain()\n",
+    "points": [
+      "用双下标原地删除空格，未申请额外的字符串数组",
+      "正确读入含空格的整行并去掉行末换行",
+      "删除结束后截断尾部残留（相当于补结束符）",
+      "输出新字符串及其长度（q 的值）"
+    ],
+    "analysis": "思路：双下标「读写分离」。`p` 负责读，`q` 负责写：只有当前字符不是空格时才把它写到 `s[q]` 并让 q 前进；无论是否写入，p 都前进。因为 q 始终不越过 p，所以不会覆盖尚未读取的字符。遍历结束后截掉 q 之后的残留，返回 q 即新长度。\n\n**Python 没有 C 指针，这里用列表/对象引用模拟**：C 里 `char *p = s, *q = s;` 两个指针共用一块缓冲区，Python 里是两个整数下标共用一个 list；C 用 `(int)(q - s)` 求新长度，Python 里 q 本身就是「距开头的偏移」，直接返回即可。C 在 `*q = '\\0'` 处截断，Python 用 `del s[q:]` 达到同样效果。\n\n读入必须整行读：C 里用 `fgets` 才能读到空格，Python 里用 `readline()` 再 `rstrip('\\n')`；如果用 `input().split()`，空格会变成切分符，根本读不到原串。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① 用 `s.replace(' ', '')` 一行搞定——虽然结果对，但申请了新字符串，违反「原地」要求（对应 C 里另开一个数组）；② 忘记截断，输出尾部带出原串残留；③ 用 `split()` 读入导致空格丢失；④ 输出长度时用了原串长度；⑤ 把换行当成普通字符保留下来，长度多 1。"
+  },
+  "指-65": {
+    "stem": "下面程序用「字节缓冲区」模拟 `void *` 逐字节复制内存，请填空。\n\n```python\ndef copy_bytes(dst, src, n):\n    for i in range(n):\n        dst[i] = ①          # 逐字节复制\n\nx = 0x11223344\nbx = x.to_bytes(4, 'little')    # 取出 x 的 4 个字节，相当于 &x\nby = bytearray(②)               # 目标缓冲区，相当于 &y\ncopy_bytes(by, bx, len(bx))\ny = int.from_bytes(by, 'little')\nprint(1 if y == x else 0)\nprint(③)\n```\n\n补全后输出 `1` 和 `4`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "src[i]",
+        "note": "把源缓冲区第 i 个字节写到目标缓冲区；C 里写 *d++ = *s++"
+      },
+      {
+        "no": "②",
+        "answer": "len(bx)",
+        "note": "要复制的字节数，正是 int 的大小 4；C 里写 (int)sizeof(x)"
+      },
+      {
+        "no": "③",
+        "answer": "len(by)",
+        "note": "输出 4，相当于 C 里的 sizeof(y)"
+      }
+    ],
+    "analysis": "知识点：通用内存操作必须按 1 字节步长前进，才能覆盖对象的每一个字节；C 里要先把 `void *` 转成 `unsigned char *`，因为 `void *` 不能解引用、也不能做算术。**Python 没有 C 指针，这里用列表/对象引用模拟**：`bytearray` 是一块可变的字节缓冲区，相当于「一段连续内存」，`x.to_bytes(4, 'little')` 把整数 x 的 4 个字节取出来（相当于 `&x`），下标就是字节偏移。\n\n① `dst[i] = src[i]` 一次搬一个字节，对应 C 的 `*d++ = *s++`（后置自增先取值再前进）。② 复制长度就是 `len(bx)`：C 里写 `(int)sizeof(x)`，即 int 的 4 字节。③ 最后输出 `len(by)`，即 `sizeof(y)` = 4，验证目标缓冲区确实是 4 字节。\n\n输出 1（复制后 y 与 x 逐位相同）和 4。易错点：① 写成 `dst = src`——那只是让两个名字指向同一块缓冲区，等于 C 里只复制了指针；② 直接把 `int.from_bytes` 的结果赋回去而不逐字节写，绕过了「字节级复制」这个考点；③ 复制长度写成元素个数以外的值导致越界；④ 用 `to_bytes` 时忘记 `'little'`，与 `from_bytes` 的字节序不一致，结果会错（大端机器上尤其明显）。"
+  },
+  "指-67": {
+    "stem": "输入 n（1 ≤ n ≤ 50）个整数，用你自己实现的**通用排序函数**排序后输出。函数签名为 `sort(base, n, size, cmp)`：`base` 是一块字节缓冲区（`bytearray`，相当于 `void *`），`n` 是元素个数，`size` 是每个元素的字节数，`cmp(base, off_a, off_b)` 返回负数 / 0 / 正数。要求函数内部必须用「字节偏移 = 下标 × size」定位元素、**逐字节交换**，从而对任意元素类型都适用；不得直接把元素当成 int 比较，也不得调用 `list.sort` / `sorted`。\n\n**输入格式：** 第一行一个整数 n；第二行 n 个整数，用空格分隔。\n\n**输出格式：** 升序输出 n 个整数，相邻整数之间一个空格，行末换行。\n\n**输入样例：**\n```text\n6\n3 -1 4 1 5 9\n```\n**输出样例：**\n```text\n-1 1 3 4 5 9\n```",
+    "solution": "import sys\n\n\ndef cmp_int(base, off_a, off_b):\n    # 只拿到两个元素的字节偏移，自己按 4 字节小端整数解出来比较\n    a = int.from_bytes(base[off_a:off_a + 4], 'little', signed=True)\n    b = int.from_bytes(base[off_b:off_b + 4], 'little', signed=True)\n    return (a > b) - (a < b)\n\n\ndef swap_bytes(base, off_x, off_y, size):\n    for k in range(size):\n        t = base[off_x + k]\n        base[off_x + k] = base[off_y + k]\n        base[off_y + k] = t\n\n\ndef sort(base, n, size, cmp):\n    for i in range(n - 1):\n        best = i\n        for j in range(i + 1, n):\n            if cmp(base, j * size, best * size) < 0:\n                best = j\n        if best != i:\n            swap_bytes(base, i * size, best * size, size)\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    if n <= 0 or len(data) < n + 1:\n        return\n\n    size = 4\n    base = bytearray(size * n)      # 相当于 void *base 指向的一块内存\n    for i in range(n):\n        v = int(data[1 + i]) & 0xFFFFFFFF\n        base[i * size:(i + 1) * size] = v.to_bytes(size, 'little')\n\n    sort(base, n, size, cmp_int)\n\n    out = [str(int.from_bytes(base[i * size:(i + 1) * size], 'little', signed=True))\n           for i in range(n)]\n    print(' '.join(out))\n\n\nmain()\n",
+    "points": [
+      "函数签名与题目一致，用 bytearray 接收任意类型数组（对应 void *）",
+      "用「下标 × size」做字节偏移定位元素，而不是按下标直接取",
+      "逐字节交换两个元素，不依赖具体元素类型",
+      "比较函数按负 / 0 / 正返回，选择排序逻辑正确",
+      "主函数正确编码、调用并输出排序结果"
+    ],
+    "analysis": "思路：`void *` 不知道元素类型，唯一可移植的做法是把它当字节流，用「基地址 + 下标 × 元素大小」算出第 i 个元素的地址，再把地址交给比较函数。比较函数只接收地址（这里是字节偏移），返回负 / 0 / 正。交换时因为不知道类型，只能逐字节交换：循环 size 次、每次换一个字节。\n\n**Python 没有 C 指针，这里用列表/对象引用模拟**：`bytearray` 是一块可变的连续字节缓冲区，下标就是字节偏移，等价于 `char *` 加指针算术；`int.to_bytes` / `int.from_bytes` 负责把整数与 4 个字节互相转换，相当于 C 里的 `*(int *)p` 与写回内存。C 里 `p + i * size` 的指针运算，在 Python 里写成 `i * size` 这个偏移量；C 里 `swap_bytes` 用 `char *x, *y`，Python 里用两个偏移。\n\n选择排序框架不变：外层 i，内层在 [i+1, n) 中找最小元素的下标 best，最后交换 i 与 best 两个元素。\n\n复杂度：时间 O(n²)，交换次数 O(n)；空间 O(1)。因为元素只能通过字节偏移间接访问，性能低于针对具体类型写的排序，但通用性最好——同一份代码可排 int、double、结构体。\n\n易错点：① 直接用 `base[i]` 取元素（每次只取 1 个字节，不是 4 个）；② 交换时只交换了偏移变量而不是内容；③ 忘了 `size` 而写死 4，函数就不通用了；④ 循环边界写成 `i < n` 导致越界；⑤ 忽略负数：不用 `& 0xFFFFFFFF` 补码化、`from_bytes` 不加 `signed=True`，负数会被解析成一个巨大的正数；⑥ 用 `list.sort` 或 `sorted` 绕过考点。"
+  },
+  "指-72": {
+    "stem": "下面程序用函数对象作谓词，实现「在区间内查找第一个满足条件的元素」，请填空。\n\n```python\ndef is_odd(x):\n    return x % 2 != 0\n\ndef find_if(a, begin, end, pred):\n    while ①:\n        if ②:\n            return begin\n        begin += 1\n    return ③\n\na = [2, 4, 7, 8, 9, 10]\np = find_if(a, 0, len(a), is_odd)\nif p is not None:\n    print(a[p], p)\n```\n\n补全后输出 `7 2`。",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "begin < end",
+        "note": "左闭右开区间，end 是尾后位置，不能取等号"
+      },
+      {
+        "no": "②",
+        "answer": "pred(a[begin])",
+        "note": "把当前元素交给谓词判断；C 里写 pred(*begin)"
+      },
+      {
+        "no": "③",
+        "answer": "None",
+        "note": "没找到时返回空值；C 里写 NULL"
+      }
+    ],
+    "analysis": "知识点：C 的「泛型算法」风格接口通常用两个指针表示区间 `[begin, end)`，`end` 指向最后一个元素之后的位置（尾后指针），因此循环条件是 `begin < end`，不能解引用 end。判定逻辑通过函数指针传入。**Python 没有 C 指针，这里用列表/对象引用模拟**：`begin`、`end` 是两个整数下标，`a[begin]` 就是解引用；谓词 `pred` 直接接收函数对象，调用 `pred(a[begin])`。\n\n`find_if` 找到就返回该元素的下标，找不到返回 `None`——C 里返回元素地址或 `NULL`。返回「位置」而不是值，让调用者既能取到值（`a[p]`），又能算出偏移（C 里写 `p - a`，Python 里 p 本身就是偏移），这是 C 标准库 `bsearch`、`strchr` 等接口的常见约定。\n\n补全后输出 `7 2`：第一个奇数是 7，位于下标 2。易错点：① 循环写成 `begin <= end`，最后一轮会访问尾后位置（C 里就是解引用 end）；② 谓词写成 `pred(begin)`（把下标当值传进去）；③ 找不到时返回 `-1` 或 `end`，调用者就无法用同一个返回值约定判断（`if p is not None` 会失效）；④ 忘记检查 None 就取 `a[p]`。"
+  }
+}

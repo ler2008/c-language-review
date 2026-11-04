@@ -1,0 +1,1391 @@
+[
+  {
+    "id": "基-51",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "printf",
+      "格式控制",
+      "输出宽度"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    printf(\"[%5d][%-5d][%05d]\\n\", 42, 42, 42);\n    return 0;\n}\n```",
+    "options": [
+      "[   42][   42][00042]",
+      "[42   ][   42][42000]",
+      "[   42][42   ][00042]",
+      "[   42][42   ][   42]"
+    ],
+    "answer": 2,
+    "analysis": "知识点：printf 转换说明中的“最小字段宽度”“左对齐标志 -”“补零标志 0”。\n\n- `%5d` 表示至少占 5 列、默认右对齐，42 只占 2 列，所以左边补 3 个空格，输出 `   42`。\n- `%-5d` 中的 `-` 把对齐方向改为左对齐，数字写在左边、空格补在右边，输出 `42   `。\n- `%05d` 中的 `0` 表示宽度不足时在前面补字符 0（注意是补在数字左边），输出 `00042`。\n\n宽度是“最小宽度”，不是“截断宽度”：数字比宽度长时按实际长度输出。三个干扰项分别对应：把 `-` 当成无效标志（会得到 `[   42][   42][00042]`）、把补零方向弄反（会得到 `[42   ][   42][42000]`）、以及把 `0` 标志当成普通空格（会得到 `[   42][42   ][   42]`）。三个标志可以组合，例如 `%-08d` 中 `-` 优先，实际不会补零只补空格，这一点在考试里也常被考到。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <iomanip>\n\nint main()\n{\n    std::cout << \"[\" << std::setw(5) << 42 << \"][\"\n              << std::left << std::setw(5) << 42 << \"][\"\n              << std::right << std::setfill('0') << std::setw(5) << 42 << \"]\\n\";\n    return 0;\n}\n```",
+        "analysis": "C++ 用 `<iomanip>` 里的流操纵符完成与 printf 宽度相同的功能：`std::setw(5)` 设定“下一次输出”的最小宽度，默认右对齐；`std::left` 改为左对齐；`std::setfill('0')` 把填充字符改成 0。\n\n关键在于“粘性”不同：`setw` 只对紧随其后的一次输出有效，用完立刻复位；而 `left`、`right`、`setfill` 会一直影响后续输出，必须显式改回来。本题第三个 `]` 之前如果忘了 `std::right`，`42` 会继续左对齐，输出就变成 `[00042]` 位置的错位。\n\n同样要记住：宽度是最小宽度，超长时不会被截断；C++20 起还可以用 `std::format(\"[{:5d}][{:<5d}][{:05d}]\", 42, 42, 42)`，格式串写法与 C 的 printf 基本一致，但类型安全。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\nprint(f\"[{42:5d}][{42:<5d}][{42:05d}]\")\n```",
+        "analysis": "Python 的 f-string 用格式迷你语言 `[[填充]对齐][符号][#][0][宽度][,][.精度][类型]` 表达同样的三件事：`:5d` 最小宽度 5、默认右对齐；`:<5d` 用 `<` 显式左对齐；`:05d` 的 `0` 等价于“填充字符为 0 且右对齐”。\n\n与 C 的对应关系是：`%5d` ↔ `{:5d}`，`%-5d` ↔ `{:<5d}`，`%05d` ↔ `{:05d}`；但 Python 还能写 `{:0>5d}`（填充 0、右对齐）或 `{:0<5d}`（填充 0、左对齐），表达力更强，且填充字符不限于 0 和空格。\n\n注意宽度同样是最小宽度，`{42:1d}` 仍输出 `42`；另外 Python 的整数是任意精度，不存在 C 里 `%d` 与 `long` 长度不匹配导致输出错乱的问题。"
+      }
+    }
+  },
+  {
+    "id": "基-52",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "强制类型转换",
+      "无符号",
+      "整型提升"
+    ],
+    "stem": "在 `unsigned char` 占 8 位、`int` 占 4 个字节的环境中，下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    printf(\"%d %d\\n\", (unsigned char)-1, (unsigned char)300);\n    return 0;\n}\n```",
+    "options": [
+      "255 44",
+      "-1 300",
+      "255 300",
+      "256 45"
+    ],
+    "answer": 0,
+    "analysis": "知识点：向无符号的小整型做强制转换时，按“模 2^n 取余”得到结果，不是截断高位、也不是四舍五入。\n\n`unsigned char` 只有 8 位，值域 0~255，模数为 256。`(unsigned char)-1`：−1 对 256 取余得 255，即 8 位全 1。`(unsigned char)300`：300 − 256 = 44。\n\n转换后的值在 `printf` 中是可变参数，会先做整型提升变成 `int` 再按 `%d` 输出，所以看到的是十进制 255 和 44，而不是字符。\n\n选 `-1 300` 是以为赋值/转换会保留原值（把 C 当成有溢出检查的语言）；选 `255 300` 是只处理了 −1 却把 300 原样输出；选 `256 45` 则误以为 300 会先“进位”成 256 再对 45 取余。真正要记的是：无符号类型的运算与转换都是模 2^n 的环上运算。",
+    "variants": {
+      "cpp": {
+        "stem": "在 `unsigned char` 占 8 位、`int` 占 4 个字节的环境中，下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    std::cout << static_cast<int>(static_cast<unsigned char>(-1)) << ' '\n              << static_cast<int>(static_cast<unsigned char>(300)) << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的转换规则与 C 相同：转成 8 位无符号类型仍是模 256 取余，`-1` 得 255，`300` 得 44，所以结果还是 `255 44`。\n\n但输出方式有一个经典陷阱：`std::cout << (unsigned char)255` 会把 `unsigned char` 当作字符类型，输出的是编码为 255 的字符（在 Latin-1 下是 `ÿ`），而不是数字 255。因此必须先 `static_cast<int>` 再输出。\n\n这也是 C++ 比 printf 更“类型敏感”的地方：`printf(\"%d\", (unsigned char)255)` 因为整型提升会打印 255，而 `cout` 不会自动做这个提升。另外 C++ 推荐用 `static_cast` 而不是 C 风格强制转换，便于在代码里搜索和审查转换点。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\nprint((-1) & 0xFF, 300 & 0xFF)\n```",
+        "analysis": "Python 的 `int` 是任意精度整数，没有“8 位无符号字节”这种固定宽度类型，也不存在赋值时的自动截断，所以要模拟 C 的 `unsigned char` 只能显式按位与 `0xFF`（模 256）。\n\n`-1` 在 Python 中按无限位补码表示，`(-1) & 0xFF` 得到 255；`300 & 0xFF` 得到 44，与 C 的结果一致。\n\n真正的差异在容器上：`bytes` 和 `bytearray` 的元素被限制在 0~255，赋值 300 会直接抛 `ValueError: byte must be in range(0, 256)`，而不是像 C 那样悄悄回绕成 44。也就是说 C 的“模运算语义”要靠程序员自己用位运算表达，Python 的字节容器则选择报错。"
+      }
+    }
+  },
+  {
+    "id": "基-53",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "嵌套循环",
+      "循环次数",
+      "循环边界"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int i, j, cnt = 0;\n\n    for (i = 1; i <= 4; i++)\n        for (j = i; j <= 4; j++)\n            cnt++;\n    printf(\"%d\\n\", cnt);\n    return 0;\n}\n```",
+    "options": [
+      "16",
+      "4",
+      "6",
+      "10"
+    ],
+    "answer": 3,
+    "analysis": "知识点：内层循环的初值依赖外层变量时，循环总次数要用求和而不是乘法。\n\n外层 i 取 1、2、3、4，对应内层 j 从 i 到 4 的次数分别是 4、3、2、1，合计 4 + 3 + 2 + 1 = 10，也就是 4×5/2。\n\n干扰项 16 是把内层当成固定跑 4 次（4×4）；4 是只数了外层轮数；6 是少算了一轮（3+2+1）。这类题的通用做法是：把内层次数写成关于 i 的表达式，再对 i 求和。\n\n如果循环写成 `for (j = 1; j <= i; j++)`，总次数同样算法，变成 1+2+3+4 = 10，但内层执行顺序不同——考试里常在“第几次进入循环体”这种细节上设陷阱。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int cnt = 0;\n    for (int i = 1; i <= 4; i++)\n        for (int j = i; j <= 4; j++)\n            cnt++;\n    std::cout << cnt << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 写法与 C 完全一致，答案仍是 10：内层次数随 i 递减，总数为 4+3+2+1。\n\n两点 C++ 特有的补充：其一，循环变量可以在 `for` 的初始化部分声明，作用域被限制在循环体内（C99 也支持，但 C++ 中更普遍）；其二，n 很大时累加次数是 O(n²)，`int` 会溢出——计算 1+2+…+n 应该直接用公式 n(n+1)/2 并用 `long long`，而不是靠双层循环累加。\n\n如果只是统计次数，C++ 还可以写 `std::accumulate` 或直接算公式，这也是“能推公式就不要循环”的工程习惯。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\ncnt = 0\nfor i in range(1, 5):\n    for j in range(i, 5):\n        cnt += 1\nprint(cnt)\n```",
+        "analysis": "`range(a, b)` 是左闭右开区间，`range(1, 5)` 生成 1、2、3、4，正好对应 C 的 `i = 1; i <= 4`；`range(i, 5)` 生成 i 到 4，对应 `j = i; j <= 4`。\n\n因此总次数同样是 4+3+2+1 = 10。这里最容易出错的是把边界写成 `range(1, 4)`（少一轮，得 6）或 `range(i, 4)`（得 3+2+1 = 6），因为 Python 的右端点不包含在区间内，而 C 的 `<=` 包含上界。\n\n记忆方法：C 的 `i <= n` 与 Python 的 `range(i, n + 1)` 等价；看到 Python 的 `range` 就要在脑子里把右端点“加一”再和 C 对照。"
+      }
+    }
+  },
+  {
+    "id": "基-54",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "scanf",
+      "输入缓冲区",
+      "字符输入"
+    ],
+    "stem": "下面程序运行时从键盘输入 `65` 后回车，输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int n;\n    char c;\n\n    scanf(\"%d\", &n);\n    scanf(\"%c\", &c);\n    printf(\"%d %d\\n\", n, c);\n    return 0;\n}\n```",
+    "options": [
+      "65 65",
+      "65 10",
+      "65 0",
+      "程序阻塞，等待第二次输入"
+    ],
+    "answer": 1,
+    "analysis": "知识点：`%d` 读取整数时会在第一个非数字字符处停止，并把该字符留在输入缓冲区里。\n\n输入 `65` 后回车，缓冲区中是字符序列 `6`、`5`、`\\n`。第一个 `scanf` 读走 `65`，`\\n` 没被消耗；第二个 `scanf(\"%c\", &c)` 中的 `%c` **不会跳过前导空白**，于是读到换行符，其 ASCII 码为 10。输出时 `char` 被提升为 `int`，按 `%d` 打印 10。\n\n选 `65 65` 是把 `%c` 当成“读下一个数字字符”；选 `65 0` 是把换行当成 `'\\0'`；选“程序阻塞”则是误以为程序会等待——其实缓冲区里已有字符，`scanf` 立即返回。\n\n正确做法是在格式串里加空格（如 `\" %c\"`）让它跳过空白，或者在读字符前用 `getchar()` 吃掉换行。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序运行时从键盘输入 `65` 后回车，输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int n;\n    char c;\n\n    std::cin >> n;\n    std::cin.get(c);\n    std::cout << n << ' ' << static_cast<int>(c) << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的 `std::cin >> n` 同样在空白处停止，并把换行符留在流里；`std::cin.get(c)` 是“不跳过空白、读一个字符”的成员函数，因此读到的是换行符 10，输出 `65 10`。\n\n对照记忆：`std::cin >> c`（对 char 使用提取运算符）**会**跳过前导空白，读到下一个非空白字符；而 `get` 与 C 的 `%c` 行为一致。所以 C++ 里“先读数字再读字符”要不要跳过换行，取决于你用 `>>` 还是 `get`。\n\n另外必须写 `static_cast<int>(c)`，否则 `cout << c` 会输出一个不可见的换行，看起来像“什么都没打印”。"
+      },
+      "python": {
+        "stem": "下面程序运行时从键盘输入 `65` 后回车，随后不再输入，结果是（ ）。\n\n```python\nimport sys\n\nn = int(sys.stdin.readline())\nc = sys.stdin.read(1)\nprint(n, ord(c))\n```",
+        "analysis": "这里能直接看出 Python 与 C 的输入模型差异：`readline()` 会把整行连同行末的 `\\n` 一起取走并消耗掉，缓冲区里不再残留换行符；随后 `read(1)` 已经到文件末尾，返回空串 `\"\"`，`ord(\"\")` 抛出 `TypeError: ord() expected a character, but string of length 0 found`。\n\nC 的 `scanf(\"%d\")` 只吃掉数字、把 `\\n` 留在缓冲区，所以第二个 `%c` 一定能读到东西；Python 的 `input()` / `readline()` 以“行”为单位消费输入，不存在“半个换行留在缓冲区”的状态。\n\n若要在 Python 中复现 C 的逐字符模型，应使用 `sys.stdin.read(1)` 自己管理缓冲，或改用 `input()` 后按字符串下标访问。",
+        "options": [
+          "65 10",
+          "抛出 TypeError：read(1) 在文件末尾只能读到空串",
+          "65 65",
+          "65 0"
+        ],
+        "answer": 1
+      }
+    }
+  },
+  {
+    "id": "基-55",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "宏定义",
+      "预处理",
+      "文本替换"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\n#define SQR(x) x * x\nint main(void)\n{\n    printf(\"%d\\n\", SQR(2 + 3));\n    return 0;\n}\n```",
+    "options": [
+      "25",
+      "11",
+      "10",
+      "编译错误"
+    ],
+    "answer": 1,
+    "analysis": "知识点：带参数的宏是“预处理阶段的文本替换”，不是函数调用，也没有参数求值这一步。\n\n`SQR(2 + 3)` 被机械地替换成 `2 + 3 * 2 + 3`，再按优先级计算：`3 * 2 = 6`，`2 + 6 + 3 = 11`。\n\n干扰项 25 是把它当成了真正的函数（先算实参 2+3 得 5，再算 5×5）；10 是把表达式读成 `(2+3)*2`；编译错误则误以为宏有类型检查。正确写法是给每个参数和整个表达式都加括号：\n\n`#define SQR(x) ((x) * (x))`\n\n即使这样写，宏仍有副作用风险（如 `SQR(i++)` 会把 i 自增两次），所以现代 C 更推荐用 `static inline` 函数代替函数式宏。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#define SQR(x) x * x\nint main()\n{\n    std::cout << SQR(2 + 3) << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的预处理器与 C 相同，宏依旧是纯文本替换，所以结果还是 `2 + 3 * 2 + 3 = 11`。\n\n但 C++ 提供了更好的替代品：`constexpr int sqr(int x) { return x * x; }` 或 `inline` 函数。它们有真正的参数求值、类型检查和名字作用域，`sqr(2 + 3)` 会先算出 5 再平方，得到 25。\n\n这也解释了为什么 C++ 核心指南明确反对函数式宏：宏不遵守作用域、不做类型检查、参数被重复求值时还有副作用风险，调试时看到的也是展开后的表达式。考试里要能区分“宏替换”与“函数调用”这两种完全不同的机制。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\ndef sqr(x):\n    return x * x\n\nprint(sqr(2 + 3))\n```",
+        "analysis": "Python 没有预处理器，也没有宏，`def` 定义的是真正的函数，答案是 25。\n\n调用时先把实参表达式 `2 + 3` 求值成 5，再把 5 绑定到形参 x，函数体内执行 `5 * 5`。这是“按值/按对象引用传递”的正常函数语义，不存在文本替换带来的优先级问题。\n\n正因为没有宏，Python 里想做“零开销内联”只能依赖解释器自己优化；而 C 的宏虽然灵活，却把优先级、副作用、调试信息这些负担都交给了程序员。三种语言在这道题上的答案分别是 11、11、25，正好标出“文本替换”与“函数调用”的分水岭。",
+        "options": [
+          "11",
+          "25",
+          "10",
+          "NameError: name 'SQR' is not defined"
+        ],
+        "answer": 1
+      }
+    }
+  },
+  {
+    "id": "基-56",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "位运算",
+      "运算符优先级",
+      "异或"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    printf(\"%d %d\\n\", 7 ^ 3, 5 & 3 | 8 >> 2);\n    return 0;\n}\n```",
+    "options": [
+      "4 2",
+      "3 3",
+      "4 1",
+      "4 3"
+    ],
+    "answer": 3,
+    "analysis": "知识点：位运算符的优先级从高到低为 `~`、`<<` `>>`、`&`、`^`、`|`，其中 `&` 高于 `^` 高于 `|`。\n\n第一个表达式：7 = 0111，3 = 0011，按位异或得 0100 = 4。\n\n第二个表达式按优先级拆成 `(5 & 3) | (8 >> 2)`：`8 >> 2 = 2`，`5 & 3 = 0001 = 1`，再 `1 | 2 = 3`。\n\n选 `4 2` 是把 `&` 和 `|` 当成同级从左往右算（先算 `3 | 8`）；选 `3 3` 是把 `^` 当成幂运算或与 `&` 混淆；选 `4 1` 是漏掉了右移的结果 2。\n\n实践建议：位运算与移位混写时永远加括号，因为很多人会下意识按“算术运算符优先”来读，而实际上 `&` 的优先级比 `==` 还低，`x & 1 == 1` 会被解析成 `x & (1 == 1)`。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    std::cout << (7 ^ 3) << ' ' << ((5 & 3) | (8 >> 2)) << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的位运算符优先级与 C 完全一致，结果同样是 `4 3`：`7 ^ 3 = 4`，`(5 & 3) | (8 >> 2) = 1 | 2 = 3`。\n\nC++ 版本里必须给每个子表达式加括号，这不是多余的：`<<` 被重载为流插入运算符后仍然是移位优先级，若写成 `std::cout << 5 & 3` 会被解析成 `(std::cout << 5) & 3`，直接编译失败。\n\nC++20 还引入了 `std::popcount`、`std::rotl`、`std::bit_width` 等位操作函数（在 `<bit>` 中），比手写移位更清晰；但对无符号类型做移位时仍需自己保证移位数小于位宽，否则是未定义行为。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\nprint(7 ^ 3, 5 & 3 | 8 >> 2)\n```",
+        "analysis": "Python 的位运算符优先级表与 C 一致：移位高于 `&`，`&` 高于 `^`，`^` 高于 `|`，所以 `5 & 3 | 8 >> 2` 同样是 `(5 & 3) | (8 >> 2) = 1 | 2 = 3`，加上 `7 ^ 3 = 4`，输出 `4 3`。\n\n但语义上有两点不同：其一，Python 的整数是任意精度，负数按“无限位补码”参与位运算，例如 `-1 >> 1` 仍是 −1（算术右移），而 C 中对负数右移是实现定义行为；其二，Python 没有 32/64 位溢出，`1 << 100` 是合法的大整数，C 里则早已溢出。\n\n因此 Python 里做位掩码时通常要显式 `& 0xFFFFFFFF` 来模拟固定位宽，这一点和 C 的“位宽由类型决定”正好相反。"
+      }
+    }
+  },
+  {
+    "id": "基-57",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "作用域",
+      "块作用域",
+      "变量遮蔽"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint x = 10;\nint main(void)\n{\n    int x = 20;\n    {\n        int x = 30;\n        printf(\"%d \", x);\n    }\n    printf(\"%d\\n\", x);\n    return 0;\n}\n```",
+    "options": [
+      "30 20",
+      "30 30",
+      "10 20",
+      "20 20"
+    ],
+    "answer": 0,
+    "analysis": "知识点：C 的作用域规则——内层块可以重新定义同名变量，称为“遮蔽（shadowing）”，离开块后外层名字重新可见。\n\n`main` 里的 `int x = 20` 遮蔽了全局 `x = 10`；内层花括号里又定义了 `int x = 30`，遮蔽了 `main` 的 x。第一个 `printf` 在内层块中，取到 30；块结束后内层 x 消亡，第二个 `printf` 取到 `main` 的 20。全局的 10 从头到尾没有被访问过。\n\n干扰项“30 30”是误以为内层赋值改的是外层变量；\"10 20\" 是没看出 `main` 里的局部变量遮蔽了全局；\"20 20\" 是漏掉了内层块的新定义。\n\n遮蔽虽然合法，但极易造成维护困难，编译器通常提供 `-Wshadow` 警告来提示。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint x = 10;\nint main()\n{\n    int x = 20;\n    {\n        int x = 30;\n        std::cout << x << ' ';\n    }\n    std::cout << x << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的块作用域与名字隐藏规则和 C 相同，答案仍是 `30 20`。\n\nC++ 的额外手段是作用域解析运算符 `::`：在内层块里写 `::x` 就能绕过所有局部同名变量，直接访问全局的 10，这是 C 没有的语法。C++ 还有命名空间作用域和类作用域，`A::x`、`ns::x` 都属于同一套“名字查找”机制。\n\n也正因为 C++ 的名字查找更复杂（还涉及 ADL、using 声明等），生产代码里更强调避免同名遮蔽；GCC/Clang 的 `-Wshadow` 在 C++ 项目中几乎是默认开启的。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\nx = 10\n\ndef main():\n    x = 20\n    if True:\n        x = 30\n        print(x, end=\" \")\n    print(x)\n\nmain()\n```",
+        "analysis": "Python 没有块级作用域：`if`、`for`、`while`、`with` 的花括号等价物不会创建新作用域，只有函数、类、模块才划分作用域。\n\n所以 `if True:` 里的 `x = 30` 并不是“新定义一个内层 x”，而是给 `main` 的局部变量 x 重新赋值，函数体内只有一个 x。结果两次都打印 30，答案与 C 不同。\n\n还要注意：函数内的 `x = 20` 会让 x 成为整个函数的局部变量，若在赋值前读取 x 会抛 `UnboundLocalError`；要修改模块级的 x 必须写 `global x`。这与 C 的“块内重新定义”是完全不同的模型：C 是在内层新建一个变量，Python 是在同一作用域内改绑定。",
+        "options": [
+          "30 30",
+          "30 20",
+          "10 20",
+          "20 20"
+        ],
+        "answer": 0
+      }
+    }
+  },
+  {
+    "id": "基-58",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "sizeof",
+      "运算符",
+      "副作用"
+    ],
+    "stem": "在 `int` 占 4 个字节的环境中，下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int i = 5;\n\n    printf(\"%d %d\\n\", (int)sizeof(i++), i);\n    return 0;\n}\n```",
+    "options": [
+      "4 6",
+      "5 6",
+      "4 5",
+      "编译错误"
+    ],
+    "answer": 2,
+    "analysis": "知识点：`sizeof` 是编译期运算符，它的操作数**不会被求值**（变长数组除外），只用来推导类型大小。\n\n`sizeof(i++)` 只关心 `i++` 这个表达式的类型是 `int`，于是直接得到 4，`i++` 根本不会执行，i 仍是 5，输出 `4 5`。\n\n干扰项“4 6”是把 sizeof 当成了函数调用，以为参数会先求值；\"5 6\" 是把 sizeof 的结果当成了变量的值；编译错误则误以为自增表达式不能出现在 sizeof 里。\n\n相关的两个常见坑：其一，`sizeof` 的结果类型是 `size_t`（无符号），与 int 比较时可能出现符号问题，所以常写成 `(int)sizeof(...)`；其二，`sizeof` 对数组名得到整个数组的字节数，但数组作为函数参数退化后只能得到指针大小。",
+    "variants": {
+      "cpp": {
+        "stem": "在 `int` 占 4 个字节的环境中，下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int i = 5;\n\n    std::cout << sizeof(i++) << ' ' << i << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的 `sizeof` 同样是编译期运算符，操作数不求值，`i` 保持 5，答案是 `4 5`。\n\nC++ 里这个性质被用得更彻底：`sizeof` 可以配合 `decltype`、模板和 `std::void_t` 做编译期类型探测，例如经典的“检测类型是否有某个成员”的 SFINAE 技巧，核心就是让 `sizeof` 只检查表达式是否合法而不真正执行它。\n\n还要注意 `sizeof` 返回 `std::size_t`：C++ 中更推荐用 `sizeof i`（不加括号）对表达式求大小，用 `sizeof(int)` 对类型求大小；C++11 起 `sizeof...` 用于参数包，含义完全不同。"
+      },
+      "python": {
+        "stem": "C 的 `sizeof` 是编译期运算符且不会求值其操作数；Python 没有 `sizeof`，只有运行期函数 `len()`。下面程序的运行结果是（ ）。\n\n```python\ni = 5\nprint(len(i))\n```",
+        "analysis": "`len()` 是普通函数调用，参数 `i` 会先被求值，然后把整数对象 5 传给 `len`；但 `len` 只接受有长度的对象（序列、集合、字典等），对 `int` 直接抛出 `TypeError: object of type 'int' has no len()`。\n\n这正好对照出两种“求大小”机制的区别：C 的 `sizeof` 在编译期由类型决定，不产生任何运行期副作用，连 `i++` 都不会执行；Python 的 `len()` 在运行期执行，参数一定会求值，而且要求对象实现 `__len__`。\n\n若真想看一个 Python 对象占多少字节，要用 `sys.getsizeof(i)`，它返回的是解释器为该对象分配的字节数（含对象头），与 C 的 `sizeof` 语义并不相同。",
+        "options": [
+          "4 5",
+          "5 6",
+          "TypeError: object of type 'int' has no len()",
+          "编译错误：sizeof 不支持 int"
+        ],
+        "answer": 2
+      }
+    }
+  },
+  {
+    "id": "基-59",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "while循环",
+      "自减运算",
+      "循环边界"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int n = 5, s = 0;\n\n    while (n--)\n        s += n;\n    printf(\"%d %d\\n\", s, n);\n    return 0;\n}\n```",
+    "options": [
+      "15 -1",
+      "10 0",
+      "15 0",
+      "10 -1"
+    ],
+    "answer": 3,
+    "analysis": "知识点：后置自减作为循环条件时，“先取值判断、再自减”，而且判断为假的那一次也会执行自减。\n\n逐轮看：条件取 n 的旧值 5（真）后 n 变 4，循环体累加 4；接着取 4（真）后 n 变 3，累加 3；……直到取 1（真）后 n 变 0，累加 0；再判断时取 0（假），n 仍被减为 −1 并退出。所以 s = 4+3+2+1+0 = 10，n = −1。\n\n干扰项 15 是把 `while (n--)` 当成“先累加 5、4、3、2、1”；0 是忽略了“假判断时也会自减”这一细节。\n\n把条件改成 `while (--n)` 则先减再判断，累加的是 4、3、2、1，s = 10 但 n = 0；改成 `while (n-- > 0) s += n + 1;` 才会累加 5、4、3、2、1，得到 s = 15、n = −1。三者的差别必须逐轮推演才能记牢。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int n = 5, s = 0;\n\n    while (n--)\n        s += n;\n    std::cout << s << ' ' << n << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的 `n--` 语义与 C 相同，结果仍是 `10 -1`：判断用旧值，自减在判断之后发生，且假判断那一次同样会减。\n\n要特别警惕的是无符号版本：若把 n 声明成 `unsigned`，最后一轮 n 从 0 自减会回绕成 4294967295，条件为真，循环几乎永不结束（要跑约 43 亿次）。这类 bug 在 C 和 C++ 中都极为常见，所以“循环计数变量不要用无符号类型递减到 0”是一条硬性建议。\n\nC++ 里更安全的写法是范围 for（`for (int k : {4,3,2,1,0})`）或 `std::accumulate`；现代 C++ 还提倡用 `gsl::index` 之类的有符号索引类型。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\nn = 5\ns = 0\nwhile n > 0:\n    n -= 1\n    s += n\nprint(s, n)\n```",
+        "analysis": "Python 没有自增自减运算符：`n--` 在 Python 中是合法的表达式，但会被解析成 `n - (-n)`（即 2n），值不会改变，写进 while 条件就是死循环。因此这里只能显式写 `n -= 1`。\n\n循环体的顺序决定了结果：先减 1 再累加，所以累加的是 4、3、2、1、0，s = 10；循环在 n 变成 0 时因条件 `n > 0` 不成立而退出，n 保持 0，输出 `10 0`——比 C 的 `10 -1` 少减了最后一次。\n\n这也说明：C 的 `while (n--)` 把“判断”和“修改”揉在一个表达式里，退出时变量已经越界一步；Python 把判断与修改分开写，边界更直观，但必须自己保证修改方向正确。",
+        "options": [
+          "10 -1",
+          "15 0",
+          "15 -1",
+          "10 0"
+        ],
+        "answer": 3
+      }
+    }
+  },
+  {
+    "id": "基-60",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "预处理",
+      "条件编译",
+      "宏"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\n#define N 4\n#if N > 3\n#define M 2\n#else\n#define M 1\n#endif\nint main(void)\n{\n    printf(\"%d\\n\", N * M);\n    return 0;\n}\n```",
+    "options": [
+      "4",
+      "8",
+      "6",
+      "编译错误：N 是变量不能出现在 #if 中"
+    ],
+    "answer": 1,
+    "analysis": "知识点：`#if` 是预处理指令，在编译之前由预处理器对“整数常量表达式”求值，此时宏已经被替换完毕。\n\n`#if N > 3` 展开为 `#if 4 > 3`，成立，于是只保留 `#define M 2` 这一支；`#else` 分支在预处理阶段就被整段丢弃，里面的 `#define M 1` 根本不会生效。最终 `N * M` 展开为 `4 * 2 = 8`。\n\n要点：`#if` 只能使用整数常量表达式，不能出现变量、`sizeof`、浮点数和字符串；`#ifdef X` 判断宏是否定义，`#if defined(X)` 是等价写法。\n\n选 4 是以为走了 `#else`；选 6 是误当成 `N + M`；选“编译错误”的人混淆了“宏”与“变量”——N 是宏名，预处理阶段就被替换成 4，所以当然能出现在 `#if` 中。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#define N 4\n#if N > 3\n#define M 2\n#else\n#define M 1\n#endif\nint main()\n{\n    std::cout << N * M << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的预处理器是同一套，答案仍是 8：`#if 4 > 3` 成立，只保留 `#define M 2`。\n\n但 C++ 提供了更安全的编译期分支手段。`if constexpr`（C++17）在模板实例化时按常量条件丢弃分支，被丢弃的分支不参与类型检查；`constexpr int N = 4;` 让常量拥有类型与作用域，而不是像宏那样在预处理阶段进行无类型文本替换。\n\n换句话说，C 只能用预处理器做“编译期分支”，C++ 还能用语言本身的常量求值机制，且更利于调试与重构——这也是现代 C++ 项目中 `#define` 常量逐渐被 `constexpr` 取代的原因。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\nN = 4\nif N > 3:\n    M = 2\nelse:\n    M = 1\nprint(N * M)\n```",
+        "analysis": "Python 没有预处理器，`#if` 这类“编译期分支”只能用运行期的 `if` 完成，结果仍是 8。\n\n本质区别在于：C 的条件编译发生在预处理阶段，未选中的分支连语法都无需完全成立（只要预处理指令配对），也不会生成任何代码；Python 的 `if` 是运行期语句，两个分支都必须先通过语法检查和字节码编译，只是其中之一不会被执行。\n\n这带来两点影响：其一，Python 无法用 `if` 屏蔽“当前平台不支持的语法或导入”，只能靠 `try/except ImportError` 或 `sys.platform` 判断；其二，C 的条件编译可以裁剪掉整个平台相关模块，Python 的模块裁剪只能在导入层面做。",
+        "options": [
+          "4",
+          "8",
+          "6",
+          "NameError: name 'M' is not defined"
+        ],
+        "answer": 1
+      }
+    }
+  },
+  {
+    "id": "基-61",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "赋值表达式",
+      "if语句",
+      "运算符"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int a = 0;\n\n    if (a = 3)\n        printf(\"T%d\\n\", a);\n    else\n        printf(\"F%d\\n\", a);\n    return 0;\n}\n```",
+    "options": [
+      "F0",
+      "T0",
+      "T3",
+      "编译错误：if 条件不能是赋值表达式"
+    ],
+    "answer": 2,
+    "analysis": "知识点：赋值表达式本身有值，其值等于赋值后左操作数的值；条件语句判断的是这个值是否非 0。\n\n`a = 3` 先把 a 改成 3，整个表达式的值也是 3，非 0 即为真，于是执行 if 分支，打印 3，输出 `T3`。\n\n干扰项 F0 是把 `=` 当成了 `==`（0 == 3 为假）；T0 是以为条件里的 a 还是旧值 0；编译错误则混淆了“语法合法”与“编译器警告”——大多数编译器只会给出 `suspicious assignment` 之类的警告，标准并不禁止。\n\n要避免这类错误：把常量写在左边（`if (3 == a)`，即“尤达表达式”），或开启 `-Wall -Wextra` 让警告变成错误（`-Werror`）。如果确实想在条件里赋值，应显式加括号 `if ((a = 3) != 0)` 表明意图。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int a = 0;\n\n    if (a = 3)\n        std::cout << \"T\" << a << '\\n';\n    else\n        std::cout << \"F\" << a << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 同样把赋值表达式的值作为条件，输出 `T3`；`-Wall` 会给出 `suggest parentheses around assignment used as truth value` 警告，但代码合法。\n\nC++ 还多了一种“声明式条件”（C++17 起）：`if (int b = f(); b > 0)` 可以在条件位置声明并初始化变量，变量的作用域覆盖 if/else 两个分支。这让“先算、再判断、再用结果”的写法不必再依赖赋值表达式的值。\n\n判断原则不变：条件里出现单个 `=` 几乎总是笔误。C++ 社区的做法是把条件写成 `if (3 == a)`，或干脆用 `if (const auto b = f(); ...)` 这种显式声明形式。"
+      },
+      "python": {
+        "stem": "下面程序的运行结果是（ ）。\n\n```python\na = 0\nif a = 3:\n    print(\"T\", a)\nelse:\n    print(\"F\", a)\n```",
+        "analysis": "Python 中赋值是**语句**而不是表达式，`if a = 3:` 直接是语法错误：`SyntaxError: invalid syntax`。\n\n原因是 Python 的语法规定 `if` 后面必须跟表达式，而赋值语句不能出现在表达式位置。这样设计正是为了避免 C 里 `if (a = 3)` 这类笔误——语言层面就不给你机会。\n\nPython 3.8 引入的海象运算符 `:=` 才允许在表达式中赋值：写成 `if (a := 3):` 就合法了，执行后 a 为 3，输出 `T 3`。考试里要分清 `=`（语句）、`:=`（表达式）与 `==`（比较）三者。",
+        "options": [
+          "T 3",
+          "F 0",
+          "SyntaxError: invalid syntax",
+          "T 0"
+        ],
+        "answer": 2
+      }
+    }
+  },
+  {
+    "id": "基-62",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "break",
+      "嵌套循环",
+      "循环控制"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int i, j;\n\n    for (i = 1; i <= 3; i++) {\n        for (j = 1; j <= 3; j++) {\n            if (j == 2)\n                break;\n            printf(\"(%d,%d)\", i, j);\n        }\n    }\n    printf(\"\\n\");\n    return 0;\n}\n```",
+    "options": [
+      "(1,1)(2,1)(3,1)",
+      "(1,1)",
+      "(1,1)(1,2)(1,3)",
+      "(1,1)(1,2)(1,3)(2,1)(2,2)(2,3)(3,1)(3,2)(3,3)"
+    ],
+    "answer": 0,
+    "analysis": "知识点：`break` 只能终止**它所在的那一层**循环（或 switch），不会影响外层。\n\n外层每取一个 i，内层都从 j = 1 重新开始：先打印 (i,1)，然后 j 变成 2 触发 break，内层结束；外层继续下一轮。因此三行分别输出 (1,1)、(2,1)、(3,1)，即 `(1,1)(2,1)(3,1)`。\n\n选 `(1,1)` 是以为 break 会一次跳出两层；选 `(1,1)(1,2)(1,3)` 是以为 break 跳出外层、只跑了第一轮；而选“九对全部打印”的人，是完全没有看到 break 的作用。\n\n要一次跳出多层循环，常用三种写法：设置标志变量、用 `goto` 跳到循环外、或把内层循环封装成函数用 `return` 提前返回。`continue` 则是跳过本轮剩余语句、直接进入下一次迭代，同样只作用于最内层。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    for (int i = 1; i <= 3; i++) {\n        for (int j = 1; j <= 3; j++) {\n            if (j == 2)\n                break;\n            std::cout << '(' << i << ',' << j << ')';\n        }\n    }\n    std::cout << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的 `break` 同样只作用于最内层循环，输出 `(1,1)(2,1)(3,1)`。\n\nC++ 跳出多层循环除了标志变量和 `goto`，还可以把循环体写成 lambda，用 `return` 从 lambda 返回（相当于跳出整个 lambda，而非两层循环）；或者借助 `std::find_if`、`std::any_of` 这类算法，把“找到即停”的语义交给标准库，避免手写 break。\n\n另外 C++20 起有 `std::stop_token` 之类的协作式取消机制，用于真正需要“从多层深度中断”的并发场景，普通嵌套循环不建议为了跳转而引入线程机制。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\nfor i in range(1, 4):\n    for j in range(1, 4):\n        if j == 2:\n            break\n        print(f\"({i},{j})\", end=\"\")\nprint()\n```",
+        "analysis": "Python 的 `break` 也只跳出最内层循环，输出同样是 `(1,1)(2,1)(3,1)`；`range(1, 4)` 左闭右开，正好对应 C 的 `i = 1; i <= 3`。\n\n跳出多层循环的惯用法与 C 不同：Python 常用标志变量，或把内层循环封装成函数后 `return`；也可以用 `for ... else` 结构——内层循环未被 break 时执行 else，配合标志位判断是否要中断外层。\n\nPython 没有 `goto`，所以“从深层循环直接跳出”只能靠函数封装或抛出异常，这也促使 Python 代码更倾向于把复杂循环拆成小函数。"
+      }
+    }
+  },
+  {
+    "id": "基-63",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "位运算",
+      "lowbit",
+      "二进制"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int x = 12;\n\n    printf(\"%d %d\\n\", x & (x - 1), x & -x);\n    return 0;\n}\n```",
+    "options": [
+      "8 4",
+      "4 8",
+      "0 4",
+      "8 2"
+    ],
+    "answer": 0,
+    "analysis": "知识点：两个经典的二进制位技巧。\n\nx = 12 = 1100₂。\n\n- `x & (x - 1)`：x − 1 = 1011₂，按位与得 1000₂ = 8，效果是**清除最低位的 1**。反复执行可以统计 1 的个数、判断是否为 2 的幂（一次清零后为 0 即为 2 的幂）。\n- `x & -x`：−x 在补码下是“取反加一”，低位的 0 保持不变、最低位的 1 及其右侧被保留，得 0100₂ = 4，即 **lowbit**，也就是 x 中最低位的 1 所对应的权值（树状数组的核心操作）。\n\n干扰项“4 8”是把两个式子记反了；\"0 4\" 是误以为 `x & (x-1)` 会清零全部；\"8 2\" 是 lowbit 算错成右移。\n\n注意 `x & -x` 依赖补码表示，且对 `INT_MIN` 取负会溢出，实际工程中应使用无符号类型。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int x = 12;\n\n    std::cout << (x & (x - 1)) << ' ' << (x & -x) << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的位运算规则相同，输出仍是 `8 4`：`12 & 11 = 8` 清除最低位的 1，`12 & -12 = 4` 得到 lowbit。\n\n两点 C++ 特有的注意事项：其一，C++20 起标准明确规定有符号整数采用补码表示，`x & -x` 的可移植性比 C 更好；但对 `INT_MIN` 取负仍是未定义行为，应该用 `unsigned`。其二，C++20 在 `<bit>` 中提供了 `std::popcount`、`std::has_single_bit`（判断 2 的幂）、`std::countr_zero`（最低位 1 的位置），语义比手写位技巧更清楚。\n\n写 `std::cout << x & (x-1)` 时务必加括号，否则会被解析成 `(std::cout << x) & (x-1)`。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\nx = 12\nprint(x & (x - 1), x & -x)\n```",
+        "analysis": "Python 的整数按无限位补码表示，`x & (x - 1)` 与 `x & -x` 的技巧依然成立：12 = 1100₂，结果为 8 和 4，与 C 一致。\n\n差异在于位宽：Python 没有 32 位或 64 位上界，`-x` 的“取反加一”是在无限位上做的，因此 `x & -x` 对任意大的正整数都正确，不会出现 C 中 `INT_MIN` 取负的溢出问题。\n\n另外 Python 提供了 `int.bit_count()`（3.10+）直接统计 1 的个数、`x.bit_length()` 求最高位位置；手写 lowbit 更多出现在算法练习（如树状数组）里，而不是性能优化。"
+      }
+    }
+  },
+  {
+    "id": "基-64",
+    "module": "C语言基础",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "for循环",
+      "逗号表达式",
+      "循环边界"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int i, j;\n\n    for (i = 0, j = 10; i < j; i++, j--)\n        ;\n    printf(\"%d %d\\n\", i, j);\n    return 0;\n}\n```",
+    "options": [
+      "4 6",
+      "5 4",
+      "5 5",
+      "6 6"
+    ],
+    "answer": 2,
+    "analysis": "知识点：`for` 的初始化部分与增量部分都可以用逗号表达式同时处理多个变量；循环次数由“条件第一次不成立”的时刻决定。\n\ni 从 0 递增、j 从 10 递减，每次循环两者各走一步。列出各轮开始时的 (i, j)：(0,10)、(1,9)、(2,8)、(3,7)、(4,6)、(5,5)，当 i = 5、j = 5 时 `i < j` 为假，循环结束，所以输出 `5 5`。\n\n干扰项“4 6”是少走了一轮（在第 4 轮就停下）；\"5 4\" 是把增量顺序看错；\"6 6\" 是多走一轮，误以为条件在增量之后才检查。\n\n记住 `for (初始化; 条件; 增量)` 的执行顺序是：初始化 → 判断条件 → 循环体 → 增量 → 再判断。空语句 `;` 在这里表示循环体什么都不做，只用来推进 i、j。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    for (int i = 0, j = 10; i < j; ++i, --j)\n        ;\n    std::cout << i << ' ' << j << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 中 `for` 的初始化可以声明多个同类型变量（`int i = 0, j = 10`），它们的作用域被限制在循环内；逻辑与 C 一致，输出 `5 5`。\n\n注意：如果写成 `for (int i = 0, j = 10; ...)` 后还想在循环外使用 i、j，就会编译错误，因为变量已在循环结束时销毁——这是 C++ 比 C 更严格的作用域规则带来的常见报错。\n\n另外习惯上 C++ 用前置 `++i` 而不是 `i++`：对内置类型两者等价，但对迭代器/自定义类型，前置版本少一次临时对象构造，这也是 C++ 的通用写法规范。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\ni, j = 0, 10\nwhile i < j:\n    i += 1\n    j -= 1\nprint(i, j)\n```",
+        "analysis": "Python 没有逗号运算符，多变量初始化用元组解包 `i, j = 0, 10`，更新也必须分开写或用 `i, j = i + 1, j - 1`（右侧先整体求值）。\n\n循环在 `i < j` 不成立时停止：从 (0,10) 出发，每轮各走一步，最终停在 i = j = 5，输出 `5 5`，与 C 相同。\n\n如果硬要用 for 表达，通常写成 `for i, j in zip(range(0, 5), range(10, 5, -1))`，但那样 i 和 j 的取值序列是 (0,10)、(1,9)…(4,6)，循环结束时 i、j 停在 4 和 6——这正好对应 C 选项里的干扰项，说明“用 for 模拟双指针”时边界很容易差一步。"
+      }
+    }
+  },
+  {
+    "id": "数-69",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "二分查找",
+      "下界",
+      "有序数组"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int a[8] = {1, 3, 3, 3, 5, 7, 9, 11};\n    int lo = 0, hi = 8, key = 3, mid;\n\n    while (lo < hi) {\n        mid = (lo + hi) / 2;\n        if (a[mid] < key)\n            lo = mid + 1;\n        else\n            hi = mid;\n    }\n    printf(\"%d\\n\", lo);\n    return 0;\n}\n```",
+    "options": [
+      "2",
+      "1",
+      "3",
+      "0"
+    ],
+    "answer": 1,
+    "analysis": "知识点：这是“下界二分”（lower_bound），求**第一个不小于 key** 的位置，而不是“找到任意一个等于 key 的位置”。\n\n区间采用左闭右开 `[lo, hi)`，循环不变量是“答案一定落在 [lo, hi) 中”。当 `a[mid] < key` 时，mid 及其左侧都不可能是答案，令 `lo = mid + 1`；否则 mid 本身可能就是答案，只能令 `hi = mid`，**不能写成 mid − 1**，否则会丢掉正确答案。\n\n推演：lo=0、hi=8，mid=4（a[4]=5 ≥ 3）→ hi=4；mid=2（3 ≥ 3）→ hi=2；mid=1（3 ≥ 3）→ hi=1；mid=0（1 < 3）→ lo=1；此时 lo=hi=1 结束，输出 1。\n\n干扰项 2 是普通二分第一次命中就返回的结果；3 是最后一个 3 的下标；0 是误以为返回“是否存在”。若把 `hi = mid` 改成 `hi = mid - 1`，本题会输出 0，这就是下界与普通二分的本质区别。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int a[8] = {1, 3, 3, 3, 5, 7, 9, 11};\n    int lo = 0, hi = 8, key = 3;\n\n    while (lo < hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (a[mid] < key)\n            lo = mid + 1;\n        else\n            hi = mid;\n    }\n    std::cout << lo << '\\n';\n    return 0;\n}\n```",
+        "analysis": "手写逻辑与 C 相同，输出 1；`mid` 用 `lo + (hi - lo) / 2` 是为了防止 `lo + hi` 溢出，这是 C/C++ 都推荐的写法。\n\n不过 C++ 标准库已经提供了语义完全一致的工具：`std::lower_bound(a, a + 8, 3) - a` 返回第一个不小于 3 的位置（1）；`std::upper_bound` 返回第一个大于 3 的位置（4）；两者相减正好是 3 的个数。这也是“数-69 这类题”在 C++ 中的工程写法——比赛中除非要改造比较规则，否则直接调用。\n\n注意 `std::lower_bound` 返回的是迭代器/指针，做差才得到下标，且结果类型是 `std::ptrdiff_t`。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\nimport bisect\n\na = [1, 3, 3, 3, 5, 7, 9, 11]\nprint(bisect.bisect_left(a, 3))\n```",
+        "analysis": "Python 标准库 `bisect` 提供了与 C 手写下界二分等价的函数：`bisect_left(a, 3)` 返回第一个不小于 3 的位置，即 1；`bisect_right(a, 3)` 返回第一个大于 3 的位置，即 4。\n\n`bisect_left` 与 `bisect_right` 的差值就是 key 在有序序列中出现的次数（这里 4 − 1 = 3），这也是“统计有序数组中某值出现次数”的标准做法，复杂度 O(log n)。\n\n`bisect` 要求序列已按升序排列，否则结果无意义；它还支持 `key` 参数（3.10+）按自定义规则比较元素，相当于 C++ 中给 `lower_bound` 传比较器。"
+      }
+    }
+  },
+  {
+    "id": "数-70",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "二维数组",
+      "初始化",
+      "缺省行数"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int a[][3] = {{1, 2}, {3}};\n\n    printf(\"%d %d %d\\n\", (int)(sizeof(a) / sizeof(a[0])), a[0][2], a[1][2]);\n    return 0;\n}\n```",
+    "options": [
+      "2 3 0",
+      "3 0 0",
+      "编译错误：二维数组的行数不能省略",
+      "2 0 0"
+    ],
+    "answer": 3,
+    "analysis": "知识点：二维数组定义时可以省略**第一维**（行数），编译器根据初始化列表的层数推导；但第二维（列数）必须写，因为它决定每行有多少个元素。\n\n这里初始化列表有两层 `{1, 2}` 和 `{3}`，所以行数为 2，列数固定为 3。数组共 6 个元素，`sizeof(a) = 24`、`sizeof(a[0]) = 12`，相除得 2，这也是“用 sizeof 求数组长度”的常用写法。\n\n部分初始化时，未被显式赋值的元素一律补 0：`a[0]` 是 {1,2,0}，`a[1]` 是 {3,0,0}，因此 `a[0][2]` 和 `a[1][2]` 都是 0。\n\n选“2 3 0”是把 `a[0][2]` 当成了行内最后一个有效值；选“3 0 0”是把列数 3 当成了行数；选“编译错误”则混淆了“第一维可省”与“两维都必须写”。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int a[][3] = {{1, 2}, {3}};\n\n    std::cout << sizeof(a) / sizeof(a[0]) << ' ' << a[0][2] << ' ' << a[1][2] << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 同样允许省略第一维、由初始化列表推导行数，且未显式初始化的元素补 0，输出仍是 `2 0 0`。\n\n如果你改用 `std::array<std::array<int, 3>, 2> a{{{1, 2}, {3}}};`，行数就由模板参数写死、不能再省；此时 `a.size()` 得 2，`a[0].size()` 得 3，`sizeof(a)` 仍是 24（没有额外开销），但语义更明确、还能配合范围 for 与算法库。\n\n要特别注意 `sizeof(a) / sizeof(a[0])` 只在“真正的数组”上成立：一旦 a 作为参数传给函数退化成指针，这个式子就永远得 1（64 位下可能得 2），所以 C++ 更推荐 `std::size(a)`（C++17）或 `std::array::size()`。"
+      },
+      "python": {
+        "stem": "下面程序的运行结果是（ ）。\n\n```python\na = [[1, 2], [3]]\nprint(len(a), a[1][2])\n```",
+        "analysis": "Python 的“二维列表”是列表的列表，每个子列表长度可以不同，也**不会**因为外层声明而自动补 0；`a = [[1, 2], [3]]` 中 `a[1]` 只有一个元素，访问 `a[1][2]` 直接抛出 `IndexError: list index out of range`。\n\n这与 C 的连续二维数组是两种模型：C 的 `int a[][3]` 在内存中是一整块 2×3 的连续空间，缺省元素一定存在且为 0；Python 的列表只保存引用，长度信息存在每个列表对象头里，越界由解释器检查。\n\n要在 Python 中模拟定长二维数组，应显式构造 `[[0] * 3 for _ in range(2)]`（注意不能写 `[[0] * 3] * 2`，那会让两行指向同一个列表）。",
+        "options": [
+          "2 0 0",
+          "2 3 0",
+          "3 0 0",
+          "抛出 IndexError：a[1] 只有 1 个元素，不会自动补 0"
+        ],
+        "answer": 3
+      }
+    }
+  },
+  {
+    "id": "数-71",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "数组遍历",
+      "最值",
+      "去重"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int a[6] = {5, 9, 9, 3, 7, 7};\n    int max1 = -1, max2 = -1, i;\n\n    for (i = 0; i < 6; i++) {\n        if (a[i] > max1) {\n            max2 = max1;\n            max1 = a[i];\n        } else if (a[i] > max2 && a[i] < max1) {\n            max2 = a[i];\n        }\n    }\n    printf(\"%d\\n\", max2);\n    return 0;\n}\n```",
+    "options": [
+      "9",
+      "7",
+      "5",
+      "3"
+    ],
+    "answer": 1,
+    "analysis": "知识点：一次遍历同时维护“最大值”和“严格第二大值”，关键是处理重复元素。\n\n规则是：遇到比 max1 大的，原来的 max1 降级为 max2；遇到不比 max1 大但比 max2 大的，更新 max2。第二个条件里必须同时有 `a[i] < max1`，否则重复出现的 9 会在 `a[i] > max2` 时被写入 max2，得到 9。\n\n推演：5 → max1=5；9 → max2=5、max1=9；第二个 9 不满足 `> max1`，也不满足 `< max1`，被跳过；3 不满足；7 → 7 > 5 且 7 < 9，max2=7；第二个 7 不满足 `> max2`，跳过。输出 7。\n\n干扰项 9 是漏掉 `a[i] < max1` 的结果；5 是忘了更新 max2；3 是只遍历了部分元素。如果题目要的是“第二大且允许重复”，则应输出 9，审题时要看清“严格”二字。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <set>\nint main()\n{\n    int a[6] = {5, 9, 9, 3, 7, 7};\n    std::set<int, std::greater<int>> s(a, a + 6);\n    auto it = s.begin();\n    std::advance(it, 1);\n    std::cout << *it << '\\n';\n    return 0;\n}\n```",
+        "analysis": "这段 C++ 代码用 `std::set` 的“自动去重 + 有序”特性求严格第二大：集合中元素降序排列为 9、7、5、3，第二个元素是 7，输出 7，与 C 手写两趟扫描的结论一致。\n\n两种实现各有取舍：`std::set` 版本 O(n log n)、需要额外 O(n) 空间，但代码短、天然去重；手写版本 O(n)、O(1) 空间，但必须小心重复值。也可以先 `std::sort(a, a + 6, std::greater<int>())` 再用 `std::unique` 去重，或者用 `std::nth_element` 配合去重。\n\n注意 `std::set` 的迭代器是双向迭代器，`s.begin() + 1` 不合法，必须用 `std::advance` 或 `std::next`。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\na = [5, 9, 9, 3, 7, 7]\nu = sorted(set(a), reverse=True)\nprint(u[1])\n```",
+        "analysis": "`set(a)` 去掉重复值得到 {3, 5, 7, 9}，`sorted(..., reverse=True)` 降序排成 [9, 7, 5, 3]，取下标 1 得 7，与 C 的一次遍历结果一致。\n\nPython 里最省事的写法正是“去重再排序”，代价是 O(n log n) 时间与 O(n) 空间；如果坚持一趟 O(n) 扫描，逻辑要和 C 完全一样，同样需要 `a[i] < max1` 这个守卫。\n\n常见错误是写成 `sorted(a)[-2]`：原数组含重复的 9，排序后是 [3,5,7,7,9,9]，`[-2]` 得 9，那是“第二大元素”而不是“严格第二大”。这也说明 Python 的简洁写法必须配合对题意的精确理解。"
+      }
+    }
+  },
+  {
+    "id": "数-72",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "字符数组",
+      "字符串",
+      "状态标记"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    char s[] = \"  I  love  C  \";\n    int i, cnt = 0, in = 0;\n\n    for (i = 0; s[i] != '\\0'; i++) {\n        if (s[i] != ' ') {\n            if (!in) {\n                cnt++;\n                in = 1;\n            }\n        } else {\n            in = 0;\n        }\n    }\n    printf(\"%d\\n\", cnt);\n    return 0;\n}\n```",
+    "options": [
+      "3",
+      "4",
+      "8",
+      "9"
+    ],
+    "answer": 0,
+    "analysis": "知识点：用“是否正处于单词内部”的状态标记 `in` 统计单词数，这是处理连续分隔符和首尾空白的标准做法。\n\n规则：遇到非空格且当前不在单词内（`in == 0`），说明进入了一个新单词，计数加 1 并置 `in = 1`；遇到空格就置 `in = 0`。这样连续多个空格只会把 in 反复置 0，不会重复计数；首部空格时 in 本来就是 0，也不会多算。\n\n字符串是 `\"  I  love  C  \"`，三个单词 I、love、C，输出 3。\n\n干扰项 8 是空格的总数（2+2+2+2），9 是“空格数 + 1”这种错误的朴素公式，4 是把结尾的两个空格误当成又开启了一个单词。只要字符串首尾可能有空白，就必须用状态机而不是简单公式。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <sstream>\n#include <string>\nint main()\n{\n    std::string s = \"  I  love  C  \";\n    std::istringstream iss(s);\n    std::string w;\n    int cnt = 0;\n\n    while (iss >> w)\n        cnt++;\n    std::cout << cnt << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的流提取运算符 `>>` 会**自动跳过前导空白**，并在下一个空白处停下，因此 `while (iss >> w) cnt++;` 天然完成了“按单词切分”，输出 3，无需手写状态机。\n\n这正是 C++ 相对 C 的便利：`std::istringstream` 把“切分”这件事交给流的状态机，连续空格和首尾空白都被正确处理，循环在提取失败（读到末尾）时结束。\n\n代价是要构造字符串流对象、逐个拷贝单词，常数比手写扫描大。若只统计个数而不需要单词内容，`std::count_if` 配合自定义判断，或 C++20 的 `std::ranges::views::split` 也是可选方案。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\ns = \"  I  love  C  \"\nprint(len(s.split()))\n```",
+        "analysis": "`str.split()` 不带参数时，按**任意长度的空白**切分，并丢弃切分产生的空串，因此 `\"  I  love  C  \".split()` 得到 `['I', 'love', 'C']`，长度为 3。\n\n如果把参数写成单个空格 `s.split(' ')`，则连续空格会产生空串：结果里会出现多个 `''`，长度变成 9，这正是本题的干扰项 9。\n\n所以 Python 中“统计单词数”几乎总是 `len(s.split())`；只有需要保留原始空白结构（例如格式化输出）时才用带参数的 split 或正则。这个差异也提示：C 里的状态机在 Python 里通常被一行库函数替代，但必须清楚库函数的默认行为。"
+      }
+    }
+  },
+  {
+    "id": "数-73",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "双指针",
+      "有序数组",
+      "两数之和"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int a[6] = {1, 2, 4, 6, 7, 11};\n    int i = 0, j = 5, target = 13, cnt = 0;\n\n    while (i < j) {\n        int s = a[i] + a[j];\n        if (s == target) {\n            cnt++;\n            i++;\n            j--;\n        } else if (s < target) {\n            i++;\n        } else {\n            j--;\n        }\n    }\n    printf(\"%d\\n\", cnt);\n    return 0;\n}\n```",
+    "options": [
+      "1",
+      "3",
+      "2",
+      "0"
+    ],
+    "answer": 2,
+    "analysis": "知识点：有序数组上的双指针（对撞指针）求“两数之和等于目标值”的对数。\n\n依据是单调性：若 `a[i] + a[j] < target`，由于 a[j] 已经是当前右端最大值，任何以 a[i] 为左端、下标更小的右端只会更小，所以 a[i] 可以直接排除，i 右移；反之 `> target` 时 a[j] 与任何更小的左端组合都偏大，j 左移。每步至少排除一个元素，总复杂度 O(n)。\n\n推演：1+11=12 < 13 → i=1；2+11=13 命中，cnt=1，i=2、j=4；4+7=11 < 13 → i=3；6+7=13 命中，cnt=2，i=4、j=3，循环结束。输出 2，对应 (2,11) 与 (6,7)。\n\n干扰项 1 是找到一个就退出；3 是把 (1,11) 这类和不为 13 的组合也算进去；0 是误以为没有解。注意本题数组必须有序，否则双指针法不成立。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int a[6] = {1, 2, 4, 6, 7, 11};\n    int i = 0, j = 5, target = 13, cnt = 0;\n\n    while (i < j) {\n        int s = a[i] + a[j];\n        if (s == target) { ++cnt; ++i; --j; }\n        else if (s < target) ++i;\n        else --j;\n    }\n    std::cout << cnt << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 版本逻辑相同，输出 2；把 `i++` 写成 `++i` 是 C++ 的书写习惯（对 int 无性能差异，对迭代器有）。\n\nC++ 还可以直接用标准算法表达同一目标：对每个 a[i]，用 `std::lower_bound` 在右侧找 `target - a[i]`，复杂度 O(n log n)；或者用 `std::unordered_map` 做 O(n) 但需要额外空间。双指针法的优势是 O(n) 时间 + O(1) 空间，前提是数组有序。\n\n如果数组无序又要 O(n)，就用哈希表存“已见过的值”，两数之和的经典解法正是这两种思路的分界。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\na = [1, 2, 4, 6, 7, 11]\ni, j, target, cnt = 0, len(a) - 1, 13, 0\n\nwhile i < j:\n    s = a[i] + a[j]\n    if s == target:\n        cnt += 1\n        i += 1\n        j -= 1\n    elif s < target:\n        i += 1\n    else:\n        j -= 1\n\nprint(cnt)\n```",
+        "analysis": "Python 没有 `++` 运算符，指针移动必须写成 `i += 1` / `j -= 1`；`j` 初始化为 `len(a) - 1` 对应 C 的 5。逻辑与 C 完全一致，输出 2。\n\nPython 里同一个问题还有更短的写法：`sum(1 for x in set(a) if target - x in set(a) ...)`，但要去重、要处理 `x == target - x` 的自配对，反而不如双指针清晰。\n\n这道题也体现了“算法与语言无关”的一面：C、C++、Python 三种写法的循环体几乎逐行对应，差别只在自增语法、数组长度获取方式和输出语句。"
+      }
+    }
+  },
+  {
+    "id": "数-74",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "二维数组",
+      "原地转置",
+      "循环边界"
+    ],
+    "stem": "要把 n×n 的矩阵 `int a[N][N]` **原地**转置（使 a[i][j] 与 a[j][i] 互换），下列双重循环写法正确的是（ ）。",
+    "options": [
+      "`for (i = 0; i < n; i++) for (j = 0; j < n; j++) { t = a[i][j]; a[i][j] = a[j][i]; a[j][i] = t; }`",
+      "`for (i = 0; i < n; i++) for (j = 0; j < n - i; j++) { t = a[i][j]; a[i][j] = a[j][i]; a[j][i] = t; }`",
+      "`for (i = 0; i <= n; i++) for (j = i + 1; j < n; j++) { t = a[i][j]; a[i][j] = a[j][i]; a[j][i] = t; }`",
+      "`for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) { t = a[i][j]; a[i][j] = a[j][i]; a[j][i] = t; }`"
+    ],
+    "answer": 3,
+    "analysis": "知识点：原地转置只需处理**上三角**（j > i），每一对 (i, j) 与 (j, i) 恰好交换一次。\n\n若 j 从 0 开始（即 `for (j = 0; j < n; j++)`），每对元素会被交换两次：第一次把 a[i][j] 换到 a[j][i]，等外层走到 i' = j、内层走到 j' = i 时又换回来，矩阵最终不变。\n\n若上界写成 `j < n - i`，循环只覆盖了右上角的一个三角形，左侧部分没被处理；例如 i=1 时 j 只到 n−2，而 (1,0) 这一对在 i=0 时已被换过，再换就换回去了，结果是错的。\n\n若外层写 `i <= n`，a[n][*] 越界，是未定义行为，可能破坏其他变量甚至崩溃。\n\n正确写法的时间复杂度 O(n²)、空间 O(1)，且 a[i][i] 的对角线元素本来就不用动。",
+    "variants": {
+      "cpp": {
+        "stem": "要把 n×n 的矩阵**原地**转置（使 a[i][j] 与 a[j][i] 互换），\n\n```cpp\nconst int N = 3;\nint a[N][N];\n```\n\n下列双重循环写法正确的是（ ）。",
+        "options": [
+          "`for (int i = 0; i < n; i++) for (int j = 0; j < n; j++) std::swap(a[i][j], a[j][i]);`",
+          "`for (int i = 0; i < n; i++) for (int j = 0; j < n - i; j++) std::swap(a[i][j], a[j][i]);`",
+          "`for (int i = 0; i <= n; i++) for (int j = i + 1; j < n; j++) std::swap(a[i][j], a[j][i]);`",
+          "`for (int i = 0; i < n; i++) for (int j = i + 1; j < n; j++) std::swap(a[i][j], a[j][i]);`"
+        ],
+        "answer": 3,
+        "analysis": "答案与 C 相同：只遍历上三角 `j = i + 1 ... n - 1`，用 `std::swap` 交换，时间复杂度 O(n²)、额外空间 O(1)。\n\nC++ 的好处是不用自己写临时变量，`std::swap` 对内置类型就是三次移动，语义清晰且不会写错类型。全区间遍历会让每对元素交换两次、矩阵复原；上界写成 `n - i` 只覆盖部分元素；外层写 `i <= n` 则越界。\n\n若要生成新矩阵而不是原地修改，C++ 可以写 `std::vector<std::vector<int>> t(n, std::vector<int>(n));` 再双重循环赋值，但那已经是 O(n²) 额外空间，不符合“原地”的要求。"
+      },
+      "python": {
+        "stem": "要把 n×n 的矩阵（列表的列表）**原地**转置，\n\n```python\nn = 3\na = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\n```\n\n下列写法正确的是（ ）。",
+        "options": [
+          "`for i in range(n): for j in range(n): a[i][j], a[j][i] = a[j][i], a[i][j]`",
+          "`a = list(map(list, zip(*a)))`",
+          "`for i in range(n): for j in range(i + 1, n): a[i][j] = a[j][i]`",
+          "`for i in range(n): for j in range(i + 1, n): a[i][j], a[j][i] = a[j][i], a[i][j]`"
+        ],
+        "answer": 3,
+        "analysis": "Python 的元组解包让交换一步完成：`a[i][j], a[j][i] = a[j][i], a[i][j]`，右侧先整体求值，不需要临时变量；`range(i + 1, n)` 对应 C 的 `j = i + 1; j < n`，只走上三角，这是正确写法。\n\n若遍历整个矩阵，每对元素会被交换两次、矩阵复原；`zip(*a)` 确实能转置，但它生成的是**新**列表，原矩阵没被修改，不符合“原地”；若只写 `a[i][j] = a[j][i]` 则是单向赋值，a[i][j] 被覆盖而 a[j][i] 没有写回，数据会被破坏。\n\n顺带记住：`zip(*a)` 得到的每行是元组，所以常见写法是 `[list(row) for row in zip(*a)]` 或 `list(map(list, zip(*a)))`。"
+      }
+    }
+  },
+  {
+    "id": "数-75",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "字符数组",
+      "部分初始化",
+      "strlen"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\n#include <string.h>\nint main(void)\n{\n    char s[10] = {'a', 'b'};\n\n    printf(\"%d %d\\n\", (int)strlen(s), (int)sizeof(s));\n    return 0;\n}\n```",
+    "options": [
+      "10 10",
+      "2 2",
+      "结果不确定：s 的其余元素是随机值",
+      "2 10"
+    ],
+    "answer": 3,
+    "analysis": "知识点：数组只要有初始化列表，未被显式初始化的元素一律**补 0**（不是随机值）；只有完全未初始化的局部数组才是随机内容。\n\n`s[0] = 'a'`、`s[1] = 'b'`，其余 8 个元素都是 0，而 0 正好是字符串结束符 `'\\0'`，所以 `strlen` 从头数到 s[2] 就停，得 2。\n\n`sizeof(s)` 求的是数组对象本身占的字节数，与内容无关，`char[10]` 就是 10。\n\n选“10 10”是把 sizeof 当成了 strlen；选“2 2”是把 sizeof 当成“有效字符数”；选“结果不确定”最关键——它把“部分初始化”与“完全未初始化”混为一谈，前者一定补 0，后者才是随机值（且读取未初始化值是未定义行为）。\n\n注意 `strlen` 只认 `'\\0'`，不会检查数组边界；如果 10 个元素都没写 0，`strlen` 会越界扫描。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <cstring>\nint main()\n{\n    char s[10] = {'a', 'b'};\n\n    std::cout << std::strlen(s) << ' ' << sizeof(s) << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的聚合初始化规则相同：未列出的元素被值初始化（char 为 0），`std::strlen(s)` 得 2，`sizeof(s)` 得 10，输出 `2 10`。\n\n两点提醒：其一，`std::cout << s` 会把它当 C 字符串输出 `ab`，但 `std::cout << s[0]` 输出的是字符 `a`；其二，`strlen` 返回 `std::size_t`（无符号），与有符号整数混用比较时会出现“负数被转成巨大无符号数”的经典 bug，所以工程上常写成 `static_cast<int>(std::strlen(s))`。\n\n更现代的做法是直接用 `std::string s(10, '\\0');` 或 `std::array<char, 10>`，避免 C 字符串的隐式结束符约定。"
+      },
+      "python": {
+        "stem": "在 Python 中，字符串 `s = \"ab\"` 的字符数与编码后的字节数分别是多少？下面程序的输出是（ ）。\n\n```python\ns = \"ab\"\nprint(len(s), len(s.encode()))\n```",
+        "analysis": "Python 的 `str` 是变长对象，长度由内容决定，没有“预留 10 个字节、其余补 0”的概念：`len(s)` 就是 2，UTF-8 编码后的字节数 `len(s.encode())` 也是 2（ASCII 字符各占 1 字节）。\n\n所以在 Python 里不存在 C 那种 “`sizeof` 与 `strlen` 必然不同”的现象；要模拟定长缓冲区应使用 `bytearray(10)`，它的 `len` 恒为 10，内容默认全 0，行为才接近 C 的 `char s[10]`。\n\n还要注意：对含中文的字符串，`len(s)`（字符数）与 `len(s.encode())`（字节数）会不同，这也是 Python 里“长度”一词必须区分字符与字节的原因。",
+        "options": [
+          "2 10",
+          "10 10",
+          "结果不确定：字符串长度由缓冲区决定",
+          "2 2"
+        ],
+        "answer": 3
+      }
+    }
+  },
+  {
+    "id": "数-76",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "快速排序",
+      "划分",
+      "数组"
+    ],
+    "stem": "下面程序用“挖坑法”以 a[0] 为基准对数组做一趟划分，输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int a[7] = {5, 3, 8, 4, 2, 7, 1};\n    int pivot = a[0], i = 0, j = 6;\n\n    while (i < j) {\n        while (i < j && a[j] >= pivot)\n            j--;\n        a[i] = a[j];\n        while (i < j && a[i] <= pivot)\n            i++;\n        a[j] = a[i];\n    }\n    a[i] = pivot;\n    printf(\"%d\\n\", i);\n    return 0;\n}\n```",
+    "options": [
+      "3",
+      "5",
+      "4",
+      "2"
+    ],
+    "answer": 2,
+    "analysis": "知识点：快速排序的一趟划分（挖坑法）。基准先取出，a[0] 成为“坑”；右指针从右往左找第一个小于基准的元素填进左坑，左指针从左往右找第一个大于基准的元素填进右坑，如此往复，最后把基准放到两指针相遇处。\n\n推演（pivot = 5）：j 停在 6（a[6]=1 < 5），a[0]=1；i 走到 2（a[2]=8 > 5），a[6]=8；j 停在 4（a[4]=2 < 5），a[2]=2；i 走到 4 与 j 相遇；a[4]=5。最终数组为 `1 3 2 4 5 7 8`，基准落在下标 4。\n\n此时基准左侧都 ≤ 5、右侧都 ≥ 5，但两侧内部并不有序——这正是“一趟划分”与“排好序”的区别。\n\n干扰项 3 是少走了一轮；5 是把基准的值当成下标；2 是只做了一次左右往返。划分的复杂度是 O(n)，且不需要额外空间。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序用“挖坑法”以 a[0] 为基准对数组做一趟划分，输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int a[7] = {5, 3, 8, 4, 2, 7, 1};\n    int pivot = a[0], i = 0, j = 6;\n\n    while (i < j) {\n        while (i < j && a[j] >= pivot) --j;\n        a[i] = a[j];\n        while (i < j && a[i] <= pivot) ++i;\n        a[j] = a[i];\n    }\n    a[i] = pivot;\n    std::cout << i << '\\n';\n    return 0;\n}\n```",
+        "analysis": "逻辑与 C 完全相同，输出 4，最终数组 `1 3 2 4 5 7 8`。\n\nC++ 标准库提供了现成的划分算法：`std::partition(a, a + 7, [pivot](int x) { return x < pivot; })` 返回分界迭代器，保证“小于基准的都在前面”，但它不保证基准元素落在分界位置，也不保证稳定；`std::stable_partition` 稳定但需要额外空间。\n\n教材里的“挖坑法”与 `std::partition` 的霍尔法、洛穆托法都属于同一类划分，考试要能按给定代码逐轮推演，而工程中优先用标准算法，避免手写下标越界。"
+      },
+      "python": {
+        "stem": "下面程序用“挖坑法”以 a[0] 为基准对列表做一趟划分，输出是（ ）。\n\n```python\na = [5, 3, 8, 4, 2, 7, 1]\npivot = a[0]\ni, j = 0, len(a) - 1\n\nwhile i < j:\n    while i < j and a[j] >= pivot:\n        j -= 1\n    a[i] = a[j]\n    while i < j and a[i] <= pivot:\n        i += 1\n    a[j] = a[i]\n\na[i] = pivot\nprint(i)\n```",
+        "analysis": "同样的挖坑逻辑在 Python 中输出 4，最终列表为 `[1, 3, 2, 4, 5, 7, 8]`。\n\nPython 写这段代码要特别注意两点：其一，没有 `--` 运算符，必须写 `j -= 1`；其二，`while i < j and a[j] >= pivot` 里的短路求值在这里是必须的——如果先访问 a[j] 再判断 i < j，指针相遇后就会越界。\n\n更 Pythonic 的划分是一行列表推导：`a = [x for x in a if x < pivot] + [pivot] + [x for x in a if x > pivot]`，但它创建了新列表、不是原地划分，空间复杂度从 O(1) 变成 O(n)。"
+      }
+    }
+  },
+  {
+    "id": "数-77",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "数组遍历",
+      "连续子段",
+      "计数"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int a[8] = {1, 2, 3, 1, 2, 3, 4, 0};\n    int best = 1, cur = 1, i;\n\n    for (i = 1; i < 8; i++) {\n        if (a[i] > a[i - 1])\n            cur++;\n        else\n            cur = 1;\n        if (cur > best)\n            best = cur;\n    }\n    printf(\"%d\\n\", best);\n    return 0;\n}\n```",
+    "options": [
+      "4",
+      "3",
+      "8",
+      "5"
+    ],
+    "answer": 0,
+    "analysis": "知识点：一次扫描求“最长连续递增子段”的长度，维护两个量——以当前位置结尾的递增长度 cur，以及全局最大值 best。\n\n转移规则：若 a[i] > a[i-1]，说明可以接在前一段后面，cur 加 1；否则当前元素自成一个长度为 1 的新段，cur 重置为 1。每步都用 cur 更新 best。\n\n数据 1,2,3,1,2,3,4,0：前三项让 cur 达到 3；遇到 1 时 1 > 3 不成立，cur 重置为 1；随后 2、3、4 让 cur 依次变成 2、3、4，best 更新为 4；最后一个 0 使 cur 回到 1。输出 4。\n\n干扰项 3 是只看第一段；8 误把整个数组长度当成答案；5 是把“后面那段”多算了一位。注意循环从 i = 1 开始，因为首元素没有前驱，cur 的初值应为 1。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <algorithm>\nint main()\n{\n    int a[8] = {1, 2, 3, 1, 2, 3, 4, 0};\n    int best = 1, cur = 1;\n\n    for (int i = 1; i < 8; i++) {\n        cur = (a[i] > a[i - 1]) ? cur + 1 : 1;\n        best = std::max(best, cur);\n    }\n    std::cout << best << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 版本用条件运算符和 `std::max` 把更新压成两行，输出仍是 4。\n\n`std::max` 来自 `<algorithm>`，要求两个参数类型一致，否则会有模板推导错误——这也是 C++ 里写 `std::max(best, cur)` 时不能混用 `int` 与 `size_t` 的原因。\n\n如果改成“最长递增子序列”（不要求连续），问题就完全不同，需要用动态规划 O(n²) 或贪心 + 二分 O(n log n)；本题的“连续”二字是关键，一旦看漏就会把答案算成 4 之外的数（例如非连续的最长递增长度是 4：1,2,3,4）。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\na = [1, 2, 3, 1, 2, 3, 4, 0]\nbest = cur = 1\nfor i in range(1, len(a)):\n    cur = cur + 1 if a[i] > a[i - 1] else 1\n    best = max(best, cur)\nprint(best)\n```",
+        "analysis": "`range(1, len(a))` 对应 C 的 `for (i = 1; i < 8; i++)`，逻辑一致，输出 4。\n\n注意 Python 的条件表达式写作 `A if cond else B`，与 C 的 `cond ? A : B` 顺序相反：真值写在最前面，条件在中间。写成 `cur + 1 if ... else 1` 时，整个表达式是一个值，可以放在赋值号右边。\n\n`best = cur = 1` 是链式赋值，两个名字绑定到同一个整数对象（整数不可变，所以后续各自重新绑定互不影响）。若把初始化写成 `best = cur = 0`，则当数组只有一个元素时会输出 0，属于边界遗漏。"
+      }
+    }
+  },
+  {
+    "id": "数-78",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "字符数组",
+      "整数取位",
+      "数字转字符串"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int n = 2024, i = 0;\n    char s[10];\n\n    while (n > 0) {\n        s[i++] = (char)('0' + n % 10);\n        n /= 10;\n    }\n    s[i] = '\\0';\n    printf(\"%s\\n\", s);\n    return 0;\n}\n```",
+    "options": [
+      "2024",
+      "4202",
+      "4202 之后还跟着不确定字符",
+      "编译错误：char 不能与 int 相加"
+    ],
+    "answer": 1,
+    "analysis": "知识点：整数逐位取出（`n % 10`）的顺序是“从低位到高位”，因此直接存进字符数组得到的是**逆序**的数字串。\n\n2024 依次取出 4、2、0、2，存成 s = {'4','2','0','2'}，再补 `'\\0'`，`printf(\"%s\")` 输出 `4202`。\n\n字符与整数的关系是：`'0' + 4` 得到字符 `'4'`（因为数字字符在 ASCII 中连续），这是数字转字符的标准写法；反过来 `c - '0'` 把字符转成数值。\n\n选 2024 是以为取位顺序就是高位在前；选“4202 之后还跟着不确定字符”对应的是**删掉** `s[i] = '\\0'` 的情况——此时数组没有结束符，`printf(\"%s\")` 会继续读数组之外的内存，属于未定义行为，可能输出乱码甚至崩溃；选“编译错误”则混淆了字符常量与整数的运算规则。\n\n若要得到正序，可在补结束符后再把前 i 个字符反转。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int n = 2024, i = 0;\n    char s[10];\n\n    while (n > 0) {\n        s[i++] = static_cast<char>('0' + n % 10);\n        n /= 10;\n    }\n    s[i] = '\\0';\n    std::cout << s << '\\n';\n    return 0;\n}\n```",
+        "analysis": "逐位取余再补结束符的逻辑与 C 相同，输出 `4202`。\n\nC++ 更地道的写法是 `std::string t = std::to_string(n);` 再 `std::reverse(t.begin(), t.end());`，或者用 `std::ostringstream` 拼接；手写 `char s[10]` 时唯一要小心的是缓冲区长度——n 的最大位数决定了数组至少要多长，否则 `s[i++]` 会越界。\n\n`std::cout << s` 会按 C 字符串输出直到 `'\\0'`，所以结束符绝不能漏；若改用 `std::string` 则不需要手动补 0，长度由对象维护，这也是 C++ 更安全的原因。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\nn = 2024\ns = str(n)[::-1]\nprint(s)\n```",
+        "analysis": "`str(n)` 得到 `\"2024\"`，切片 `[::-1]` 表示“从头到尾、步长 −1”，即整体反转，输出 `4202`，与 C 手写取位的结果一致。\n\nPython 字符串不可变，切片生成的是新串，所以不存在 C 里“忘了补 `'\\0'` 就越界读”的问题；反过来也没有 `char` 数组那种“原地修改”的写法，若要原地改只能先转成 `list(s)` 或 `bytearray`。\n\n若想按 C 的方式练习取位，可以写 `while n: s += str(n % 10); n //= 10`，注意 Python 的 `//` 是整除、`/` 会产生浮点数，这一点与 C 的整数除法不同。",
+        "options": [
+          "2024",
+          "4202",
+          "4202 之后还跟着不确定字符",
+          "TypeError: 字符串不可变，[::-1] 非法"
+        ],
+        "answer": 1
+      }
+    }
+  },
+  {
+    "id": "数-79",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "memcpy",
+      "memmove",
+      "重叠内存"
+    ],
+    "stem": "有 `char s[16] = \"abcdef\";`（数组余下元素为 0）。要把 `s[2..5]` 这四个字符 `\"cdef\"` 移动到 `s[0..3]`，使前 4 个字符变成 `\"cdef\"` 并以 `'\\0'` 结束。下列写法中**行为有定义且结果正确**的是（ ）。",
+    "options": [
+      "`memmove(s, s + 2, 4); s[4] = '\\0';`",
+      "`memcpy(s, s + 2, 4); s[4] = '\\0';`",
+      "`strcpy(s, s + 2);`",
+      "`memcpy(s + 2, s, 4); s[4] = '\\0';`"
+    ],
+    "answer": 0,
+    "analysis": "知识点：`memcpy` 要求源区间与目标区间**不重叠**，C 标准明确规定“若复制发生在重叠的对象之间，行为未定义”；`memmove` 则允许重叠，实现上会先判断方向或借助临时缓冲，等价于安全版 memcpy。\n\n本题源区间是 [2,6)、目标区间是 [0,4)，明显重叠，只有 `memmove` 能保证正确，再手动补上 `'\\0'` 即可得到 `\"cdef\"`。\n\n`memcpy` 那一项在多数实现上“碰巧”正确（glibc 的 memcpy 有时按正向复制），但标准不保证，换编译器/优化级别就可能出错，属于典型“能跑但错”的代码。\n\n`strcpy` 同样要求不重叠，且它按 `'\\0'` 判断长度，源与目标重叠时行为未定义；把方向和区间都写反的 `memcpy(s + 2, s, 4)` 会把 s[0..3] 复制到 s[2..5]，结果不是本题要求的字符串。",
+    "variants": {
+      "cpp": {
+        "stem": "有\n\n```cpp\nchar s[16] = \"abcdef\";\n```\n\n要把 `s[2..5]` 这四个字符 `\"cdef\"` 移动到 `s[0..3]`，使前 4 个字符变成 `\"cdef\"` 并以 `'\\0'` 结束。下列写法中**行为有定义且结果正确**的是（ ）。",
+        "options": [
+          "`std::memmove(s, s + 2, 4); s[4] = '\\0';`",
+          "`std::memcpy(s, s + 2, 4); s[4] = '\\0';`",
+          "`std::strcpy(s, s + 2);`",
+          "`std::memcpy(s + 2, s, 4); s[4] = '\\0';`"
+        ],
+        "answer": 0,
+        "analysis": "C++ 沿用 C 的约定：`std::memcpy` 的源与目标不得重叠，重叠是未定义行为；`std::memmove` 允许重叠，所以只有 `std::memmove` 那一项有定义且结果正确。\n\nC++ 算法库提供了更类型安全的替代：目标在前时用 `std::copy(first, last, dest)`（正向复制，安全），目标在后时用 `std::copy_backward`（反向复制，避免覆盖未读数据）。这两个算法不依赖 `void*` 和字节数，能保留元素类型。\n\n若改用 `std::string s = \"abcdef\"; s.erase(0, 2);`，结果是 `\"cdef\"` 且不需要手动补结束符——这也是 C++ 中处理字符串错位更推荐的方式。"
+      },
+      "python": {
+        "stem": "在 Python 中把列表前 4 个元素替换为下标 2~5 的元素，下面程序的输出是（ ）。\n\n```python\ns = list(\"abcdef\")\ns[0:4] = s[2:6]\nprint(\"\".join(s))\n```",
+        "analysis": "Python 的切片赋值会先对右侧 `s[2:6]` 求值，得到一个**新列表** `['c','d','e','f']`，然后再赋给左侧切片，因此源与目标重叠不会互相破坏——这与 C 的 `memcpy` 未定义行为形成鲜明对比。\n\n赋值后列表变成 `['c','d','e','f','e','f']`，输出 `cdefef`。注意切片赋值不要求两侧长度相等，它会自动伸缩列表；本题左右都是 4 个元素，所以长度不变。\n\n若要得到 `\"cdef\"`，应写 `s = s[2:6]`（生成新列表）或 `del s[4:]`（截断）。Python 的“切片先复制”语义让重叠操作天然安全，代价是可能产生临时对象。",
+        "options": [
+          "cdefef",
+          "cdef",
+          "cdcdef",
+          "行为未定义，取决于解释器实现"
+        ],
+        "answer": 0
+      }
+    }
+  },
+  {
+    "id": "数-80",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "冒泡排序",
+      "逆序对",
+      "交换次数"
+    ],
+    "stem": "下面程序对数组做冒泡排序（升序），输出交换次数。结果是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int a[5] = {4, 2, 5, 1, 3};\n    int i, j, t, cnt = 0;\n\n    for (i = 0; i < 4; i++)\n        for (j = 0; j < 4 - i; j++)\n            if (a[j] > a[j + 1]) {\n                t = a[j];\n                a[j] = a[j + 1];\n                a[j + 1] = t;\n                cnt++;\n            }\n    printf(\"%d\\n\", cnt);\n    return 0;\n}\n```",
+    "options": [
+      "5",
+      "4",
+      "10",
+      "6"
+    ],
+    "answer": 3,
+    "analysis": "知识点：冒泡排序中“相邻元素交换”的总次数恰好等于数组的**逆序对数**，因为每次相邻交换都只消除一个逆序对，且排好序时逆序对为 0。\n\n逐对统计 (i < j 且 a[i] > a[j])：4 与 2、1、3 构成 3 个；2 与 1 构成 1 个；5 与 1、3 构成 2 个；1 与 3 之间没有。合计 3 + 1 + 2 = 6。\n\n干扰项 10 是总比较次数（4+3+2+1），注意比较次数与交换次数是两回事——第 4 趟只比较不交换。\n\n这个结论也解释了为什么“用冒泡排序统计逆序对”是 O(n²) 的：它把每一对逆序都真正换了一次。若数据规模大，应改用归并排序或树状数组在 O(n log n) 内统计。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序对数组做冒泡排序（升序），输出交换次数。结果是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int a[5] = {4, 2, 5, 1, 3};\n    int cnt = 0;\n\n    for (int i = 0; i < 4; i++)\n        for (int j = 0; j < 4 - i; j++)\n            if (a[j] > a[j + 1]) {\n                std::swap(a[j], a[j + 1]);\n                cnt++;\n            }\n    std::cout << cnt << '\\n';\n    return 0;\n}\n```",
+        "analysis": "逻辑与 C 相同，输出 6；`std::swap` 省去临时变量，但交换次数统计的仍是“相邻比较后发生交换”的次数。\n\nC++ 中统计逆序对更常见的写法是归并排序（O(n log n)）或树状数组，因为冒泡排序在 n 较大时会超时；也可以用 `std::count_if` 做双重循环，但仍是 O(n²)。\n\n注意 `cnt` 的类型：最坏情况下逆序对数为 n(n−1)/2，n 达到 10 万时就会超过 `int` 范围，应使用 `long long`；这也是 C++ 竞赛代码里常见的溢出点。"
+      },
+      "python": {
+        "stem": "下面程序对列表做冒泡排序（升序），输出交换次数。结果是（ ）。\n\n```python\na = [4, 2, 5, 1, 3]\ncnt = 0\nfor i in range(len(a) - 1):\n    for j in range(len(a) - 1 - i):\n        if a[j] > a[j + 1]:\n            a[j], a[j + 1] = a[j + 1], a[j]\n            cnt += 1\nprint(cnt)\n```",
+        "analysis": "`range(len(a) - 1 - i)` 对应 C 的 `j < 4 - i`，元组交换 `a[j], a[j+1] = a[j+1], a[j]` 等价于三步交换，最终输出 6。\n\nPython 的整数不会溢出，所以 `cnt` 不必考虑类型范围；但冒泡排序本身仍是 O(n²)，数据量大时应该用 `sorted()`（Timsort，O(n log n)）或归并排序统计逆序对。\n\n如果想验证“交换次数 = 逆序对数”，可以写 `sum(1 for i in range(n) for j in range(i+1, n) if a[i] > a[j])`（注意要先保存原数组，因为冒泡排序会把它改成有序的）。"
+      }
+    }
+  },
+  {
+    "id": "数-81",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "数组遍历",
+      "平均值",
+      "整型除法"
+    ],
+    "stem": "下面程序统计数组中“小于平均值”的元素个数，输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int a[6] = {3, 8, 5, 10, 2, 7};\n    int sum = 0, i, cnt = 0;\n\n    for (i = 0; i < 6; i++)\n        sum += a[i];\n    for (i = 0; i < 6; i++)\n        if (a[i] < (double)sum / 6)\n            cnt++;\n    printf(\"%d\\n\", cnt);\n    return 0;\n}\n```",
+    "options": [
+      "2",
+      "3",
+      "4",
+      "1"
+    ],
+    "answer": 1,
+    "analysis": "知识点：先求和、再求平均、最后再扫一遍比较——统计“小于平均值”必须两趟，因为平均值依赖于全部元素。\n\nsum = 3+8+5+10+2+7 = 35，平均值 35/6 ≈ 5.8333。小于它的元素是 3、5、2，共 3 个。\n\n`(double)sum / 6` 中的强制转换是关键：若写成 `sum / 6`，整数除法得 5，此时小于 5 的只有 3 和 2，答案为 2，这正是主要干扰项。\n\n注意比较时不能写成 `a[i] < sum / 6.0` 之外的花样，也不要先把平均值存进 `int avg`——那样又会截断。\n\n另一个细节：如果平均值恰好等于某个元素，`<` 不把它计入，题目说“小于”就是严格小于；若要求“不大于”应改用 `<=`。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序统计数组中“小于平均值”的元素个数，输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <numeric>\n#include <algorithm>\nint main()\n{\n    int a[6] = {3, 8, 5, 10, 2, 7};\n    double sum = std::accumulate(a, a + 6, 0.0);\n    double avg = sum / 6;\n    int cnt = std::count_if(a, a + 6, [avg](int x) { return x < avg; });\n    std::cout << cnt << '\\n';\n    return 0;\n}\n```",
+        "analysis": "`std::accumulate` 的第三个参数是累加器的**初始值**，这里写 `0.0` 才让整个累加过程用 `double`；如果写成 `0`，累加会按 `int` 进行，虽然本题不会溢出，但在大数组上就可能溢出，而且后续除法仍要小心。\n\n`std::count_if` 配合 lambda 把“条件”表达得很清楚，输出 3。\n\n三种写法对比：手写两趟循环最直观；`accumulate` + `count_if` 更接近“描述意图”；但都要注意平均值是浮点数，比较时用 `<` 而不是 `==`。若元素是浮点数，还应考虑误差范围而不是精确相等。"
+      },
+      "python": {
+        "stem": "下面程序统计列表中“小于平均值”的元素个数，输出是（ ）。\n\n```python\na = [3, 8, 5, 10, 2, 7]\navg = sum(a) / len(a)\nprint(sum(1 for x in a if x < avg))\n```",
+        "analysis": "Python 的 `/` 是真除法，`35 / 6` 直接得到 5.8333…，不会掉进 C 的整数除法陷阱，因此答案是 3。\n\n`sum(1 for x in a if x < avg)` 是“计数型”生成器表达式：满足条件的元素各产生一个 1，再求和即为个数。也可以用 `len([x for x in a if x < avg])`，但生成器不建临时列表，更省内存。\n\n如果需要整数平均值，Python 用 `//`（向下取整）而不是 `/`；注意对负数 `//` 是向下取整（−7 // 2 = −4），而 C 的整数除法是向零截断（−7 / 2 = −3），这是两种语言在“整除”上的重要差异。"
+      }
+    }
+  },
+  {
+    "id": "数-82",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "字符数组",
+      "字符串反转",
+      "双指针"
+    ],
+    "stem": "下面程序把句子中的单词顺序颠倒（单词内部字母顺序不变），输出是（ ）。\n\n```c\n#include <stdio.h>\n#include <string.h>\n\nstatic void reverse(char *s, int i, int j)\n{\n    while (i < j) {\n        char t = s[i];\n        s[i] = s[j];\n        s[j] = t;\n        i++;\n        j--;\n    }\n}\n\nint main(void)\n{\n    char s[] = \"one two three\";\n    int n = (int)strlen(s), i, start = 0;\n\n    reverse(s, 0, n - 1);\n    for (i = 0; i <= n; i++) {\n        if (s[i] == ' ' || s[i] == '\\0') {\n            reverse(s, start, i - 1);\n            start = i + 1;\n        }\n    }\n    printf(\"%s\\n\", s);\n    return 0;\n}\n```",
+    "options": [
+      "eerht owt eno",
+      "one two three",
+      "three two one",
+      "eno owt eerht"
+    ],
+    "answer": 2,
+    "analysis": "知识点：“两次反转法”实现按单词逆序，空间复杂度 O(1)。\n\n第一步把整个字符串反转，得到 `eerht owt eno`：单词顺序反了，但每个单词内部的字母也反了。\n第二步再逐个单词做一次反转，单词内部恢复正序，于是得到 `three two one`。\n\n循环里 `i <= n` 而不是 `i < n`，是为了让 i 走到 `s[n]` 这个结束符时也能触发最后一个单词的反转——这是本题最容易漏掉的边界。`start` 记录当前单词的首字符下标，每遇到空格或结束符就把 [start, i−1] 反转，然后令 `start = i + 1`。\n\n干扰项 `eerht owt eno` 是只做了第一步；`one two three` 是两步都没做；`eno owt eerht` 是单词内部反了但顺序没反。整个过程每个字符被访问常数次，时间 O(n)。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序把句子中的单词顺序颠倒（单词内部字母顺序不变），输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <string>\n#include <algorithm>\n#include <sstream>\n\nint main()\n{\n    std::istringstream iss(\"one two three\");\n    std::string w;\n    std::string out;\n\n    while (iss >> w) {\n        if (!out.empty())\n            out = ' ' + out;\n        out = w + out;\n    }\n    std::cout << out << '\\n';\n    return 0;\n}\n```",
+        "analysis": "这段 C++ 代码每次把新单词拼到结果串的**前面**，最终得到 `three two one`，与 C 的两次反转法结果相同，但空间复杂度是 O(n)（反复拼接甚至可能 O(n²)）。\n\nC++ 的两种典型写法：其一是 `std::reverse` 两次反转（与 C 思路一致，`std::reverse(s.begin(), s.end())` 再对每个单词反转），O(1) 额外空间；其二是用 `std::vector<std::string>` 收集单词后逆序输出，代码最清晰。\n\n注意 `iss >> w` 会自动跳过连续空白，所以原句中的多个空格会在输出时被压缩成一个——如果要保留原空白结构，就必须手工扫描，标准流无法胜任。"
+      },
+      "python": {
+        "stem": "下面程序把句子中的单词顺序颠倒（单词内部字母顺序不变），输出是（ ）。\n\n```python\ns = \"one two three\"\nwords = s.split()\nprint(\" \".join(reversed(words)))\n```",
+        "analysis": "`s.split()` 按空白切分成 `['one', 'two', 'three']`，`reversed(words)` 逆序迭代，`\" \".join(...)` 用单个空格拼回，得到 `three two one`。\n\n这是 Python 风格的“高层”解法：一行完成，但额外占 O(n) 空间，且会规范化空白——原句若有多个连续空格或首尾空格，输出都会被压成单空格。C 的两次反转法在原文上原地修改，能保留原有空白，只是代码更长。\n\n`\" \".join(...)` 是 Python 拼接字符串的推荐方式，因为字符串不可变，用 `+=` 反复拼接会不断创建新对象，复杂度可能退化到 O(n²)。"
+      }
+    }
+  },
+  {
+    "id": "数-83",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "数组遍历",
+      "相邻比较",
+      "边界"
+    ],
+    "stem": "下面程序查找数组中“第一次出现下降”的位置，输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int a[6] = {1, 3, 3, 2, 5, 4};\n    int i, pos = -1;\n\n    for (i = 0; i < 6 - 1; i++)\n        if (a[i] > a[i + 1]) {\n            pos = i;\n            break;\n        }\n    printf(\"%d\\n\", pos);\n    return 0;\n}\n```",
+    "options": [
+      "3",
+      "4",
+      "2",
+      "-1"
+    ],
+    "answer": 2,
+    "analysis": "知识点：比较相邻元素时，循环上界必须是 n − 1，否则访问 a[i + 1] 会越界。\n\n逐个检查：i=0 时 1 > 3 不成立；i=1 时 3 > 3 不成立（相等不算下降）；i=2 时 3 > 2 成立，记录 pos = 2 并 break。输出 2。\n\n注意 pos 记录的是“下降对中前一个元素”的下标，而不是后一个。若改成记录 i + 1，答案就变成 3，这是常见歧义点，读题时要看题目问的是“哪个位置开始下降”。\n\n干扰项 4 是误以为要一直找下去并记录最后一个下降点（4 处 5 > 4 也成立）；−1 是误以为数组已有序。\n\n若数组本身非降序，循环正常结束，pos 保持初值 −1，这种“哨兵初值”写法比用额外标志位更简洁。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序查找数组中“第一次出现下降”的位置，输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <algorithm>\n#include <functional>\nint main()\n{\n    int a[6] = {1, 3, 3, 2, 5, 4};\n    int *p = std::adjacent_find(a, a + 6, std::greater<int>());\n    std::cout << (p == a + 6 ? -1 : (int)(p - a)) << '\\n';\n    return 0;\n}\n```",
+        "analysis": "`std::adjacent_find` 在区间中查找第一对满足谓词的相邻元素；谓词用 `std::greater<int>()` 表示“前一个大于后一个”，正好对应“下降”。返回值是指向这对元素中**前一个**的迭代器，减 a 得下标 2，与手写循环一致。\n\n若找不到，它返回的是尾迭代器 `a + 6`，所以要判断 `p == a + 6` 再输出 −1——这种“返回尾迭代器表示未找到”是 C++ 标准算法的通用约定（`std::find` 等也一样）。\n\n用标准算法的好处是边界（n − 1）由库保证，不会写出 `a[i+1]` 越界；代价是要理解谓词与返回值的语义。"
+      },
+      "python": {
+        "stem": "下面程序查找列表中“第一次出现下降”的位置，输出是（ ）。\n\n```python\na = [1, 3, 3, 2, 5, 4]\npos = next((i for i in range(len(a) - 1) if a[i] > a[i + 1]), -1)\nprint(pos)\n```",
+        "analysis": "`next(生成器, 默认值)` 的第二个参数是“找不到时的返回值”，因此这里等价于 C 的 `pos = -1` 初值加 break，输出 2。\n\n`range(len(a) - 1)` 与 C 的 `i < n - 1` 对应；如果写成 `range(len(a))`，最后一轮会访问 `a[i + 1]`，在 i = n − 1 时越界抛 `IndexError`（Python 不会像 C 那样静默读脏数据，而是直接报错，这一点反而更安全）。\n\n生成器表达式是惰性的：`next` 一旦取到第一个满足条件的 i 就停止计算，效果与 break 相同，也不建临时列表。"
+      }
+    }
+  },
+  {
+    "id": "数-84",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "字符串函数",
+      "strncmp",
+      "strcmp"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\n#include <string.h>\nint main(void)\n{\n    printf(\"%d %d\\n\", strncmp(\"abcdef\", \"abcxyz\", 3), strcmp(\"abc\", \"abd\") < 0);\n    return 0;\n}\n```",
+    "options": [
+      "0 0",
+      "0 1",
+      "负数 1",
+      "1 1"
+    ],
+    "answer": 1,
+    "analysis": "知识点：`strncmp(s1, s2, n)` 只比较前 n 个字符，`strcmp` 比较到第一个不同的字符或结束符为止。\n\n`strncmp(\"abcdef\", \"abcxyz\", 3)` 比较的是 `\"abc\"` 与 `\"abc\"`，前 3 个字符完全相同，返回 0——尽管两个字符串整体不同，但只比较 3 个字符就停。\n\n`strcmp(\"abc\", \"abd\")` 在第三个字符处不同，'c' < 'd'，返回一个负整数；再与 0 比较得真，输出 1。\n\n干扰项“负数 1”是把 strncmp 当成了 strcmp；\"0 0\" 是误以为 strcmp 返回布尔值；\"1 1\" 是误以为 strncmp 返回“是否相等”的 1。\n\n要记牢：这三个函数返回的是 int（负/零/正），不是 bool；判断相等用 `== 0`，判断大小用 `< 0` 或 `> 0`，不要写成 `== -1`，因为具体返回值由实现决定。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <cstring>\n#include <string>\nint main()\n{\n    std::cout << std::strncmp(\"abcdef\", \"abcxyz\", 3) << ' '\n              << (std::string(\"abc\") < std::string(\"abd\")) << '\\n';\n    return 0;\n}\n```",
+        "analysis": "`std::strncmp` 的语义与 C 相同，前 3 个字符一致返回 0；`std::string` 的 `<` 运算符按字典序比较，`\"abc\" < \"abd\"` 为真，输出 `0 1`。\n\n这里体现了 C++ 的双轨制：C 风格字符串函数返回三值 int，而 `std::string` 的比较运算符返回 bool，且不需要关心结束符与长度参数。\n\n工程上应优先用 `std::string` 或 C++17 的 `std::string_view`：`std::string_view(\"abcdef\").substr(0, 3) == \"abc\"` 既表达了“比较前 3 个字符”，又不会误用长度参数。注意 `std::string` 的 `compare` 成员函数仍返回三值 int，与 `<` 不同。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\ns1, s2 = \"abcdef\", \"abcxyz\"\nprint(s1[:3] == s2[:3], \"abc\" < \"abd\")\n```",
+        "analysis": "Python 用切片 `s1[:3]` 取出前 3 个字符再比较，效果等价于 `strncmp(..., 3)`，结果为 `True`；字符串的 `<` 直接按字典序比较，`\"abc\" < \"abd\"` 也为 `True`，输出 `True True`。\n\n与 C 的关键差异：Python 的比较运算符返回**布尔值**，不存在“负/零/正”的三值约定，所以不会出现 `strcmp(...) == -1` 这种不可移植的写法；同时字符串是值语义，`==` 比较内容而不是地址。\n\n另外 Python 字符串比较按 Unicode 码位进行，C 的 `strcmp` 按 `unsigned char` 的字节值比较；对纯 ASCII 两者一致，对非 ASCII 文本（如中文）结果可能不同。",
+        "options": [
+          "True False",
+          "True True",
+          "False True",
+          "0 1"
+        ],
+        "answer": 1
+      }
+    }
+  },
+  {
+    "id": "数-85",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "数组",
+      "桶计数",
+      "分段统计"
+    ],
+    "stem": "下面程序按分数段统计人数并输出 5 个桶的计数，输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int a[10] = {85, 62, 77, 91, 55, 68, 73, 88, 95, 60};\n    int cnt[5] = {0}, i;\n\n    for (i = 0; i < 10; i++) {\n        if (a[i] < 60)        cnt[0]++;\n        else if (a[i] < 70)   cnt[1]++;\n        else if (a[i] < 80)   cnt[2]++;\n        else if (a[i] < 90)   cnt[3]++;\n        else                  cnt[4]++;\n    }\n    for (i = 0; i < 5; i++)\n        printf(i ? \" %d\" : \"%d\", cnt[i]);\n    printf(\"\\n\");\n    return 0;\n}\n```",
+    "options": [
+      "2 2 2 3 1",
+      "1 2 2 3 2",
+      "0 3 2 2 2",
+      "1 3 2 2 2"
+    ],
+    "answer": 3,
+    "analysis": "知识点：把连续区间映射到数组下标（桶计数），用 `else if` 链保证每个元素只落进一个桶。\n\n数组元素分类：55 落在 <60（1 人）；62、68、60 落在 [60,70)（3 人）；77、73 落在 [70,80)（2 人）；85、88 落在 [80,90)（2 人）；91、95 落在 ≥90（2 人）。合计 10 人，输出 `1 3 2 2 2`。\n\n边界处理是本题核心：用 `< 上界` 而不是 `<= 上界`，60 分才会落进 [60,70) 而不是 <60；若把第一个条件写成 `a[i] <= 60`，60 会被算进不及格桶，结果变成 `2 2 2 2 2`。\n\n干扰项“2 2 2 3 1”是把桶的顺序记反了；“1 2 2 3 2”是边界整体错位一格；“0 3 2 2 2”是漏掉了 55。\n\n`printf(i ? \" %d\" : \"%d\", cnt[i])` 用三元运算符控制分隔符，避免行末多出空格，是格式化输出的常用技巧。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序按分数段统计人数并输出 5 个桶的计数，输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <array>\nint main()\n{\n    int a[10] = {85, 62, 77, 91, 55, 68, 73, 88, 95, 60};\n    std::array<int, 5> cnt{};\n\n    for (int x : a) {\n        if (x < 60)      cnt[0]++;\n        else if (x < 70) cnt[1]++;\n        else if (x < 80) cnt[2]++;\n        else if (x < 90) cnt[3]++;\n        else             cnt[4]++;\n    }\n    for (int i = 0; i < 5; i++)\n        std::cout << (i ? \" \" : \"\") << cnt[i];\n    std::cout << '\\n';\n    return 0;\n}\n```",
+        "analysis": "`std::array<int, 5> cnt{};` 的 `{}` 是值初始化，把 5 个元素全部置 0——这比 C 里写 `= {0}` 更不容易被误解成“只初始化第一个元素”。逻辑与 C 相同，输出 `1 3 2 2 2`。\n\n`for (int x : a)` 是范围 for，不需要下标，也就不容易写错边界；`std::array` 的长度由类型携带，`cnt.size()` 恒为 5。\n\n如果想更“描述式”一点，可以对每个区间用 `std::count_if(a, a + 10, [](int x){ return x >= 60 && x < 70; })` 统计，但那要扫 5 遍数组；桶计数只需一遍，是 O(n) 更优解。"
+      },
+      "python": {
+        "stem": "下面程序按分数段统计人数并输出 5 个桶的计数，输出是（ ）。\n\n```python\na = [85, 62, 77, 91, 55, 68, 73, 88, 95, 60]\ncnt = [0] * 5\n\nfor x in a:\n    if x < 60:\n        cnt[0] += 1\n    elif x < 70:\n        cnt[1] += 1\n    elif x < 80:\n        cnt[2] += 1\n    elif x < 90:\n        cnt[3] += 1\n    else:\n        cnt[4] += 1\n\nprint(*cnt)\n```",
+        "analysis": "`[0] * 5` 生成 5 个 0 的列表，因为 int 不可变，`cnt[0] += 1` 只会重新绑定该位置而不会影响其他位置，这与 `[[0] * 5] * 2` 这种“共享内层列表”的坑不同。\n\n`elif` 链与 C 的 `else if` 等价，逐段判断后输出 `1 3 2 2 2`；`print(*cnt)` 用解包把 5 个元素以空格分隔输出，等价于 C 里控制分隔符的写法。\n\nPython 里更简洁的替代是 `bisect`：把分界点 [60,70,80,90] 作为有序列表，`bisect_right`（或 `bisect_left`）返回桶下标，循环体只剩一行。但要注意开闭区间的约定，写错一边就会出现边界错位。"
+      }
+    }
+  },
+  {
+    "id": "数-86",
+    "module": "数组",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "数组",
+      "计数",
+      "多重集合"
+    ],
+    "stem": "下面程序判断两个等长数组是否互为“排列”（元素相同、顺序可不同），输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int a[5] = {1, 2, 3, 4, 5};\n    int b[5] = {0, 2, 4, 4, 5};\n    int cnt[6] = {0}, i, ok = 1;\n\n    for (i = 0; i < 5; i++) {\n        cnt[a[i]]++;\n        cnt[b[i]]--;\n    }\n    for (i = 0; i < 6; i++)\n        if (cnt[i] != 0)\n            ok = 0;\n    printf(\"%d\\n\", ok);\n    return 0;\n}\n```",
+    "options": [
+      "0",
+      "1",
+      "5",
+      "编译错误：数组下标不能是变量"
+    ],
+    "answer": 0,
+    "analysis": "知识点：用“计数抵消”判断两个序列是否互为排列——a 中出现的值加 1，b 中出现的值减 1，若所有计数都归零，则两者是同一多重集合。\n\n逐值看：a 贡献 1、2、3、4、5 各一次；b 贡献 0、2、4、4、5 各一次。抵消后 cnt[1] = 1、cnt[3] = 1、cnt[0] = −1、cnt[4] = −1，其余为 0，所以 ok = 0。\n\n本题是刻意设计的反例：两个数组长度相同、元素和也相同（都是 15）、最大值也相同，但显然不是排列。这说明“和相等”或“异或相等”都不足以判定排列，必须逐值计数（或排序后逐位比较）。\n\n选 1 是只看求和的结果；选 5 是误把数组长度当答案；选“编译错误”的人错误地认为下标不能是变量——C 的数组下标完全可以是任意整型表达式。\n\n注意这个计数法要求值域已知且不大（这里是 0~5），否则要用排序或哈希表。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序判断两个等长数组是否互为“排列”（元素相同、顺序可不同），输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <algorithm>\nint main()\n{\n    int a[5] = {1, 2, 3, 4, 5};\n    int b[5] = {0, 2, 4, 4, 5};\n\n    std::cout << std::is_permutation(a, a + 5, b) << '\\n';\n    return 0;\n}\n```",
+        "analysis": "`std::is_permutation(first1, last1, first2)`（C++11，`<algorithm>`）判断第二段是否是第一段的排列，第三段长度由第一段决定，因此两段必须等长。这里返回 false，`std::cout` 输出 0。\n\n它的典型实现正是“先找第一个不同的位置，再对剩余部分做计数/排序比较”，与手写计数抵消的思路一致但更通用：不要求值域有限，也不要求元素可哈希，只需可比较相等。\n\n对照记忆：`std::is_permutation` 判断“多重集合相等”；`std::equal` 判断“逐位相等”；`std::mismatch` 返回第一处不同的位置。三者常被混淆。"
+      },
+      "python": {
+        "stem": "下面程序判断两个等长列表是否互为“排列”（元素相同、顺序可不同），输出是（ ）。\n\n```python\nfrom collections import Counter\n\na = [1, 2, 3, 4, 5]\nb = [0, 2, 4, 4, 5]\nprint(int(Counter(a) == Counter(b)))\n```",
+        "analysis": "`Counter` 是“多重集合”的字典实现：它记录每个值出现的次数，两个 Counter 相等当且仅当所有值的计数都相同。这里 a 有 1、3，b 有 0 和多余的 4，所以不相等，输出 0。\n\n`Counter(a) == Counter(b)` 会自动处理“某值只在一侧出现”的情况（缺失视为计数 0），因此不需要手动补键；这也是它比“逐个值查表”更省心的原因。\n\n其他写法：`sorted(a) == sorted(b)` 语义相同但 O(n log n)；`sum(a) == sum(b) and len(a) == len(b)` 是**错误**的判定（本题两数组和都是 15，却会被误判为排列），这正是本题想暴露的陷阱。",
+        "options": [
+          "0",
+          "1",
+          "5",
+          "True"
+        ],
+        "answer": 0
+      }
+    }
+  },
+  {
+    "id": "指-77",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "const指针",
+      "解引用",
+      "只读访问"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    int x = 5;\n    const int *p = &x;\n\n    x = 8;\n    printf(\"%d\\n\", *p);\n    return 0;\n}\n```",
+    "options": [
+      "5",
+      "8",
+      "编译错误：const int * 不能指向普通变量",
+      "运行错误：读取 const 修饰的内存"
+    ],
+    "answer": 1,
+    "analysis": "知识点：`const int *p` 表示“p 指向一个 const int”，限制的是**通过 p 这个途径**去修改对象，并不会把 x 本身变成常量。\n\nx 是普通 int，用 `x = 8` 直接赋值完全合法；p 中保存的地址没变，再次解引用读到的是 x 的当前值 8。\n\n干扰项 5 是误以为 const 冻结了被指对象；\"编译错误\" 混淆了“指向常量的指针”与“常量对象”——`const int *p = &x;` 中 x 不是 const，把非 const 对象的地址赋给指向常量的指针是允许的（反过来，把 const 对象的地址赋给普通指针才需要强制转换）。\n\n与之相对，`int *const p = &x;` 才是“指针本身不能改”，此时可以 `*p = 8` 但不能 `p = &y`；`const int *const p` 则两者都锁死。三种写法的区别是本章必考点。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    int x = 5;\n    const int *p = &x;\n\n    x = 8;\n    std::cout << *p << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 的规则与 C 相同：`const int *p` 只是“通过 p 只读”，x 依然可以被直接修改，输出 8。`const int *p` 与 `int const *p` 完全等价，const 修饰的是被指对象。\n\nC++ 还允许 const 引用 `const int &r = x;` 起到类似“只读视图”的作用，且没有空指针问题；而 `const_cast` 可以去掉 const，但如果原对象本身是 const（`const int x = 5;`），通过 const_cast 修改它是未定义行为。\n\n另外注意：把 `const int *` 隐式转成 `int *` 在 C++ 中是编译错误（C 只给警告），必须显式 `const_cast`，这是 C++ 类型系统更严格的一处体现。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\nx = 5\np = x\nx = 8\nprint(p)\n```",
+        "analysis": "Python 没有指针，也没有 const；变量是“名字到对象的绑定”。`p = x` 让 p 也绑定到整数对象 5，随后 `x = 8` 只是把名字 x 重新绑定到新对象 8，p 仍绑定在 5 上，所以输出 5。\n\n这正是与 C 的关键差异：C 的 p 保存的是 x 的**地址**，x 变化后通过 p 能看到新值；Python 的名字保存的是**对象引用**，重新赋值只是改绑定，不会影响已经指向旧对象的其他名字。\n\n若确实需要“通过另一个名字观察到更新”，必须使用可变容器，例如 `box = [5]; p = box; box[0] = 8; print(p[0])` 输出 8——因为两个名字指向同一个列表对象，修改的是对象内部状态而不是重新绑定。",
+        "options": [
+          "8",
+          "5",
+          "编译错误：Python 没有 const",
+          "None"
+        ],
+        "answer": 1
+      }
+    }
+  },
+  {
+    "id": "指-78",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "动态内存",
+      "free",
+      "悬空指针"
+    ],
+    "stem": "执行完下面的代码后，关于指针 p 的说法正确的是（ ）。\n\n```c\nint *p = (int *)malloc(sizeof(int));\nif (p != NULL) {\n    *p = 10;\n    free(p);\n}\n```",
+    "options": [
+      "p 被 free 自动置为 NULL，再解引用会立刻崩溃",
+      "p 的值变成 0，因为那块内存已经被回收",
+      "p 仍保存原来申请到的地址，成为悬空指针，再解引用是未定义行为",
+      "p 指向的内存被清零，*p 恒等于 0"
+    ],
+    "answer": 2,
+    "analysis": "知识点：`free` 只把堆块归还给分配器，它接收的是指针的**值**（一份拷贝），不会修改调用者的指针变量。\n\n因此 free 之后 p 里仍是原来的地址，只是那块内存已不再属于本程序，这种指针称为“悬空指针（dangling pointer）”。继续 `*p`、`p[0]`、再次 `free(p)` 都是未定义行为：可能读到旧值、可能读到分配器写进去的链表信息、也可能崩溃，具体取决于实现与运行时机。\n\n干扰项“自动置 NULL”是把某些调试工具/语言（如 Java 的引用置空）的行为当成了 C 标准；\"值变成 0\" 与 \"内存被清零\" 都是对 free 语义的误解——标准只保证内存可被重新分配，不保证内容。\n\n正确习惯是 `free(p); p = NULL;`，并在 free 前确认 p 来自 malloc/calloc/realloc 且未被释放过。",
+    "variants": {
+      "cpp": {
+        "stem": "执行完下面的代码后，关于指针 p 的说法正确的是（ ）。\n\n```cpp\nint *p = new int(10);\ndelete p;\n```",
+        "analysis": "`delete p` 与 `free(p)` 一样只释放对象、不改变指针变量的值，p 仍保存原地址，成为悬空指针；再 `*p` 或 `delete p` 都是未定义行为（后者是重复释放）。\n\nC++ 的改进手段是智能指针：`std::unique_ptr<int> p = std::make_unique<int>(10);` 在离开作用域时自动 delete，且无法被复制，从机制上避免悬空；`std::shared_ptr` 用引用计数管理共享所有权。\n\n如果必须用裸指针，标准做法是 `delete p; p = nullptr;`，并且 delete 之后不要再通过任何别名访问该对象——多个指针指向同一对象时，即使把其中一个置空，其他别名仍然是悬空的。",
+        "options": [
+          "p 被 delete 自动置为 nullptr，再解引用会立刻崩溃",
+          "p 的值变成 0，因为那块内存已经被回收",
+          "p 仍保存原来申请到的地址，成为悬空指针，再解引用是未定义行为",
+          "p 指向的内存被清零，*p 恒等于 0"
+        ],
+        "answer": 2
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\np = [10]\nq = p\ndel p\nprint(q[0])\n```",
+        "analysis": "`del p` 只删除名字 p 这个绑定，对象 [10] 的引用计数从 2 减到 1（q 仍引用它），所以对象不会被回收，`q[0]` 正常输出 10。\n\n这与 free 的模型完全不同：free 立即把堆块归还，留下悬空指针；Python 用引用计数（加循环垃圾回收）延迟释放，只要还有名字引用对象，它就活着。因此 Python 里几乎不会出现“悬空引用”，除非是弱引用（`weakref`）指向已被回收的对象，或文件/网络连接这类需要显式关闭的资源。\n\n代价是对象生命周期不直观：`del` 不等于释放，`gc.collect()` 也只处理循环引用，实际释放时机由实现决定。",
+        "options": [
+          "抛出 NameError：p 已被删除",
+          "0",
+          "10",
+          "None"
+        ],
+        "answer": 2
+      }
+    }
+  },
+  {
+    "id": "指-79",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "数组名",
+      "指针退化",
+      "类型"
+    ],
+    "stem": "有定义\n\n```c\nint a[5] = {1, 2, 3, 4, 5};\nint *p = a;\n```\n\n下列关于 a 与 p 的说法，正确的是（ ）。",
+    "options": [
+      "`sizeof(a)` 与 `sizeof(p)` 相等",
+      "`a` 可以执行 `a++`，而 `p` 不能自增",
+      "`a` 与 `p` 都是指针变量，都占 8 个字节",
+      "`&a` 与 `a` 的数值相同，但 `&a` 的类型是 `int (*)[5]`，而 `a` 在参与运算时退化为 `int *`"
+    ],
+    "answer": 3,
+    "analysis": "知识点：数组名不是指针变量，它是“数组类型”的标识符，只在大多数表达式中**退化**为指向首元素的指针。\n\n- `sizeof(a)` 得 20（整个数组），`sizeof(p)` 得 8（64 位平台上的指针），所以“两者相等”错。\n- `a` 不是可修改的左值，`a++` 编译错误；`p` 是变量可以自增，“a 能自增而 p 不能”把两者说反了。\n- `&a` 的类型是 `int (*)[5]`（指向整个数组的指针），`a` 退化后是 `int *`。两者数值都是首地址，但 `&a + 1` 会跳过 20 字节，`a + 1` 只跳过 4 字节，这一条正确。\n- 数组名不是变量，不占“指针变量”的存储，“都占 8 个字节”错。\n\n区分技巧：看 `+1` 的步长。`a + 1` 走一个元素，`&a + 1` 走整个数组；这也是 `int (*p)[5] = &a;` 这种行指针写法的来源。",
+    "variants": {
+      "cpp": {
+        "stem": "有定义\n\n```cpp\nint a[5] = {1, 2, 3, 4, 5};\nint *p = a;\n```\n\n下列关于 a 与 p 的说法，正确的是（ ）。",
+        "options": [
+          "`sizeof(a)` 与 `sizeof(p)` 相等",
+          "`a` 可以执行 `a++`，而 `p` 不能自增",
+          "`a` 与 `p` 都是指针变量，都占 8 个字节",
+          "`&a` 与 `a` 的数值相同，但 `&a` 的类型是 `int (*)[5]`，而 `a` 在参与运算时退化为 `int *`"
+        ],
+        "answer": 3,
+        "analysis": "答案与 C 相同：`&a` 的类型是 `int (*)[5]`，`a` 退化为 `int *`，两者数值相同但类型不同、`+1` 的步长不同。\n\nC++ 还提供了保留数组类型的手段：`int (&r)[5] = a;` 是数组引用，`sizeof(r)` 仍是 20；`std::array<int, 5> a{};` 则彻底避免退化，`.size()` 恒为 5，传参时也能保留长度信息。\n\n`std::size(a)`（C++17）在编译期求数组长度，若误传退化成指针的参数会直接编译失败——这比 `sizeof(a)/sizeof(a[0])` 安全得多，因为后者在函数参数上会静默算错。"
+      },
+      "python": {
+        "stem": "Python 的列表与 C 的数组在“名字与对象”的关系上完全不同。关于\n\n```python\na = [1, 2, 3, 4, 5]\n```\n\n下列说法正确的是（ ）。",
+        "options": [
+          "`a + 1` 会把每个元素都加 1",
+          "`a` 与 `a[0]` 是同一个对象",
+          "列表创建后长度不可改变",
+          "`len(a)` 返回 5，列表对象本身没有“退化成指针”的规则"
+        ],
+        "answer": 3,
+        "analysis": "Python 的 list 是对象，变量 a 只是对该对象的引用：`len(a)` 直接读对象头里保存的长度，O(1)，不存在 C 那种“数组名退化为指针、sizeof 失效”的问题。\n\n- `a + 1` 会抛 `TypeError`，列表只能与列表相加；逐元素加 1 要写 `[x + 1 for x in a]`。\n- `a[0]` 是元素 1（int 对象），与列表对象 a 不是同一个东西。\n- 列表长度可变，`append`、`del`、切片赋值随时改变它。\n\nC 的数组是“定长连续内存 + 名字退化为指针”，Python 的 list 是“变长对象 + 引用语义”；理解这一点，才能解释为什么 C 需要 `sizeof(a)/sizeof(a[0])`，而 Python 只需 `len(a)`。"
+      }
+    }
+  },
+  {
+    "id": "指-80",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "指针作参数",
+      "值传递",
+      "交换"
+    ],
+    "stem": "下面程序想交换两个指针变量，输出是（ ）。\n\n```c\n#include <stdio.h>\n\nvoid swap_ptr(int *a, int *b)\n{\n    int *t = a;\n    a = b;\n    b = t;\n}\n\nint main(void)\n{\n    int x = 1, y = 2;\n    int *p = &x, *q = &y;\n\n    swap_ptr(p, q);\n    printf(\"%d %d\\n\", *p, *q);\n    return 0;\n}\n```",
+    "options": [
+      "1 2",
+      "2 1",
+      "1 1",
+      "编译错误：形参与实参类型不匹配"
+    ],
+    "answer": 0,
+    "analysis": "知识点：C 只有值传递。调用 `swap_ptr(p, q)` 时，形参 a、b 得到的是 p、q 的**副本**，函数内 `a = b` 只改了副本，p、q 本身毫发无损。\n\n因此 main 中 p 仍指向 x、q 仍指向 y，输出 `1 2`。\n\n要让函数真正交换两个指针变量，必须传“指针的地址”，即形参写成 `int **a, int **b`，调用 `swap_ptr(&p, &q)`，函数内用 `*a`、`*b` 操作；或者干脆把交换逻辑写在调用处。\n\n注意区分三种“交换”：\n1. 交换指针变量本身 → 需要 `int **`；\n2. 交换指针所指的值（`*a` 与 `*b`）→ 只需 `int *`，这也是常见 swap 的写法；\n3. 交换两个普通 int → 必须传地址，否则就是经典的“swap 无效”错误。\n\n干扰项“2 1”正是把“交换指针”与“交换所指的值”混为一谈。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序想交换两个指针变量，输出是（ ）。\n\n```cpp\n#include <iostream>\n\nvoid swap_ptr(int *a, int *b)\n{\n    int *t = a;\n    a = b;\n    b = t;\n}\n\nint main()\n{\n    int x = 1, y = 2;\n    int *p = &x, *q = &y;\n\n    swap_ptr(p, q);\n    std::cout << *p << ' ' << *q << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 同样是值传递，形参 a、b 是 p、q 的副本，交换副本不影响实参，输出 `1 2`。\n\n但 C++ 有引用，可以真正交换指针变量：`void swap_ptr(int *&a, int *&b)`，或直接调用标准库的 `std::swap(p, q)`（对指针就是交换两个地址值，调用后 p 指向 y、q 指向 x，输出 `2 1`）。\n\n记忆要点：`int *&a` 是“指针的引用”，a 与实参是同一个变量；`int *a` 是“指针的副本”。C 里只能靠二级指针 `int **` 达到同样效果，写法更绕，这也是 C++ 引用参数更受欢迎的原因之一。"
+      },
+      "python": {
+        "stem": "下面程序想交换两个变量，输出是（ ）。\n\n```python\ndef swap(a, b):\n    a, b = b, a\n\np, q = 1, 2\nswap(p, q)\nprint(p, q)\n```",
+        "options": [
+          "1 2",
+          "2 1",
+          "1 1",
+          "语法错误：函数内不能重新赋值形参"
+        ],
+        "answer": 0,
+        "analysis": "Python 的参数传递是“对象引用传递（按赋值传递）”：函数内的 a、b 是调用者名字的**新绑定**，`a, b = b, a` 只重新绑定了函数内的局部名字，调用者的 p、q 不变，输出 `1 2`。\n\n要在 Python 中交换，应让函数返回值：`p, q = swap(p, q)`，或直接写 `p, q = q, p`（这行在调用处是真正的交换，因为右侧先整体求值）。\n\n如果把可变对象传进来，函数内的原地修改才会影响调用者，例如 `def f(lst): lst.append(1)`；但重新赋值 `lst = [9]` 依旧只改局部名字。这条“改对象 vs 改绑定”的区分，与 C 的“改所指内容 vs 改指针本身”完全对应。"
+      }
+    }
+  },
+  {
+    "id": "指-81",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "字符串常量",
+      "指针比较",
+      "未指定行为"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\nint main(void)\n{\n    char *p = \"abc\";\n    char *q = \"abc\";\n\n    printf(\"%d\\n\", p == q);\n    return 0;\n}\n```",
+    "options": [
+      "结果由实现决定，可能输出 1 也可能输出 0",
+      "一定输出 1：内容相同的字面量只存一份",
+      "一定输出 0：两个字符串字面量是两个不同的数组",
+      "编译错误：字符串字面量不能赋给 char *"
+    ],
+    "answer": 0,
+    "analysis": "知识点：C 标准规定，内容相同的字符串字面量是否被合并成同一个数组是**未指定的（unspecified）**，编译器可以合并也可以不合并。\n\n`p == q` 比较的是两个指针的地址值，而不是内容。若编译器做了字面量合并，两个指针相等，输出 1；若没有合并，它们指向不同数组，输出 0。所以这段代码没有可移植的确定答案——这正是它作为考题的价值：判断“是否有定义/是否指定”。\n\n要比较内容必须用 `strcmp(p, q) == 0`。\n\n另外，把字面量赋给 `char *` 在 C 中合法但**不推荐**：字面量通常放在只读段，修改 `p[0] = 'X'` 是未定义行为（可能直接段错误）。规范写法是 `const char *p = \"abc\";`。\n\n选“一定输出 1”“一定输出 0”都把“未指定”当成了“必然”；选“编译错误”的人套用的是 C++ 规则，不是 C 的。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的编译/运行结果是（ ）。\n\n```cpp\n#include <iostream>\nint main()\n{\n    char *p = \"abc\";\n    char *q = \"abc\";\n\n    std::cout << (p == q) << '\\n';\n    return 0;\n}\n```",
+        "options": [
+          "编译错误：C++ 不允许把字符串字面量转换成 char *",
+          "一定输出 1：内容相同的字面量只存一份",
+          "一定输出 0：两个字符串字面量是两个不同的数组",
+          "结果由实现决定，可能输出 1 也可能输出 0"
+        ],
+        "answer": 0,
+        "analysis": "这是 C 与 C++ 在同一行代码上的著名分歧：C++ 中字符串字面量的类型是 `const char[N]`，从 C++11 起把它赋给 `char *` 是**非法的**，直接编译错误（有些编译器只给警告并保留旧行为，但标准已不允许）。\n\n正确写法是 `const char *p = \"abc\";`。此时再比较 `p == q` 又回到“字面量是否合并”的未指定问题，答案仍不确定——所以 C++ 里也不该用 `==` 比较字符串内容，应使用 `std::string` 的 `==` 或 `std::strcmp`。\n\n对比记忆：C 允许 `char *p = \"abc\"`（修改是 UB），C++ 直接拒绝；C 的 `==` 比地址，`std::string` 的 `==` 比内容。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\np = \"abc\"\nq = \"abc\"\nprint(p == q)\n```",
+        "analysis": "Python 的 `==` 对字符串比较的是**内容**，两个内容相同的字符串一定相等，输出 `True`，不受内存地址影响。\n\n若要比较“是不是同一个对象”才用 `is`：`p is q` 在 CPython 中通常也是 True（短字符串会被驻留 interning），但这属于实现细节，不能依赖。C 的 `==` 恰好相反——它比较地址，比较内容必须显式调用 `strcmp`，这是两种语言最容易踩的坑。\n\n此外 Python 字符串不可变，没有“字面量放在只读段、修改会崩溃”的问题；任何“修改”都会产生新字符串。",
+        "options": [
+          "True",
+          "False",
+          "结果由实现决定，可能 True 也可能 False",
+          "编译错误：== 不能用于比较字符串"
+        ],
+        "answer": 0
+      }
+    }
+  },
+  {
+    "id": "指-82",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 2,
+    "tags": [
+      "malloc",
+      "void指针",
+      "类型转换"
+    ],
+    "stem": "在 C 语言中，语句\n\n```c\nint *p = malloc(10 * sizeof(int));\n```\n\n的说法正确的是（ ）。",
+    "options": [
+      "编译错误：必须写成 `(int *)malloc(10 * sizeof(int))`",
+      "合法：`malloc` 返回的 `void *` 会隐式转换为 `int *`",
+      "合法，但 `malloc` 的返回类型本来就是 `int *`",
+      "运行错误：`void *` 不能赋给指针变量"
+    ],
+    "answer": 1,
+    "analysis": "知识点：C 中 `void *` 是“通用对象指针”，可以与任何对象指针类型**隐式**互相转换，所以 `int *p = malloc(...)` 无需强制转换即可通过编译。\n\n`malloc` 的原型是 `void *malloc(size_t size);`，失败返回 `NULL`；成功时返回的内存内容**未初始化**，不能假设为 0。\n\n工程上反而推荐**不写**强制转换：如果忘了 `#include <stdlib.h>`，编译器会报“把 int 赋给指针”的警告/错误，从而提醒你补头文件；而写了 `(int *)` 会把这个错误掩盖成“看起来正常”的代码，在 64 位平台上指针与 int 宽度不同，可能导致崩溃。\n\n选“必须强制转换”的人套用的是 C++ 规则；选“返回类型本来就是 int *”描述错了 `malloc` 的原型；选“运行错误”则混淆了“不能解引用 void *”与“不能赋值”——`void *` 可以接收和赋出，只是不能直接 `*p` 或参与指针算术。",
+    "variants": {
+      "cpp": {
+        "stem": "在 C++ 中，语句\n\n```cpp\nint *p = malloc(10 * sizeof(int));\n```\n\n的说法正确的是（ ）。",
+        "options": [
+          "合法：`void *` 可以隐式转换为 `int *`",
+          "编译错误：C++ 不允许 `void *` 隐式转换为 `int *`，必须显式转换",
+          "合法，但 `malloc` 的返回类型本来就是 `int *`",
+          "只有包含了 `<cstdlib>` 时才合法"
+        ],
+        "answer": 1,
+        "analysis": "同一行代码在 C++ 中是**编译错误**：C++ 是强类型语言，`void *` 不能隐式转换成 `T *`，必须写 `static_cast<int *>(malloc(...))` 或 C 风格 `(int *)`。\n\n这正是 C 与 C++ 的经典分歧点，也是把 C 代码直接当 C++ 编译时最常见的报错之一。\n\n不过 C++ 的正确做法不是补强制转换，而是根本不用 malloc：用 `new int[10]` / `delete[]`，或者更好——用 `std::vector<int> v(10);`，由容器管理生命周期，异常安全且无需手动释放。\n\n`std::vector` 的 `data()` 可以拿到底层连续内存的指针，与 C 接口交互时很方便，这也解释了现代 C++ 为何几乎不需要裸 `malloc`。"
+      },
+      "python": {
+        "stem": "在 Python 中要得到一个含 10 个整数的序列：\n\n```python\np = [0] * 10\n```\n\n下面说法正确的是（ ）。",
+        "options": [
+          "`p = [0] * 10` 只得到 1 个元素 0 的列表",
+          "`p = [0] * 10` 得到 10 个 0，无需类型转换，也没有 `void *` 的概念",
+          "必须先声明 `int *p` 再分配空间",
+          "必须调用 `malloc` 并用 `(int *)` 强制转换"
+        ],
+        "answer": 1,
+        "analysis": "Python 是动态类型语言，没有指针、没有 `void *`，也没有“申请 N 个 int 的空间”这种底层操作；`[0] * 10` 直接把列表重复 10 次，得到 10 个 0，所有元素引用同一个不可变 int 对象 0，所以修改其中一个不会影响其他。\n\n这也说明 Python 不存在 C 的“内存未初始化”问题：列表元素一定已初始化，越界访问会抛 `IndexError` 而不是读到脏数据。\n\n需要与 C 的 `int *` 交互时（如 `array` 模块、NumPy、`ctypes`），Python 会额外维护类型与缓冲区信息；纯 Python 层面则是“对象 + 引用计数”，由解释器负责回收，程序员不需要 free。"
+      }
+    }
+  },
+  {
+    "id": "指-83",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 1,
+    "tags": [
+      "strchr",
+      "指针相减",
+      "字符串查找"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\n#include <string.h>\nint main(void)\n{\n    char s[] = \"abcabc\";\n    char *p = strchr(s, 'b');\n\n    printf(\"%d\\n\", (int)(p - s));\n    return 0;\n}\n```",
+    "options": [
+      "2",
+      "4",
+      "-1",
+      "1"
+    ],
+    "answer": 3,
+    "analysis": "知识点：`strchr(s, c)` 返回指向 s 中**首次**出现字符 c 的位置的指针，找不到时返回 `NULL`；两个指向同一数组的指针相减，结果是它们之间的**元素个数**，不是字节数。\n\n\"abcabc\" 中第一个 'b' 在下标 1，所以 p 指向 s[1]，`p - s` 得 1。\n\n干扰项 2 是把 'b' 当成第 2 个字符（数数从 1 开始）；4 是第二个 'b' 的下标（若用 `strrchr` 找最后一次出现才会得到 4）；−1 是“找不到”时的常见约定，但这里找得到。\n\n实战要点：使用 `strchr` 的返回值前必须先判空，`if (p != NULL)` 再相减；否则 p 为 NULL 时 `p - s` 是未定义行为。类似函数还有 `strrchr`（最后一次出现）、`strstr`（子串）、`strpbrk`（任一字符集合）。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <cstring>\nint main()\n{\n    char s[] = \"abcabc\";\n    const char *p = std::strchr(s, 'b');\n\n    std::cout << (p - s) << '\\n';\n    return 0;\n}\n```",
+        "analysis": "`std::strchr` 语义与 C 相同，返回首次出现的指针，`p - s` 得 1；返回值类型是 `const char *`（参数是 const 时）或 `char *`，这里用 `const char *` 接收更安全。\n\nC++ 里更自然的写法是 `std::string s = \"abcabc\"; auto pos = s.find('b');`，`pos` 是 `std::string::size_type`，找不到时返回 `std::string::npos`（一个极大的无符号数，通常等于 `(size_type)-1`），而不是 `-1`。所以判断“找不到”必须写 `pos == std::string::npos`，不能写 `pos < 0`——无符号数永远不小于 0，这是经典 bug。\n\n迭代器版 `std::find(s.begin(), s.end(), 'b') - s.begin()` 也能得到 1，且不依赖结束符。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\ns = \"abcabc\"\nprint(s.find(\"b\"))\n```",
+        "analysis": "`str.find` 返回子串首次出现的下标，找不到返回 **−1**（不抛异常），所以输出 1。\n\n与 C 的 `strchr` 对照：C 返回指针（找不到返回 NULL），需要自己相减才能得到下标；Python 直接返回下标，找不到的哨兵值是 −1，而不是 NULL。\n\n另一个容易混淆的成员是 `str.index`：它返回同样的下标，但找不到时抛 `ValueError`。选择哪一个取决于你希望“找不到”是正常分支还是异常情况。\n\n三种语言的“查找失败”约定各不相同：C 用 NULL 指针、C++ 的 `string::find` 用 `npos`（无符号最大值）、Python 用 −1（`index` 则抛异常）；跨语言移植时这是高频错误源。"
+      }
+    }
+  },
+  {
+    "id": "指-84",
+    "module": "指针",
+    "type": "choice",
+    "difficulty": 3,
+    "tags": [
+      "函数指针",
+      "函数名退化",
+      "调用"
+    ],
+    "stem": "下面程序的输出是（ ）。\n\n```c\n#include <stdio.h>\n\nint f(int x) { return x * 2; }\n\nint main(void)\n{\n    int (*p)(int) = f;\n    int (*q)(int) = &f;\n\n    printf(\"%d %d\\n\", p(3), (*q)(4));\n    return 0;\n}\n```",
+    "options": [
+      "6 6",
+      "编译错误：&f 与函数指针类型不匹配",
+      "6 8",
+      "8 6"
+    ],
+    "answer": 2,
+    "analysis": "知识点：函数名在表达式中退化为“指向函数的指针”，因此 `f` 与 `&f` 的值相同、类型也相同，都是 `int (*)(int)`；对函数指针调用时，`p(3)`、`(*p)(3)`、`(***p)(3)` 等价。\n\n`p(3)` 调用 f 得 6；`(*q)(4)` 先解引用得到函数再用 4 调用，得 8，输出 `6 8`。\n\n干扰项“6 6”是把 `(*q)(4)` 误当成 `q(4)` 之外的东西（其实两者一样）；\"编译错误\"是误以为 `&f` 得到的是“函数的地址”而不能初始化函数指针——实际上取地址与退化得到的类型完全一致；\"8 6\" 是把两个参数对调。\n\n注意声明解析：`int (*p)(int)` 必须带括号，若写成 `int *p(int)` 就变成“返回 int * 的函数声明”，是完全不同的东西。",
+    "variants": {
+      "cpp": {
+        "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint f(int x) { return x * 2; }\n\nint main()\n{\n    int (*p)(int) = f;\n    int (*q)(int) = &f;\n\n    std::cout << p(3) << ' ' << (*q)(4) << '\\n';\n    return 0;\n}\n```",
+        "analysis": "C++ 中 `f` 与 `&f` 同样等价，`p(3)` 与 `(*q)(4)` 都合法，输出 `6 8`。\n\nC++ 还可以用 `auto p = f;` 让编译器推导函数指针类型，或用 `std::function<int(int)> p = f;` 包装任意可调用对象（函数、lambda、仿函数），代价是可能的类型擦除开销。\n\n两个 C++ 特有的坑：其一，若 f 有重载，`int (*p)(int) = f;` 会因无法确定取哪个重载而报错，必须写 `static_cast<int (*)(int)>(f)`；其二，把捕获了局部变量的 lambda 赋给函数指针是非法的，只有无捕获 lambda 才能转换成函数指针。"
+      },
+      "python": {
+        "stem": "下面程序的输出是（ ）。\n\n```python\ndef f(x):\n    return x * 2\n\np = f\nprint(p(3), f(4))\n```",
+        "analysis": "Python 的函数是“一等对象”：函数名就是对该函数对象的引用，`p = f` 直接把同一个函数对象绑定到新名字，`p(3)` 与 `f(3)` 完全等价，输出 `6 8`。\n\n与 C 的对照：C 需要写函数指针类型 `int (*)(int)`，还要理解函数名退化与 `&f` 的等价；Python 不需要声明类型，也不需要取地址，任何可调用对象（函数、lambda、类实例的 `__call__`）都能直接赋值和传递。\n\n也正因如此，Python 没有“函数指针类型不匹配”的编译期错误——传错参数要到运行期才抛 `TypeError`；C 的函数指针类型不匹配则编译期就能发现。",
+        "options": [
+          "6 6",
+          "TypeError: 'function' object is not subscriptable",
+          "6 8",
+          "8 6"
+        ],
+        "answer": 2
+      }
+    }
+  }
+]

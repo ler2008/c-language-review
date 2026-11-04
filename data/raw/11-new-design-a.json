@@ -1,0 +1,492 @@
+[
+  {
+    "id": "基-66",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "日期计算",
+      "模拟",
+      "闰年"
+    ],
+    "stem": "给定一个合法日期（年、月、日）和一个非负整数 n，求这个日期之后第 n 天的日期。例如 2023 年 12 月 31 日之后第 1 天是 2024 年 1 月 1 日。\n闰年规则：年份能被 4 整除且不能被 100 整除，或者能被 400 整除。\n\n**输入格式：** 第一行三个整数 y、m、d（1600 ≤ y ≤ 9999），表示一个合法日期；第二行一个整数 n（0 ≤ n ≤ 10000）。\n\n**输出格式：** 一行，格式为 `yyyy-mm-dd`，年占 4 位、月与日各占 2 位，不足补 0。\n\n**输入样例：**\n```text\n2023 12 31\n2\n```\n**输出样例：**\n```text\n2024-01-02\n```",
+    "solution": "#include <stdio.h>\n\nstatic int isLeap(int y)\n{\n    return (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0);\n}\n\nstatic int daysInMonth(int y, int m)\n{\n    static const int tab[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};\n\n    if (m == 2 && isLeap(y))\n        return 29;\n    return tab[m];\n}\n\nint main(void)\n{\n    int y, m, d, n, i;\n\n    if (scanf(\"%d %d %d\", &y, &m, &d) != 3)\n        return 0;\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n\n    for (i = 0; i < n; i++) {\n        if (++d > daysInMonth(y, m)) {\n            d = 1;\n            if (++m > 12) {\n                m = 1;\n                ++y;\n            }\n        }\n    }\n\n    printf(\"%04d-%02d-%02d\\n\", y, m, d);\n    return 0;\n}\n",
+    "points": [
+      "正确读入年、月、日与天数 n",
+      "用月天数表加闰年判断得到当月天数，2 月在闰年时为 29 天",
+      "逐日推进并在超界时正确进位到下一月、下一年",
+      "用 %04d-%02d-%02d 输出，补足前导 0"
+    ],
+    "analysis": "思路：把问题交给「逐日推进」的模拟——每次把日期加 1 天，若超过当月天数就变成下月 1 日，若月份超过 12 就变成下一年 1 月，重复 n 次即得答案。\n\n关键步骤：① 写 `isLeap` 判断闰年（能被 4 整除且不能被 100 整除，或能被 400 整除）；② 用 `tab[13]` 保存月天数，2 月在闰年时单独返回 29；③ 循环体先 `++d`，再与 `daysInMonth(y, m)` 比较；④ `printf` 用宽度 4 和 2 补零。\n\n复杂度：时间 O(n)（n ≤ 10000），空间 O(1)。\n\n易错点：① 闰年判断漏掉「百年不闰、四百年再闰」，把 1900 当成闰年；② 月天数表是按 1 月对齐的，却写成 `tab[m - 1]`，导致 1 月取到 0 天；③ 先判断月份进位再判断日期进位，顺序颠倒；④ n = 0 时仍推进了一天；⑤ 输出忘记补前导 0，把 2024 年 1 月 2 日打成 `2024-1-2`。",
+    "module": "C语言基础",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "给定一个合法日期（年、月、日）和一个非负整数 n，求这个日期之后第 n 天的日期。例如 2023 年 12 月 31 日之后第 1 天是 2024 年 1 月 1 日。\n闰年规则：年份能被 4 整除且不能被 100 整除，或者能被 400 整除。\n\n**输入格式：** 第一行三个整数 y、m、d（1600 ≤ y ≤ 9999），表示一个合法日期；第二行一个整数 n（0 ≤ n ≤ 10000）。\n\n**输出格式：** 一行，格式为 `yyyy-mm-dd`，年占 4 位、月与日各占 2 位，不足补 0。\n\n**输入样例：**\n```text\n2023 12 31\n2\n```\n**输出样例：**\n```text\n2024-01-02\n```",
+        "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nbool isLeap(int y)\n{\n    return (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0);\n}\n\nint daysInMonth(int y, int m)\n{\n    static const int tab[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};\n\n    if (m == 2 && isLeap(y))\n        return 29;\n    return tab[m];\n}\n\nint main()\n{\n    int y, m, d, n;\n\n    if (!(cin >> y >> m >> d))\n        return 0;\n    cin >> n;\n\n    for (int i = 0; i < n; ++i) {\n        if (++d > daysInMonth(y, m)) {\n            d = 1;\n            if (++m > 12) {\n                m = 1;\n                ++y;\n            }\n        }\n    }\n\n    cout << setfill('0') << setw(4) << y << '-'\n         << setw(2) << m << '-' << setw(2) << d << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 cin 连续读入日期与 n，处理读入失败",
+          "isLeap 返回 bool，daysInMonth 用 static const 数组保存月长",
+          "逐日推进并逐级进位",
+          "用 setfill('0') 与 setw 控制补零宽度"
+        ],
+        "analysis": "思路：与 C 版一致，仍是逐日推进加闰年判断；C++ 的差别在输入输出和封装：用 `cin` 连续读入，`isLeap` 返回 `bool`，补零交给 `setfill('0')` 与 `setw`。\n\n关键步骤：① `cin >> y >> m >> d` 读日期，再单独读 `n`；② `daysInMonth` 用 `static const int tab[13]`，闰年 2 月返回 29；③ 每次 `++d` 后判断越界，再逐级进位；④ `cout << setfill('0') << setw(4) << y << '-' << setw(2) << m << '-' << setw(2) << d`。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① `setw` 只对紧接着的一次输出生效，年、月、日必须各写一次 `setw`；② 以为 `setfill` 要每项重设（其实设置一次就保持）；③ 忘了包含 `<iomanip>` 导致 `setw` 无法解析；④ 把 `isLeap` 写成返回 int 的 -1/0，参与 `if` 时含义混乱。"
+      },
+      "python": {
+        "stem": "给定一个合法日期（年、月、日）和一个非负整数 n，求这个日期之后第 n 天的日期。例如 2023 年 12 月 31 日之后第 1 天是 2024 年 1 月 1 日。\n闰年规则：年份能被 4 整除且不能被 100 整除，或者能被 400 整除。\n\n**输入格式：** 第一行三个整数 y、m、d（1600 ≤ y ≤ 9999），表示一个合法日期；第二行一个整数 n（0 ≤ n ≤ 10000）。\n\n**输出格式：** 一行，格式为 `yyyy-mm-dd`，年占 4 位、月与日各占 2 位，不足补 0。\n\n**输入样例：**\n```text\n2023 12 31\n2\n```\n**输出样例：**\n```text\n2024-01-02\n```",
+        "solution": "import sys\n\n\ndef is_leap(y):\n    return (y % 4 == 0 and y % 100 != 0) or y % 400 == 0\n\n\ndef days_in_month(y, m):\n    tab = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]\n    if m == 2 and is_leap(y):\n        return 29\n    return tab[m]\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 4:\n        return\n    y, m, d = int(data[0]), int(data[1]), int(data[2])\n    n = int(data[3])\n\n    for _ in range(n):\n        d += 1\n        if d > days_in_month(y, m):\n            d = 1\n            m += 1\n            if m > 12:\n                m = 1\n                y += 1\n\n    print(f\"{y:04d}-{m:02d}-{d:02d}\")\n\n\nmain()\n",
+        "points": [
+          "用 sys.stdin.read().split() 一次读完全部记号",
+          "is_leap 与 days_in_month 拆成两个小函数，2 月闰年特判 29",
+          "for 循环推进 n 天，越界后逐级进位",
+          "f-string 的 :04d / :02d 完成补零输出"
+        ],
+        "analysis": "思路：同样是逐日推进。Python 不必担心整型溢出，把 `is_leap` 和 `days_in_month` 写成两个小函数，主流程用 `for _ in range(n)` 推进，最后用 f-string 一次格式化。\n\n关键步骤：① `sys.stdin.read().split()` 把两行内容都变成记号，避免逐行读取遇到空行；② `y, m, d = int(data[0]), int(data[1]), int(data[2])`，`n = int(data[3])`；③ 每轮 `d += 1`，越界则 `d = 1; m += 1`，`m > 12` 时 `m = 1; y += 1`；④ `print(f\"{y:04d}-{m:02d}-{d:02d}\")`。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① 用 `input()` 分行读时，n 那一行可能是空行；② 闰年条件 `A and B or C` 不写括号，靠短路求值碰巧正确但可读性差；③ 格式串写成 `{y:4d}`，得到的是空格填充而不是前导 0；④ 在函数里忘了 `main()` 调用，程序什么都不输出。"
+      }
+    }
+  },
+  {
+    "id": "基-67",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "分段计费",
+      "分支",
+      "整数运算"
+    ],
+    "stem": "某城市出租车按里程和等待时间计费，规则如下：\n- 起步价 10 元，含 3 公里；\n- 里程超过 3 公里但不超过 10 公里时，超出部分每公里 2.4 元；\n- 里程超过 10 公里时，10 公里以内仍按上一条计费，超过 10 公里的部分每公里 3.6 元；\n- 每次乘车另收燃油附加费 1 元；\n- 等待时间不超过 5 分钟不收费，超过 5 分钟的部分每分钟加收 0.5 元。\n\n为避免浮点数误差，请以「角」为单位（1 元 = 10 角）累加总费用，最后四舍五入到元输出（满 0.5 元进位）。\n\n**输入格式：** 一行两个整数 d 和 w（1 ≤ d ≤ 1000，0 ≤ w ≤ 600），d 表示里程（公里），w 表示等待时间（分钟）。\n\n**输出格式：** 一行一个整数，表示四舍五入后的车费（单位：元）。\n\n**输入样例：**\n```text\n12 8\n```\n**输出样例：**\n```text\n37\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int d, w, fee;\n\n    if (scanf(\"%d %d\", &d, &w) != 2)\n        return 0;\n\n    fee = 100;                       /* 起步价 10 元 = 100 角，含 3 公里 */\n    if (d > 3) {\n        int seg = (d < 10 ? d : 10) - 3;\n        fee += seg * 24;             /* 2.4 元/公里 = 24 角 */\n    }\n    if (d > 10)\n        fee += (d - 10) * 36;        /* 3.6 元/公里 = 36 角 */\n\n    fee += 10;                       /* 燃油附加费 1 元 = 10 角 */\n\n    if (w > 5)\n        fee += (w - 5) * 5;          /* 0.5 元/分钟 = 5 角 */\n\n    printf(\"%d\\n\", (fee + 5) / 10);  /* 角 -> 元，四舍五入 */\n    return 0;\n}\n",
+    "points": [
+      "以角为单位拆解三段里程计价：起步价、3~10 公里、超过 10 公里",
+      "把燃油附加费和等待费的正确分段加入总费用",
+      "用整数运算避免浮点误差",
+      "用 (fee + 5) / 10 实现四舍五入到元并正确输出"
+    ],
+    "analysis": "思路：把金额统一换算成「角」，所有单价都是整数（24 角、36 角、5 角、10 角），于是全程整数运算，不存在浮点误差。\n\n关键步骤：① `fee = 100`（起步价含 3 公里）；② `d > 3` 时，先取 `d` 与 10 中的较小值（代码写作 `d < 10 ? d : 10`）再减 3，得到 3~10 公里段的公里数，乘 24 角；③ `d > 10` 时，再单独加 `(d - 10) * 36`；④ 加 10 角燃油费；⑤ `w > 5` 时加 `(w - 5) * 5`；⑥ `(fee + 5) / 10` 完成四舍五入到元。\n\n复杂度：时间 O(1)，空间 O(1)。\n\n易错点：① 用 `double` 算 2.4 元再 `printf(\"%.0f\")`，2.4 在二进制中不精确，边界上会差 1 元；② 超过 10 公里时把前 10 公里也按 3.6 元算，或重复加了一次超出部分；③ 等待时间的 5 分钟写成 `>= 5`，多收一分钟；④ 分段边界写成 `d > 3` 与 `d >= 10` 混用，10 公里时漏掉 3~10 段；⑤ 四舍五入写成 `fee / 10` 直接截断。",
+    "module": "C语言基础",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "某城市出租车按里程和等待时间计费，规则如下：\n- 起步价 10 元，含 3 公里；\n- 里程超过 3 公里但不超过 10 公里时，超出部分每公里 2.4 元；\n- 里程超过 10 公里时，10 公里以内仍按上一条计费，超过 10 公里的部分每公里 3.6 元；\n- 每次乘车另收燃油附加费 1 元；\n- 等待时间不超过 5 分钟不收费，超过 5 分钟的部分每分钟加收 0.5 元。\n\n为避免浮点数误差，请以「角」为单位（1 元 = 10 角）累加总费用，最后四舍五入到元输出（满 0.5 元进位）。\n\n**输入格式：** 一行两个整数 d 和 w（1 ≤ d ≤ 1000，0 ≤ w ≤ 600），d 表示里程（公里），w 表示等待时间（分钟）。\n\n**输出格式：** 一行一个整数，表示四舍五入后的车费（单位：元）。\n\n**输入样例：**\n```text\n12 8\n```\n**输出样例：**\n```text\n37\n```",
+        "solution": "#include <iostream>\n#include <algorithm>\nusing namespace std;\n\nint main()\n{\n    int d, w;\n\n    if (!(cin >> d >> w))\n        return 0;\n\n    int fee = 100;                        // 起步价 10 元 = 100 角，含 3 公里\n    if (d > 3) {\n        int seg = min(d, 10) - 3;\n        fee += seg * 24;                  // 2.4 元/公里 = 24 角\n    }\n    if (d > 10)\n        fee += (d - 10) * 36;             // 3.6 元/公里 = 36 角\n\n    fee += 10;                            // 燃油附加费 1 元 = 10 角\n\n    if (w > 5)\n        fee += (w - 5) * 5;               // 0.5 元/分钟 = 5 角\n\n    cout << (fee + 5) / 10 << '\\n';       // 角 -> 元，四舍五入\n    return 0;\n}\n",
+        "points": [
+          "用 min(d, 10) 划出 3~10 公里段，避免重复判断",
+          "以 int 保存「角」，金额全为整数",
+          "燃油费与等待费按规则分段累加",
+          "用 (fee + 5) / 10 做四舍五入，注意这里必须是整数除法"
+        ],
+        "analysis": "思路：与 C 版完全相同，金额单位取「角」。C++ 里直接用 `std::min`（需包含 `<algorithm>`）把 3~10 公里段一次算清，比手写三元表达式更直观。\n\n关键步骤：① `cin >> d >> w`；② `int fee = 100;`，`d > 3` 时加 `(min(d, 10) - 3) * 24`；③ `d > 10` 时再加 `(d - 10) * 36`；④ 加 10 角燃油费与 `(w - 5) * 5` 的等待费；⑤ `cout << (fee + 5) / 10`。\n\n复杂度：O(1) 时间，O(1) 空间。\n\n易错点：① 用 `double fee` 配合 `round()` 反而引入浮点误差，边界可能差 1 元；② 把 `(fee + 5) / 10` 写成 `(fee + 5) / 10.0` 输出小数，不符合「输出整数」；③ 忘记 `#include <algorithm>` 就调用 `std::min`，部分编译器直接报错；④ 把两段里程单价都写成常量后累加，重复计算 3~10 公里段。"
+      },
+      "python": {
+        "stem": "某城市出租车按里程和等待时间计费，规则如下：\n- 起步价 10 元，含 3 公里；\n- 里程超过 3 公里但不超过 10 公里时，超出部分每公里 2.4 元；\n- 里程超过 10 公里时，10 公里以内仍按上一条计费，超过 10 公里的部分每公里 3.6 元；\n- 每次乘车另收燃油附加费 1 元；\n- 等待时间不超过 5 分钟不收费，超过 5 分钟的部分每分钟加收 0.5 元。\n\n为避免浮点数误差，请以「角」为单位（1 元 = 10 角）累加总费用，最后四舍五入到元输出（满 0.5 元进位）。\n\n**输入格式：** 一行两个整数 d 和 w（1 ≤ d ≤ 1000，0 ≤ w ≤ 600），d 表示里程（公里），w 表示等待时间（分钟）。\n\n**输出格式：** 一行一个整数，表示四舍五入后的车费（单位：元）。\n\n**输入样例：**\n```text\n12 8\n```\n**输出样例：**\n```text\n37\n```",
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n    d, w = int(data[0]), int(data[1])\n\n    fee = 100                       # 起步价 10 元 = 100 角，含 3 公里\n    if d > 3:\n        seg = min(d, 10) - 3\n        fee += seg * 24             # 2.4 元/公里 = 24 角\n    if d > 10:\n        fee += (d - 10) * 36        # 3.6 元/公里 = 36 角\n\n    fee += 10                       # 燃油附加费 1 元 = 10 角\n\n    if w > 5:\n        fee += (w - 5) * 5          # 0.5 元/分钟 = 5 角\n\n    print((fee + 5) // 10)          # 角 -> 元，四舍五入\n\n\nmain()\n",
+        "points": [
+          "用整数角累加，min(d, 10) 划分里程段",
+          "分支顺序：先 3~10 段，再超过 10 段，最后附加费",
+          "用 // 整除实现 (fee + 5) // 10 的四舍五入",
+          "通过一次 read().split() 读取两个整数"
+        ],
+        "analysis": "思路：和 C 版同一个模型——金额以「角」为单位全部用 int 计算。Python 的 `//` 对非负整数就是向下取整，所以 `(fee + 5) // 10` 正好等价于四舍五入到元。\n\n关键步骤：① `data = sys.stdin.read().split()` 后取 `d, w`；② `fee = 100`，`d > 3` 时加 `(min(d, 10) - 3) * 24`；③ `d > 10` 时加 `(d - 10) * 36`；④ 加 10 角燃油费与 `(w - 5) * 5`；⑤ `print((fee + 5) // 10)`。\n\n复杂度：O(1) 时间，O(1) 空间。\n\n易错点：① 用 `/` 得到 float 再 `round()`，`round(36.5)` 在 Python 3 里是 36（银行家舍入），和题目要求的「0.5 进位」不一致；② 用 `math.ceil` 一律进位，把 36.1 元也进成 37；③ 忘记 `w > 5` 才收等待费，把前 5 分钟也计费；④ 里程写成 `d >= 3` 才加钱，3 公里时多收一段。"
+      }
+    }
+  },
+  {
+    "id": "基-68",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "进制转换",
+      "字符串",
+      "循环"
+    ],
+    "stem": "读入一个 r 进制正整数，先把它转换成十进制，再把该十进制值转换成 m 进制输出。r 进制串中大于 9 的数字用大写字母 A~F 表示（即 10~15）。\n\n**输入格式：** 第一行两个整数 r 和 m（2 ≤ r, m ≤ 16）；第二行一个 r 进制正整数 s（长度不超过 10，不含前导 0，s 为 `0` 时除外），字符只含 0~9 与 A~F。\n\n**输出格式：** 第一行输出 s 的十进制值；第二行输出 s 在 m 进制下的表示（大于 9 的数字用大写字母 A~F）。\n\n**输入样例：**\n```text\n16 2\n1F\n```\n**输出样例：**\n```text\n31\n11111\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nstatic int digitValue(char c)\n{\n    if (c >= '0' && c <= '9')\n        return c - '0';\n    if (c >= 'A' && c <= 'F')\n        return c - 'A' + 10;\n    return c - 'a' + 10;\n}\n\nint main(void)\n{\n    int r, m, i, len, k = 0;\n    long long dec = 0, tmp;\n    char s[32];\n    char out[64];\n\n    if (scanf(\"%d %d\", &r, &m) != 2)\n        return 0;\n    if (scanf(\"%31s\", s) != 1)\n        return 0;\n\n    len = (int)strlen(s);\n    for (i = 0; i < len; i++)\n        dec = dec * r + digitValue(s[i]);\n\n    printf(\"%lld\\n\", dec);\n\n    tmp = dec;\n    if (tmp == 0) {\n        out[k++] = '0';\n    } else {\n        while (tmp > 0) {\n            int dig = (int)(tmp % m);\n            out[k++] = (char)(dig < 10 ? '0' + dig : 'A' + dig - 10);\n            tmp /= m;\n        }\n    }\n\n    for (i = k - 1; i >= 0; i--)\n        putchar(out[i]);\n    putchar('\\n');\n    return 0;\n}\n",
+    "points": [
+      "实现字符到数值的映射，能处理 0~9 与 A~F",
+      "用「乘 r 加当前位」把 r 进制串累加成十进制",
+      "用除 m 取余、逆序输出完成十进制转 m 进制",
+      "单独处理值为 0 的边界，输出 0"
+    ],
+    "analysis": "思路：进制转换是两次「霍纳法则」的组合——r 进制转十进制用 `dec = dec * r + digit` 从左到右累加；十进制转 m 进制用不断 `% m` 取余、`/ m` 缩小，把余数倒序排列。\n\n关键步骤：① `digitValue` 把 `'0'~'9'` 映射成 0~9、`'A'~'F'` 映射成 10~15；② 逐字符累加得到 `dec`；③ 先输出 `dec`，再用副本 `tmp` 做除基取余，余数小于 10 记 `'0' + dig`，否则记 `'A' + dig - 10`；④ 逆序输出余数串。\n\n复杂度：时间 O(L + log_m dec)，L 为串长（≤ 10）；空间 O(L)。\n\n易错点：① 直接用 `dec` 做除基取余，把 `dec` 改成 0 后再输出十进制值，第一行永远是 0；② 余数逆序时从 `k` 开始而不是 `k - 1`，多输出一个未初始化字符；③ 忘记 `dec == 0` 的边界，输出空行；④ 把字母映射写成 `c - 'A'`，A 被当成 0。",
+    "module": "C语言基础",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "读入一个 r 进制正整数，先把它转换成十进制，再把该十进制值转换成 m 进制输出。r 进制串中大于 9 的数字用大写字母 A~F 表示（即 10~15）。\n\n**输入格式：** 第一行两个整数 r 和 m（2 ≤ r, m ≤ 16）；第二行一个 r 进制正整数 s（长度不超过 10，不含前导 0，s 为 `0` 时除外），字符只含 0~9 与 A~F。\n\n**输出格式：** 第一行输出 s 的十进制值；第二行输出 s 在 m 进制下的表示（大于 9 的数字用大写字母 A~F）。\n\n**输入样例：**\n```text\n16 2\n1F\n```\n**输出样例：**\n```text\n31\n11111\n```",
+        "solution": "#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint digitValue(char c)\n{\n    if (c >= '0' && c <= '9')\n        return c - '0';\n    if (c >= 'A' && c <= 'F')\n        return c - 'A' + 10;\n    return c - 'a' + 10;\n}\n\nint main()\n{\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int r, m;\n    string s;\n    if (!(cin >> r >> m))\n        return 0;\n    cin >> s;\n\n    long long dec = 0;\n    for (char c : s)\n        dec = dec * r + digitValue(c);\n\n    string out;\n    long long tmp = dec;\n    if (tmp == 0) {\n        out = \"0\";\n    } else {\n        while (tmp > 0) {\n            int dig = static_cast<int>(tmp % m);\n            out += static_cast<char>(dig < 10 ? '0' + dig : 'A' + dig - 10);\n            tmp /= m;\n        }\n        reverse(out.begin(), out.end());\n    }\n\n    cout << dec << '\\n' << out << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 range-for 遍历 string 逐位累加",
+          "用 string 追加余数字符，再 reverse 得到结果",
+          "long long 保存十进制值，避免长度 10 的 16 进制溢出",
+          "单独处理 dec == 0，输出 0"
+        ],
+        "analysis": "思路：同样两步转换。C++ 用 `range-for` 遍历 `string`，余数先 `push_back` 再 `reverse`，比 C 版手工逆序更不容易越界。\n\n关键步骤：① `cin >> r >> m` 后 `cin >> s`；② `dec = dec * r + digitValue(c)`；③ `tmp = dec`，循环 `out += char(dig < 10 ? '0' + dig : 'A' + dig - 10); tmp /= m;`；④ `reverse(out.begin(), out.end())`；⑤ 分两行输出。\n\n复杂度：O(L + log_m dec) 时间，O(L) 空间。\n\n易错点：① `char` 是 8 位有符号类型，`'A' + dig - 10` 直接赋给 `char` 建议显式 `static_cast<char>`，避免窄化警告；② 忘记 `#include <algorithm>` 导致 `reverse` 未声明；③ `while (tmp > 0)` 在 `dec == 0` 时一次都不执行，输出空串；④ 用 `int` 存十进制值，长度 10 的 16 进制（如 `FFFFFFFFF`）会溢出。"
+      },
+      "python": {
+        "stem": "读入一个 r 进制正整数，先把它转换成十进制，再把该十进制值转换成 m 进制输出。r 进制串中大于 9 的数字用大写字母 A~F 表示（即 10~15）。\n\n**输入格式：** 第一行两个整数 r 和 m（2 ≤ r, m ≤ 16）；第二行一个 r 进制正整数 s（长度不超过 10，不含前导 0，s 为 `0` 时除外），字符只含 0~9 与 A~F。\n\n**输出格式：** 第一行输出 s 的十进制值；第二行输出 s 在 m 进制下的表示（大于 9 的数字用大写字母 A~F）。\n\n**输入样例：**\n```text\n16 2\n1F\n```\n**输出样例：**\n```text\n31\n11111\n```",
+        "solution": "import sys\n\nDIGITS = \"0123456789ABCDEF\"\n\n\ndef digit_value(ch):\n    return DIGITS.index(ch.upper())\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 3:\n        return\n    r, m = int(data[0]), int(data[1])\n    s = data[2]\n\n    dec = 0\n    for ch in s:\n        dec = dec * r + digit_value(ch)\n\n    if dec == 0:\n        out = \"0\"\n    else:\n        buf = []\n        tmp = dec\n        while tmp > 0:\n            buf.append(DIGITS[tmp % m])\n            tmp //= m\n        out = \"\".join(reversed(buf))\n\n    print(dec)\n    print(out)\n\n\nmain()\n",
+        "points": [
+          "用 DIGITS 常量表完成字符与数值的双向映射",
+          "遍历字符串累加得到十进制值 dec",
+          "while 循环 divmod 式取余并 reversed 得到 m 进制串",
+          "dec == 0 时输出 0"
+        ],
+        "analysis": "思路：Python 用一张 `DIGITS` 常量表同时承担「字符→数值」和「数值→字符」两个方向，主流程与 C 版一致：先累加出十进制，再除基取余并反转。\n\n关键步骤：① `DIGITS = \"0123456789ABCDEF\"`，`digit_value` 用 `DIGITS.index(ch.upper())`；② `for ch in s: dec = dec * r + digit_value(ch)`；③ `while tmp > 0: buf.append(DIGITS[tmp % m]); tmp //= m`；④ `\"\".join(reversed(buf))`。\n\n复杂度：O(L + log_m dec) 时间，O(L) 空间。\n\n易错点：① 用内置 `int(s, r)` 虽然能算十进制，但转 m 进制仍需自己写，且题目要求体现转换过程；② `reversed` 返回迭代器，忘记 `\"\".join(...)` 直接 print 会打印出迭代器对象；③ `tmp //= m` 写成 `tmp /= m` 得到 float，取余时出错；④ `dec == 0` 时不特判，`buf` 为空，第二行输出空行。"
+      }
+    }
+  },
+  {
+    "id": "数-88",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "排序",
+      "统计",
+      "数组"
+    ],
+    "stem": "给定 n 个整数，按每个整数出现的次数从多到少重新排列后输出（出现几次就输出几次）；出现次数相同的整数，数值小的排在前面。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 200）；第二行 n 个整数（绝对值不超过 1000），用空格分隔。\n\n**输出格式：** 一行，按上述规则输出 n 个整数，相邻整数用一个空格分隔，行末不得有多余空格。\n\n**输入样例：**\n```text\n9\n4 4 1 2 2 2 3 3 3\n```\n**输出样例：**\n```text\n2 2 2 3 3 3 4 4 1\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct {\n    int value;\n    int count;\n} Group;\n\nstatic int cmpIntAsc(const void *a, const void *b)\n{\n    int x = *(const int *)a;\n    int y = *(const int *)b;\n    return (x > y) - (x < y);\n}\n\nstatic int cmpGroup(const void *a, const void *b)\n{\n    const Group *p = (const Group *)a;\n    const Group *q = (const Group *)b;\n\n    if (p->count != q->count)\n        return q->count - p->count;          /* 次数多的在前 */\n    return (p->value > q->value) - (p->value < q->value);\n}\n\nint main(void)\n{\n    int a[200];\n    Group g[200];\n    int n, i, k = 0;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 0; i < n; i++)\n        scanf(\"%d\", &a[i]);\n\n    qsort(a, (size_t)n, sizeof(a[0]), cmpIntAsc);\n\n    for (i = 0; i < n; i++) {\n        if (k > 0 && g[k - 1].value == a[i]) {\n            g[k - 1].count++;\n        } else {\n            g[k].value = a[i];\n            g[k].count = 1;\n            k++;\n        }\n    }\n\n    qsort(g, (size_t)k, sizeof(g[0]), cmpGroup);\n\n    for (i = 0; i < k; i++) {\n        int j;\n        for (j = 0; j < g[i].count; j++) {\n            if (i > 0 || j > 0)\n                printf(\" \");\n            printf(\"%d\", g[i].value);\n        }\n    }\n    printf(\"\\n\");\n    return 0;\n}\n",
+    "points": [
+      "先对原数组升序排序，使相同数值相邻",
+      "一次遍历合并出「数值 + 出现次数」的分组",
+      "用二级排序比较器：先比次数降序，再比数值升序",
+      "按分组展开输出，控制空格不允许多余"
+    ],
+    "analysis": "思路：先把数组升序排序，相同数值就聚在一起，一次线性扫描即可合并成「数值 + 次数」的分组数组；再对这些分组按（次数降序，数值升序）排序，最后按次数把数值展开输出。\n\n关键步骤：① `qsort(a, n, sizeof(a[0]), cmpIntAsc)`；② 扫描时若当前值等于 `g[k-1].value` 就 `count++`，否则新建一组；③ `cmpGroup` 先用 `q->count - p->count` 实现次数降序，次数相同再用 `(p->value > q->value) - (p->value < q->value)` 实现数值升序；④ 双重循环展开，用 `i > 0 || j > 0` 控制空格。\n\n复杂度：时间 O(n log n)，空间 O(n)。\n\n易错点：① 只按次数排序、忘了次数相同时的数值次序，结果随排序算法不同而变化；② 比较器里用 `p->count - q->count` 方向写反；③ 展开时用 `i == 0` 判断是否首元素，导致第二组开头多一个空格；④ 分组时忘记先把数组排序，相同值不相邻，分组数偏多。",
+    "module": "数组",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "给定 n 个整数，按每个整数出现的次数从多到少重新排列后输出（出现几次就输出几次）；出现次数相同的整数，数值小的排在前面。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 200）；第二行 n 个整数（绝对值不超过 1000），用空格分隔。\n\n**输出格式：** 一行，按上述规则输出 n 个整数，相邻整数用一个空格分隔，行末不得有多余空格。\n\n**输入样例：**\n```text\n9\n4 4 1 2 2 2 3 3 3\n```\n**输出样例：**\n```text\n2 2 2 3 3 3 4 4 1\n```",
+        "solution": "#include <iostream>\n#include <vector>\n#include <utility>\n#include <algorithm>\nusing namespace std;\n\nint main()\n{\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    if (!(cin >> n))\n        return 0;\n\n    vector<int> a(n);\n    for (int &x : a)\n        cin >> x;\n\n    sort(a.begin(), a.end());          // 先按数值升序，相同值聚在一起\n\n    vector<pair<int, int>> g;          // (数值, 出现次数)\n    for (int x : a) {\n        if (!g.empty() && g.back().first == x)\n            g.back().second++;\n        else\n            g.push_back({x, 1});\n    }\n\n    sort(g.begin(), g.end(), [](const pair<int, int> &p, const pair<int, int> &q) {\n        if (p.second != q.second)\n            return p.second > q.second;   // 次数多的在前\n        return p.first < q.first;         // 次数相同，数值小的在前\n    });\n\n    bool first = true;\n    for (const auto &p : g) {\n        for (int i = 0; i < p.second; ++i) {\n            if (!first)\n                cout << ' ';\n            cout << p.first;\n            first = false;\n        }\n    }\n    cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 sort 把数组排成升序，相同值相邻",
+          "用 vector<pair<int,int>> 存 (数值, 次数) 完成分组",
+          "lambda 比较器实现次数降序、数值升序的二级排序",
+          "用 first 标志控制空格，避免行末多余空格"
+        ],
+        "analysis": "思路：C++ 版把 C 版的「排序 + 分组 + 二级排序」写得更紧凑：`sort` 排数组，`vector<pair<int,int>>` 按 `g.back().first == x` 合并分组，lambda 完成二级比较。\n\n关键步骤：① `sort(a.begin(), a.end())`；② 遍历数组，`g.back().second++` 或 `push_back({x, 1})`；③ lambda 里 `if (p.second != q.second) return p.second > q.second; return p.first < q.first;`；④ 双重循环输出，`first` 标志控制空格。\n\n复杂度：O(n log n) 时间，O(n) 空间。\n\n易错点：① lambda 写成 `return p.second > q.second;` 而没有后面的 `return`，次数相同时顺序不确定，不满足严格弱序；② 用 `vector<pair<int,int>>` 却按 `.first`（数值）排序，变成普通升序输出；③ 输出循环里 `if (!first) cout << ' ';` 写在 `first = false` 之后，第一个元素前也带空格；④ `g.back()` 在 `g` 为空时调用，未定义行为。"
+      },
+      "python": {
+        "stem": "给定 n 个整数，按每个整数出现的次数从多到少重新排列后输出（出现几次就输出几次）；出现次数相同的整数，数值小的排在前面。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 200）；第二行 n 个整数（绝对值不超过 1000），用空格分隔。\n\n**输出格式：** 一行，按上述规则输出 n 个整数，相邻整数用一个空格分隔，行末不得有多余空格。\n\n**输入样例：**\n```text\n9\n4 4 1 2 2 2 3 3 3\n```\n**输出样例：**\n```text\n2 2 2 3 3 3 4 4 1\n```",
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    a = [int(x) for x in data[1:1 + n]]\n\n    counts = {}\n    for x in a:\n        counts[x] = counts.get(x, 0) + 1\n\n    order = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))\n\n    out = []\n    for value, c in order:\n        out.extend([str(value)] * c)\n    print(\" \".join(out))\n\n\nmain()\n",
+        "points": [
+          "用字典统计每个数值的出现次数",
+          "sorted 的 key 用 (-次数, 数值) 实现两级排序",
+          "用列表乘法 [str(v)] * c 展开重复元素",
+          "join 输出，天然没有行末多余空格"
+        ],
+        "analysis": "思路：Python 版省掉了「先排序再分组」这一步：直接用字典统计频次，再用 `sorted` 的 key `(-次数, 数值)` 一次表达两级排序规则，最后把每个值重复 count 次展开。\n\n关键步骤：① `counts[x] = counts.get(x, 0) + 1`；② `order = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))`；③ `out.extend([str(value)] * c)`；④ `print(\" \".join(out))`。\n\n复杂度：O(n + k log k) 时间（k 为不同数值个数），O(n) 空间。\n\n易错点：① key 写成 `(kv[1], kv[0])`，变成次数升序；② 忘了次数要降序，用 `reverse=True` 会把数值次序也一起反过来；③ 展开时用 `out.append(str(value))` 只输出一次；④ 空输入时 `data[0]` 越界，需要先判断 `if not data`。"
+      }
+    }
+  },
+  {
+    "id": "数-89",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "二维数组",
+      "矩阵遍历",
+      "边界控制"
+    ],
+    "stem": "给定一个 m 行 n 列的整数矩阵，从左上角开始按顺时针方向螺旋遍历整个矩阵，依次输出访问到的元素。\n\n**输入格式：** 第一行两个整数 m 和 n（1 ≤ m, n ≤ 20）；随后 m 行，每行 n 个整数（绝对值不超过 1000）。\n\n**输出格式：** 一行，按螺旋顺序输出 m×n 个整数，相邻整数用一个空格分隔，行末不得有多余空格。\n\n**输入样例：**\n```text\n3 4\n1 2 3 4\n5 6 7 8\n9 10 11 12\n```\n**输出样例：**\n```text\n1 2 3 4 8 12 11 10 9 5 6 7\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int a[20][20];\n    int m, n, i, j;\n    int top, bottom, left, right;\n    int first = 1;\n\n    if (scanf(\"%d %d\", &m, &n) != 2)\n        return 0;\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++)\n            scanf(\"%d\", &a[i][j]);\n\n    top = 0;\n    bottom = m - 1;\n    left = 0;\n    right = n - 1;\n\n    while (top <= bottom && left <= right) {\n        for (j = left; j <= right; j++) {\n            if (!first)\n                printf(\" \");\n            printf(\"%d\", a[top][j]);\n            first = 0;\n        }\n        top++;\n\n        for (i = top; i <= bottom; i++) {\n            if (!first)\n                printf(\" \");\n            printf(\"%d\", a[i][right]);\n            first = 0;\n        }\n        right--;\n\n        if (top <= bottom) {\n            for (j = right; j >= left; j--) {\n                if (!first)\n                    printf(\" \");\n                printf(\"%d\", a[bottom][j]);\n                first = 0;\n            }\n            bottom--;\n        }\n\n        if (left <= right) {\n            for (i = bottom; i >= top; i--) {\n                if (!first)\n                    printf(\" \");\n                printf(\"%d\", a[i][left]);\n                first = 0;\n            }\n            left++;\n        }\n    }\n\n    printf(\"\\n\");\n    return 0;\n}\n",
+    "points": [
+      "用 top / bottom / left / right 四个边界描述当前未访问的矩形",
+      "按「上边、右边、下边、左边」四步依次遍历并收缩边界",
+      "在下边和左边的循环前判断边界是否仍然有效，防止重复输出",
+      "控制输出空格，行末不多打空格"
+    ],
+    "analysis": "思路：用四个边界 `top`、`bottom`、`left`、`right` 框住还没访问的矩形区域，每一轮按「上边从左到右、右边从上到下、下边从右到左、左边从下到上」走一圈，然后各自收缩一格，直到边界交叉。\n\n关键步骤：① 读入矩阵；② 上边循环 `j = left..right` 后 `top++`；③ 右边循环 `i = top..bottom` 后 `right--`；④ 下边和左边循环前分别判断 `top <= bottom`、`left <= right`，否则单行或单列时会把同一行/列重复走一遍；⑤ 用 `first` 标志控制空格。\n\n复杂度：每个元素恰好访问一次，时间 O(mn)，空间 O(1)（除矩阵本身）。\n\n易错点：① 下边、左边的循环不加条件判断，m = 1 或 n = 1 时元素被重复输出；② 把 `top++` 写在遍历上边之前，整行数据会被跳过；③ 上边走完后 `top` 已经加 1，右边循环仍从原来的行号开始，右上角元素被输出两次；④ 用 `printf(\"%d \")` 输出，行末留下多余空格。",
+    "module": "数组",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "给定一个 m 行 n 列的整数矩阵，从左上角开始按顺时针方向螺旋遍历整个矩阵，依次输出访问到的元素。\n\n**输入格式：** 第一行两个整数 m 和 n（1 ≤ m, n ≤ 20）；随后 m 行，每行 n 个整数（绝对值不超过 1000）。\n\n**输出格式：** 一行，按螺旋顺序输出 m×n 个整数，相邻整数用一个空格分隔，行末不得有多余空格。\n\n**输入样例：**\n```text\n3 4\n1 2 3 4\n5 6 7 8\n9 10 11 12\n```\n**输出样例：**\n```text\n1 2 3 4 8 12 11 10 9 5 6 7\n```",
+        "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int m, n;\n    if (!(cin >> m >> n))\n        return 0;\n\n    vector<vector<int>> a(m, vector<int>(n));\n    for (int i = 0; i < m; ++i)\n        for (int j = 0; j < n; ++j)\n            cin >> a[i][j];\n\n    int top = 0, bottom = m - 1, left = 0, right = n - 1;\n    bool first = true;\n\n    while (top <= bottom && left <= right) {\n        for (int j = left; j <= right; ++j) {\n            if (!first) cout << ' ';\n            cout << a[top][j];\n            first = false;\n        }\n        ++top;\n\n        for (int i = top; i <= bottom; ++i) {\n            if (!first) cout << ' ';\n            cout << a[i][right];\n            first = false;\n        }\n        --right;\n\n        if (top <= bottom) {\n            for (int j = right; j >= left; --j) {\n                if (!first) cout << ' ';\n                cout << a[bottom][j];\n                first = false;\n            }\n            --bottom;\n        }\n\n        if (left <= right) {\n            for (int i = bottom; i >= top; --i) {\n                if (!first) cout << ' ';\n                cout << a[i][left];\n                first = false;\n            }\n            ++left;\n        }\n    }\n\n    cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 vector<vector<int>> 保存矩阵，四个边界变量控制螺旋",
+          "四个方向的循环分别收缩 top / right / bottom / left",
+          "单行单列时用边界判断跳过反向的两条边",
+          "bool first 控制空格输出"
+        ],
+        "analysis": "思路：与 C 版同一套四边界算法。C++ 用 `vector<vector<int>>` 存矩阵，避免固定大小数组；`bool first` 控制空格。\n\n关键步骤：① `vector<vector<int>> a(m, vector<int>(n))` 并读入；② 上边、右边两条边各收缩一次；③ 下边、左边循环前分别判断 `top <= bottom`、`left <= right`；④ 输出时 `if (!first) cout << ' ';`。\n\n复杂度：O(mn) 时间，O(1) 额外空间（不计矩阵）。\n\n易错点：① `vector<vector<int>> a(m, vector<int>(n))` 写成 `a(m, n)` 会编译失败（没有这种构造函数）；② 右边循环用了 `i = top` 而 `top` 已经 `++top`，写法正确但容易和收缩顺序搞混；③ 忘记单行/单列的保护条件；④ 输出用 `cout << a[top][j] << \" \"`，行末多空格。"
+      },
+      "python": {
+        "stem": "给定一个 m 行 n 列的整数矩阵，从左上角开始按顺时针方向螺旋遍历整个矩阵，依次输出访问到的元素。\n\n**输入格式：** 第一行两个整数 m 和 n（1 ≤ m, n ≤ 20）；随后 m 行，每行 n 个整数（绝对值不超过 1000）。\n\n**输出格式：** 一行，按螺旋顺序输出 m×n 个整数，相邻整数用一个空格分隔，行末不得有多余空格。\n\n**输入样例：**\n```text\n3 4\n1 2 3 4\n5 6 7 8\n9 10 11 12\n```\n**输出样例：**\n```text\n1 2 3 4 8 12 11 10 9 5 6 7\n```",
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    m, n = int(data[0]), int(data[1])\n    vals = [int(x) for x in data[2:2 + m * n]]\n    grid = [vals[i * n:(i + 1) * n] for i in range(m)]\n\n    top, bottom, left, right = 0, m - 1, 0, n - 1\n    ans = []\n\n    while top <= bottom and left <= right:\n        for j in range(left, right + 1):\n            ans.append(grid[top][j])\n        top += 1\n\n        for i in range(top, bottom + 1):\n            ans.append(grid[i][right])\n        right -= 1\n\n        if top <= bottom:\n            for j in range(right, left - 1, -1):\n                ans.append(grid[bottom][j])\n            bottom -= 1\n\n        if left <= right:\n            for i in range(bottom, top - 1, -1):\n                ans.append(grid[i][left])\n            left += 1\n\n    print(\" \".join(str(x) for x in ans))\n\n\nmain()\n",
+        "points": [
+          "一次 read().split() 读入并按 n 切片成二维列表",
+          "four-boundaries 循环，四段 for 依次遍历",
+          "用 if top <= bottom / left <= right 防止重复访问",
+          "用 join 输出，天然没有行末多余空格"
+        ],
+        "analysis": "思路：Python 版沿用四边界思路，先把一维记号按 `n` 切片成 `grid`，再用四段 `for` 走螺旋，`ans` 收集后一次 `join` 输出。\n\n关键步骤：① `grid = [vals[i * n:(i + 1) * n] for i in range(m)]`；② 上边 `range(left, right + 1)`，右边 `range(top, bottom + 1)`，下边 `range(right, left - 1, -1)`，左边 `range(bottom, top - 1, -1)`；③ 每走完一条边就收缩对应边界；④ 下边和左边前判断边界。\n\n复杂度：O(mn) 时间，O(mn) 空间（结果列表）。\n\n易错点：① `range(right, left - 1, -1)` 的终止值写成 `left`，会少输出最左边一个；② 忘了 `top += 1` 后右边循环应从新的 `top` 开始，导致右上角元素重复；③ 单行矩阵时下边循环把整行又输出一遍；④ `\" \".join(ans)` 里 `ans` 是 int 列表，需要先 `map(str, ...)`。"
+      }
+    }
+  },
+  {
+    "id": "数-90",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "字符数组",
+      "字符串",
+      "模拟"
+    ],
+    "stem": "对只含小写字母的字符串做行程长度压缩：把连续出现的相同字符写成「字符 + 该字符连续出现的次数」。例如 `aaabbc` 压缩为 `a3b2c1`；只出现一次的字符也要写出次数 1。\n\n**输入格式：** 一行一个由小写字母组成的字符串（长度 1 ≤ L ≤ 1000，不含空白字符）。\n\n**输出格式：** 一行，压缩后的字符串。\n\n**输入样例：**\n```text\naaabbc\n```\n**输出样例：**\n```text\na3b2c1\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nint main(void)\n{\n    char s[1005];\n    int i = 0, len;\n\n    if (scanf(\"%1004s\", s) != 1)\n        return 0;\n    len = (int)strlen(s);\n\n    while (i < len) {\n        int cnt = 1;\n        while (i + cnt < len && s[i + cnt] == s[i])\n            cnt++;\n        printf(\"%c%d\", s[i], cnt);\n        i += cnt;\n    }\n    printf(\"\\n\");\n    return 0;\n}\n",
+    "points": [
+      "正确读入不含空格的字符串并求长度",
+      "用外层 while 定位每一段的起点，内层 while 统计连续相同字符个数",
+      "用 printf(\"%c%d\") 输出字符与该段长度，次数可能超过 9",
+      "外层指针按段长跳转，避免重复统计"
+    ],
+    "analysis": "思路：双指针扫描——外层 `i` 指向当前段的第一个字符，内层从 `i` 往后数出这一段有多长，输出「字符 + 长度」后让 `i` 直接跳过整段。\n\n关键步骤：① `scanf(\"%1004s\", s)` 读入（缓冲区 1005 字节，宽度 1004 保证不越界，且能容纳 1000 个字符）；② `strlen` 得到 `len`；③ 内层 `while (i + cnt < len && s[i + cnt] == s[i]) cnt++;` 数出段长；④ `printf(\"%c%d\", s[i], cnt)`；⑤ `i += cnt` 进入下一段。\n\n复杂度：时间 O(L)，每个字符只被看一次；空间 O(L)（存字符串）。\n\n易错点：① 次数用 `%c` 输出，超过 9 时变成奇怪字符；② 内层循环条件漏掉 `i + cnt < len`，越界读；③ 每段计数后 `i++` 而不是 `i += cnt`，把同一段拆成多个字符输出；④ 用 `gets` 读入（已从标准中移除且不安全）；⑤ 输出后忘记换行或漏掉计数为 1 的段。",
+    "module": "数组",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "对只含小写字母的字符串做行程长度压缩：把连续出现的相同字符写成「字符 + 该字符连续出现的次数」。例如 `aaabbc` 压缩为 `a3b2c1`；只出现一次的字符也要写出次数 1。\n\n**输入格式：** 一行一个由小写字母组成的字符串（长度 1 ≤ L ≤ 1000，不含空白字符）。\n\n**输出格式：** 一行，压缩后的字符串。\n\n**输入样例：**\n```text\naaabbc\n```\n**输出样例：**\n```text\na3b2c1\n```",
+        "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main()\n{\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    string s;\n    if (!(cin >> s))\n        return 0;\n\n    string out;\n    int n = static_cast<int>(s.size());\n    int i = 0;\n\n    while (i < n) {\n        int j = i;\n        while (j < n && s[j] == s[i])\n            ++j;\n        out += s[i];\n        out += to_string(j - i);\n        i = j;\n    }\n\n    cout << out << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 cin >> s 读入 string（不含空白）",
+          "双指针 i、j 定位每一段的起止",
+          "用 to_string 把段长拼到结果串中",
+          "结果串一次性输出"
+        ],
+        "analysis": "思路：与 C 版相同的双指针扫描，只是把字符缓冲换成 `string`，用 `out += s[i]; out += to_string(j - i);` 拼接结果。\n\n关键步骤：① `cin >> s`（遇到空白停止，本题输入不含空白）；② `int j = i; while (j < n && s[j] == s[i]) ++j;`；③ 拼接字符与 `to_string(j - i)`；④ `i = j` 继续。\n\n复杂度：O(L) 时间，O(L) 空间。\n\n易错点：① 用 `cin >>` 读含空格的串会截断（本题不含空格，但换成含空格输入就必须 `getline`）；② 忘记 `#include <string>` 就用 `to_string`；③ `int n = s.size()` 产生有符号/无符号比较警告，应显式转换；④ 段长用 `char` 保存，超过 127 溢出。"
+      },
+      "python": {
+        "stem": "对只含小写字母的字符串做行程长度压缩：把连续出现的相同字符写成「字符 + 该字符连续出现的次数」。例如 `aaabbc` 压缩为 `a3b2c1`；只出现一次的字符也要写出次数 1。\n\n**输入格式：** 一行一个由小写字母组成的字符串（长度 1 ≤ L ≤ 1000，不含空白字符）。\n\n**输出格式：** 一行，压缩后的字符串。\n\n**输入样例：**\n```text\naaabbc\n```\n**输出样例：**\n```text\na3b2c1\n```",
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    s = data[0]\n\n    parts = []\n    i = 0\n    n = len(s)\n    while i < n:\n        j = i\n        while j < n and s[j] == s[i]:\n            j += 1\n        parts.append(f\"{s[i]}{j - i}\")\n        i = j\n\n    print(\"\".join(parts))\n\n\nmain()\n",
+        "points": [
+          "一次 read().split() 取第一个记号作为字符串",
+          "双指针 i、j 数出每段长度",
+          "用 f-string 拼出「字符 + 次数」",
+          "join 后一次输出"
+        ],
+        "analysis": "思路：Python 用 `while` 双指针数段，用 f-string 拼「字符 + 次数」。字符串不可变，所以把每段结果放进列表再 `join`。\n\n关键步骤：① `s = sys.stdin.read().split()[0]`；② 外层 `while i < n`，内层 `while j < n and s[j] == s[i]: j += 1`；③ `parts.append(f\"{s[i]}{j - i}\")`；④ `i = j`，最后 `print(\"\".join(parts))`。\n\n复杂度：O(L) 时间，O(L) 空间。\n\n易错点：① 用 `s.count(s[i])` 统计整串出现次数，而不是连续段长度；② 直接用 `for` 遍历并累加计数，边界处容易漏掉最后一段；③ 结果用 `+` 反复拼接字符串，长串时退化为 O(L²)；④ 用 `input()` 读入时字符串两端可能带换行，需要 `strip()`。"
+      }
+    }
+  },
+  {
+    "id": "指-95",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "指针",
+      "原地修改",
+      "数组旋转"
+    ],
+    "stem": "给定 n 个整数，把它们整体循环左移 k 位：左移后第 i 个位置上是原来的第 (i + k) 个数（下标从 0 开始）。要求只用常数级额外空间完成移动（提示：三次反转）。\n\n**输入格式：** 第一行两个整数 n 和 k（1 ≤ n ≤ 100，0 ≤ k ≤ 1000）；第二行 n 个整数，用空格分隔。\n\n**输出格式：** 一行，输出左移后的 n 个整数，相邻整数用一个空格分隔，行末不得有多余空格。\n\n**输入样例：**\n```text\n7 3\n1 2 3 4 5 6 7\n```\n**输出样例：**\n```text\n4 5 6 7 1 2 3\n```",
+    "solution": "#include <stdio.h>\n\n/* 反转区间 [begin, end) */\nstatic void reverseRange(int *begin, int *end)\n{\n    if (begin >= end)          /* 空区间直接返回 */\n        return;\n    --end;                     /* 现在 end 指向区间内最后一个元素 */\n    while (begin < end) {\n        int t = *begin;\n        *begin = *end;\n        *end = t;\n        ++begin;\n        --end;\n    }\n}\n\nint main(void)\n{\n    int a[100];\n    int n, k, i;\n\n    if (scanf(\"%d %d\", &n, &k) != 2)\n        return 0;\n    for (i = 0; i < n; i++)\n        scanf(\"%d\", &a[i]);\n\n    k %= n;                       /* k 可能大于 n */\n\n    reverseRange(a, a + k);       /* 前 k 个反转 */\n    reverseRange(a + k, a + n);   /* 后 n-k 个反转 */\n    reverseRange(a, a + n);       /* 整体反转 */\n\n    for (i = 0; i < n; i++) {\n        if (i > 0)\n            printf(\" \");\n        printf(\"%d\", a[i]);\n    }\n    printf(\"\\n\");\n    return 0;\n}\n",
+    "points": [
+      "先对 k 取模，处理 k ≥ n 与 k = 0 的情况",
+      "写出以 [begin, end) 为区间的指针版反转函数",
+      "依次反转前 k 个、后 n-k 个、整个数组",
+      "用指针遍历输出，空格控制正确"
+    ],
+    "analysis": "思路：三次反转是数组旋转的标准原地算法。设前 k 个为 A、后 n-k 个为 B，原数组是 AB，目标是 BA：先 `reverse(A)`、再 `reverse(B)`、最后 `reverse(AB)`，得到 BA。\n\n关键步骤：① `k %= n` 把 k 缩到 [0, n)；② `reverseRange` 用两个指针 `begin`、`end` 表示**左闭右开**区间，空区间先返回，再把 `--end` 指向最后一个元素，然后逐步交换、向中间收拢；③ 三次调用反转；④ 指针遍历输出。\n\n复杂度：时间 O(n)，空间 O(1)（只有交换用的临时变量）。\n\n易错点：① 忘记 `k %= n`，k = 1000、n = 7 时越界；② 区间语义没统一：函数按左闭右开设计，调用却传了 `a + k - 1`；③ 空区间没提前返回，`--end` 会把指针移到数组之前，形成越界指针；④ 输出用 `printf(\"%d \")`，行末多空格。",
+    "module": "指针",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "给定 n 个整数，把它们整体循环左移 k 位：左移后第 i 个位置上是原来的第 (i + k) 个数（下标从 0 开始）。要求只用常数级额外空间完成移动（提示：三次反转）。\n\n**输入格式：** 第一行两个整数 n 和 k（1 ≤ n ≤ 100，0 ≤ k ≤ 1000）；第二行 n 个整数，用空格分隔。\n\n**输出格式：** 一行，输出左移后的 n 个整数，相邻整数用一个空格分隔，行末不得有多余空格。\n\n**输入样例：**\n```text\n7 3\n1 2 3 4 5 6 7\n```\n**输出样例：**\n```text\n4 5 6 7 1 2 3\n```",
+        "solution": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nint main()\n{\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, k;\n    if (!(cin >> n >> k))\n        return 0;\n\n    vector<int> a(n);\n    for (int &x : a)\n        cin >> x;\n\n    k %= n;                       // k 可能大于 n\n\n    reverse(a.begin(), a.begin() + k);   // 前 k 个反转\n    reverse(a.begin() + k, a.end());     // 后 n-k 个反转\n    reverse(a.begin(), a.end());         // 整体反转\n\n    for (int i = 0; i < n; ++i) {\n        if (i)\n            cout << ' ';\n        cout << a[i];\n    }\n    cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 std::reverse 对三个区间反转，语义与指针版完全一致",
+          "k %= n 处理 k 大于等于 n 的情况",
+          "vector 下标访问输出，first 思路控制空格",
+          "说明 reverse 的区间同样是左闭右开"
+        ],
+        "analysis": "思路：C++ 用标准算法 `std::reverse` 表达同一套三次反转，`reverse(a.begin(), a.begin() + k)` 的区间也是左闭右开，和 C 版的指针区间一一对应。\n\n关键步骤：① `vector<int> a(n)` 读入；② `k %= n`；③ 三次 `reverse`；④ 循环输出，`if (i) cout << ' ';`。\n\n复杂度：O(n) 时间，O(1) 额外空间。\n\n易错点：① `reverse(a.begin(), a.begin() + k)` 误写成 `begin() + k - 1`，`k = 0` 时迭代器越界；② 只反转一次就输出，得到前 k 个逆序而不是循环左移；③ 用 `std::rotate(a.begin(), a.begin() + k, a.end())` 也对，但写成 `rotate(a.begin(), a.end(), a.begin() + k)` 结果不同；④ 忘记 `#include <algorithm>`。"
+      },
+      "python": {
+        "stem": "给定 n 个整数，把它们整体循环左移 k 位：左移后第 i 个位置上是原来的第 (i + k) 个数（下标从 0 开始）。要求只用常数级额外空间完成移动（提示：三次反转）。\n\n**输入格式：** 第一行两个整数 n 和 k（1 ≤ n ≤ 100，0 ≤ k ≤ 1000）；第二行 n 个整数，用空格分隔。\n\n**输出格式：** 一行，输出左移后的 n 个整数，相邻整数用一个空格分隔，行末不得有多余空格。\n\n**输入样例：**\n```text\n7 3\n1 2 3 4 5 6 7\n```\n**输出样例：**\n```text\n4 5 6 7 1 2 3\n```",
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n    n, k = int(data[0]), int(data[1])\n    a = [int(x) for x in data[2:2 + n]]\n\n    k %= n\n    ans = a[k:] + a[:k]          # 左移 k 位\n    print(\" \".join(str(x) for x in ans))\n\n\nmain()\n",
+        "points": [
+          "用切片 a[k:] + a[:k] 一次完成左移",
+          "k %= n 处理 k 大于等于 n",
+          "join 输出，无行末空格",
+          "说明切片会新建列表，与原地三次反转在结果上等价"
+        ],
+        "analysis": "思路：Python 最自然的写法是切片：`a[k:] + a[:k]` 正好把「原来第 k 个到末尾」接到「原来前 k 个」前面，结果与三次反转完全一致。\n\n关键步骤：① `data = sys.stdin.read().split()`；② `a = [int(x) for x in data[2:2 + n]]`；③ `k %= n`；④ `ans = a[k:] + a[:k]`；⑤ `print(\" \".join(map(str, ans)))`。\n\n复杂度：O(n) 时间，O(n) 空间（切片新建列表；本题是 Python 的惯用写法，结果与原地算法相同）。\n\n易错点：① 写成 `a[:k] + a[k:]`，根本没移动；② 忘记 `k %= n`，`a[k:]` 在 k > n 时得到空列表，结果变成原数组；③ 用 `a[k:] + a[:k]` 却以为会修改 `a` 本身，后面又输出 `a`；④ 输出 `print(ans)` 打出方括号和逗号，不符合格式。"
+      }
+    }
+  },
+  {
+    "id": "指-96",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "单链表",
+      "归并",
+      "指针"
+    ],
+    "stem": "输入两个按升序排列的整数序列，分别用尾插法建立两条单链表，再把它们归并成一条仍然升序的单链表后输出。要求不申请新的数据结点，只修改指针，把两条链表的结点「接」起来。\n\n**输入格式：** 第一行两个整数 n1 和 n2（0 ≤ n1, n2 ≤ 50，且 n1 与 n2 不同时为 0）；第二行 n1 个升序整数；第三行 n2 个升序整数（若对应的 n 为 0，则该行为空行）。\n\n**输出格式：** 一行，按升序输出归并后的 n1+n2 个整数，相邻整数用一个空格分隔，行末不得有多余空格。\n\n**输入样例：**\n```text\n3 4\n1 3 8\n2 3 9\n```\n**输出样例：**\n```text\n1 2 3 3 8 9\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct Node {\n    int value;\n    struct Node *next;\n} Node;\n\nstatic Node *createNode(int value)\n{\n    Node *p = (Node *)malloc(sizeof(Node));\n\n    if (p == NULL)\n        return NULL;\n    p->value = value;\n    p->next = NULL;\n    return p;\n}\n\nstatic Node *buildList(int n)\n{\n    Node *head = NULL, *tail = NULL;\n    int i, value;\n\n    for (i = 0; i < n; i++) {\n        Node *p;\n        if (scanf(\"%d\", &value) != 1)\n            break;\n        p = createNode(value);\n        if (p == NULL)\n            break;\n        if (head == NULL) {\n            head = tail = p;\n        } else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    return head;\n}\n\nstatic Node *mergeList(Node *a, Node *b)\n{\n    Node dummy;                       /* 哑结点，省掉头指针的特判 */\n    Node *tail = &dummy;\n\n    dummy.next = NULL;\n    while (a != NULL && b != NULL) {\n        if (a->value <= b->value) {\n            tail->next = a;\n            a = a->next;\n        } else {\n            tail->next = b;\n            b = b->next;\n        }\n        tail = tail->next;\n    }\n    tail->next = (a != NULL) ? a : b;\n    return dummy.next;\n}\n\nstatic void destroyList(Node *head)\n{\n    while (head != NULL) {\n        Node *next = head->next;\n        free(head);\n        head = next;\n    }\n}\n\nint main(void)\n{\n    int n1, n2, printed = 0;\n    Node *a, *b, *c, *p;\n\n    if (scanf(\"%d %d\", &n1, &n2) != 2)\n        return 0;\n\n    a = buildList(n1);\n    b = buildList(n2);\n    c = mergeList(a, b);\n\n    for (p = c; p != NULL; p = p->next) {\n        if (printed > 0)\n            printf(\" \");\n        printf(\"%d\", p->value);\n        printed++;\n    }\n    if (printed == 0)\n        printf(\"empty\");\n    printf(\"\\n\");\n\n    destroyList(c);\n    return 0;\n}\n",
+    "points": [
+      "定义结点结构并用尾插法建立两条单链表",
+      "用哑结点简化归并时的头指针处理",
+      "合并时只改 next 指针，不新建数据结点",
+      "收尾时把剩余链表整段挂到尾部，最后释放全部结点"
+    ],
+    "analysis": "思路：归并两条有序链表与归并两个有序数组的思路相同，区别是只能靠 `next` 指针移动。设置一个哑结点 `dummy`，`tail` 始终指向结果链表的最后一个结点，每次比较两条链表的当前结点，把较小者「摘」下来接到 `tail` 后面。\n\n关键步骤：① `createNode` 申请结点并初始化；② `buildList` 用尾插法（`tail->next = p; tail = p;`）保持输入顺序；③ 归并循环中只做 `tail->next = a; a = a->next;` 这类指针修改；④ 一条链表走完后 `tail->next = (a != NULL) ? a : b` 把剩余部分整段接上；⑤ `destroyList` 释放全部结点。\n\n复杂度：时间 O(n1 + n2)，空间 O(1)（只用了几个指针）。\n\n易错点：① 归并时新建结点复制数据，违背「只改指针」；② 没有哑结点又不特判头指针，第一条被选中的结点丢失；③ 循环结束后忘记接剩余部分，结果少一截；④ `tail->next` 在循环里写成 `a->next` 指针错乱；⑤ 释放链表时先 `free(head)` 再取 `head->next`，访问已释放内存。",
+    "module": "指针",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "输入两个按升序排列的整数序列，分别用尾插法建立两条单链表，再把它们归并成一条仍然升序的单链表后输出。要求不申请新的数据结点，只修改指针，把两条链表的结点「接」起来。\n\n**输入格式：** 第一行两个整数 n1 和 n2（0 ≤ n1, n2 ≤ 50，且 n1 与 n2 不同时为 0）；第二行 n1 个升序整数；第三行 n2 个升序整数（若对应的 n 为 0，则该行为空行）。\n\n**输出格式：** 一行，按升序输出归并后的 n1+n2 个整数，相邻整数用一个空格分隔，行末不得有多余空格。\n\n**输入样例：**\n```text\n3 4\n1 3 8\n2 3 9\n```\n**输出样例：**\n```text\n1 2 3 3 8 9\n```",
+        "solution": "#include <iostream>\nusing namespace std;\n\nstruct Node {\n    int value;\n    Node *next;\n    explicit Node(int v) : value(v), next(nullptr) {}\n};\n\nNode *buildList(int n)\n{\n    Node *head = nullptr, *tail = nullptr;\n\n    for (int i = 0; i < n; ++i) {\n        int v;\n        if (!(cin >> v))\n            break;\n        Node *p = new Node(v);\n        if (head == nullptr) {\n            head = tail = p;\n        } else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    return head;\n}\n\nNode *mergeList(Node *a, Node *b)\n{\n    Node dummy(0);                    // 哑结点，省掉头指针的特判\n    Node *tail = &dummy;\n\n    while (a != nullptr && b != nullptr) {\n        if (a->value <= b->value) {\n            tail->next = a;\n            a = a->next;\n        } else {\n            tail->next = b;\n            b = b->next;\n        }\n        tail = tail->next;\n    }\n    tail->next = (a != nullptr) ? a : b;\n    return dummy.next;\n}\n\nvoid destroyList(Node *head)\n{\n    while (head != nullptr) {\n        Node *next = head->next;\n        delete head;\n        head = next;\n    }\n}\n\nint main()\n{\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n1, n2;\n    if (!(cin >> n1 >> n2))\n        return 0;\n\n    Node *a = buildList(n1);\n    Node *b = buildList(n2);\n    Node *c = mergeList(a, b);\n\n    int printed = 0;\n    for (Node *p = c; p != nullptr; p = p->next) {\n        if (printed++ > 0)\n            cout << ' ';\n        cout << p->value;\n    }\n    if (printed == 0)\n        cout << \"empty\";\n    cout << '\\n';\n\n    destroyList(c);\n    return 0;\n}\n",
+        "points": [
+          "用 struct Node 与 new/delete 管理结点",
+          "构造函数初始化 value 与 next",
+          "哑结点 + tail 指针完成原地归并",
+          "printed 计数控制空格与空链表输出"
+        ],
+        "analysis": "思路：C++ 版用 `struct Node` 加构造函数 `Node(int v) : value(v), next(nullptr)`，`new`/`delete` 成对管理，其余归并逻辑与 C 版相同。\n\n关键步骤：① `buildList` 尾插建表；② `mergeList` 用 `Node dummy(0)` 作哑结点；③ 比较 `a->value <= b->value` 决定摘下谁；④ 收尾 `tail->next = (a != nullptr) ? a : b;`；⑤ `destroyList` 用 `delete` 逐个释放。\n\n复杂度：O(n1 + n2) 时间，O(1) 空间。\n\n易错点：① `explicit Node(int v)` 之后写 `Node dummy = 0;` 编译失败，应写 `Node dummy(0);`；② 用 `new` 建链却用 `free` 释放（或反之），行为未定义；③ `tail->next` 赋值后忘记 `tail = tail->next`，后一个结点覆盖前一个；④ 输出用 `if (printed++ > 0)` 时把自增写错位置，导致空格数不对。"
+      },
+      "python": {
+        "stem": "输入两个按升序排列的整数序列，分别用尾插法建立两条单链表，再把它们归并成一条仍然升序的单链表后输出。要求不申请新的数据结点，只修改指针，把两条链表的结点「接」起来。\n\n**输入格式：** 第一行两个整数 n1 和 n2（0 ≤ n1, n2 ≤ 50，且 n1 与 n2 不同时为 0）；第二行 n1 个升序整数；第三行 n2 个升序整数（若对应的 n 为 0，则该行为空行）。\n\n**输出格式：** 一行，按升序输出归并后的 n1+n2 个整数，相邻整数用一个空格分隔，行末不得有多余空格。\n\n**输入样例：**\n```text\n3 4\n1 3 8\n2 3 9\n```\n**输出样例：**\n```text\n1 2 3 3 8 9\n```",
+        "solution": "import sys\n\n\nclass Node:\n    __slots__ = (\"value\", \"next\")\n\n    def __init__(self, value):\n        self.value = value\n        self.next = None\n\n\ndef build_list(values):\n    head = tail = None\n    for v in values:\n        node = Node(v)\n        if head is None:\n            head = tail = node\n        else:\n            tail.next = node\n            tail = node\n    return head\n\n\ndef merge_list(a, b):\n    dummy = Node(0)                   # 哑结点，省掉头指针的特判\n    tail = dummy\n    while a is not None and b is not None:\n        if a.value <= b.value:\n            tail.next = a\n            a = a.next\n        else:\n            tail.next = b\n            b = b.next\n        tail = tail.next\n    tail.next = a if a is not None else b\n    return dummy.next\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n    n1, n2 = int(data[0]), int(data[1])\n    vals = [int(x) for x in data[2:2 + n1 + n2]]\n\n    a = build_list(vals[:n1])\n    b = build_list(vals[n1:n1 + n2])\n    head = merge_list(a, b)\n\n    out = []\n    while head is not None:\n        out.append(str(head.value))\n        head = head.next\n    print(\" \".join(out) if out else \"empty\")\n\n\nmain()\n",
+        "points": [
+          "用带 __slots__ 的 Node 类表示结点",
+          "build_list 尾插建表，merge_list 用哑结点归并",
+          "只改 next 引用，不新建数据结点",
+          "join 输出，空链表输出 empty"
+        ],
+        "analysis": "思路：Python 用轻量 `Node` 类（`__slots__` 减少内存开销）表示结点，`build_list` 尾插建表，`merge_list` 用哑结点把两条链按大小接起来，只修改 `next` 引用。\n\n关键步骤：① `class Node` 定义 `value` 与 `next`；② `build_list(vals)` 用 `tail.next = node; tail = node` 尾插；③ `merge_list` 中 `tail.next = a; a = a.next`；④ `tail.next = a if a is not None else b`；⑤ 遍历结果链输出。\n\n复杂度：O(n1 + n2) 时间，O(1) 额外空间（不计结点本身）。\n\n易错点：① 用 `while a and b:` 判断（空结点对象恒为真，这里恰好可用，但更清晰的是 `is not None`，避免以后给类加 `__bool__` 时出错）；② `tail.next = a; a = a.next` 顺序颠倒，把整条链丢掉；③ 用 `vals[:n1]` 与 `vals[n1:]` 切分时没有限制到 `n1 + n2` 个，尾随记号线会多建结点；④ 空链表时 `\" \".join(out)` 得到空字符串，需要单独输出 `empty`。"
+      }
+    }
+  },
+  {
+    "id": "结-75",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "结构体数组",
+      "排序",
+      "多关键字"
+    ],
+    "stem": "读入 n 名学生的学号、姓名和三门课成绩，计算每人的总分，然后按总分从高到低排序输出；总分相同时，学号小的排在前面。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；随后 n 行，每行依次为学号（正整数）、姓名（不含空白字符，长度小于 20）和三个整数成绩（0~100）。\n\n**输出格式：** 共 n 行，每行输出 `学号 姓名 总分`，相邻数据用一个空格分隔。\n\n**输入样例：**\n```text\n5\n1005 Tom 80 80 80\n1001 Amy 90 90 60\n1003 Bob 70 70 70\n1002 Cid 95 95 95\n1004 Dan 60 60 60\n```\n**输出样例：**\n```text\n1002 Cid 285\n1001 Amy 240\n1005 Tom 240\n1003 Bob 210\n1004 Dan 180\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct {\n    int id;\n    char name[20];\n    int total;\n} Student;\n\nstatic int cmpStudent(const void *a, const void *b)\n{\n    const Student *p = (const Student *)a;\n    const Student *q = (const Student *)b;\n\n    if (p->total != q->total)\n        return q->total - p->total;        /* 总分高的在前 */\n    return (p->id > q->id) - (p->id < q->id);   /* 总分相同，学号小的在前 */\n}\n\nint main(void)\n{\n    Student stu[100];\n    int n, i;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n\n    for (i = 0; i < n; i++) {\n        int s1, s2, s3;\n        scanf(\"%d %19s %d %d %d\", &stu[i].id, stu[i].name, &s1, &s2, &s3);\n        stu[i].total = s1 + s2 + s3;\n    }\n\n    qsort(stu, (size_t)n, sizeof(stu[0]), cmpStudent);\n\n    for (i = 0; i < n; i++)\n        printf(\"%d %s %d\\n\", stu[i].id, stu[i].name, stu[i].total);\n    return 0;\n}\n",
+    "points": [
+      "定义含学号、姓名、总分的结构体并读入数据",
+      "读入时把三科成绩求和写入 total",
+      "比较器实现两级规则：总分降序，总分相同学号升序",
+      "输出排序后的每条记录，格式与样例一致"
+    ],
+    "analysis": "思路：把每条学生记录抽象成结构体，总分在输入时就算好（避免反复求和），然后交给 `qsort` 用一个「两级比较」的比较器排序。\n\n关键步骤：① `typedef struct { int id; char name[20]; int total; } Student;`；② 循环里 `scanf(\"%d %19s %d %d %d\", ...)`，注意姓名用宽度限制防止溢出，并立刻算 `total`；③ `cmpStudent` 先比 `total`，不同则返回 `q->total - p->total` 实现降序，相同则用 `(p->id > q->id) - (p->id < q->id)` 实现学号升序；④ 顺序输出。\n\n复杂度：时间 O(n log n)，空间 O(n)。\n\n易错点：① 比较器返回 `p->total - q->total`，把降序写成了升序；② 总分相同的分支忘记处理，比较结果不稳定、与答案不符；③ 比较器返回 bool 值（只有 0/1），`qsort` 需要负数/零/正数，降序时全班出错；④ 姓名数组开 20 却用 `%s` 不限宽，长名字写越界；⑤ 排序后再求和，把 `total` 覆盖掉。",
+    "module": "结构体",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "读入 n 名学生的学号、姓名和三门课成绩，计算每人的总分，然后按总分从高到低排序输出；总分相同时，学号小的排在前面。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；随后 n 行，每行依次为学号（正整数）、姓名（不含空白字符，长度小于 20）和三个整数成绩（0~100）。\n\n**输出格式：** 共 n 行，每行输出 `学号 姓名 总分`，相邻数据用一个空格分隔。\n\n**输入样例：**\n```text\n5\n1005 Tom 80 80 80\n1001 Amy 90 90 60\n1003 Bob 70 70 70\n1002 Cid 95 95 95\n1004 Dan 60 60 60\n```\n**输出样例：**\n```text\n1002 Cid 285\n1001 Amy 240\n1005 Tom 240\n1003 Bob 210\n1004 Dan 180\n```",
+        "solution": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nstruct Student {\n    int id;\n    string name;\n    int total;\n};\n\nint main()\n{\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    if (!(cin >> n))\n        return 0;\n\n    vector<Student> stu(n);\n    for (int i = 0; i < n; ++i) {\n        int s1, s2, s3;\n        cin >> stu[i].id >> stu[i].name >> s1 >> s2 >> s3;\n        stu[i].total = s1 + s2 + s3;\n    }\n\n    sort(stu.begin(), stu.end(), [](const Student &a, const Student &b) {\n        if (a.total != b.total)\n            return a.total > b.total;      // 总分高的在前\n        return a.id < b.id;                // 总分相同，学号小的在前\n    });\n\n    for (const Student &s : stu)\n        cout << s.id << ' ' << s.name << ' ' << s.total << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 struct Student 加 string 保存姓名",
+          "vector<Student> 配合 sort 与 lambda 比较器",
+          "lambda 返回严格弱序：总分降序、学号升序",
+          "用 range-for 输出，注意 endl 与 '\\n' 的选择"
+        ],
+        "analysis": "思路：C++ 版用 `struct Student` + `string` + `vector` + `sort`，比较规则写进 lambda，比 C 的 `qsort` 少一次 void 指针转换。\n\n关键步骤：① 定义 `struct Student { int id; string name; int total; };`；② 读入时计算 `total = s1 + s2 + s3`；③ `sort(stu.begin(), stu.end(), [](const Student &a, const Student &b) { if (a.total != b.total) return a.total > b.total; return a.id < b.id; });`；④ range-for 输出。\n\n复杂度：O(n log n) 时间，O(n) 空间。\n\n易错点：① lambda 写成 `return a.total >= b.total;`，破坏了严格弱序，`sort` 可能越界崩溃；② 捕获列表写成 `[=]` 虽能编译但没必要；③ 只按总分排序，忘了学号次序，相同总分时顺序依赖输入；④ 输出用 `endl` 每次都刷新缓冲区，数据量大时变慢（本题无妨，但应习惯 `'\\n'`）。"
+      },
+      "python": {
+        "stem": "读入 n 名学生的学号、姓名和三门课成绩，计算每人的总分，然后按总分从高到低排序输出；总分相同时，学号小的排在前面。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；随后 n 行，每行依次为学号（正整数）、姓名（不含空白字符，长度小于 20）和三个整数成绩（0~100）。\n\n**输出格式：** 共 n 行，每行输出 `学号 姓名 总分`，相邻数据用一个空格分隔。\n\n**输入样例：**\n```text\n5\n1005 Tom 80 80 80\n1001 Amy 90 90 60\n1003 Bob 70 70 70\n1002 Cid 95 95 95\n1004 Dan 60 60 60\n```\n**输出样例：**\n```text\n1002 Cid 285\n1001 Amy 240\n1005 Tom 240\n1003 Bob 210\n1004 Dan 180\n```",
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n\n    students = []\n    pos = 1\n    for _ in range(n):\n        sid = int(data[pos])\n        name = data[pos + 1]\n        total = int(data[pos + 2]) + int(data[pos + 3]) + int(data[pos + 4])\n        students.append((sid, name, total))\n        pos += 5\n\n    students.sort(key=lambda s: (-s[2], s[0]))\n\n    for sid, name, total in students:\n        print(sid, name, total)\n\n\nmain()\n",
+        "points": [
+          "用元组 (学号, 姓名, 总分) 保存记录",
+          "sorted/ sort 的 key 用 (-总分, 学号) 表达两级规则",
+          "用一次遍历把总分算好再排序",
+          "print 多参数输出，自动以空格分隔"
+        ],
+        "analysis": "思路：Python 不必定义结构体，用元组 `(sid, name, total)` 就够了；两级排序规则可以写成一个 key：`(-total, sid)`，负号表示降序。\n\n关键步骤：① `data = sys.stdin.read().split()` 后按每 5 个记号一组解析；② `total = int(...) + int(...) + int(...)`；③ `students.sort(key=lambda s: (-s[2], s[0]))`；④ `print(sid, name, total)`。\n\n复杂度：O(n log n) 时间，O(n) 空间。\n\n易错点：① key 写成 `(s[2], s[0])`，变成总分升序；② 想用 `reverse=True` 同时实现「总分降序 + 学号升序」，结果学号也被降序；③ 解析时步长写错（如 `pos += 4`），后面全部错位；④ 姓名里若含空格（本题不含），`split()` 解析会错位。"
+      }
+    }
+  },
+  {
+    "id": "结-76",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "结构体",
+      "统计",
+      "分组"
+    ],
+    "stem": "读入 n 名学生的班级号、姓名和成绩，按班级号从小到大分组统计：输出每个出现过的班级的班级号、人数、平均分（保留 1 位小数）和最高分。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；随后 n 行，每行依次为班级号（1~100 的整数）、姓名（不含空白字符）和成绩（0~100 的整数）。\n\n**输出格式：** 每行输出 `班级号 人数 平均分 最高分`，平均分保留 1 位小数；班级按班级号升序输出，相邻数据用一个空格分隔。\n\n**输入样例：**\n```text\n6\n2 Li 85\n1 Wang 90\n2 Zhao 70\n3 Sun 60\n1 Qian 80\n2 Zhou 95\n```\n**输出样例：**\n```text\n1 2 85.0 90\n2 3 83.3 95\n3 1 60.0 60\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct {\n    int id;\n    int count;\n    int sum;\n    int best;\n} ClassStat;\n\nstatic int cmpById(const void *a, const void *b)\n{\n    const ClassStat *p = (const ClassStat *)a;\n    const ClassStat *q = (const ClassStat *)b;\n\n    return (p->id > q->id) - (p->id < q->id);\n}\n\nint main(void)\n{\n    ClassStat st[100];\n    int n, k = 0, i;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n\n    for (i = 0; i < n; i++) {\n        int cid, score, j, pos = -1;\n        char name[32];\n\n        scanf(\"%d %31s %d\", &cid, name, &score);\n\n        for (j = 0; j < k; j++) {\n            if (st[j].id == cid) {\n                pos = j;\n                break;\n            }\n        }\n        if (pos < 0) {\n            pos = k++;\n            st[pos].id = cid;\n            st[pos].count = 0;\n            st[pos].sum = 0;\n            st[pos].best = -1;\n        }\n        st[pos].count++;\n        st[pos].sum += score;\n        if (score > st[pos].best)\n            st[pos].best = score;\n    }\n\n    qsort(st, (size_t)k, sizeof(st[0]), cmpById);\n\n    for (i = 0; i < k; i++)\n        printf(\"%d %d %.1f %d\\n\", st[i].id, st[i].count,\n               (double)st[i].sum / st[i].count, st[i].best);\n    return 0;\n}\n",
+    "points": [
+      "定义班级统计结构体（班级号、人数、总分、最高分）",
+      "边读边线性查找班级号，找到就累加，找不到就新建一组",
+      "用 qsort 按班级号升序排列统计结果",
+      "平均分用 (double)sum / count 输出，保留 1 位小数"
+    ],
+    "analysis": "思路：边读边聚合——用一个结构体数组保存每个出现过班级的「人数、总分、最高分」，每读一条记录就在数组里线性查找班级号，找到就累加，找不到就追加一组，最后按班级号排序输出。\n\n关键步骤：① `typedef struct { int id, count, sum, best; } ClassStat;`；② 读入 `cid`、`name`、`score`（姓名本题不参与统计，但仍要读掉）；③ 线性查找 `st[j].id == cid`，新建时把 `best` 初始化成 -1，保证第一条成绩一定能更新最高分；④ `sum += score`、`count++`、`if (score > best) best = score`；⑤ `qsort` 按 id 升序，输出时 `(double)sum / count`。\n\n复杂度：时间 O(n·k)（k 为不同班级数，最坏 O(n²)，n ≤ 100 足够），空间 O(k)。\n\n易错点：① `best` 初始化成 0，一旦数据里出现负分或需要用「未赋值」区分时就会出错，用 -1 当哨兵更稳妥；② 平均分写成 `sum / count` 做整除，250/3 变成 83 而不是 83.3；③ 忘记把姓名读掉，后面的班级号和成绩全部错位；④ 新建分组后忘记 `k++`，一直覆盖第 0 组；⑤ 输出顺序依赖输入顺序，没有按班级号排序。",
+    "module": "结构体",
+    "langs": [
+      "c",
+      "cpp",
+      "python"
+    ],
+    "variants": {
+      "cpp": {
+        "stem": "读入 n 名学生的班级号、姓名和成绩，按班级号从小到大分组统计：输出每个出现过的班级的班级号、人数、平均分（保留 1 位小数）和最高分。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；随后 n 行，每行依次为班级号（1~100 的整数）、姓名（不含空白字符）和成绩（0~100 的整数）。\n\n**输出格式：** 每行输出 `班级号 人数 平均分 最高分`，平均分保留 1 位小数；班级按班级号升序输出，相邻数据用一个空格分隔。\n\n**输入样例：**\n```text\n6\n2 Li 85\n1 Wang 90\n2 Zhao 70\n3 Sun 60\n1 Qian 80\n2 Zhou 95\n```\n**输出样例：**\n```text\n1 2 85.0 90\n2 3 83.3 95\n3 1 60.0 60\n```",
+        "solution": "#include <iostream>\n#include <iomanip>\n#include <map>\n#include <string>\nusing namespace std;\n\nstruct Stat {\n    int count = 0;\n    int sum = 0;\n    int best = -1;\n};\n\nint main()\n{\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    if (!(cin >> n))\n        return 0;\n\n    map<int, Stat> groups;          // 键是班级号，map 自动按升序排列\n    for (int i = 0; i < n; ++i) {\n        int cid, score;\n        string name;\n        cin >> cid >> name >> score;\n        Stat &s = groups[cid];\n        s.count++;\n        s.sum += score;\n        if (score > s.best)\n            s.best = score;\n    }\n\n    cout << fixed << setprecision(1);\n    for (const auto &kv : groups) {\n        const Stat &s = kv.second;\n        cout << kv.first << ' ' << s.count << ' '\n             << static_cast<double>(s.sum) / s.count << ' '\n             << s.best << '\\n';\n    }\n    return 0;\n}\n",
+        "points": [
+          "用 map<int, Stat> 让班级号自动有序",
+          "groups[cid] 直接取出（或默认构造）对应班级的统计",
+          "cout << fixed << setprecision(1) 控制平均分格式",
+          "结构体内成员默认值写法（= 0 / = -1）保证初始化"
+        ],
+        "analysis": "思路：C++ 用 `map<int, Stat>` 把「按班级号有序」这件事交给容器本身，`groups[cid]` 会在键不存在时默认构造一个 `Stat`，于是「查找或新建」一步完成。\n\n关键步骤：① `struct Stat { int count = 0; int sum = 0; int best = -1; };`；② `Stat &s = groups[cid];` 拿到引用；③ 累加 `s.count`、`s.sum`，更新 `s.best`；④ 遍历 map（天然按 key 升序），`cout << fixed << setprecision(1)` 输出平均分。\n\n复杂度：O(n log k) 时间，O(k) 空间。\n\n易错点：① 忘记 `#include <map>`；② `cout << fixed << setprecision(1)` 写反顺序（两者顺序其实无所谓，但 `setprecision` 必须在 `fixed` 之后才表示小数位数，否则是有效数字位数）；③ 用 `map<int, Stat>` 却在循环里按引用之外的副本修改，统计丢失；④ `s.sum / s.count` 两个 int 相除，得到整除结果。"
+      },
+      "python": {
+        "stem": "读入 n 名学生的班级号、姓名和成绩，按班级号从小到大分组统计：输出每个出现过的班级的班级号、人数、平均分（保留 1 位小数）和最高分。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；随后 n 行，每行依次为班级号（1~100 的整数）、姓名（不含空白字符）和成绩（0~100 的整数）。\n\n**输出格式：** 每行输出 `班级号 人数 平均分 最高分`，平均分保留 1 位小数；班级按班级号升序输出，相邻数据用一个空格分隔。\n\n**输入样例：**\n```text\n6\n2 Li 85\n1 Wang 90\n2 Zhao 70\n3 Sun 60\n1 Qian 80\n2 Zhou 95\n```\n**输出样例：**\n```text\n1 2 85.0 90\n2 3 83.3 95\n3 1 60.0 60\n```",
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n\n    stats = {}                      # 班级号 -> [人数, 总分, 最高分]\n    pos = 1\n    for _ in range(n):\n        cid = int(data[pos])\n        _name = data[pos + 1]\n        score = int(data[pos + 2])\n        pos += 3\n        if cid not in stats:\n            stats[cid] = [0, 0, -1]\n        rec = stats[cid]\n        rec[0] += 1\n        rec[1] += score\n        if score > rec[2]:\n            rec[2] = score\n\n    for cid in sorted(stats):\n        cnt, total, best = stats[cid]\n        print(f\"{cid} {cnt} {total / cnt:.1f} {best}\")\n\n\nmain()\n",
+        "points": [
+          "用字典把班级号映射到 [人数, 总分, 最高分]",
+          "边读边累加，缺失的键先初始化",
+          "sorted(stats) 得到班级号升序",
+          "f-string 的 :.1f 输出平均分"
+        ],
+        "analysis": "思路：Python 用字典做聚合：键是班级号，值是 `[人数, 总分, 最高分]` 列表，读入时逐条更新；最后 `sorted(stats)` 得到升序的班级号并输出。\n\n关键步骤：① `stats = {}`；② `if cid not in stats: stats[cid] = [0, 0, -1]`；③ `rec[0] += 1`、`rec[1] += score`、`rec[2] = max(rec[2], score)`；④ `for cid in sorted(stats): ... print(f\"{cid} {cnt} {total / cnt:.1f} {best}\")`。\n\n复杂度：O(n + k log k) 时间，O(k) 空间。\n\n易错点：① `total / cnt` 用 `//`，得到整除；② 忘记 `sorted`，直接遍历字典（依赖插入顺序，不是班级号升序）；③ `rec[2] = max(rec[2], score)` 时 `rec` 被重新赋值成 int，后续 `rec[0]` 报错；④ 姓名里有空格时 `split()` 解析错位（本题姓名不含空格）。"
+      }
+    }
+  }
+]

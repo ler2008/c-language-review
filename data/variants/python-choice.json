@@ -1,0 +1,1884 @@
+{
+ "基-01": {
+  "analysis": "Python 的 int 是任意精度有符号整数：没有 unsigned、没有固定 4 字节上限，2**32、10**100 都能正常保存，所以本题在 Python 里不存在“最大值”。只有固定宽度容器才有上限：struct.pack('I', ...)、array('I')、ctypes.c_uint32 的范围是 0~2**32-1。考点映射为：C 用位数推范围，Python 要先选位宽容器；用 & 0xFFFFFFFF 可以模拟 32 位无符号回绕。"
+ },
+ "基-02": {
+  "stem": "```python\nc = 'A'\nprint(ord(c) + 2)\n```",
+  "options": [
+   "65",
+   "67",
+   "66",
+   "TypeError：字符不能参与算术"
+  ],
+  "answer": 1,
+  "analysis": "Python 没有 char 类型，单个字符就是长度 1 的 str，不能直接参与算术；要取编码用内置函数 ord('A') 得 65，再加 2 得 67，print 输出十进制。反过来 chr(67) 得到 'C'，对应 C 里把 %d 换成 %c。直接写 'A' + 2 会抛 TypeError，这正是“字符即小整数”与“str 是独立类型”的差别，考点从 ASCII 码运算变成 ord/chr 转换。"
+ },
+ "基-04": {
+  "stem": "```python\nx = 5\nprint(int(x > 3 + 2))\n```",
+  "options": [
+   "0",
+   "1",
+   "3",
+   "5"
+  ],
+  "answer": 0,
+  "analysis": "Python 同样是算术优先于比较：先算 3 + 2 得 5，再判断 5 > 5 为 False。区别在输出：比较结果是 bool，直接 print 会显示 False，用 int() 才能得到与 C 一致的 0/1。Python 还有 C 没有的链式比较 3 < x < 7，含义是“x 同时大于 3 且小于 7”，与 C 的 (3 < x) < 7 完全不同，这是优先级类题目的新陷阱。"
+ },
+ "基-06": {
+  "stem": "```python\na, b = 7, 2\nprint(a // b, f\"{a / b:.2f}\")\n```",
+  "options": [
+   "4 3.50",
+   "3 3.5",
+   "3.50 3.50",
+   "3 3.50"
+  ],
+  "answer": 3,
+  "analysis": "Python 的 / 永远是真除法（7 / 2 得 3.5），// 才是整除，正数时与 C 的向零截断一致，所以 a // b 得 3。格式化用 f-string 的 :.2f，效果等同 C 的 %.2f，保留两位小数输出 3.50。注意负数时 // 向下取整（-7 // 2 得 -4），与 C 的截断不同，这是两门语言最容易踩的坑。"
+ },
+ "基-08": {
+  "stem": "```python\ni = 3\nj = i          # i++：先取旧值给 j\ni += 1\ni += 1         # ++i：先自增\nk = i\nprint(i, j, k)\n```",
+  "options": [
+   "4 3 4",
+   "5 4 5",
+   "5 3 5",
+   "5 3 4"
+  ],
+  "answer": 2,
+  "analysis": "Python 没有 ++/-- 运算符，自增只能写成 i += 1，因此“先取值还是先自增”必须靠语句顺序显式表达：j = i 拿到 3 后 i 加 1 变 4，再 i += 1 变 5 后 k = i 得 5，最终 5 3 5。好处是不会出现 C 里“同一表达式内多次修改同一变量”的未定义行为；代价是写法更长，且不能把自增塞进表达式里。i++ 在 Python 是语法错误，别照抄 C。"
+ },
+ "基-09": {
+  "stem": "```python\nd = 3.9\nn = int(d)\nprint(f\"{d:.1f} {n}\")\n```",
+  "options": [
+   "3.9 4",
+   "3.9 3",
+   "3.0 3",
+   "4 4"
+  ],
+  "answer": 1,
+  "analysis": "int(3.9) 向零截断得 3，不是四舍五入（round(3.9) 才得 4，且 Python 用银行家舍入）。Python 的数值对象不可变，int(d) 只产生一个新的 int 对象，d 仍是 3.9，所以输出 3.9 3。C 的强制转换与 Python 的 int() 在截断方向上一致，区别是 C 的转换可能溢出/未定义，Python 的 int 任意精度、不会溢出。"
+ },
+ "基-11": {
+  "stem": "```python\ndata = input().split()   # 用户输入：3,5\na = int(data[0])\nb = int(data[1])\nprint(a, b)\n```",
+  "options": [
+   "a 得到 3，b 取不到值",
+   "a 得到 3，b 得到 5",
+   "a 得到 3，b 被自动置为 0",
+   "程序抛出 ValueError，两个数都没读进来"
+  ],
+  "answer": 3,
+  "analysis": "C 的 scanf(\"%d%d\") 在逗号处停下，a 得到 3；Python 的 input().split() 默认按空白切分，\"3,5\" 是整体一个字符串，int(\"3,5\") 立即抛 ValueError，a 都还没赋上值。考点从“格式串逐字符匹配”变成“输入切分策略与异常处理”：要按逗号读就写 map(int, input().split(','))，要容错就用 try/except。Python 不会留下“读了一半”的半个变量，失败即异常。"
+ },
+ "基-12": {
+  "stem": "```python\ncnt = 0\nfor i in range(0, 11, 2):\n    cnt += 1\nprint(cnt)\n```",
+  "options": [
+   "11",
+   "5",
+   "10",
+   "6"
+  ],
+  "answer": 3,
+  "analysis": "range(start, stop, step) 是左闭右开，i 取 0、2、4、6、8、10 共 6 个值，循环体执行 6 次。C 的 i <= 10 与 Python 的 range(0, 11, 2) 等价，写成 range(0, 10, 2) 才是 5 次（对应 i < 10）。Python 可以直接用 len(range(0, 11, 2)) 算出次数，不必手推；range 对象是惰性的，不会真的建 6 个元素。"
+ },
+ "基-14": {
+  "stem": "```python\nx = 2\nmatch x:\n    case 1:\n        print(\"a\", end=\"\")\n    case 2:\n        print(\"b\", end=\"\")\n    case 3:\n        print(\"c\", end=\"\")\n    case _:\n        print(\"d\", end=\"\")\nprint()\n```",
+  "options": [
+   "b",
+   "bcd",
+   "bc",
+   "c"
+  ],
+  "answer": 0,
+  "analysis": "Python 3.10 的 match 每个 case 执行完自动结束：没有贯穿（fall-through），也不需要 break，所以本例只输出 b。C 输出 bc 是因为 case 2 缺少 break，会继续执行 case 3 的语句。想在 Python 里复现“贯穿”，只能靠连续 if（每个 if 独立判断）或手动标志位。考点映射：C 要记“记得写 break”，Python 要记“match 不贯穿，别把它当 C 用”。"
+ },
+ "基-16": {
+  "stem": "```python\ni, s = 5, 0\nwhile True:\n    s += i\n    i += 1\n    if not (i < 5):\n        break\nprint(s)\n```",
+  "options": [
+   "0",
+   "5",
+   "10",
+   "死循环"
+  ],
+  "answer": 1,
+  "analysis": "Python 没有 do-while，惯用 while True 加循环体末尾的条件 break 来保证“至少执行一次”。这里先 s += 5、i 变 6，再判断 6 < 5 为假退出，输出 5。若直接写 while i < 5，循环体一次都不执行、s 保持 0（对应选项 0 的错法）。do-while 的语义在 Python 里完全靠“把判断放到末尾”来表达，没有语法级的等价物。"
+ },
+ "基-18": {
+  "stem": "```python\ns = 0\nfor i in range(1, 6):\n    if i == 3:\n        continue\n    if i == 5:\n        break\n    s += i\nprint(s)\n```",
+  "options": [
+   "7",
+   "15",
+   "3",
+   "10"
+  ],
+  "answer": 0,
+  "analysis": "Python 的 continue 跳过本次迭代、break 直接结束整个 for，语义与 C 相同：i=1 累加 1，i=2 累加得 3，i=3 被 continue 跳过，i=4 得 7，i=5 break 结束，输出 7。差别在 for 的实现：Python 的 for 是迭代可迭代对象（range 已生成序列），没有 C 的“初始化/条件/步长”三段式，continue 后也不会执行“步长语句”，所以不存在 C 里 for 的第三段被跳过的隐蔽问题。"
+ },
+ "基-19": {
+  "stem": "```python\na, b = 1, 2\na = 3\nb = a + 1\nc = a + b\nprint(c)\n```",
+  "options": [
+   "3",
+   "4",
+   "8",
+   "7"
+  ],
+  "answer": 3,
+  "analysis": "Python 没有逗号运算符：c = (a = 3, b = a + 1, a + b) 在 Python 里是语法错误，a = ... 不能出现在表达式里；逗号只会构造元组，如 c = (3, 4, 7) 得到 tuple。要表达“从左到右依次求值、取最后一个结果”，只能拆成多条语句（如上），或写 c = (a := 3, b := a + 1, a + b)[-1]。考点从“逗号表达式取值规则”变成“表达式/语句的边界”。"
+ },
+ "基-21": {
+  "stem": "```python\na, b = 3, 5\nm = a if a > b else b\nprint(m * 2 if m > 4 else m)\n```",
+  "options": [
+   "5",
+   "6",
+   "10",
+   "15"
+  ],
+  "answer": 2,
+  "analysis": "Python 的条件表达式写作 X if cond else Y，与 C 的 cond ? X : Y 操作数顺序不同，但语义一致：先算条件，再取一支求值。3 > 5 为假，m 得 5；5 > 4 为真，输出 m * 2 = 10。注意 Python 的 ?: 等价物要求表达式写在条件前面，嵌套时建议加括号；C 的“只有一支被求值”在 Python 同样成立，这是惰性求值。"
+ },
+ "基-23": {
+  "stem": "```python\nMAX = 3 + 2\nprint(MAX * 2)\n```",
+  "options": [
+   "10",
+   "7",
+   "8",
+   "5"
+  ],
+  "answer": 0,
+  "analysis": "Python 没有预处理器和宏：MAX = 3 + 2 是赋值语句，先把 3 + 2 求值成 5 再绑定到名字，所以 MAX * 2 得 10。C 输出 7 是因为 #define 只做文本替换，展开成 3 + 2 * 2。想在 Python 里得到 C 的“文本替换 + 缺括号”效果，只能拼字符串再 eval（极不推荐）；正确做法本来就是给宏加括号 #define MAX (3+2)。考点映射：宏是文本替换，变量是值绑定。"
+ },
+ "基-25": {
+  "stem": "```python\na, b = 0, 5\nprint(\"yes\" if a != 0 and b / a > 1 else \"no\")\n```",
+  "options": [
+   "no",
+   "yes",
+   "运行时出错（除数为 0）",
+   "编译错误"
+  ],
+  "answer": 0,
+  "analysis": "Python 的 and/or 与 C 的 &&/|| 一样短路：a != 0 为 False，右边 b / a 根本不会求值，所以不会触发除零，输出 no。区别在失败形态：C 的除零是未定义行为或崩溃，Python 会抛 ZeroDivisionError（可用 try/except 捕获），因此“靠短路保护除数”在 Python 里同样有效，但更推荐先判 a 再写除法。"
+ },
+ "基-26": {
+  "stem": "```python\nprint(-7 // 2, -7 % 2)\n```",
+  "options": [
+   "-4 1",
+   "-3 1",
+   "-4 -1",
+   "-3 -1"
+  ],
+  "answer": 0,
+  "analysis": "Python 的 // 是向下取整（floor），-7 // 2 得 -4；% 的符号与除数一致，-7 % 2 得 1，所以输出 -4 1。C99 是向零截断，-7 / 2 得 -3、-7 % 2 得 -1，正好是另一组选项。要模拟 C 语义用 int(-7 / 2)（或 math.trunc）和 a - trunc(a / b) * b；这也是负数取模题最容易出错的地方，不能把两门语言的 // 混为一谈。"
+ },
+ "基-29": {
+  "stem": "```python\ni = j = 0\nif (i := i + 1) - 1 or (j := j + 1):\n    j += 1\nprint(i, j)\n```",
+  "options": [
+   "1 1",
+   "0 2",
+   "1 2",
+   "2 2"
+  ],
+  "answer": 2,
+  "analysis": "Python 没有后置 ++，用海象运算符 (i := i + 1) - 1 表达“先取值 0、同时让 i 变 1”：左边为 0（假），or 才会求值右边，j 变成 1；条件为真，进入 if 再 j += 1 得 2，输出 1 2。这个写法把 C 的“副作用 + 短路”拆成了可读的两步。C 标准保证 &&/|| 先求左操作数，Python 的 and/or 同样如此，且都返回操作数本身而不是纯 bool。"
+ },
+ "基-30": {
+  "stem": "```python\nimport sys\n\nn = int(input())          # 输入 42，input() 把整行连同换行一起读走\nc = sys.stdin.read(1)     # 缓冲区已空，读到的是空串（EOF）\nprint(n, int(c == \"\\n\"))\n```",
+  "options": [
+   "42 0",
+   "42 1",
+   "42 10",
+   "42 -1"
+  ],
+  "answer": 0,
+  "analysis": "C 的 scanf(\"%d\") 把 '\\n' 留在输入缓冲区，紧接着的 getchar() 立刻读到它；Python 的 input() 按行读取并丢掉行尾换行，所以缓冲区里没有残留，sys.stdin.read(1) 只能拿到空串（EOF），故 c == \"\\n\" 为假，输出 42 0。考点从“scanf/getchar 缓冲区细节”映射为“input 与 stdin 读取的边界”；要逐字符读整行可以用 sys.stdin.read 或循环 input()。"
+ },
+ "基-32": {
+  "stem": "```python\nimport sys\n\ni = 0\nn = sys.getsizeof(i)   # 与 sizeof 不同：这是运行期函数，实参一定先求值\ni += 1                 # 所以这行一定会执行\nprint(n, i)\n```",
+  "options": [
+   "28 1",
+   "28 0",
+   "8 1",
+   "0 0"
+  ],
+  "answer": 0,
+  "analysis": "C 的 sizeof 是编译期运算符，操作数不被求值，sizeof(i++) 不会让 i 自增；Python 没有 sizeof，sys.getsizeof 是普通函数调用，参数 i 先被求值，随后的 i += 1 照常执行。64 位 CPython 上 sys.getsizeof(0) 为 28（含对象头），所以输出 28 1。要问“类型占多少字节”得用 sys.getsizeof 或 struct.calcsize，二者与 C 的 sizeof(int)=4 不是一回事。"
+ },
+ "基-33": {
+  "stem": "```python\ns = 0\nfor i in range(1, 4):\n    for j in range(1, 4):\n        if i == j:\n            continue\n        s += i * j\nprint(s)\n```",
+  "options": [
+   "36",
+   "14",
+   "18",
+   "22"
+  ],
+  "answer": 3,
+  "analysis": "嵌套循环里的 continue 只作用于它所在的那一层，与 C 相同：跳过 i == j 的 3 个对角线组合，累加剩下 6 个 i≠j 的乘积，2+3+2+6+3+6=22。Python 的 for 用 range 生成序列，没有“手动维护循环变量”的负担；若要一次跳出两层，Python 用 break + 标志或直接函数 return，没有 C 的 goto。"
+ },
+ "函-01": {
+  "stem": "```python\ndef max_of(a, b):\n    return a if a > b else b\n\nprint(max_of(max_of(3, 8), 5))\n```",
+  "options": [
+   "5",
+   "8",
+   "3",
+   "编译错误"
+  ],
+  "answer": 1,
+  "analysis": "Python 允许函数调用作为另一个调用的实参：内层 max_of(3, 8) 返回 8，外层变成 max_of(8, 5) 返回 8。Python 的函数是一等对象，还可以直接 max(3, 8, 5) 用内置函数，但考点仍是“内层返回值作为外层实参”的求值顺序。与 C 的差别：Python 没有函数声明/原型，def 必须在使用前执行到；参数个数不对是运行时 TypeError，不是编译错误。"
+ },
+ "函-02": {
+  "analysis": "Python 没有函数声明（原型）这个概念：def 语句本身就完成“定义 + 绑定名字”，被调用前必须先执行到该 def，否则抛 NameError。因此也没有“声明可以重复、定义只能一次”的规则；重复 def 会直接覆盖前一个函数。参数只写类型是 C 的写法，Python 的类型注解（a: int）是可选提示，运行时不检查；Python 也没有重载，同名函数后者覆盖前者，需要多态就用默认参数、*args 或 singledispatch。"
+ },
+ "函-04": {
+  "analysis": "Python 的参数传递是“对象引用绑定”：形参是函数内的局部名字，调用时绑定到实参所指的对象，既不复制对象，也不是 C 的“值传递”。对不可变对象（int、str、tuple）在函数内重新赋值只改局部名字，调用者看不到变化；对可变对象（list、dict、set）原地修改（append、a[i] = ...）会反映给调用者。形参必须是局部变量，且实参个数必须匹配（除非有默认值或 *args），不存在“少传自动补 0”。"
+ },
+ "函-05": {
+  "stem": "```python\ndef add_one(a, n):\n    for i in range(n):\n        a[i] += 1\n\nv = [1, 2, 3, 4]\nadd_one(v, 2)\nprint(\"\".join(map(str, v)))\n```",
+  "options": [
+   "1234",
+   "2234",
+   "2334",
+   "2344"
+  ],
+  "answer": 2,
+  "analysis": "Python 传列表时传的是对象引用，函数内 a[i] += 1 直接改到调用者的 v 上，与 C “数组名退化为首元素地址”的效果相同：只处理前 2 个，v 变成 [2, 3, 3, 4]，输出 2334。差别在于 Python 没有“数组退化”：len(a) 在函数内仍是 4，也不需要额外传长度；若在函数内写 a = [...] 只是重新绑定局部名字，不会影响调用者。"
+ },
+ "函-07": {
+  "stem": "```python\ndef f(n):\n    if n == 0:\n        return 1\n    return n * f(n - 1)\n\nprint(f(4) // f(2))\n```",
+  "options": [
+   "12",
+   "24",
+   "6",
+   "2"
+  ],
+  "answer": 0,
+  "analysis": "f 是递归阶乘：f(4) = 24、f(2) = 2，Python 的 // 整除得 12。递归必须有终止条件（这里 n == 0 返回 1），否则会 RecursionError（默认递归深度约 1000），而不是 C 的栈溢出崩溃。Python 没有尾调用优化，深层递归要改写成循环或 functools.reduce；大数阶乘 Python 能算（任意精度），C 会溢出。"
+ },
+ "函-09": {
+  "stem": "```python\nx = 1\n\ndef main():\n    x = 2\n    def show():\n        return 3\n    print(show(), x)\n\nmain()\n```",
+  "options": [
+   "3 1",
+   "3 2",
+   "1 2",
+   "2 3"
+  ],
+  "answer": 1,
+  "analysis": "Python 的作用域单位是模块、函数、类，没有 C 那种“裸花括号块作用域”：main 里的 x = 2 是局部变量，遮蔽模块级 x = 1；内层函数 show 返回 3，print 输出 3 2。注意 show 若读 x 会走闭包（读取外层局部变量），若要给它赋值必须写 nonlocal x；全局变量则用 global。C 的内层 {} 会在块结束时销毁变量，Python 的局部变量活到函数返回。"
+ },
+ "函-10": {
+  "stem": "```python\ndef show():\n    print(\"hi\")\n\nr = show()\nprint(r)\n```",
+  "options": [
+   "无返回值；参数类型为 void 指针",
+   "无返回值；参数个数和类型都不确定",
+   "有返回值且返回值类型为 void；无参数",
+   "没有 return 时返回 None；括号为空表示不接受参数"
+  ],
+  "answer": 3,
+  "analysis": "Python 没有 void 关键字：函数不写 return（或只写 return）就返回 None，调用处拿到的是 NoneType 单例，所以上面输出 hi 之后还会打印 None。def show(): 的括号为空就表示不接受参数，不需要用 void 占位，也没有“空参数列表表示参数不确定”的旧写法。把无返回值的函数用于算术会 TypeError（None 不支持 +），但可以独立调用或放进表达式（值就是 None）；函数总能返回一个对象，这是与 C 的 void 最大的区别。"
+ },
+ "函-12": {
+  "stem": "```python\ndef swap(a, b):\n    a, b = b, a\n\nx, y = 1, 2\nswap(x, y)\nprint(x, y)\n```",
+  "options": [
+   "2 1",
+   "1 1",
+   "1 2",
+   "2 2"
+  ],
+  "answer": 2,
+  "analysis": "Python 的参数是对象引用绑定，但 int 不可变：函数内 a, b = b, a 只交换两个局部名字的绑定，函数返回后 x、y 仍是 1、2。要真正的交换，最 Pythonic 的是在调用处写 x, y = y, x（元组解包，一步完成），或传一个可变容器（list）在函数内交换 l[0], l[1]。C 必须传地址；Python 没有取地址运算符，也就不存在“传地址”这条路。"
+ },
+ "函-14": {
+  "stem": "```python\ndef find(a, n, x):\n    for i in range(n):\n        if a[i] == x:\n            return i\n    return -1\n\nv = [4, 8, 15, 16, 23, 42]\nprint(find(v, 6, 15), find(v, 6, 7))\n```",
+  "options": [
+   "3 -1",
+   "2 -1",
+   "2 0",
+   "-1 -1"
+  ],
+  "answer": 1,
+  "analysis": "return 立即结束函数并返回值：15 在下标 2（从 0 数：4、8、15），7 不在列表中，循环走完返回 -1，输出 2 -1。Python 里更直接的写法是 v.index(15)，找不到会抛 ValueError 而不是返回 -1；也可以用 in 先判断，或 next((i for i, x in enumerate(v) if x == 15), -1)。考点仍是“找到即返回、否则返回约定值”。"
+ },
+ "函-15": {
+  "stem": "```python\ndef next_num():\n    next_num.n += 1\n    return next_num.n\n\nnext_num.n = 0\na = next_num()\nb = next_num()\nc = next_num()\nprint(a, b, c)\n```",
+  "options": [
+   "1 2 3",
+   "1 1 1",
+   "0 1 2",
+   "3 3 3"
+  ],
+  "answer": 0,
+  "analysis": "Python 没有 static 局部变量：函数内的普通局部变量每次调用都重新创建。要保留“跨调用状态”，惯用做法是函数属性（如本例 next_num.n）、闭包（外层变量 + nonlocal）、类属性或用 itertools.count()。本例三次调用依次得 1、2、3；若用普通局部 n = 0 再自增，则每次都是 1，输出 1 1 1。注意函数属性可被外部随意修改，封装性不如闭包。"
+ },
+ "函-18": {
+  "analysis": "Python 没有 extern、static 的链接属性概念，也没有“声明/定义分离”的多文件机制：一个 .py 文件就是一个模块，模块级变量在首次 import 时创建，所有 import 同一模块的地方共享同一个模块对象，因此天然就是“全局唯一”。跨模块修改要写 module.var = ... 或调用模块函数；函数内改模块级变量需要 global。想限制可见性用下划线约定、__all__ 或模块内私有函数，没有 C 的 internal linkage。"
+ },
+ "函-19": {
+  "stem": "```python\ncalls = 0\n\ndef f(n):\n    global calls\n    calls += 1\n    if n <= 1:\n        return 1\n    return f(n - 1) + f(n - 2)\n\nf(5)\nprint(calls)\n```",
+  "options": [
+   "8",
+   "9",
+   "15",
+   "14"
+  ],
+  "answer": 2,
+  "analysis": "同样是斐波那契式递归，C(0)=C(1)=1，C(n)=1+C(n-1)+C(n-2)：C(2)=3、C(3)=5、C(4)=9、C(5)=15，所以 f 共被调用 15 次。Python 里统计调用次数用模块级计数器 + global（或用函数属性、装饰器、sys.setprofile）。这个例子也说明朴素递归是指数级，Python 里更常用 functools.lru_cache 做记忆化，把调用次数降到 O(n)。"
+ },
+ "函-21": {
+  "analysis": "Python 没有 void 返回类型，也没有“函数不能出现在表达式里”的限制：任何函数调用都是表达式，值可能是 None。None 不能参与算术或格式化（会 TypeError），所以“无返回值函数的结果”只能单独使用或显式判空。Python 允许在函数内再定义函数（闭包），也允许 return 提前退出（不带值即返回 None）；函数可以返回任意对象，包括列表、字典、元组，不像 C 不能整体返回数组。"
+ },
+ "函-22": {
+  "stem": "```python\ndef half(n):\n    return n // 2\n\nprint(f\"{half(5):.1f}\")\n```",
+  "options": [
+   "2.5",
+   "2",
+   "编译错误",
+   "2.0"
+  ],
+  "answer": 3,
+  "analysis": "Python 没有返回类型声明，函数返回什么类型完全由 return 的表达式决定：n // 2 对 int 得 int 2，:.1f 再把它格式化成 2.0。若写成 return n / 2 就会得到 2.5——Python 的 / 是真除法，不需要像 C 那样先转 double。C 的 2.0 来自“先整数除法得 2，再在 return 时转成 double”；Python 里“转换”只发生在格式化或显式 float() 时。"
+ },
+ "数-01": {
+  "stem": "```python\na = [0] * 3\nprint(len(a))\n```",
+  "options": [
+   "`a = [0] * 3`，得到含 3 个 0 的列表",
+   "`a = [0, 0, 0, 0]`，得到 4 个元素",
+   "`a = [3]`，得到 3 个元素",
+   "`a = list(3)`，按长度 3 创建列表"
+  ],
+  "answer": 0,
+  "analysis": "Python 的 list 没有“声明长度”这一步：a = [0] * 3 用重复运算一次造出 3 个元素，len(a) 为 3；[3] 是“一个元素，值为 3”；list(3) 会抛 TypeError（list() 只接受可迭代对象）；想造 4 个元素就写 [0] * 4。C 的 int a[3] 是“先定长度再逐个初始化”，Python 是“直接给出元素，长度由元素个数决定”。要变长用 append/extend，越界下标仍然 IndexError。"
+ },
+ "数-02": {
+  "stem": "```python\na = [4, 7]\nprint(a[0] + a[5])\n```",
+  "options": [
+   "4",
+   "7",
+   "11",
+   "IndexError：列表没有 a[5]"
+  ],
+  "answer": 3,
+  "analysis": "C 的 int a[6] = {4, 7} 会把其余元素补 0，a[0] + a[5] 得 4；Python 的列表长度就是元素个数 2，a[5] 不存在，直接抛 IndexError，不会自动补 0。要在 Python 里得到 C 的效果必须显式写 a = [4, 7] + [0] * 4。考点映射：“部分初始化补零”是 C 的聚合初始化规则，Python 没有这条规则，长度与元素个数永远一致。"
+ },
+ "数-04": {
+  "stem": "```python\na = [10, 20, 30, 40, 50]\nfor i in range(6):\n    print(a[i], end=\" \")\n```",
+  "options": [
+   "循环执行 5 次，输出 5 个元素，结果正确",
+   "第 6 次循环访问 a[5] 时抛出 IndexError，程序中断",
+   "a[5] 是列表最后一个元素，输出 6 个数也合法",
+   "编译时报错，因为 range(6) 超出了列表长度"
+  ],
+  "answer": 1,
+  "analysis": "range(6) 产生 0~5，第 6 次访问 a[5] 时列表只有 5 个元素，Python 会立即抛 IndexError，而不是像 C 那样读到越界的未知内存（未定义行为）。正确写法是 range(len(a)) 或直接 for x in a。Python 的负下标是合法特性（a[-1] 是最后一个），但 a[5]、a[-6] 都会 IndexError；这种“快速失败”让越界 bug 更早暴露。"
+ },
+ "数-05": {
+  "stem": "```python\na = [0.0] * 12\nprint(len(a))\n```",
+  "options": [
+   "1",
+   "8",
+   "96",
+   "12"
+  ],
+  "answer": 3,
+  "analysis": "C 用 sizeof(a) / sizeof(a[0]) 求元素个数；Python 的 list 自带长度，len(a) 直接得 12，不需要关心元素类型大小。len 与内存字节数无关：sys.getsizeof(a) 返回的是容器对象本身的开销（含指向元素的引用数组），不是 12×8，也不能除以元素大小求个数。这个“求长度”的考点在 Python 变成“用 len，而不是自己算字节”。"
+ },
+ "数-07": {
+  "stem": "```python\na = [5, 3, 8, 1, 2]\nfor j in range(len(a) - 1):\n    if a[j] > a[j + 1]:\n        a[j], a[j + 1] = a[j + 1], a[j]\nprint(a)\n```",
+  "options": [
+   "`3 5 1 8 2`",
+   "`1 2 3 5 8`",
+   "`3 5 1 2 8`",
+   "`3 1 5 2 8`"
+  ],
+  "answer": 2,
+  "analysis": "这一轮冒泡从左到右比较 4 对相邻元素：5/3 交换得 3 5 8 1 2，5/8 不换，8/1 交换得 3 5 1 8 2，8/2 交换得 3 5 1 2 8，最大值 8 冒到末尾。Python 的交换写 a[j], a[j+1] = a[j+1], a[j]，靠元组解包完成，不需要临时变量（C 必须用 t）。排序本身也可以用 a.sort()，但考点是“第一轮之后”的中间状态。"
+ },
+ "数-08": {
+  "analysis": "选择排序的比较次数与语言无关：第 1 趟在 n 个元素中找最小比较 n-1 次，之后依次 n-2、…、1，总计 n(n-1)/2，与初始排列无关。Python 手写选择排序同样是双重循环、比较次数固定；但实际 Python 代码几乎不会手写它——内置 sorted()/list.sort() 用 Timsort，平均 O(n log n) 且稳定。这道题在 Python 视角下要区分“算法复杂度”与“内置实现”，不能因为 sorted() 快就以为选择排序也快。"
+ },
+ "数-10": {
+  "stem": "```python\na = [1, 2, 3, 4, 5, 6]\nfor i in range(3):\n    a[i], a[5 - i] = a[5 - i], a[i]\nprint(a)\n```",
+  "options": [
+   "`for i in range(6): a[i], a[5-i] = a[5-i], a[i]`",
+   "`for i in range(4): a[i], a[5-i] = a[5-i], a[i]`",
+   "`for i in range(1, 6): a[i], a[6-i] = a[6-i], a[i]`",
+   "`for i in range(3): a[i], a[5-i] = a[5-i], a[i]`"
+  ],
+  "answer": 3,
+  "analysis": "原地逆序只需首尾对称交换 n/2 次，n = 6 时 i 取 0、1、2，所以 range(3) 正好；range(6) 换两轮会换回原样，range(4) 会破坏中间元素。Python 的 a[i], a[5-i] = a[5-i], a[i] 是原子式的元组解包，不需要临时变量；更地道的写法是 a.reverse()（原地）或 a[::-1]（生成新列表）。range 的“右开”正好对应 C 的 i < 3。"
+ },
+ "数-12": {
+  "stem": "```python\na = [[0] * 3 for _ in range(2)]\na[0][0] = 9\nprint(a)\n```",
+  "options": [
+   "`a = [[1, 2, 3]] * 2`，两行是同一个列表对象",
+   "`a = [[1, 2], [3, 4, 5]]`，行长不等，Python 允许",
+   "`a = [[0] * 3 for _ in range(2)]`，2 行 3 列且两行互相独立",
+   "`a = [[1, 2, 3], [4, 5, 6]] + [7, 8, 9]`"
+  ],
+  "answer": 2,
+  "analysis": "C 的二维数组初始化要遵守“行数可省、列数必须写、初值不能超容量”；Python 用列表推导式 [[0]*3 for _ in range(2)] 造出 2 行、每行独立的 3 元素列表。注意 [[0]*3]*2 是经典陷阱：两行是同一个对象的两个引用，改 a[0][0] 会同时改 a[1][0]；行长度在 Python 里可以不等（不规则表），没有“列数必须一致”的类型约束。"
+ },
+ "数-13": {
+  "stem": "```python\na = [[0] * 4 for _ in range(3)]\nprint(len(a), len(a[0]), a[0] is a[1])\n```",
+  "options": [
+   "共 12 个元素（3 行 4 列），但每一行是独立的 list 对象，内存中不保证相邻",
+   "共 7 个元素，因为 3 + 4 = 7",
+   "按列优先存放，a[1][0] 紧跟在 a[0][0] 之后",
+   "共 12 个元素，并且在内存中一定连续存放"
+  ],
+  "answer": 0,
+  "analysis": "C 的 int a[3][4] 是 12 个 int 连续存放（行优先），a[1][0] 紧跟在 a[0][3] 之后；Python 的 a 是“含 3 个引用的 list”，每个元素又是独立的 4 元素 list，行与行之间不保证相邻，也没有行优先的内存布局保证。len(a)=3、len(a[0])=4 是两层长度；a[0] is a[1] 为 False 说明两行是不同对象。要连续内存只能用 array('i') 或一维 list 自己算下标。"
+ },
+ "数-15": {
+  "analysis": "矩阵乘法的维度规则与语言无关：A 是 2×3、B 是 3×4，可乘（A 的列数 = B 的行数），结果 C 是 2×4。Python 里矩阵最自然的表示是“列表的列表”，C[i][j] = sum(A[i][k] * B[k][j] for k in range(3))，用生成器/zip 可以写成 [[sum(x * y for x, y in zip(row, col)) for col in zip(*B)] for row in A]。真正的数值计算用 numpy（第三方库），本库题目不依赖它，所以仍要会手写三重循环。"
+ },
+ "数-17": {
+  "stem": "```python\ns = \"abc\"\nt = \"abc\\0\"\nprint(len(s), len(t))\n```",
+  "options": [
+   "`len(\"abc\")` 为 4，因为末尾会自动补 '\\0'",
+   "`\"abc\"` 与 `\"abc\\0\"` 是两个不同的 str，后者长度为 4",
+   "`b\"abc\"` 会在末尾自动补一个 0 字节",
+   "Python 的字符串必须以 '\\0' 结尾才能用 print 输出"
+  ],
+  "answer": 1,
+  "analysis": "C 要区分“字符数组”和“字符串”：用 \"abc\" 初始化会自动补 '\\0'，用 {'a','b','c'} 且长度恰好为 3 就没有结束符。Python 的 str 根本不存结束符，len(\"abc\") 就是 3，也不会自动补 '\\0'；'\\0' 只是一个普通字符，所以 \"abc\\0\" 长度为 4，与 \"abc\" 是两个不同的字符串。需要 C 风格字节序列时用 b\"abc\"（bytes），它同样不自动补 0，传给 C 函数要自己加 b\"\\x00\"。"
+ },
+ "数-18": {
+  "stem": "```python\ns = \"hello\"\nprint(len(s), len(s.encode()))\n```",
+  "options": [
+   "5 和 6",
+   "6 和 5",
+   "6 和 6",
+   "5 和 5"
+  ],
+  "answer": 3,
+  "analysis": "C 的 sizeof(s) 是数组容量 6（含 '\\0'），strlen(s) 是可见字符数 5；Python 没有这两个口径：len(s) 是字符数 5，len(s.encode()) 是 UTF-8 字节数，ASCII 下也是 5（中文会不同，如 \"中\" 的 len 为 1、encode 后为 3）。Python 的 str 不自动补 '\\0'，所以不存在“容量比长度多 1”的关系；要问对象内存开销用 sys.getsizeof。"
+ },
+ "数-20": {
+  "stem": "```python\ns = \"ab\"\ns += \"cde\"\ns = \"fg\"\nprint(len(s), s)\n```",
+  "options": [
+   "2",
+   "5",
+   "7",
+   "8"
+  ],
+  "answer": 0,
+  "analysis": "Python 的 str 不可变：s += \"cde\" 实际是新建 \"abcde\" 再重新绑定 s，随后 s = \"fg\" 又整体换成新串，所以最终长度是 2。C 的 strcat 是往原缓冲区末尾追加（需要足够空间），strcpy 是从头覆盖；Python 里两者都变成“拼接/重新赋值”，不存在缓冲区容量与越界问题，也没有必要区分“追加”和“覆盖”——区别只在语义上：s = s + t（追加）与 s = t（覆盖）。"
+ },
+ "数-21": {
+  "stem": "```python\nprint(\"abc\" < \"abd\", \"abc\" == \"abd\")\n```",
+  "options": [
+   "`\"abc\" == \"abd\"` 为 True",
+   "`\"abc\" > \"abd\"` 为 True",
+   "`(\"abc\" > \"abd\") - (\"abc\" < \"abd\")` 恰好等于 -1",
+   "Python 用 `\"abc\" < \"abd\"` 得到 True，不存在“返回值是负数”的约定"
+  ],
+  "answer": 3,
+  "analysis": "C 的 strcmp 逐字符比较并返回差值，标准只保证“小于/等于/大于 0”的符号，不保证是 -1，所以不能写 == -1。Python 的字符串比较直接返回 bool：\"abc\" < \"abd\" 为 True，按 Unicode 码点逐字符比较（ASCII 范围内与 C 一致，中文按码点而不是字典序）。需要三值比较函数时用 functools.cmp_to_key；排序用 key 即可，不需要自己写比较器。"
+ },
+ "数-23": {
+  "stem": "```python\nname = input()      # 输入：Li Ming\nprint(len(name), name)\n```",
+  "options": [
+   "输入中的空格会被丢弃",
+   "输入超过 19 个字符会自动截断",
+   "`input()` 读到换行才结束，空格会保留；不存在固定缓冲区，str 会自动增长",
+   "必须给 name 加 & 才能写入"
+  ],
+  "answer": 2,
+  "analysis": "C 的 scanf(\"%s\") 遇空白就停、且不检查目标缓冲区大小，要靠 %19s 限宽；Python 的 input() 读整行（空格保留，行尾换行被去掉），字符串自动扩容，不存在“越界写”。要按空白切分就 name.split()，要限长就切片 name[:19]，要读整行含空格正是 input() 的默认行为。考点从“缓冲区安全”变成“读整行 vs 切分”。"
+ },
+ "数-24": {
+  "stem": "```python\nline = input()          # 读一行含空格的文本\nprint(line)\n```",
+  "options": [
+   "`line = input()`",
+   "`line = sys.stdin.readline().rstrip(\"\\n\")`",
+   "`line = sys.stdin.read().splitlines()[0]`",
+   "`line = eval(input())`"
+  ],
+  "answer": 3,
+  "analysis": "C 里不推荐 gets（不接收长度、必然越界，C11 已删除），改用 fgets/带限宽的 scanf。Python 没有缓冲区越界问题，input()、readline、read().splitlines() 都能安全读整行；真正“不推荐”的是对用户输入用 eval()——它会执行任意 Python 代码，等价于把不受信任输入当程序运行。考点从“内存安全”映射为“代码注入安全”，两者都属于“不要用错误的方式接收输入”。"
+ },
+ "数-27": {
+  "stem": "```python\na = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]\nlo, hi, seen = 0, 9, []\nwhile lo <= hi:\n    mid = (lo + hi) // 2\n    seen.append(a[mid])\n    if a[mid] == 14:\n        break\n    if a[mid] < 14:\n        lo = mid + 1\n    else:\n        hi = mid - 1\nprint(seen)\n```",
+  "options": [
+   "`10, 12, 14`",
+   "`10, 16, 12, 14`",
+   "`10, 16, 14`",
+   "`14`"
+  ],
+  "answer": 1,
+  "analysis": "初始 mid=(0+9)//2=4 比较 10，小于 14 则 lo=5；mid=(5+9)//2=7 比较 16，大于 14 则 hi=6；mid=(5+6)//2=5 比较 12；mid=6 比较 14 命中，依次是 10、16、12、14。Python 的 // 对正数就是向下取整，与 C 的 / 一致；标准库 bisect 只返回插入点，bisect_left 需要数组已排序，过程与手写相同。"
+ },
+ "数-29": {
+  "stem": "```python\na = [5, 2, 4, 6, 1, 3]\nfor i in range(1, 4):\n    key = a[i]\n    j = i - 1\n    while j >= 0 and a[j] > key:\n        a[j + 1] = a[j]\n        j -= 1\n    a[j + 1] = key\nprint(a)\n```",
+  "options": [
+   "`2 4 6 5 1 3`",
+   "`2 5 4 6 1 3`",
+   "`2 4 5 6 1 3`",
+   "`1 2 3 4 5 6`"
+  ],
+  "answer": 2,
+  "analysis": "插入排序的中间状态：i=1 插入 2 得 2 5 4 6 1 3；i=2 插入 4 得 2 4 5 6 1 3；i=3 待插入 6 比前面都大，while 一次都不成立，数组不变，仍是 2 4 5 6 1 3。Python 版把 j >= 0 写在 while 条件里，靠 and 短路避免负下标（Python 的 a[-1] 合法但语义是倒数第一个，反而更危险）；更简单的写法是 a.insert 或切片，但考点是每趟结束时的状态。"
+ },
+ "数-30": {
+  "stem": "```python\na = [1, 1, 2, 2, 2, 3, 5, 5]\nk = 0\nfor i in range(1, len(a)):\n    if a[i] != a[k]:\n        k += 1\n        a[k] = a[i]\nprint(k + 1)\n```",
+  "options": [
+   "8",
+   "5",
+   "3",
+   "4"
+  ],
+  "answer": 3,
+  "analysis": "快慢指针原地去重：k 指向已保留的最后一个元素，i 扫描，遇到新值就 ++k 并写回。初始保留 1，之后保留 2、3、5，k 最终为 3，有效元素个数 k + 1 = 4。Python 里更直接的是 list(dict.fromkeys(a))（保序去重）或 itertools.groupby，但考点是“原地、O(n)、不额外开数组”；注意 k + 1 少写 1 就会得到选项 3 的错误答案。"
+ },
+ "数-32": {
+  "stem": "```python\ndef show(b, n):\n    for i in range(n):\n        b[i] += 1\n\na = [0] * 10\nshow(a, 10)\nprint(a[0], len(a))\n```",
+  "options": [
+   "调用时把 a 的 10 个元素完整复制给 b，函数内修改 b 不影响 a",
+   "形参 b 绑定同一个 list 对象，函数内 b[i] 会改变 a[i]；但 b = [...] 重新绑定不影响 a",
+   "形参写成 def show(b, n) 没有给出长度，无法通过语法检查",
+   "在 show 内部用 len(b) 求不出 10"
+  ],
+  "answer": 1,
+  "analysis": "Python 传 list 传的是对象引用，b 与 a 绑定同一个列表：b[i] += 1 直接改到 a，a[0] 变 1；但若在函数内写 b = [0] * 10，只是让局部名字 b 指向新列表，a 不变。C 的形参 int b[] 会退化成指针、sizeof 失效；Python 的 len(b) 永远是 10，长度信息不丢，也不需要额外传 n（传 n 只是为了只处理前 n 个）。这就是“可变对象共享”与“重新绑定”的区别。"
+ },
+ "数-34": {
+  "stem": "```python\na = [[1, 2, 3], [4, 5, 6], [7, 8, 10]]\ns = 0\nfor i in range(3):\n    s += a[i][2 - i]\nprint(s)\n```",
+  "options": [
+   "15",
+   "16",
+   "12",
+   "46"
+  ],
+  "answer": 0,
+  "analysis": "a[i][2 - i] 依次取 a[0][2]、a[1][1]、a[2][0]，即 3、5、7，和为 15，这是副对角线（行列下标之和等于列数减一）。主对角线是 a[i][i]，得 1+5+10=16（选项 16）；12 是第一列相加，46 是全部元素之和。Python 的二维列表同样用 a[i][j] 两级下标，没有 C 的 *(*(a+i)+j) 解引用层次，副对角线的规律 j = 列数 - 1 - i 完全一样。"
+ },
+ "数-36": {
+  "stem": "```python\ns = [\"\"] * 5\ns[0] = \"zhangsan\"\ns[1] = \"lisi\"\nprint(len(s), s[0])\n```",
+  "options": [
+   "`s = [\"\"] * 5`，5 个槽位，每个都可以换成任意长度的字符串",
+   "`s = [[\"\"] * 5] * 9`，9 行、每行 5 个",
+   "`s = \"\" * 5`，只能存一个空串",
+   "`s = [\"\"] * 9`，只能存 9 个字符串"
+  ],
+  "answer": 0,
+  "analysis": "C 要存 5 个长度不超过 9 的字符串，必须 char s[5][10]：第一维个数、第二维每串容量（含 '\\0'）。Python 的 str 长度可变（不可变对象但可整体替换），列表每个槽位只是引用，不需要预先给每行留容量，所以 [\"\"] * 5 就能放 5 个任意长度的字符串；要 9 个就 [\"\"] * 9。注意若元素是 list 这种可变对象，[[\"\"] * 5] * 9 会让 9 行共享同一个内层列表，应改用推导式。"
+ },
+ "数-37": {
+  "stem": "```python\na = [[1, 2, 3], [4, 5, 6]]\nflat = [x for row in a for x in row]\nprint(flat.index(4))\n```",
+  "options": [
+   "1",
+   "3",
+   "4",
+   "6"
+  ],
+  "answer": 1,
+  "analysis": "行优先展平后，a[1][0] 的线性下标是 1 * 3 + 0 = 3，它前面正好是完整的第 0 行 3 个元素。Python 的 list of lists 不保证连续内存，但“行优先展平”的顺序与 C 一致，i * 列数 + j 的换算同样成立；展平可以用嵌套推导式或 itertools.chain.from_iterable。若用一维 list 模拟二维表，读写成 flat[i * n + j]。"
+ },
+ "数-40": {
+  "stem": "```python\na = [1, 2, 3, 4, 5, 6]\nt = a[5]\nfor i in range(5, 0, -1):\n    a[i] = a[i - 1]\na[0] = t\nprint(\"\".join(map(str, a)))\n```",
+  "options": [
+   "`123456`",
+   "`512346`",
+   "`623451`",
+   "`612345`"
+  ],
+  "answer": 3,
+  "analysis": "循环右移一位：先暂存最后的 6，再从后往前把每个元素后移一位（必须从后往前，否则前一个值会覆盖还没处理的数据），最后 a[0] = 6，得到 6 1 2 3 4 5。Python 里更简洁的写法是 a = a[-1:] + a[:-1]（切片，生成新列表）或 collections.deque 的 rotate(1)（原地、O(k)）；手写下标的版本与 C 完全同构，可以对照理解。"
+ },
+ "数-43": {
+  "stem": "```python\na = [[0] * 4 for _ in range(3)]\ns = 0\nfor i in range(3):\n    for j in range(4):\n        s += a[i][j]\nprint(s)\n```",
+  "options": [
+   "`for i in range(3): for j in range(4): s += a[i][j]`",
+   "`for i in range(4): for j in range(3): s += a[i][j]`",
+   "`for i in range(4): for j in range(4): s += a[i][j]`",
+   "`for i in range(3): for j in range(5): s += a[i][j]`"
+  ],
+  "answer": 0,
+  "analysis": "a 是 3 行 4 列，合法行下标 0~2、列下标 0~3，所以外层 range(3)、内层 range(4) 正好遍历 12 个元素。range 的右开特性天然对应 C 的 i < 3，不会写出“<= 3”这种越界；写成 range(4) 会访问 a[3] 抛 IndexError。Python 的 len(a)、len(a[0]) 能自动给出边界，比硬编码更稳妥。"
+ },
+ "数-44": {
+  "stem": "```python\na = [3, 1, 3, 5, 3, 1, 7]\ncnt = [0] * 8\nfor v in a:\n    cnt[v] += 1\nprint(cnt[3], cnt[0])\n```",
+  "options": [
+   "`3 3`",
+   "`2 0`",
+   "`3 0`",
+   "`0 3`"
+  ],
+  "answer": 2,
+  "analysis": "用元素值作下标做频次统计：3 出现 3 次，cnt[3] 为 3；没有 0，cnt[0] 保持 0，输出 3 0。Python 里同样要先把计数数组按“最大值 + 1”开好（[0] * 8），下标越界会 IndexError；更 Pythonic 的是 collections.Counter(a)，它等价于字典计数，不需要预先知道最大值，也不会因为负数下标误用（Python 的 a[-1] 是最后一个元素，用负数计数会静默出错，要特别小心）。"
+ },
+ "指-01": {
+  "stem": "```python\nx = 7\np = x\nprint(p, p is x, id(p) == id(x))\n```",
+  "options": [
+   "`id(x)` 返回的地址可以用 `*` 解引用得到 7",
+   "`p = x` 之后，对 p 重新赋值会同时改掉 x",
+   "Python 没有 `&`/`*`；`p = x` 只是让 p 绑定同一个对象，`p is x` 为 True，改 p 的绑定不影响 x",
+   "`p` 保存的是 x 的地址，`p` 与 `id(x)` 数值不同就说明没指向"
+  ],
+  "answer": 2,
+  "analysis": "C 的 & 取地址、* 解引用，p 与 x 是两个独立存储单元、p 存 x 的地址；Python 没有指针运算符，p = x 让两个名字绑定同一个 int 对象（7 是小整数，甚至可能命中缓存），所以 p is x、id 相等。对 p 赋新值只是重新绑定 p，x 不变；要“通过引用改值”只能把对象放进可变容器（[x] 或 {'v': x}）。考点从“地址与解引用”映射为“名字绑定与对象同一性”。"
+ },
+ "指-02": {
+  "stem": "```python\na = [0] * 10\np = a\nprint(len(a), len(p), p is a)\n```",
+  "options": [
+   "40 和 40",
+   "8 和 8",
+   "10 和 8",
+   "10 和 10，且 p is a 为 True"
+  ],
+  "answer": 3,
+  "analysis": "C 里 sizeof(a) 是 40 字节、sizeof(p) 是指针 8 字节，p 是独立变量；Python 的 p = a 既不是复制也不是新建指针，而是让 p 绑定同一个 list 对象，所以 len(a) 与 len(p) 都是 10，p is a 为 True。想得到独立副本要 a.copy()、a[:]（浅拷贝）或 copy.deepcopy(a)（含嵌套可变对象）；sys.getsizeof(a) 得到的是容器开销，不是元素个数乘元素大小。"
+ },
+ "指-04": {
+  "stem": "```python\na = [10, 20, 30, 40, 50]\np = 2            # 用下标代替指针\nprint(a[p - 1], a[p + 1])\n```",
+  "options": [
+   "10 和 30",
+   "20 和 40",
+   "20 和 30",
+   "30 和 40"
+  ],
+  "answer": 1,
+  "analysis": "C 的 p = a + 2 指向 a[2]，*(p - 1) 退一格得 20，p[1] 进一格得 40；Python 没有指针算术，只能用整数下标 a[p - 1]、a[p + 1]，步长天然是“一个元素”，不会出现“移动 1 字节”的误解。切片 a[p-1:p+2] 会返回子列表 [20, 30, 40]，不是单个值，这是 Python 里最容易与指针偏移混淆的地方。"
+ },
+ "指-05": {
+  "stem": "```python\na = [1, 2, 3]\ni = 0\nx = a[i]\ni += 1\ny = a[i]\na[i] += 1\nprint(a[0], a[1], x, y)\n```",
+  "options": [
+   "1、3、1、2",
+   "1、2、1、2",
+   "2、3、1、2",
+   "1、3、2、1"
+  ],
+  "answer": 0,
+  "analysis": "C 的 *p++ 先取值再让指针后移，(*p)++ 让所指元素自增；Python 没有 ++ 也没有“取值同时移动”的复合运算，必须用一个下标变量 i 把两件事拆开：x 取 a[0]=1，i 移到 1，y 取 a[1]=2，再 a[1] += 1 变 3，输出 1 3 1 2。拆开写可读性更好，也不会踩 C 里 *p++ 与 (*p)++ 的优先级坑；要遍历用 for x in a 或 enumerate 更自然。"
+ },
+ "指-06": {
+  "stem": "```python\ndef f(a):\n    print(len(a))\n\na = [0] * 10\nprint(len(a))\nf(a)\n```",
+  "options": [
+   "40 然后 40",
+   "40 然后 8",
+   "8 然后 8",
+   "10 然后 10"
+  ],
+  "answer": 3,
+  "analysis": "C 的形参 int a[10] 退化为 int*，函数内 sizeof(a) 是 8、长度信息丢失，所以输出 40 然后 8；Python 传的是 list 对象引用，len 在函数内外都是 10，“数组退化”不存在。C 里长度必须另传参数 n，Python 里 len 自带长度。真正会“丢长度”的是把 list 换成迭代器/生成器（没有 len，且只能遍历一次），这时才需要先 list(...) 或自己计数。"
+ },
+ "指-08": {
+  "stem": "```python\na = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]\np = 0\nprint(a[p + 1])\nprint(a[p + 1][0])\n```",
+  "options": [
+   "a[p+1] 是第 1 行的整行列表（对第 1 行的引用）；a[p+1][0] 是 5",
+   "a[p+1] 是第 1 行第 1 个元素",
+   "a[p+1] 会向后移动 4 个字节得到地址",
+   "只能写 a[p+1][j] 取元素，不能整行取"
+  ],
+  "answer": 0,
+  "analysis": "C 的 int (*p)[4] 是行指针，p + 1 跳过一整行（16 字节），*(p + 1) 得到行数组并退化成 int*，指向该行首元素；Python 里 a[p+1] 直接就是第 1 行这个 list 对象（对它的引用），再 [0] 取该行首元素 5。没有“行指针/列指针”的类型区分，也没有按字节的步长；a[p+1] 是整行，a[p+1][0] 才是元素，这正好对应 *(p+1) 与 **(p+1)。"
+ },
+ "指-09": {
+  "stem": "```python\nx = 1\np = [None] * 4\nfor i in range(4):\n    p[i] = x\nprint(len(p), all(v is x for v in p))\n```",
+  "options": [
+   "`p = [0] * 4`：一个含 4 个 int 的列表",
+   "`p = [None] * 4`：4 个槽位，之后每个槽位可以绑定到不同的对象",
+   "`p = 0 * 4`：整数乘法",
+   "`p = [[0]] * 4`：4 个 list"
+  ],
+  "answer": 1,
+  "analysis": "C 的 int *p[4] 是“指针数组”：4 个元素，每个都是指向 int 的指针；int (*p)[4] 才是“行指针”。Python 没有指针类型，list 的每个槽位存的就是对象引用，所以 [None] * 4 再逐个绑定，正好对应“4 个指针槽”；[0] * 4 是 4 个 int 值，[[0]] * 4 是 4 个列表（且是同一个内层列表的别名）。要表达“二级指针”只能靠嵌套引用，例如 q = [p]。"
+ },
+ "指-11": {
+  "stem": "```python\np = None\nprint(p is None)\n# p.bit_length()   # 这行会抛 AttributeError\n```",
+  "options": [
+   "对 `None` 解引用（例如 `p.bit_length()`）会得到 0，不会出错",
+   "`None` 只能赋给特定类型，赋给字符串会报错",
+   "`None` 可以赋给任何变量表示“没有值”；对 `None` 调用方法会抛 `AttributeError`；Python 没有 `free`，内存由 GC 管理",
+   "判断是否为空必须写 `p == 0`"
+  ],
+  "answer": 2,
+  "analysis": "C 的 NULL 是空指针常量，可赋给任意对象指针，free(NULL) 是安全的空操作；Python 的 None 是全局单例对象，可以赋给任何变量表示“无值”，但访问它的属性/方法会 AttributeError，参与算术会 TypeError。判空要用 p is None，而不是 p == 0（0、\"\"、[] 在布尔上下文中为假，用 if not p 会误伤这些合法值）。Python 没有显式释放，del 只删名字，回收交给引用计数 + GC。"
+ },
+ "指-13": {
+  "stem": "```python\npoint = (1, 2)      # tuple 不可变\np1 = point\np1 = (3, 4)         # 允许：重新绑定\n# p1[0] = 10        # TypeError：tuple 元素不可改\nprint(point, p1)\n```",
+  "options": [
+   "`p1 = (3, 4)`",
+   "`p1[0] = 10`",
+   "`point[0] = 10`",
+   "`(1, 2)[0] = 10`"
+  ],
+  "answer": 0,
+  "analysis": "Python 没有 const 限定符也没有指针，所谓“只读”靠对象不可变：tuple 创建后元素不能改，str/frozenset 同理，修改会 TypeError；但名字（引用）永远可以重新绑定，p1 = (3, 4) 合法。C 的“指向常量的指针 vs 常量指针”这一对区分在 Python 里不存在，取而代之的是“对象是否可变”和“名字能否重新绑定”。要防误改可用 dataclass(frozen=True) 或 typing.Final（静态检查）。"
+ },
+ "指-15": {
+  "stem": "```python\na = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]\ni, j = 1, 2\nprint(a[i][j])\n```",
+  "options": [
+   "`a[i * 4 + j]`",
+   "`a[i][j]`",
+   "`a[i] + j`",
+   "`a[i][j : j + 1]`"
+  ],
+  "answer": 1,
+  "analysis": "C 的 *(*(a + i) + j) 逐层解引用：a + i 指向第 i 行，*(a + i) 得到行数组并退化为 int*，再 + j 解引用得到元素。Python 没有指针与退化，两级下标 a[i][j] 直接完成同样的事。a[i * 4 + j] 只对“已展平的一维列表”成立，对 list of lists 会拿到一行而不是元素；a[i][j:j+1] 返回长度为 1 的切片（新 list），不是元素本身。"
+ },
+ "指-16": {
+  "stem": "```python\na = [[1, 2, 3], [4, 5, 6]]\np = a\nprint(p[1][2], p[0][1], 1)\n```",
+  "options": [
+   "6 2 1",
+   "6 3 3",
+   "6 2 3",
+   "3 2 3"
+  ],
+  "answer": 0,
+  "analysis": "Python 版逐项对应：p[1][2] 是第 1 行第 2 列 6；p[0][1] 是 2；最后一项在 C 里是 (int)(p[1] - p[0])，因为 p[i] 退化后按 int 步长相减得 3，而 Python 没有指针相减，只能取“行号差” 1。这正好说明 C 的行指针相减单位会变（行指针 → 退化后按元素），Python 的下标差永远是“行数差 / 元素个数差”，语义更直观。"
+ },
+ "指-18": {
+  "stem": "```python\np = [0] * 5          # 申请并初始化 5 个 0\np.append(9)          # 追加：类似 realloc 的扩容\nprint(len(p), p[0], p[-1])\n```",
+  "options": [
+   "`[0] * n` 创建 n 个 0；分配失败时抛 MemoryError，而不是返回 None",
+   "`[0] * n` 分配后内容是未初始化的随机值",
+   "`del p` 之后 p 会被自动置为 None",
+   "Python 没有 malloc/calloc/realloc，所以不能动态分配数组"
+  ],
+  "answer": 0,
+  "analysis": "Python 的内存由解释器管理，没有 malloc/calloc/realloc/free：列表字面量、[0] * n、推导式完成“申请 + 初始化”，追加时自动扩容（均摊 O(1)，类似 realloc），失败抛 MemoryError。del p 只删除名字并减引用，对象由 GC 回收，不会把名字置 None（再访问 p 是 NameError）。C 要判 malloc 返回值、手动 free；Python 要担心的是循环引用和大对象常驻，而不是野指针。"
+ },
+ "指-20": {
+  "stem": "```python\ndef max_(a, b):\n    return a if a > b else b\n\np = max_          # 函数是一等对象，赋值就是“函数指针”\nprint(p(3, 8))\n```",
+  "options": [
+   "`p = max_; print(p(3, 8))`",
+   "`int *p = max_; print(p(3, 8))`",
+   "`p = max_(); print(p(3, 8))`",
+   "`p = \"max_\"; print(p(3, 8))`"
+  ],
+  "answer": 0,
+  "analysis": "C 要用 int (*p)(int, int) 声明函数指针，括号不能省；Python 的函数是一等对象，p = max_ 就把函数对象绑定给 p，p(3, 8) 直接调用，没有声明、没有解引用运算符。max_() 是“调用并取返回值”（这里还会因缺参数报错），字符串 \"max_\" 不能调用（TypeError）。函数可以作为参数、返回值、存进列表/字典，这就是 Python 的高阶函数与回调写法。"
+ },
+ "指-22": {
+  "stem": "```python\nx = 10\np = [x]          # 用单元素列表充当“可间接修改的盒子”\npp = p\npp[0] = 20\nprint(x, p[0], pp is p)\n```",
+  "options": [
+   "`pp` 是 p 的地址，`**pp` 得 10",
+   "`pp[0]` 是 20，且 x 仍然是 10（列表里存的是值拷贝，不是对 x 的引用）",
+   "`pp[0] = 20` 会把 x 也改成 20",
+   "Python 不允许列表嵌套列表"
+  ],
+  "answer": 1,
+  "analysis": "C 的 int **pp 通过两级地址访问同一个 int 对象，改 *pp 会影响 x；Python 没有二级指针，把 x 放进列表只是把“指向该 int 对象的引用”存进槽位，pp[0] = 20 让槽位改指向新对象，x 仍是 10。想“通过引用修改调用者变量”，Python 用返回值重新赋值、传可变容器、nonlocal 或类属性。int 不可变是这里的根本原因；如果盒子里放的是 list，改盒内元素才会互相可见。"
+ },
+ "指-23": {
+  "stem": "```python\ndef make_list():\n    data = [0]\n    data[0] = 5\n    return data\n\np = make_list()\np = None\nprint(p is None)\n```",
+  "options": [
+   "`p = [0]; p[0] = 5; p = None`：没有悬空指针，对象由 GC 回收",
+   "`p = None; p[0] = 5`：对 None 下标赋值",
+   "`def f(): x = 3; return x` 之后访问 x",
+   "`p = [0]; del p[0]; print(p[0])`"
+  ],
+  "answer": 0,
+  "analysis": "C 的野指针（未初始化）、悬空指针（free 后仍用）、重复释放都源于手动内存管理；Python 没有 free，对象由引用计数回收，p = None 只是解除绑定，之后访问 p 是 None，不会读到“已释放内存”。Python 里的对应错误是：对 None 取下标（TypeError）、下标越界（IndexError）、用未定义的名字（NameError）。这些都会立即抛异常而不是未定义行为，所以更容易定位。"
+ },
+ "指-25": {
+  "stem": "```python\na = [10, 20, 30, 40]\ni = 0\nx = a[i]; i += 1\ni += 1\ny = a[i]\ni += 1\nz = a[i]\nprint(x, y, z)\n```",
+  "options": [
+   "10、20、30",
+   "10、30、30",
+   "10、30、40",
+   "10、40、30"
+  ],
+  "answer": 2,
+  "analysis": "逐步对照 C：*p++ 取 a[0] 得 10 且 p 后移；再 p++ 到 a[2]；*p 得 30；*++p 先移再取 a[3] 得 40，输出 10、30、40。Python 没有指针，用下标 i 显式维护“当前位置”，每条语句只做一件事，因此不会出现 *p++ 与 *++p 的优先级混淆；要顺序遍历用 for x in a 或 enumerate 即可。"
+ },
+ "指-26": {
+  "stem": "```python\na = [10, 20, 30, 40, 50]\nprint(a[2:], a[2])\n```",
+  "options": [
+   "`a[:2]`",
+   "`a[2:]`",
+   "`a[2] + 2`",
+   "`a + 2`"
+  ],
+  "answer": 1,
+  "analysis": "C 的 &a[2] 是第 3 个元素的地址，指针加 1 按 int 步长前进；Python 里没有地址，“从下标 2 开始到末尾”写作切片 a[2:]，它返回一个新列表 [30, 40, 50]（是副本不是视图），而 a[2] 是单个元素 30。a[:2] 是前两个元素，a + 2 会 TypeError（列表不能和 int 相加），a[2] + 2 是数值加法 32。"
+ },
+ "指-27": {
+  "stem": "```python\na = [0] * 6\ni, j = 1, 4\nprint(i < j, j - i)\n```",
+  "options": [
+   "`True` 和 12（字节差）",
+   "`True` 和 3",
+   "`False`，因为 `&a[4]` 的地址更大",
+   "两个位置不能比较大小，只能相减"
+  ],
+  "answer": 1,
+  "analysis": "C 里 p = &a[1]、q = &a[4]，地址上 p < q，q - p 的结果是元素个数 3（对应 12 字节，但表达式的值是 3）；Python 里“位置”就是整数下标，比较与相减都按元素个数，不存在字节差，也没有“只有同一数组内才能相减”的限制。C 的指针相减单位是元素、类型是 ptrdiff_t，这一点与 Python 的下标差概念上一致，只是 Python 用 int 表示、且不会越界未定义。"
+ },
+ "指-29": {
+  "stem": "```python\na = [[0] * 4 for _ in range(3)]\ni, j = 2, 1\nprint(i * 4 + j)\n```",
+  "options": [
+   "线性下标 9（= 2 * 4 + 1）",
+   "线性下标 2",
+   "线性下标 6",
+   "线性下标 36"
+  ],
+  "answer": 0,
+  "analysis": "C 用 (i * 列数 + j) * sizeof(int) 算字节偏移：(2*4+1)*4 = 36 字节，若首地址 1000 则 &a[2][1] 是 1036。Python 没有地址，但行优先的线性下标换算完全一样：i * 4 + j = 9。9 是“第几个元素”，36 是“第几字节”，两者都值得会算；a[2][1] 与展平后的 flat[9] 取到同一个值，前提是展平顺序按行优先。"
+ },
+ "指-31": {
+  "stem": "```python\np = [1, 2, 3]\ndel p\n# print(p)   # NameError: name 'p' is not defined\n```",
+  "options": [
+   "`p = [1, 2]; p = None`：安全",
+   "`p = [1, 2]; del p; del p`：第二次 del 会抛 NameError",
+   "`p = [1, 2]; p.append(3); p = None`：安全",
+   "`p = [1, 2] * 2`：安全"
+  ],
+  "answer": 1,
+  "analysis": "C 的重复 free（double free）会破坏堆结构、属于未定义行为；Python 没有 free，“重复释放”对应“重复 del 同一个名字”，第二次 del 抛 NameError，属于可捕获的异常而不是内存破坏。p = None 只是解除绑定、减一次引用，对象由 GC 回收；p = [1,2] * 2 是列表重复，完全安全。Python 里真正需要小心的是循环引用和“删除后仍持有别名”，而不是重复释放。"
+ },
+ "指-33": {
+  "stem": "```python\ns = \"hello\"\n# s[0] = \"H\"      # TypeError: 'str' object does not support item assignment\ns = \"H\" + s[1:]\nprint(s)\n```",
+  "options": [
+   "`s = \"hello\"; s[0] = \"H\"`",
+   "`s = \"hello\"; s = \"H\" + s[1:]`",
+   "`s = \"hello\"; print(s)`",
+   "`s = bytearray(b\"hello\"); s[0] = ord(\"H\")`"
+  ],
+  "answer": 0,
+  "analysis": "C 的字符串字面量在只读区，char *p = \"hello\"; p[0] = 'H' 是未定义行为；char s[] = \"hello\" 则是可写副本，可以改。Python 的 str 一律不可变，s[0] = \"H\" 直接 TypeError，任何“改字符”都必须生成新串（切片拼接、replace、join）。bytearray 是可变的字节序列，可以原地赋值（值必须是 0~255 的 int），这是 Python 里最接近“可写字符数组”的类型。"
+ },
+ "指-35": {
+  "stem": "```python\na = [7, 8, 9]\ni = 1                 # 用下标 i 表示“指向 a[1]”\nprint(a[i], a[i], a[i + 1])\n```",
+  "options": [
+   "8 8 9",
+   "8 8 8",
+   "7 8 9",
+   "8 9 9"
+  ],
+  "answer": 0,
+  "analysis": "C 的二级指针每解引用一次剥一层：*pp 是 p，**pp 是 p 所指元素；Python 用“下标变量”间接寻址，a[i] 就是元素 8，a[i+1] 是 9，输出 8 8 9。Python 里要表达“指向指针的指针”只能靠容器嵌套（如 pp = [a, i]），而且没有自动解引用，每次都要自己写 []。这也说明 C 的 * 层数概念在 Python 里被“下标层数”替代。"
+ },
+ "指-37": {
+  "stem": "```python\ndef show(x):\n    return type(x).__name__\n\nprint(show(3), show([1]), show(\"s\"))\n```",
+  "options": [
+   "`void *` 不能与任何具体类型指针相互赋值，必须强制转换",
+   "`void *` 可以接收任意对象指针的赋值，也可以隐式赋给其他对象指针，但不能解引用",
+   "Python 里任何对象都能传给函数，不需要 void*；要按字节处理用 bytes/bytearray/memoryview",
+   "`void *` 可以解引用，解引用得到 1 个字节的值"
+  ],
+  "answer": 2,
+  "analysis": "C 的 void* 是类型擦除：任意对象指针可隐式赋给它，反过来也可隐式赋给其他对象指针，但它不能解引用、不能做指针算术，这是“通用接口”的代价。Python 变量本身没有类型，函数参数天然可以接收任意对象（鸭子类型），不需要 void*；要按字节处理用 bytes/bytearray/memoryview，要类型检查用 isinstance。所以本题的考点在 Python 里变成“动态类型 vs 类型擦除指针”。"
+ },
+ "指-39": {
+  "stem": "```python\ns = \"hello\"\nprint(len(s), len(s.encode()))\n```",
+  "options": [
+   "6、8、5",
+   "5、5、5",
+   "6、5、5",
+   "5、8、5"
+  ],
+  "answer": 1,
+  "analysis": "C 的 sizeof(s)=6（含 '\\0'）、sizeof(p)=8（指针）、strlen(s)=5；Python 没有结束符也没有指针，len(s) 与 len(s.encode()) 在纯 ASCII 下都是 5。中文时会不同：\"中\" 的 len 是 1、encode 成 UTF-8 后是 3 字节，所以“字符数”和“字节数”在 Python 里靠 len(str) 与 len(str.encode()) 区分，而不是 sizeof/strlen。"
+ },
+ "指-41": {
+  "stem": "```python\ndef swap(a, b):\n    a, b = b, a\n\nx, y = 1, 2\nswap(x, y)\nprint(x, y)\n```",
+  "options": [
+   "在函数里加 `global a, b` 声明，就能交换调用者的变量",
+   "让函数返回交换后的两个值，调用处写 `x, y = swap(x, y)`",
+   "在函数里把 `t = a` 改成 `t = a.copy()`",
+   "把形参改成 `*a, *b`，调用改为 `swap(*x, *y)`"
+  ],
+  "answer": 1,
+  "analysis": "Python 没有引用传参，也没有指针：参数是对象引用绑定，int 不可变，所以函数内 a, b = b, a 只交换局部名字，调用者的 x、y 不变。要实现交换：让函数返回元组，调用处 x, y = swap(x, y)（或直接 x, y = y, x，最 Pythonic）；如果传的是 list 这种可变对象，可以在函数内原地交换 l[0], l[1]，因为共享同一对象。global 只对模块级变量有效，对形参 a、b 加 global 是语法错误；*x 是解包，不能用于传参。"
+ },
+ "指-43": {
+  "stem": "```python\ndef make():\n    a = [1, 2, 3]\n    return a\n\nprint(make())\n```",
+  "options": [
+   "返回局部列表是安全的：对象由引用计数保活，函数返回后仍可使用",
+   "返回了局部变量的地址，函数返回后内存失效，形成悬空指针",
+   "数组 a 未初始化，返回值不确定",
+   "函数返回类型应为 int，不能返回列表"
+  ],
+  "answer": 0,
+  "analysis": "C 的 return a 返回栈上局部数组的地址，函数返回后该内存失效，是典型悬空指针（编译器通常给警告）；Python 的 return a 返回的是列表对象引用，函数结束时局部名字 a 消失，但对象仍被返回值引用，引用计数保证它存活，所以完全安全。Python 没有“返回局部变量地址”这种错误，只有“返回可变对象的共享引用”导致的别名问题（调用者修改会影响其他持有者）。"
+ },
+ "指-45": {
+  "stem": "```python\ns = \"abcd\"\nfor i in range(0, len(s), 2):\n    print(s[i], end=\"\")\nprint()\n```",
+  "options": [
+   "abcd",
+   "ac",
+   "ad",
+   "abc"
+  ],
+  "answer": 1,
+  "analysis": "C 的 p += 2 让字符指针每次跳两个字符，直到遇到 '\\0'，输出 ac；Python 用 range 的步长 2（或切片 s[::2]）达到同样效果。区别是边界：C 靠 '\\0' 哨兵结束，Python 靠 len(s)，不会越界读；s[::2] 一步得到 \"ac\"，比手写循环更简洁，但考点（步长遍历）不变。"
+ },
+ "指-46": {
+  "stem": "```python\ndef add(a, b):\n    return a + b\n\ndef sub(a, b):\n    return a - b\n\nop = [add, sub]\nprint(op[0](3, 2), op[1](3, 2))\n```",
+  "options": [
+   "`op = [add, sub]`，`op[0](3, 2)` 得 5、`op[1](3, 2)` 得 1",
+   "`op = [add(), sub()]`，调用时再加参数",
+   "`op = [add, sub]`，`op[0]` 是函数地址，必须先写 `(*op[0])(3, 2)` 才能调用",
+   "`op = [add, sub]`，只能通过 `op[0].__call__` 调用，直接加括号非法"
+  ],
+  "answer": 0,
+  "analysis": "C 要写 int (*op[2])(int, int) 这种“函数指针数组”声明；Python 的 list 元素可以是函数对象，op[0](3, 2) 直接调用，(*op[0])(3, 2) 也合法但没必要，. __call__ 同样可用只是绕。用列表/字典存放函数可以做分发表（字典按名字查），用 if/elif 或 match 也可以，但表驱动扩展性更好。"
+ },
+ "指-47": {
+  "stem": "```python\nimport array\na = array.array(\"i\", [1, 2, 3])\nprint(a.itemsize, a[1] - a[0])\n```",
+  "options": [
+   "都是 1 字节",
+   "1 字节和 4 字节",
+   "都是 4 字节",
+   "Python 没有指针步长：下标 +1 永远前进一个元素，与元素类型大小无关"
+  ],
+  "answer": 3,
+  "analysis": "C 的指针步长由所指类型决定：int* 的 p++ 前进 4 字节，char* 前进 1 字节，这是指针必须区分类型的根本原因。Python 的序列下标以“元素”为单位，a[i+1] 就是下一个元素，不暴露字节偏移，也没有指针类型；要看元素宽度用 array('i').itemsize 或 struct.calcsize('i')。所以本题在 Python 里没有字节步长这回事，只有“元素宽度”这一静态属性。"
+ },
+ "指-48": {
+  "stem": "```python\na = [1, 2, 3, 4]\ni = 1\nprint(a[i - 1], a[3], i)\n```",
+  "options": [
+   "1 4 3",
+   "2 4 1",
+   "1 4 1",
+   "1 3 1"
+  ],
+  "answer": 2,
+  "analysis": "C 的 p[-1] 等价于 *(p - 1)，回退一个 int 得 a[0]=1；*(a+3)=4；p - a = 1（元素个数差）。Python 里 a[i-1] 得 1、a[3] 得 4、下标差 i = 1，输出 1 4 1。特别注意：Python 的 a[-1] 是“最后一个元素”（4），不是“回退一格”，所以不能把 C 的 p[-1] 直接照搬成 a[-1]；想做相对偏移必须显式写 a[i - 1]。"
+ },
+ "结-01": {
+  "stem": "```python\nclass Point:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n\np = Point(1, 2)\nprint(p.x, p.y)\n```",
+  "options": [
+   "Python 用 class 定义类型，靠冒号和缩进划分成员，结尾不需要分号；缩进错误报 IndentationError",
+   "class 的花括号 `}` 后必须写分号",
+   "类定义末尾的分号可以省略，解释器会自动补",
+   "漏写分号时定义处不会报错，只在第一次使用时报错"
+  ],
+  "answer": 0,
+  "analysis": "C 的 struct 定义是声明，右花括号后必须有分号（};），漏写直接在定义处报 expected ';'。Python 没有花括号也没有分号：用 class 关键字 + 冒号 + 缩进定义代码块，成员是方法里 self.x = ... 动态挂上去的；缩进不齐会 IndentationError。要更接近 C 结构体的“字段列表”语义，用 @dataclass（字段即成员，自动生成 __init__/__repr__/__eq__）。"
+ },
+ "结-02": {
+  "stem": "```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass Point:\n    x: int\n    y: int = 0\n\np = Point(3)\nprint(p.x, p.y)\n```",
+  "options": [
+   "3 和 3",
+   "3 和未定义的随机值",
+   "编译错误：初始化项个数不足",
+   "3 和 0"
+  ],
+  "answer": 3,
+  "analysis": "C 的 struct Point p = {3} 只给第一个成员，其余按零初始化补 0；Python 用 dataclass 的默认值 y: int = 0 表达同样效果：Point(3) 得 x=3、y=0。没有默认值时少传参数是 TypeError（不是随机值），也不是编译错误。注意 dataclass 的可变默认值要用 field(default_factory=list)，否则所有实例共享同一个列表——这是 Python 特有的坑，对应 C 里“每个结构体变量各自占一份存储”。"
+ },
+ "结-04": {
+  "stem": "```python\nclass Book:\n    def __init__(self, title, price):\n        self.title = title\n        self.price = price\n\nb = Book(\"C Primer\", 59.5)\npb = b\nprint(pb.title, pb.price)\n```",
+  "options": [
+   "`b.price`",
+   "`pb->price`",
+   "`pb.price`",
+   "`(*pb).title`"
+  ],
+  "answer": 1,
+  "analysis": "C 里结构体对象用 . 访问成员、结构体指针用 ->，两者不能互换，所以 pb->price（pb 是指针写法一致但此处 pb 是对象引用）在 C 里要看类型；Python 根本没有指针，所有对象（包括引用）一律用 . 访问属性，pb->price 在 Python 是 SyntaxError（-> 只用于函数返回类型注解），(*pb).title 也是语法错误。所以“错误”的项在 Python 里是 -> 写法，而 b.price、pb.price、(*pb).title 的等价写法都合法。"
+ },
+ "结-06": {
+  "stem": "```python\np1 = {\"a\": 1, \"b\": 2}\np2 = p1.copy()\np2[\"a\"] = 99\nprint(p1[\"a\"], p2[\"a\"])\n```",
+  "options": [
+   "`p2 = {\"a\": 1, \"b\": 2}`",
+   "`p2 = p1.copy()`，浅拷贝后改 p2 不影响 p1",
+   "`p2 = *p1`",
+   "`p2 = p1`，只是多一个别名"
+  ],
+  "answer": 1,
+  "analysis": "C 的结构体赋值是值拷贝（逐成员复制），p2 = p1 之后两者独立；Python 的 p2 = p1 只是增加一个引用（别名），改 p2[\"a\"] 会同时改 p1，必须用 p1.copy()/dict(p1)/copy.copy(p1) 才是浅拷贝。若值里有嵌套可变对象（列表、字典），浅拷贝仍共享内层，要用 copy.deepcopy。{...} 字面量只能重建一份相同内容，不是“把 p1 复制过去”；*p1 是解包，不能单独作右值。"
+ },
+ "结-07": {
+  "stem": "```python\ns = [\n    {\"id\": 101, \"score\": [80, 90, 85]},\n    {\"id\": 102, \"score\": [70, 75, 88]},\n]\np = s\nprint(p[1][\"score\"][2])\n```",
+  "options": [
+   "80",
+   "88",
+   "85",
+   "70"
+  ],
+  "answer": 1,
+  "analysis": "C 的 (*(p + 1)).score[2] 先指针算术移到第二个结构体，再取成员数组；Python 用 p[1][\"score\"][2] 两级取值，得到 88。括号的重要性在 C 里很关键（*(p + 1).score[2] 会先取成员再解引用，类型错误），Python 没有这种歧义，但“先定位元素、再取字段、再取子元素”的层次是一样的。用 dataclass/对象时写 p[1].score[2]，更接近 C 的写法。"
+ },
+ "结-09": {
+  "stem": "```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass Date:\n    year: int\n    month: int\n    day: int\n\n@dataclass\nclass Employee:\n    id: int\n    name: str\n    birth: Date\n```",
+  "options": [
+   "32",
+   "28",
+   "40",
+   "Python 没有 sizeof 与内存对齐：对象大小由解释器决定（sys.getsizeof 含对象开销），嵌套对象只存引用"
+  ],
+  "answer": 3,
+  "analysis": "C 的嵌套结构体是“值内嵌”，sizeof(Employee) = 4 + 16 + 12 = 32（按 4 字节对齐，无额外填充）；Python 的 dataclass 里 birth: Date 存的是引用，不是内嵌对象，内存由解释器分配，不能用“成员大小相加”推算。要观察大致开销用 sys.getsizeof（含对象头）或 pympler/asizeof（第三方）；“对齐/填充”在 Python 层不可见，只有用 struct/array 与 C 交互时才需要关心。"
+ },
+ "结-11": {
+  "stem": "```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass Point:\n    x: int\n    y: int\n\ndef move(p):\n    p.x += 10\n    p.y += 10\n\na = Point(1, 2)\nmove(a)\nprint(a.x)\n```",
+  "options": [
+   "11",
+   "10",
+   "0",
+   "1"
+  ],
+  "answer": 0,
+  "analysis": "C 的结构体作参数是值拷贝，函数内改副本，a.x 仍是 1；Python 传的是对象引用，p 与 a 指向同一个 Point，p.x += 10 直接改到 a，输出 11。这是“值语义 vs 引用语义”的典型差异。若想保持“函数内改不动调用者”，传 dataclass(frozen=True) 的实例（修改会 FrozenInstanceError），或在函数里先 copy.copy(p) 再改副本。"
+ },
+ "结-12": {
+  "stem": "```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass Point:\n    x: int\n    y: int\n\ndef make():\n    return Point(1, 2)\n\nprint(make().x)\n```",
+  "options": [
+   "结构体超过 8 字节时不能作为返回值，只能改用全局变量",
+   "返回结构体的函数必须把返回类型写成 `void *`",
+   "可以直接返回 dataclass/元组等对象，调用处用同类型变量接收",
+   "Python 不允许函数返回对象"
+  ],
+  "answer": 2,
+  "analysis": "C 允许函数返回结构体（返回副本，可能经隐藏指针优化），没有 8 字节限制；Python 一切皆对象引用，返回 dataclass、tuple、dict 都是常规操作，也不需要声明返回类型。“返回多个值”就是 return a, b 得到元组再解包，比 C 的“返回结构体/传指针输出参数”更自然。"
+ },
+ "结-14": {
+  "stem": "```python\nclass Node:\n    def __init__(self, data, next=None):\n        self.data = data\n        self.next = next\n\nn = Node(1, Node(2))\nprint(n.data, n.next.data)\n```",
+  "options": [
+   "`typedef` 是预处理指令，在编译前把 `Node` 全部文本替换成 `struct Node`",
+   "有了这条语句后，结构体内部的 `struct Node *next;` 可以简写为 `Node *next;`",
+   "Python 用 class 定义类型，实例属性存引用，`self.next = None` 之后可以赋另一个 Node；没有 typedef/struct 标签的两套名字",
+   "该语句在起别名的同时也定义了一个名为 `Node` 的变量"
+  ],
+  "answer": 2,
+  "analysis": "C 的 typedef 只起别名，且在结构体体内别名尚未生效，所以自引用必须写 struct Node *next;；Python 的类名在方法执行时已经绑定，__init__ 里写 self.next = None 再赋 Node 对象即可，不需要前置声明或 typedef。类型注解可以用 Optional[\"Node\"]（字符串前向引用）。Python 里也没有“标签名与 typedef 名分属两个命名空间”的问题，类名就是唯一的名字。"
+ },
+ "结-16": {
+  "stem": "```python\nclass S:\n    def __init__(self):\n        self.c = \"\"\n        self.i = 0\n```",
+  "options": [
+   "8",
+   "5",
+   "12",
+   "Python 没有内存对齐与 sizeof：对象大小由解释器决定，不能按成员大小相加/对齐推算"
+  ],
+  "answer": 3,
+  "analysis": "C 的 struct S { char c; int i; } 要满足 int 的 4 字节对齐，c 后补 3 字节，sizeof 为 8。Python 的类实例通常用 __dict__ 存属性（散列表），没有“成员按声明顺序紧密排列 + 对齐填充”的布局，sys.getsizeof 只给对象本身大小而且含头部；要控制布局用 __slots__，要字节级布局用 struct/array 与 C 交互。所以“sizeof 是 8”这个结论在 Python 里不成立。"
+ },
+ "结-17": {
+  "stem": "```python\nfrom types import SimpleNamespace\n\np = SimpleNamespace(x=1, y=2)\nprint(p.x, p.y)\n```",
+  "options": [
+   "匿名结构体不能用来定义变量，只能作为成员的嵌入类型",
+   "Python 没有匿名结构体；临时聚合可用 SimpleNamespace 或具名 dataclass，类型始终有名字（类对象）",
+   "匿名结构体可以作为函数的返回类型，方便一次返回多个值",
+   "匿名结构体不能包含数组成员，只能包含基本类型成员"
+  ],
+  "answer": 1,
+  "analysis": "C 的匿名 struct 在定义类型的同时定义变量，但类型没有名字，之后无法再写出它，也不能作为返回类型，只能靠 typedef 起别名。Python 的每个类都是对象、都有名字（可以用 type(\"X\", (), {}) 动态创建，但仍有 __name__），没有“省略标记名导致类型不可写出”的限制；临时数据容器用 types.SimpleNamespace、dataclass、NamedTuple 或直接字典。"
+ },
+ "结-20": {
+  "stem": "```python\nclass Node:\n    def __init__(self, data, next=None):\n        self.data = data\n        self.next = next\n\nhead = None\nfor i in range(1, 4):\n    head = Node(i * 2, head)\n\np = head\nwhile p:\n    print(p.data, end=\" \")\n    p = p.next\n```",
+  "options": [
+   "`2 4 6 `",
+   "`2 6 4 `",
+   "`6 2 4 `",
+   "`6 4 2 `"
+  ],
+  "answer": 3,
+  "analysis": "头插法：每次都把新结点放在表头（新结点 next 指向旧 head，再让 head 指向新结点），所以后插入的排在前面，三次插入 2、4、6 后链表从头到尾是 6 → 4 → 2，输出 `6 4 2 `。Python 版用 Node(i * 2, head) 一行完成“建结点 + 接链”，没有 malloc，对象由 GC 管理；遍历用 while p: 利用 None 为假，比 while p is not None 更简洁。"
+ },
+ "结-21": {
+  "stem": "```python\nclass Node:\n    def __init__(self, data, next=None):\n        self.data = data\n        self.next = next\n\n# p 是待删结点，q 是它的前驱\nq.next = p.next\ndel p          # 只删除名字，对象由 GC 回收\n```",
+  "options": [
+   "`q.next = p.next; del p`",
+   "`p.next = q.next; del p`",
+   "`q.next = p.next; del q`",
+   "`del p; q.next = p.next`"
+  ],
+  "answer": 0,
+  "analysis": "删除单链表结点的两步：先让前驱跳过 p（q.next = p.next），再释放/丢弃 p；顺序反了会丢链或访问已删结点。Python 没有 free，del p 只删除局部名字、减少一次引用，若别处没有引用对象即被回收；若还有引用（比如临时变量），对象仍存活，不会出现 C 的悬空指针。注意 del p 之后不能再写 p.next（NameError），这也是“先改链、后删名字”的原因。"
+ },
+ "结-24": {
+  "stem": "```python\nclass U:\n    def __init__(self):\n        self.value = None\n\nu = U()\nu.value = 3\nprint(u.value)\n```",
+  "options": [
+   "5 和 8",
+   "5 和 5",
+   "4 和 8",
+   "Python 没有 union：成员各占独立的属性槽，内存由解释器管理；要“同一时刻只存一个值”用 Optional/枚举或只保留一个属性"
+  ],
+  "answer": 3,
+  "analysis": "C 的 union 所有成员共享同一块存储（大小取最大成员并对齐，本题 4），struct 成员各自占空间并插入填充（本题 8）。Python 没有 union 这种内存布局控制，类实例的每个属性独立存在（通常在 __dict__ 里），改一个字段不会“覆盖”另一个字段；要用 __slots__ 省内存，或用 Optional/枚举表达“当前只有一种值有效”。所以 union/struct 的 sizeof 对比在 Python 里没有对应物。"
+ },
+ "结-25": {
+  "stem": "```python\nclass Node:\n    def __init__(self, data, next=None):\n        self.data = data\n        self.next = next\n```",
+  "options": [
+   "`class Node: next: Node` 直接引用会导致无限递归",
+   "Python 里在 __init__ 中写 `self.next = None`，之后赋 None 或另一个 Node 即可；类型注解用 `Optional[\"Node\"]` 前向引用，不存在“结构体包含自身对象”的非法问题",
+   "必须写成 `struct Node *next` 才能自引用",
+   "Python 不允许类引用自身"
+  ],
+  "answer": 1,
+  "analysis": "C 的结构体不能包含自身的对象成员（大小无限递归），只能包含指向自身的指针；Python 的属性存的是对象引用，类在方法运行前就已定义好，所以自引用天然可行。类型注解里直接写 next: Node 在函数定义时会被求值，可能 NameError，所以用字符串 \"Node\" 或 from __future__ import annotations 做前向引用。这个问题在 Python 里从“语法限制”变成了“类型注解的求值时机”。"
+ },
+ "结-27": {
+  "stem": "```python\ndef show(a):\n    print(len(a))\n\nshow([{\"id\": 1}] * 3)\n```",
+  "options": [
+   "8，不能",
+   "16，能",
+   "8，能",
+   "长度信息不会丢失：len(a) 直接得到实参的元素个数"
+  ],
+  "answer": 3,
+  "analysis": "C 的形参 struct Item a[] 退化为指针，sizeof(a) 是 8，sizeof(a)/sizeof(a[0]) 得不到元素个数，必须另传 n；Python 传 list 对象引用，len(a) 直接就是 3，长度信息不丢。只有把 list 换成迭代器/生成器时才会“没有长度”，需要先 list(...) 或自己计数。这道题在 Python 里答案从“8，不能”变成“长度可用”，正说明数组退化是 C 特有机制。"
+ },
+ "结-29": {
+  "stem": "```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass Node:\n    id: int = 0\n    name: str = \"\"\n    score: int = 0\n\nn = Node(score=90, id=7)\nprint(n.name == \"\", n.id, n.score)\n```",
+  "options": [
+   "未初始化，内容是不确定的随机字节",
+   "全部为默认值，name 是空字符串（对应 C 的零初始化）",
+   "编译错误：指定初始化器必须按成员声明顺序书写",
+   "编译错误：Python 不支持关键字参数"
+  ],
+  "answer": 1,
+  "analysis": "C99 的指定初始化器 .score = 90, .id = 7 可以乱序、只初始化部分成员，未指定的成员按零初始化补 0（name 全为 '\\0'，是空字符串）。Python 的关键字参数同样可以乱序，dataclass 的默认值让未指定的字段取默认值（\"\"、0），输出 True 7 90。注意 Python 的“默认值”是显式写在类里的，不是“没写就自动清零”；没有默认值的字段少传会 TypeError。"
+ },
+ "结-30": {
+  "stem": "```python\nclass Op:\n    def __init__(self, symbol, calc):\n        self.symbol = symbol\n        self.calc = calc\n\no = Op(\"+\", lambda a, b: a + b)\nprint(o.calc(2, 3))\n```",
+  "options": [
+   "结果为 5，`o.calc` 中存放的是函数代码的一份拷贝",
+   "编译错误：结构体成员不能声明为函数指针",
+   "得到的是函数地址，必须先写 `(*o.calc)(2, 3)` 才能调用",
+   "结果为 5，`o.calc` 保存的是函数对象的引用，`o.calc(2, 3)` 与 `add(2, 3)` 等价"
+  ],
+  "answer": 3,
+  "analysis": "C 的结构体成员可以是指向函数的指针，存的是函数的入口地址，o.calc(2, 3) 与 (*o.calc)(2, 3) 等价。Python 的函数是一等对象，存进属性的就是引用，o.calc(2, 3) 直接调用；但要注意绑定方法：如果存的是实例方法，调用时会自动传 self，而这里存的是普通 lambda，不会。想把“数据 + 行为”绑在一起，类方法/staticmethod/函数属性都可以，这比 C 的函数指针更灵活。"
+ },
+ "结-32": {
+  "stem": "```python\nclass Node:\n    def __init__(self, data, next=None):\n        self.data = data\n        self.next = next\n\nhead = Node(1)\nprint(head.data)\n```",
+  "options": [
+   "构造 Node 对象后无需判空/手动释放，GC 负责回收；要注意环状链表会形成循环引用",
+   "每次 new 都必须判断是否返回空指针",
+   "free 之后应尽快通过 p.next 取下一个结点",
+   "对同一块内存连续 free 两次可以更彻底地释放"
+  ],
+  "answer": 0,
+  "analysis": "C 用 malloc 建结点必须判返回值，用完要 free 并把指针置 NULL，否则悬空/重复释放。Python 的 Node(...) 失败会抛 MemoryError（无需判空），对象由引用计数回收，没有 free；“连续释放两次”这种错误在 Python 里不存在。Python 特有的内存问题是环状链表/双向引用造成循环引用，需要 weakref 或手动断链（p.next = None）配合 gc.collect。"
+ },
+ "结-34": {
+  "stem": "```python\nclass Info:\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n\na = Info(\"Tom\", 20)\nb = a\na.name = None\nprint(b.name, a is b)\n```",
+  "options": [
+   "`b.name` 指向一块新分配的字符串，内容为 \"Tom\"",
+   "`b.name` 被自动置为 `None`，因此可以安全地判断后使用",
+   "`b` 与 `a` 是同一个对象（`b is a` 为 True），改 a.name 会同时改 b.name；要独立副本需 copy.copy/deepcopy",
+   "整体赋值会为引用成员自动重新申请内存，`b.name` 仍可安全使用"
+  ],
+  "answer": 2,
+  "analysis": "C 的结构体整体赋值是浅拷贝：指针成员只复制地址，free(a.name) 后 b.name 悬空。Python 的 b = a 连浅拷贝都不是，只是别名（b is a），改 a.name 会同时反映到 b；copy.copy 才是浅拷贝（嵌套可变对象仍共享），copy.deepcopy 递归复制。所以 Python 里“浅拷贝/深拷贝”的区别与 C 的“值拷贝 + 指针成员”问题同源，但默认赋值更“危险”也更省内存。"
+ },
+ "结-35": {
+  "stem": "```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass Stu:\n    id: int = 0\n    name: str = \"\"\n\ns = [Stu(1, \"A\"), Stu(2, \"B\"), Stu()]\nprint(s[2].id, repr(s[2].name))\n```",
+  "options": [
+   "`s[2].id` 为随机值，`s[2].name` 内容不确定",
+   "`s[2].id` 为 0，`s[2].name` 是空字符串（默认值）",
+   "编译错误：初始化项少于数组长度",
+   "`s[2].id` 为 0，但 `s[2].name` 的内容不确定"
+  ],
+  "answer": 1,
+  "analysis": "C 的数组/结构体初始化项少于元素个数是合法的，未给出的部分零初始化，所以 s[2].id 为 0、name 全为 '\\0'（空字符串）。Python 的列表必须写满元素，s[2] 不存在就 IndexError；要达到同样效果用默认值 + Stu() 占位（如上），id 取 0、name 取 \"\"。注意 Python 里“不写默认值”的字段不会自动清零，而是要求传参，否则 TypeError——没有 C 的聚合零初始化规则。"
+ },
+ "结-37": {
+  "stem": "```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass Point:\n    x: int\n    y: int\n\np = Point(1, 2)\n```",
+  "options": [
+   "`p = (1, 2)`",
+   "`p = Point{1, 2}`",
+   "`p = Point(1, 2)`",
+   "`p = Point[1, 2]`"
+  ],
+  "answer": 2,
+  "analysis": "C 有 typedef 后用 Point p = {1, 2}，按成员顺序用花括号列表初始化；Python 用构造函数 Point(1, 2) 或关键字参数 Point(x=1, y=2)，Point{1, 2} 是 C++ 的写法，Python 会 SyntaxError，Point[1, 2] 是下标语法（会在类上抛 TypeError）。(1, 2) 只是一个元组，不会生成 Point 对象，除非另写工厂函数。"
+ },
+ "结-39": {
+  "stem": "```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass Item:\n    id: int\n    price: float\n\nitems = [Item(0, 0.0)] * 10\nprint(len(items))\n```",
+  "options": [
+   "`len(items)`",
+   "`sys.getsizeof(items) / sys.getsizeof(Item(0, 0.0))`",
+   "`sys.getsizeof(items) / 10`",
+   "`len(items) / 10`"
+  ],
+  "answer": 0,
+  "analysis": "C 用 sizeof(list) / sizeof(list[0]) 求元素个数，因为数组的字节数是元素大小之和；Python 的 list 自带长度，len(items) 直接得 10。sys.getsizeof(items) 只算容器本身（头部 + 指向元素的引用数组），不含元素对象的内存，所以除去元素大小得不到个数，除以 10 也没有意义。要统计元素总内存得用 pympler.asizeof 之类的工具。"
+ },
+ "结-40": {
+  "stem": "```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass Rec:\n    id: int\n    score: int\n\na = [Rec(1, 80), Rec(2, 90), Rec(3, 70)]\np = 0\np += 1\nprint(a[p].id)\n```",
+  "options": [
+   "`a[1]`，增加 4 字节",
+   "`a[1]`，下标 +1 前进一个元素，没有“字节步长”这回事",
+   "`a[0]` 的第二个成员，增加 4 字节",
+   "`a[1]`，增加 1 字节"
+  ],
+  "answer": 1,
+  "analysis": "C 的 struct Rec *p = a; p++ 前进 sizeof(struct Rec) = 8 字节，指向 a[1]；Python 没有指针算术，下标 +1 就是以元素为步长，字节偏移由解释器内部决定、不可见。p[1].id 与 (p+1)->id 在 C 里靠指针类型决定步长，Python 里全靠下标，写错下标才会越界（IndexError）。要按字节移动只能手动用 array/struct 转字节视图。"
+ },
+ "枚-01": {
+  "stem": "```python\nfrom enum import Enum, auto\n\nclass Season(Enum):\n    SPRING = auto()\n    SUMMER = auto()\n    AUTUMN = auto()\n    WINTER = auto()\n\nprint(Season.AUTUMN.value)\n```",
+  "options": [
+   "1",
+   "2",
+   "3",
+   "4"
+  ],
+  "answer": 2,
+  "analysis": "C 的枚举默认从 0 开始递增，AUTUMN 是 2；Python 的 enum.auto() 从 1 开始递增，AUTUMN 的 value 是 3（要完全对齐 C 就显式写 SPRING = 0, SUMMER = 1, ...）。另外 Python 打印枚举成员显示 Season.AUTUMN 而不是数字，取数值要 .value 或 int(member)（IntEnum 才行）；枚举成员是单例对象，不能赋新值。"
+ },
+ "枚-02": {
+  "stem": "```python\nfrom enum import IntEnum\n\nclass Code(IntEnum):\n    RED = 4\n    GREEN = 5      # Python 必须显式写出，没有“自动前一个 +1”\n    BLUE = 9\n    WHITE = 10\n\nprint(int(Code.GREEN + Code.WHITE))\n```",
+  "options": [
+   "15",
+   "14",
+   "13",
+   "5"
+  ],
+  "answer": 0,
+  "analysis": "C 的枚举只影响被显式赋值的常量，后面的按“前一个值 + 1”递增：GREEN = 5、WHITE = 10，相加 15。Python 的 Enum 成员必须显式给值（或用 auto() 逐个递增，但 auto 只看前一个成员，不会因为中间有 9 而特殊处理）；IntEnum 是 int 子类，支持算术，普通 Enum 相加会 TypeError。要 G/W 得 5/10 必须自己写，没有隐式递增。"
+ },
+ "枚-04": {
+  "stem": "```python\nfrom enum import Enum\n\nclass Color(Enum):\n    RED = 0\n    GREEN = 1\n\nprint(Color.RED == 0)\n```",
+  "options": [
+   "枚举常量的类型就是它所属的枚举类型，因此不能参与算术",
+   "枚举常量在内存中只占 1 个字节，所以 sizeof 等于 1",
+   "Python 的 Enum 成员默认不能参与算术（TypeError），要当整数用需继承 IntEnum/IntFlag；与 0 比较得到 False，要取数值用 .value",
+   "枚举常量只能作为 switch 的 case 标签，不能赋给 int 变量"
+  ],
+  "answer": 2,
+  "analysis": "C 的枚举常量类型是 int，可以赋给 int、做算术、作数组下标；Python 的 Enum 成员是单例对象，Color.RED == 0 为 False（要 Color.RED.value == 0），算术会 TypeError，作列表下标也要 .value。IntEnum 继承 int，可以当整数用；IntFlag 支持按位运算。“sizeof 为 1”这类说法在 Python 里没有意义，对象大小由解释器决定。"
+ },
+ "枚-05": {
+  "stem": "```python\nfrom enum import Enum\n\nclass Color(Enum):\n    RED = 0\n    GREEN = 1\n```",
+  "options": [
+   "枚举常量的值可以在程序运行时修改，而宏定义的值不能修改",
+   "Python 用 Enum/IntEnum 表示常量组：有名字、有命名空间、成员不可重复且不能重新赋值，repr 与调试都能看到成员名；模块级大写常量则没有这层约束",
+   "枚举常量比宏定义占用更少的内存空间",
+   "枚举常量名可以用 `#undef` 取消定义，而宏名不能"
+  ],
+  "answer": 1,
+  "analysis": "C 的 #define 是文本替换：没有类型、不守作用域、调试时只看得到字面量；enum 由编译器处理、有名字和 int 类型、遵守作用域。Python 没有预处理器，模块级 UPPER_CASE 常量只是约定；Enum 则提供真正的命名空间（Color.RED）、成员不可重复/不可重新赋值、可迭代、repr 显示成员名，比裸常量更安全。两者都不分配“运行期可改的存储”，说谁更省内存没有意义。"
+ },
+ "枚-07": {
+  "stem": "```python\nfrom enum import IntEnum\n\nclass Cmd(IntEnum):\n    START = 1\n    STOP = 2\n    PAUSE = 3\n\nc = Cmd.STOP\nmatch c:\n    case Cmd.STOP:\n        print(\"stop\")\n    case Cmd.PAUSE:\n        print(\"pause\")\n```",
+  "options": [
+   "`case \"STOP\":`",
+   "`case c:`",
+   "`case Cmd.STOP:`",
+   "`case Cmd.STOP;`"
+  ],
+  "answer": 2,
+  "analysis": "C 的 case 标签必须是整型常量表达式，写枚举常量最可读。Python 的 match 用“模式”：case Cmd.STOP 是值模式（带点号的限定名，按 == 比较）正确；case \"STOP\" 是字符串值模式，与 IntEnum 成员不相等；case c 是捕获模式，永远匹配并把 c 重新绑定；case Cmd.STOP; 的分号是语法错误。另外 match 没有贯穿，也不需要 break。"
+ },
+ "枚-09": {
+  "stem": "```python\nfrom enum import Enum\n\nclass Color(Enum):\n    RED = 1\n\nclass Size(Enum):\n    RED = 2\n\nprint(Color.RED, Size.RED, Color.RED is Size.RED)\n```",
+  "options": [
+   "枚举常量只在枚举定义所在的花括号内有效，离开花括号就失效",
+   "不同枚举中可以随意定义同名的常量，编译器会按类型自动区分",
+   "Python 的 Enum 成员属于类命名空间，不同枚举类里可以有同名成员（Color.RED 与 Size.RED 互不冲突）；而模块级普通常量在同一命名空间不能重名",
+   "枚举类型名与常量名共用一个命名空间，因此二者不能同名"
+  ],
+  "answer": 2,
+  "analysis": "C 的枚举常量是普通标识符，与变量同一命名空间，同一作用域不能重名（所以两个枚举不能都有 RED，除非用不同作用域）；Python 的 Enum 成员是类属性，访问必须写 Color.RED，不同类之间同名不冲突，Color.RED is Size.RED 为 False。这相当于 C++11 的 enum class。注意模块级裸常量仍共享命名空间，会互相覆盖。"
+ },
+ "枚-10": {
+  "stem": "```python\nfrom enum import Enum\n\nclass Dir(Enum):\n    EAST = 0\n    SOUTH = 5\n    WEST = 6\n    NORTH = 9\n\nprint([d.name for d in Dir])\n```",
+  "options": [
+   "只有取值连续时才能用 for 循环遍历，否则会漏掉中间的成员",
+   "`print(e)` 可以直接输出枚举变量对应的常量名",
+   "无论取值是否连续都可以 `for d in Dir` 遍历，不会漏也不会造出“空洞”值；名字用 `d.name`",
+   "枚举成员的取值必须连续，否则 `for d in Dir` 会抛异常"
+  ],
+  "answer": 2,
+  "analysis": "C 的枚举变量本质是 int，取值可能不连续，所以 for (e = EAST; e <= NORTH; e++) 会访问 1~4 这些非成员值，遍历不可靠；Python 的 Enum 可迭代（按定义顺序），__members__ 是只读映射，d.name 取名字、d.value 取数值，不会产生“空洞”。Python 里也没有 ++ 运算符，枚举成员不可变，不能自增；要按名字查成员用 Dir[\"SOUTH\"]。"
+ },
+ "枚-12": {
+  "stem": "```python\nfrom enum import Enum\n\nclass E(Enum):\n    A = 2\n    B = 2\n    C = 3\n\nprint(E.A is E.B, E.C.value, list(E))\n```",
+  "options": [
+   "`class E(Enum): A; B; A`",
+   "`class E(Enum): A = 1; B = 0`",
+   "`class E(Enum): A = 2; B = 2; C = 3`（B 只是 A 的别名，E.A is E.B 为 True）",
+   "`class E(Enum): A = 2; B = 2; C`（C 缺少值）"
+  ],
+  "answer": 2,
+  "analysis": "C 允许同一枚举里两个常量取相同的值，它们只是同一个整数的两个名字；Python 的 Enum 允许重复值，但后一个会变成前一个的别名：E.A is E.B 为 True，迭代 list(E) 只出现 A，E.B.name 仍是 \"A\"（可用 E.__members__ 看到两个名字）。选项 0 重复成员名是语法错误，选项 1 的 A、B 不相等，选项 3 的 C 缺少值会 TypeError。别名机制是 C 枚举没有的额外语义。"
+ },
+ "基-35": {
+  "stem": "```python\na = -1\nb = 1\nprint(\"yes\" if a < b else \"no\")\n```",
+  "options": [
+   "yes",
+   "no",
+   "结果不确定，取决于编译器",
+   "编译错误"
+  ],
+  "answer": 0,
+  "analysis": "Python 只有任意精度有符号 int，没有 unsigned，也不存在 C 的“int 与 unsigned int 混合运算先把 int 转成 unsigned”规则，所以 -1 < 1 就是数学比较，输出 yes（C 的答案是 no）。要模拟 32 位无符号语义必须显式写 (a & 0xFFFFFFFF) < b，才会得到 C 的结果。本题把“隐式整型转换”映射成“Python 不做位宽重解释，需要时手动掩码”。"
+ },
+ "基-37": {
+  "stem": "```python\na = 0.1 + 0.2\nb = 0.3\nprint(a == b)          # False\n```",
+  "options": [
+   "直接用 a == b 判断，float 能精确表示所有小数",
+   "只要 abs(a - b) < 1 就认为相等",
+   "用 math.isclose(a, b, rel_tol=0, abs_tol=1e-9) 或 abs(a - b) < 1e-9 判断",
+   "把 a、b 都 int() 后再用 == 比较"
+  ],
+  "answer": 2,
+  "analysis": "Python 的 float 是 IEEE 754 双精度，0.1 + 0.2 与 0.3 不相等，直接 == 会得到 False；C 的 double 陷阱在 Python 完全一样。推荐 math.isclose（可设相对/绝对容差）或 abs(a - b) < 1e-9；要精确十进制用 decimal.Decimal，要精确分数用 fractions.Fraction。容差取 1 太粗、int() 会丢小数，都是典型错误。"
+ },
+ "基-38": {
+  "stem": "```python\nx = 0x5A\nx = ((x << 2) | (x >> 6)) & 0xFF\nprint(x)\n```",
+  "options": [
+   "90",
+   "360",
+   "105",
+   "104"
+  ],
+  "answer": 2,
+  "analysis": "0x5A 是 0101 1010，左移 2 位得 0x168，右移 6 位得 1，按位或得 0x169；Python 的 int 没有固定宽度，左移不会自动截断，所以必须显式 & 0xFF 只保留低 8 位，得 0x69 = 105。C 里靠 (unsigned char) 强制转换截断。考点映射：定宽整数的回绕在 Python 要用手工掩码或 ctypes.c_ubyte/struct 模拟，右移对负数也不做算术移位语义。"
+ },
+ "基-40": {
+  "stem": "```python\nx = 4\nmatch x:\n    case 1:\n        print(\"A\", end=\"\")\n    case 2:\n        print(\"C\", end=\"\")\n    case 3:\n        print(\"D\", end=\"\")\n    case _:\n        print(\"B\", end=\"\")\nprint()\n```",
+  "options": [
+   "B",
+   "BC",
+   "C",
+   "BCD"
+  ],
+  "answer": 0,
+  "analysis": "Python 的 match 按顺序尝试模式，x = 4 不匹配任何具体值，落到通配模式 case _，输出 B 后立即结束——没有 C 的“从 default 入口继续贯穿到 case 2”的行为，所以不会输出 C。C 的 default 只是入口标号、位置任意、无 break 会贯穿。考点映射：C 记“default 也要 break”，Python 记“match 只执行第一个匹配的分支”。"
+ },
+ "基-42": {
+  "stem": "```python\nn, cnt = 0, 0\nwhile True:\n    cnt += 1\n    n //= 10\n    if not (n > 0):\n        break\nprint(cnt)\n```",
+  "options": [
+   "1",
+   "0",
+   "10",
+   "无限循环"
+  ],
+  "answer": 0,
+  "analysis": "Python 没有 do-while，用 while True + 末尾 break 保证至少执行一次：n = 0 时 cnt 变 1、n // 10 仍为 0，判断 0 > 0 为假退出，输出 1。若写成 while n > 0，循环一次都不执行，cnt 保持 0（对应选项 0 的错法）。这个模式正好用于“统计整数位数”这类必须处理 0 一位的场景，Python 也可以直接用 len(str(abs(n))) 但负号要单独处理。"
+ },
+ "基-44": {
+  "analysis": "Python 没有 goto，也没有标号语法，跨层跳转只能靠：break（只跳一层）、把嵌套循环抽成函数后用 return 一次返回、用异常（raise/except）做非局部跳转、while-else。C 的 goto 标号具有函数作用域，Python 里对应的“函数级退出”手段就是 return/异常。工程上 Python 更鼓励早返回（early return）和拆分小函数，这也是把 goto 的“错误清理集中跳转”替换成 try/finally 的原因。"
+ },
+ "基-45": {
+  "stem": "```python\na = 2\nd = 2.5\nprint(f\"{d if a > 3 else (a if a > 0 else d):.1f}\")\n```",
+  "options": [
+   "2.0",
+   "2",
+   "2.5",
+   "编译错误"
+  ],
+  "answer": 0,
+  "analysis": "Python 的条件表达式没有“两支统一成同一类型”的算术转换规则：内层选中 a（int 2）就返回 int 2，不会因为另一支是 double 就变成 2.0；这里显示 2.0 只是因为 f-string 的 :.1f 格式化。C 的 2.0 来自 ?: 的类型统一（int 与 double 的公共类型是 double）以及 printf 的 %.1f。考点映射：C 在表达式层做隐式类型提升，Python 在格式化层做显示转换。"
+ },
+ "基-47": {
+  "stem": "```python\ns = -1\nu = s & 0xFFFFFFFF   # 手工模拟“赋给 32 位无符号”：按模 2**32 取低 32 位\nprint(u)\n```",
+  "options": [
+   "65535",
+   "1",
+   "编译错误：short 不能赋给 unsigned int",
+   "4294967295"
+  ],
+  "answer": 3,
+  "analysis": "Python 没有 short/unsigned，赋值不会自动取模，-1 就是 -1；要模拟“-1 转成 32 位无符号”必须显式 & 0xFFFFFFFF，得 4294967295（2**32-1）。C 里这个转换由标准规定按模 2^n 进行，是隐式的。考点映射：定宽整数的类型转换在 Python 变成显式掩码；如果只想判“最高位是否为 1”可以用 (x >> 31) & 1，而不是依赖类型系统。"
+ },
+ "基-49": {
+  "analysis": "Python 既没有 #define 的预处理文本替换，也没有 const 限定对象：N = 10 是普通名字绑定，值是对象引用，运行时可以被重新绑定；所谓“常量”只是全大写命名约定，或 typing.Final 静态标注（运行时不强制）。想真正防改，用 enum 成员、namedtuple、frozen dataclass 或只读属性。C 的 const 有类型检查和只读语义，#define 没有类型也不分配存储；Python 的对应关系是“约定/不可变对象 vs 可重新绑定”。"
+ },
+ "基-50": {
+  "stem": "```python\na = 1\nb = 2\nprint(a + b)\n```",
+  "options": [
+   "正常运行，输出 3",
+   "正常运行，输出 1",
+   "语法错误：b = 2 这一行缺少分号",
+   "运行错误：变量 b 未初始化"
+  ],
+  "answer": 0,
+  "analysis": "Python 用换行和缩进划分语句，分号是可选的（a = 1; b = 2 也合法），所以这段代码正常输出 3。C 中每条语句必须以分号结束，漏写是编译期语法错误。Python 里与“漏分号”对应的错误是漏冒号（if x > 0 后面少 :）、缩进不一致（IndentationError）和括号不配对，报错同样指向大致位置，读报错要结合上下文。"
+ },
+ "函-23": {
+  "analysis": "Python 没有函数声明/原型，也没有链接器层面的“未定义符号”：import 一个模块会执行它，模块里 def 过的函数才存在，调用未定义的名字是运行时 NameError。跨文件复用靠 import，而不是头文件里的原型；from m import f 只是在当前命名空间绑定 f。函数没有重载，同名定义会覆盖；参数注解（int、-> str）只是类型提示，运行时不检查，可用 mypy 等工具静态检查。"
+ },
+ "函-25": {
+  "analysis": "Python 里 return 结束当前函数并把值交给调用处，写在模块顶层则直接结束模块执行。要“立即结束整个程序”用 sys.exit(code)（抛 SystemExit，可被 except/finally 捕获并执行清理）或 os._exit（不执行清理，慎用）；raise 一个未捕获异常也会终止程序并打印栈。C 的 exit 会刷新 stdio、执行 atexit；Python 的 finally、atexit 注册函数、with 语句的 __exit__ 承担同样的清理职责。"
+ },
+ "函-27": {
+  "analysis": "Python（CPython）不做尾调用优化：即使写成 return f(n - 1) 这种“尾递归”，每层仍占一个栈帧，深度超过 sys.getrecursionlimit()（默认约 1000）就抛 RecursionError。所以 C 里“尾递归可被编译器优化成循环、空间 O(1)”的结论不能搬到 Python；Pythonic 的做法是改写成 while 循环、用显式栈，或用 functools.lru_cache 减少重复计算。尾递归的定义（递归调用是返回前最后一个动作、结果被直接返回）在两种语言里是一样的。"
+ },
+ "函-29": {
+  "stem": "```python\ndef make():\n    x = 10\n    def get():\n        return x      # 闭包捕获 x，函数返回后 x 仍被引用而存活\n    return get\n\np = make()\nprint(p())\n```",
+  "options": [
+   "Python 的闭包持有 x 的引用，make 返回后 x 仍然存活，调用 get() 安全得到 10",
+   "函数返回后 x 立即被销毁，调用 get() 会读到垃圾值",
+   "只有把 x 声明为 global 才能返回它",
+   "返回内部函数会直接导致 SyntaxError"
+  ],
+  "answer": 0,
+  "analysis": "C 返回局部变量的地址会得到悬空指针（栈帧回收后地址失效），这是本题的考点；Python 没有“取地址”，返回的是对象引用/闭包，make 结束后局部名字 x 消失，但闭包仍持有那个 int 对象，引用计数保证它存活，所以 p() 安全返回 10。Python 里没有悬空指针，但有别的生命周期问题：循环引用要靠 GC 回收，闭包意外捕获大对象会导致内存滞留。"
+ },
+ "函-30": {
+  "stem": "```python\ndef f(a):\n    print(len(a))\n\nf([0] * 10)\n```",
+  "options": [
+   "40",
+   "10",
+   "8",
+   "4"
+  ],
+  "answer": 1,
+  "analysis": "C 里形参 int a[10] 会退化成 int*，sizeof(a) 变成指针大小 8，长度信息丢失；Python 传的是 list 对象引用，len(a) 依然是 10，“数组退化”不存在。Python 的对象自带长度，不需要额外传 n；真正会“丢长度”的情况是把 list 换成迭代器/生成器（只能遍历一次，没有 len）。“指针占 8 字节”这类平台细节在 Python 层不可见，只能用 sys.getsizeof 观察对象内存。"
+ },
+ "数-45": {
+  "stem": "```python\na = [0] * 10\nprint(len(a), a[-1])\n```",
+  "options": [
+   "合法下标是 1~10，正好 10 个元素",
+   "合法下标是 0~9，共 10 个元素；访问 a[10] 抛 IndexError",
+   "合法下标是 0~10，共 11 个元素，因为要留一个位置放结束标志",
+   "Python 不做下标检查，a[10]、a[-1] 都是合法元素"
+  ],
+  "answer": 1,
+  "analysis": "Python 的列表下标同样从 0 开始，长度 10 的合法下标是 0~9，a[10] 直接抛 IndexError（不是 C 的未定义行为）。Python 特有的地方是负下标：a[-1] 表示最后一个元素（值 0），a[-10] 是第一个，a[-11] 才越界，所以“负数下标”在 Python 合法但语义完全不同，不能照搬 C 的 p[-1]。切片越界则不报错，会静默截断，这也是常见陷阱。"
+ },
+ "数-47": {
+  "stem": "```python\ndef f(b):\n    print(len(b))\n\na = [0] * 10\nprint(len(a), end=\" \")\nf(a)\n```",
+  "options": [
+   "`40 40`",
+   "`8 8`",
+   "`40 8`",
+   "`10 10`"
+  ],
+  "answer": 3,
+  "analysis": "C 里 main 中 sizeof(a) 是 40，传给函数后退化成指针、sizeof(b) 变 8；Python 传的是 list 对象引用，len(a) 与函数内 len(b) 都是 10，不存在数组退化，长度信息不丢。Python 里真正会丢长度的是迭代器/生成器：只能遍历一次、没有 len，需要先 list(...) 物化。要观察“指针大小”这类信息只能 sys.getsizeof。"
+ },
+ "数-49": {
+  "stem": "```python\nn = int(input())\na = [0] * n\na.append(1)\nprint(len(a))\n```",
+  "options": [
+   "长度在运行到该行时由 n 决定，之后仍可 append 改变长度",
+   "长度必须在编译期确定，n 是变量所以不能这样写",
+   "不能用 len() 求大小，因为长度运行期才知",
+   "长度在运行到该行时由 n 决定，之后固定不变"
+  ],
+  "answer": 0,
+  "analysis": "C99 的变长数组“变长”只是长度表达式在运行时求值，定义之后固定，sizeof 也在运行期算；Python 的 list 是动态数组，[0] * n 在运行期按 n 分配，之后仍然可以 append/insert/删除，len 随时变化。所以 Python 没有“定长数组”的语法，也没有 VLA 这个概念；要固定长度只能自己约定不扩容，或用 tuple/array 表达。"
+ },
+ "数-51": {
+  "stem": "```python\na = [1, 2, 3]\nprint(a[3])\n```",
+  "options": [
+   "`a = [1, 2, 3]` 的长度是 3；之后 `a.append(4)` 会把它扩成 4",
+   "`a[3] = 4` 会像 C 那样自动扩容到 4 个元素",
+   "`a = [1, 2, 3, 4]` 但声明成 3 个元素会丢弃第 4 个初值",
+   "`len(a)` 返回的是列表占用的字节数"
+  ],
+  "answer": 0,
+  "analysis": "Python 没有“声明长度”这一步，长度随元素个数变化：a = [1, 2, 3] 长度为 3，append 后变 4；但 a[3] = 4 不会扩容，而是 IndexError（上面这段代码就会报错）。C 的 int a[3] 长度固定，a[3] 是越界写；Python 扩容量只能用 append/insert/extend/+=。len 返回元素个数，字节数用 sys.getsizeof。"
+ },
+ "数-52": {
+  "stem": "```python\na = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]\nprint(a[1][2])\n```",
+  "options": [
+   "`a[1][2]` 与 `a[2][1]` 等价",
+   "`a[1][2]` 与 `a[1][2:3][0]` 等价",
+   "`a[1][2]` 与 `sum(a[1]) + 2` 等价",
+   "`a[1][2]` 与 `a[1 + 2]` 等价"
+  ],
+  "answer": 1,
+  "analysis": "C 的 a[1][2] 逐层解引用 *(*(a+1)+2)，等价写法是 *(a[1]+2)；Python 里 a[1] 取出第 2 行这个 list，[2] 再取其中的元素，所以 a[1][2:3][0] 也取到同一个值（切片返回长度为 1 的新列表）。区别在于：切片产生新 list、下标访问返回元素引用；a[2][1] 是另一行另一列，a[1+2]=a[3] 越界。考点是“行的引用 + 列下标”两级寻址。"
+ },
+ "数-55": {
+  "stem": "```python\na = [2, 2, 1, 1, 1, 2, 2, 3, 2]\ncand, cnt = a[0], 1\nfor i in range(1, len(a)):\n    if cnt == 0:\n        cand, cnt = a[i], 1\n    elif a[i] == cand:\n        cnt += 1\n    else:\n        cnt -= 1\nprint(cand, cnt)\n```",
+  "options": [
+   "`2 5`",
+   "`1 1`",
+   "`2 1`",
+   "`2 0`"
+  ],
+  "answer": 2,
+  "analysis": "摩尔投票：cand=2,cnt=1 → 遇 2 加 1 得 2 → 遇 1 减 1 得 1 → 再遇 1 得 0 → 遇 1 时 cnt 为 0，换 cand=1,cnt=1 → 遇 2 减为 0 → 遇 2 换回 cand=2,cnt=1 → 遇 3 减为 0 → 最后遇 2 换 cand=2,cnt=1，输出 2 1。Python 的同步赋值 cand, cnt = a[i], 1 比 C 的两次赋值更简洁；要统计出现次数用 collections.Counter，要保证“多数”还要再扫一遍验证。"
+ },
+ "数-56": {
+  "analysis": "稳定性指相等键的记录排序前后相对次序不变，与语言无关。Python 的 sorted() 和 list.sort() 用 Timsort，是稳定排序：相等元素保持原顺序，所以常利用“先按次键排一次，再按主键排一次”实现多关键字排序。手写快速排序/堆排序同样不稳定，归并排序稳定。Python 里如果要“不稳定”反而没有好处；排序键用 key= 提取，比 C 的 qsort 比较函数更简洁，也不需要自己保证稳定。"
+ },
+ "数-59": {
+  "stem": "```python\ndef show(a):\n    a[0] = 99\n\nv = [1, 2, 3]\nshow(v)\nprint(v[0])\n```",
+  "options": [
+   "Python 没有 const 形参，传 list 进函数仍可被修改；想表达“只读”应传 tuple 或复制一份",
+   "调用时必须传入 tuple，否则运行时报错",
+   "形参标注 `a: tuple` 后 Python 会在运行时阻止修改",
+   "`const int a[]` 与 Python 的 `a: Final` 完全等价"
+  ],
+  "answer": 0,
+  "analysis": "C 的 const int a[] 表示“通过 a 不能改元素”，是函数对调用者的单向承诺；Python 没有 const，类型注解只是提示，运行时不检查，所以 show(v) 会真的把 v[0] 改成 99。要表达只读：传 tuple（修改会 TypeError）、传副本 a[:] 或 copy.deepcopy、或用文档/命名约定（如只读视图）。这是“编译期约束”与“运行时约定”的差别。"
+ },
+ "数-60": {
+  "stem": "```python\ns = \"aaabbc1\"\ni = 0\nwhile i < len(s):\n    j = i\n    while j < len(s) and s[j] == s[i]:\n        j += 1\n    print(s[i], j - i, sep=\"\", end=\"\")\n    i = j\nprint()\n```",
+  "options": [
+   "`aaabbc1`",
+   "`a3b2c111`",
+   "`a3b2c11`",
+   "`a3b1c111`"
+  ],
+  "answer": 1,
+  "analysis": "行程长度压缩：外层 i 指向当前段起点，内层 j 走到第一个不同字符，段长 j - i；依次得到 a3、b2、c1、11（数字 1 只有一段，长度 1），拼起来是 a3b2c111。Python 里可以更直接地写 itertools.groupby(s)，对每组的 key 和 len(list(g)) 输出，逻辑相同但不用手动维护双下标；注意最后一段必须处理，否则会漏掉结尾。"
+ },
+ "数-63": {
+  "stem": "```python\ndef f(a):\n    return len(a), len(a[0])\n\ngrid = [[0] * 4 for _ in range(3)]\nprint(f(grid))\n```",
+  "options": [
+   "`def f(a[3][], n):`",
+   "`def f(a: list[list[int]], n):`",
+   "`def f(int **a, n):`",
+   "`def f(a[][]):`"
+  ],
+  "answer": 1,
+  "analysis": "C 的二维数组形参必须写出第二维长度（int a[][4]），因为要据此计算步长；Python 传的是 list of lists，形参只写一个名字即可，行列数用 len(a)、len(a[0]) 在运行期取，类型注解 list[list[int]] 只是提示、不参与运行时检查。所以“第二维不能省”的限制在 Python 里不存在，但“行数要另传”也不必要——len 就够了。"
+ },
+ "数-65": {
+  "analysis": "稀疏矩阵的思想与语言无关：只存非零元 + 行列数，空间 O(非零元个数)。C 用三元组结构体数组；Python 最自然的是字典 {(i, j): v}，取不存在的键默认 0（用 d.get((i, j), 0)），遍历用 d.items()，无需预先分配 100×100。考点从“三元组顺序表”映射为“哈希表/字典”，但“不要存 10000 个 0”“要记住矩阵形状”这两个结论完全相同；真正的大规模稀疏计算用 scipy.sparse，属于第三方库。"
+ },
+ "数-66": {
+  "stem": "```python\ns = \"a\\0bc\"\nprint(len(s), len(s.encode()))\n```",
+  "options": [
+   "5 和 1",
+   "5 和 5",
+   "4 和 4",
+   "6 和 1"
+  ],
+  "answer": 2,
+  "analysis": "C 的 \"a\\0bc\" 字节序列是 'a'、'\\0'、'b'、'c'，再加上编译器自动补的结束符，sizeof 为 5，而 strlen 遇到第一个 '\\0' 就停，得 1。Python 的 str 不自动补结束符，len(\"a\\0bc\") 就是 4 个字符（\\0 算 1 个），encode 成 UTF-8 也是 4 字节，输出 4 和 4。要在 Python 里复现“遇到 \\0 就截断”，得自己写 s.split(\"\\0\")[0]。"
+ },
+ "数-67": {
+  "stem": "```python\ns = \"  -123abc\"\ni, sign, v = 0, 1, 0\nwhile s[i] == \" \":\n    i += 1\nif s[i] in \"+-\":\n    if s[i] == \"-\":\n        sign = -1\n    i += 1\nwhile i < len(s) and \"0\" <= s[i] <= \"9\":\n    v = v * 10 + int(s[i])\n    i += 1\nprint(sign * v)\n```",
+  "options": [
+   "`123`",
+   "`-123`",
+   "`-123abc`",
+   "`0`"
+  ],
+  "answer": 1,
+  "analysis": "三段式模拟 atoi：跳过前导空格、识别一个符号、累加连续数字；v 依次为 1、12、123，遇 'a' 停止，输出 -123。Python 里 int(\"  -123abc\") 会直接 ValueError（不会像 atoi 那样“能读多少读多少”），等价物是正则 re.match(r\"\\s*[+-]?\\d+\", s)。另外注意 \"0\" <= s[i] <= \"9\" 是链式比较，与 isdigit() 不完全等价（isdigit 对某些 Unicode 数字也为真）。"
+ },
+ "数-68": {
+  "stem": "```python\na = [0] * 5\nfor i in range(1, 6):\n    a[i] = i\n```",
+  "options": [
+   "`a = [0] * 5; for i in range(5): a[i] = i`",
+   "`s = \"hello\"; print(s)`",
+   "`a = [0] * 5; for i in range(1, 6): a[i] = i`",
+   "`s = \"hi\"; print(s[1])`"
+  ],
+  "answer": 2,
+  "analysis": "a 的合法下标是 0~4，range(1, 6) 会产生 5，最后一次写 a[5] 越界，Python 立即抛 IndexError（C 是未定义行为）。选项 0 用 range(5) 覆盖 0~4，安全；字符串索引同样受检查，s[1] 安全，s 也不需要结尾 '\\0'，所以“字符数组长度不够放结束符”这种越界在 Python 里不存在。Python 的快速失败让越界更容易定位。"
+ },
+ "指-49": {
+  "stem": "```python\na = [3, 1, 2]\nprint(sorted(a), sorted(a, reverse=True))\n```",
+  "options": [
+   "`a.sort()` 或 `sorted(a)`",
+   "`a.sort(cmp=lambda x, y: x - y)`",
+   "`sorted(a, cmp=lambda x, y: x - y)`",
+   "必须先自己写一个返回负数/0/正数的比较函数"
+  ],
+  "answer": 0,
+  "analysis": "C 的 qsort 必须传 int (*)(const void*, const void*) 比较函数，还要把 void* 强转回真实类型；Python 3 的 sort/sorted 接受 key 参数（提取排序键，函数只接收一个元素）和 reverse，稳定排序，没有 cmp 参数。需要三值比较时用 functools.cmp_to_key 包一层；qsort 的 void* 强转、比较函数返回值约定在 Python 里都不存在。"
+ },
+ "指-50": {
+  "stem": "```python\nfrom typing import Callable\n\nBinOp = Callable[[int, int], int]     # 类型别名，仅用于标注\n\ndef add(a, b):\n    return a + b\n\nop: BinOp = add\nprint(op(2, 3))\n```",
+  "options": [
+   "`op: BinOp = add; print(op(2, 3))`",
+   "`op = BinOp(add); print(op(2, 3))`",
+   "`print((*op)(2, 3))`",
+   "`print(*op(2, 3))`"
+  ],
+  "answer": 0,
+  "analysis": "C 的 typedef int (*BinOp)(int, int) 让 BinOp 成为“函数指针类型”，所以 BinOp op = add 已经是指针变量，不需要再写 *；Python 的 Callable[[int, int], int] 只是类型提示（运行时不检查），函数对象直接赋值即可调用，没有“函数指针的指针”这种层数。(*op)(2, 3) 在 Python 是“对可迭代对象解包”，函数不可迭代会 TypeError；print(*op(2, 3)) 是把返回值 5 解包，也会 TypeError。"
+ },
+ "指-52": {
+  "stem": "```python\nfrom typing import Callable\n\nRow = list[int]\nFn = Callable[[int], Row]\nprint(Fn)\n```",
+  "options": [
+   "`Callable[[int], Callable[[], list[int]]]`：接受 int、返回一个“无参返回 list 的函数”",
+   "`Callable[[int], list[int]]`：接受 int，返回 list[int]",
+   "`list[Callable[[int], int]]`：一个列表，元素是函数",
+   "`Callable[[list[int]], int]`：接受 list，返回 int"
+  ],
+  "answer": 1,
+  "analysis": "C 的 int (*(*f)(int))[3] 要用“由内向外、先右后左”读：f 是指针 → 指向接受 int 的函数 → 返回 int (*)[3]（行指针）→ 行内是 3 个 int。Python 用 Callable 组合表达同样的类型：Callable[[int], list[int]] 就是“接受一个 int、返回 list[int] 的函数”。区别是 Python 没有“指向数组的指针”，list[int] 直接表示一行；也没有声明语法，类型注解只用于静态检查（mypy）。"
+ },
+ "指-55": {
+  "stem": "```python\np = [0] * 0\nprint(p, len(p))\n```",
+  "options": [
+   "`[0] * 0` 得到空列表 `[]`，长度 0，访问 p[0] 抛 IndexError（确定行为，不是实现定义）",
+   "`[0] * 0` 返回 None",
+   "`[0] * 0` 返回含 0 的列表",
+   "`[0] * 0` 是未定义行为"
+  ],
+  "answer": 0,
+  "analysis": "C 的 malloc(0) 是“实现定义”：要么返回 NULL，要么返回一个可传给 free 的唯一非空指针，且不能通过它访问对象。Python 的 [0] * 0 行为完全确定：得到空列表，len 为 0，任何下标都 IndexError；判空用 if not p 或 len(p) == 0。这里也体现两种内存模型的差别：C 的“0 字节分配”有歧义，Python 的容器长度为 0 是明确状态。"
+ },
+ "指-56": {
+  "stem": "```python\nclass Line:\n    def __init__(self, n):\n        self.len = n\n        self.data = []\n\nline = Line(0)\nline.data.extend([1, 2, 3])\nprint(line.len, line.data)\n```",
+  "options": [
+   "Python 没有柔性数组：直接在类里放 `self.data = []`，长度随 append/extend 改变，不需要一次 malloc",
+   "必须把 data 声明为类的最后一个属性，否则语法错误",
+   "定义 Line() 后可以直接写 line.data[0] = 1，列表会自动扩展",
+   "一个类里可以定义多个“柔性数组”，只要放最后"
+  ],
+  "answer": 0,
+  "analysis": "C 的柔性数组必须是结构体最后一个成员、sizeof 不计入，用 malloc(sizeof(struct) + n * sizeof(int)) 一次分配，长度靠自己记录；Python 的 list 是独立堆对象，类里只存引用，长度可变、自动扩容，没有“必须是最后一个成员”的限制，也没有 sizeof 对齐问题。line.data[0] = 1 在空列表上仍然 IndexError，Python 不会因为赋值而自动扩展。"
+ },
+ "指-58": {
+  "stem": "```python\nm, n = 3, 4\na = [[0] * n for _ in range(m)]     # 方式一：行列表 + 每行独立\nb = [0] * (m * n)                   # 方式二：单块一维\nb[1 * n + 2] = 5\nprint(a[1][2], b[1 * n + 2])\n```",
+  "options": [
+   "方式一的行之间一定连续，方式二反而不连续",
+   "两种完全等价，方式二也能直接写 b[i][j]",
+   "方式二无法表示二维表",
+   "方式一是 m 个独立 list，行不保证相邻；方式二是一整块、下标要自己算 i * n + j；两者都不需要手动释放"
+  ],
+  "answer": 3,
+  "analysis": "C 的两套模型：指针数组 + 逐行 malloc（m+1 次分配、行不保证相邻、要逐行 free）与单块 malloc（一次分配、连续、只需一次 free，下标 i*n+j）。Python 的 list of lists 各行是独立对象，行间不保证相邻；扁平 list 才是一整块（存的是对象引用数组），下标同样要自己算；两者都由 GC 回收，没有 malloc/free 次数与释放顺序问题。要真连续内存用 array('i') 或 numpy。"
+ },
+ "指-62": {
+  "stem": "```python\ndef sort_by_pivot(values, pivot):\n    return sorted(values, key=lambda x: abs(x - pivot))\n\nprint(sort_by_pivot([10, 3, 7], 5))\n```",
+  "options": [
+   "Python 的闭包/默认参数直接把基准值带进 key 函数，不需要 void* 上下文参数",
+   "必须把 pivot 存成全局变量，否则 key 函数拿不到",
+   "key 函数只能接收一个元素，因此无法访问 pivot",
+   "闭包不能捕获参数，必须用 functools.partial 才能绑定 pivot"
+  ],
+  "answer": 0,
+  "analysis": "C 的回调函数没有闭包，只能靠 void* arg 把上下文原样转交给比较函数（qsort_r 就是这样），类型安全由调用双方保证。Python 的函数可以闭包捕获外层变量，key=lambda x: abs(x - pivot) 直接引用 pivot，还可以用 functools.partial 显式绑定，因此不需要“上下文指针”这种手工传递。这是“闭包”替代“void* arg”的典型映射，也避免了类型强转错误。"
+ },
+ "指-64": {
+  "stem": "```python\ndef f(x):\n    return x + 1\n\np = f\nprint(p(3), p.__call__(3), f(3))\n# (*p)(3) 会抛 TypeError：'function' object is not iterable\n```",
+  "options": [
+   "`p(3)`",
+   "`p.__call__(3)`",
+   "`f(3)`",
+   "`(*p)(3)`"
+  ],
+  "answer": 3,
+  "analysis": "C 里 p(3)、(*p)(3)、(&f)(3) 都合法，只有 *p(3) 因优先级错误；Python 的函数调用语法只有 f(args)，(*p)(3) 会先对函数做序列解包，抛 TypeError（函数不可迭代），而 *p(3) 直接是 SyntaxError。p.__call__(3) 与 p(3) 等价（可调用对象协议）。所以“错误”的那一项在 Python 里换成了 (*p)(3)——C 的正确写法恰是 Python 的错误写法，这个反差正好说明两种语言的调用模型不同。"
+ },
+ "指-66": {
+  "stem": "```python\ns = [\"red\", \"green\", \"blue\"]\nt = [list(\"red\"), list(\"green\"), list(\"blue\")]\nprint(len(s), len(t), s[0][0], t[0][0])\n```",
+  "options": [
+   "`len(s)` 与 `len(t)` 都等于 18",
+   "s 的三个字符串在内存中连续存放，t 的各行不保证连续",
+   "s 是 3 个 str 对象（长度可变、各占独立内存），t 是 3 个字符列表；len 都是 3，s[0][0] 与 t[0][0] 都是 'r'，但 s 中每个串可整体替换，t 只能改单个字符",
+   "`s[0][0]` 与 `t[0][0]` 都表示字符 'r'，两种定义完全等价"
+  ],
+  "answer": 2,
+  "analysis": "C 的 char *s[3] 是指针数组（sizeof 24），字符串字面量放在别处；char t[3][6] 是 18 字节的连续二维数组。Python 里 s 是 3 个 str 对象（各自独立、不可变、长度可变），t 是 3 个 list（可变、可改单个字符），len 都是 3；两者都只存引用，“指针数组 vs 二维数组”的 sizeof 差异在 Python 里没有对应物，只剩“对象是否可变、长度是否固定”的差别。"
+ },
+ "指-68": {
+  "stem": "```python\ndef make_copy(src):\n    p = src[:]          # 复制一份\n    if p == \"\":\n        return None\n    return p\n\nprint(make_copy(\"abc\"))\n```",
+  "options": [
+   "`p = src[:]` 只是浅拷贝，会漏掉最后一个字符",
+   "返回局部变量 `p` 之后它就失效了，调用者拿到的是无效引用",
+   "判断空串应该写 `p is \"\"`，用 `p == \"\"` 判断不准",
+   "没有问题：返回局部字符串/切片是安全的，内存由引用计数管理"
+  ],
+  "answer": 3,
+  "analysis": "C 的 bug 是空串分支里先 free(p) 再 return p，把已释放地址交给调用者；Python 没有 free，src[:] 生成新的 str，返回后由调用者持有，引用计数保证有效，不会悬空。选项 0 的“切片漏字符”不成立（切片是完整复制，且没有 '\\0' 需要补）；选项 1 是 C 的悬空指针概念，Python 不适用；选项 2 说反了——判断字符串是否为空应当用 == \"\"，用 is \"\" 依赖实现细节、不可靠。所以 Python 版真正要注意的是别名（返回可变对象时）与 None 判空。"
+ },
+ "指-69": {
+  "stem": "```python\na = [0] * 5\np = len(a)\nprint(p, p > 0, p - 0)\n# print(a[p])   # IndexError\n```",
+  "options": [
+   "`p = len(a)` 是“尾后下标”：可以比较、可以算 `p - 0 = 5`，但不能 `a[p]`（IndexError）",
+   "`p = len(a)` 之后再访问 `a[p]` 会立即崩溃，因此这行语句本身非法",
+   "`a[len(a)]` 会自动扩容",
+   "`len(a)` 得到的是 20 字节"
+  ],
+  "answer": 0,
+  "analysis": "C 允许构造“尾后指针” a + 5：可以比较、相减、作为循环上界，但不能解引用；Python 里对应的“尾后位置”就是 len(a)，作为比较/切片边界（a[:len(a)]）都合法，作为下标 a[p] 抛 IndexError。区别是 Python 没有未定义行为，越界一定抛异常；len(a) 是元素个数 5，不是字节数 20（字节数用 sys.getsizeof 或 array.itemsize * len）。"
+ },
+ "指-70": {
+  "stem": "```python\ndata = bytearray(b\"ABCD\")\nmv = memoryview(data)\nprint(bytes(mv[1:3]), mv[1])\n```",
+  "options": [
+   "用 `bytes`/`bytearray` 切片或 `memoryview` 按字节处理；不需要把 void* 转成 unsigned char*",
+   "必须把对象转成 void* 再解引用",
+   "用 char* 比 unsigned char* 快",
+   "只有 unsigned char* 才能接收任意对象"
+  ],
+  "answer": 0,
+  "analysis": "C 的 memcpy 用 void* 做类型擦除、再转 unsigned char* 逐字节复制，因为 void* 不能解引用/做算术，unsigned char 没有符号位与填充位的额外语义、步长恰好 1 字节，也不会有对齐问题。Python 没有指针类型，按字节处理用 bytes（只读）、bytearray（可变）、memoryview（零拷贝视图，可 cast），切片即复制；符号位/对齐问题在 Python 层不存在，但二进制协议里仍要关心字节序（<、>）和宽度。"
+ },
+ "指-71": {
+  "stem": "```python\na = [2_000_000_000, -2_000_000_000]\nprint(sorted(a, reverse=True))\n```",
+  "options": [
+   "完全正确，降序必须自己写比较函数并把结果取负",
+   "错误，Python 的 sorted 无法比较超过 32 位的整数",
+   "Python 的整数不会溢出，不存在 C 的减法溢出问题；降序直接用 `sorted(a, reverse=True)` 或 `key=lambda x: -x`",
+   "错误，key 函数必须返回负数/0/正数"
+  ],
+  "answer": 2,
+  "analysis": "C 的 b - a 在差值超过 INT_MAX 时溢出，有符号溢出是未定义行为，排序可能出错，安全写法是先比较再返回 -1/0/1。Python 的 int 任意精度，减法永不溢出，所以“相减比较”在 Python 里数学上总是正确的（只是大数运算更慢）；排序 API 也不用三值比较函数，用 reverse=True 或 key 即可，需要三值时用 functools.cmp_to_key。"
+ },
+ "指-73": {
+  "stem": "```python\ndef add(a, b):\n    return a + b\n\ndef sub(a, b):\n    return a - b\n\ndef choose(op):\n    return add if op == \"+\" else sub\n\nprint(choose(\"+\")(3, 2))\n```",
+  "options": [
+   "`def choose(op): return add if op == \"+\" else sub`（返回函数对象本身）",
+   "`def choose(op) -> int*:`（返回 int 指针）",
+   "`def choose(op): return add()`（立即调用，返回结果）",
+   "必须先用 typedef 声明返回类型"
+  ],
+  "answer": 0,
+  "analysis": "C 的“返回函数指针”声明 int (*choose(char))(int, int) 极难写，通常用 typedef 简化：typedef int (*F)(int,int); F choose(char);。Python 直接返回函数对象即可，不需要声明返回类型，类型注解写 Callable[[int, int], int] 只是提示；注意 choose(\"+\") 返回的是函数，choose(\"+\")(3, 2) 才是调用结果，漏写第二对括号会把函数当结果。"
+ },
+ "指-74": {
+  "stem": "```python\nimport sys\nprint(type(sys.argv).__name__, len(sys.argv) >= 1, sys.argv[:2])\n```",
+  "options": [
+   "`sys.argv` 是单个字符串",
+   "`sys.argv` 是 `list[str]`：第 0 个是脚本名，其余是命令行参数；没有 `char **` 也没有 NULL 结尾的哨兵",
+   "`sys.argv` 是 `dict[str, str]`，按参数名取值",
+   "`sys.argv` 是 `bytes` 列表，需要 decode 才能用"
+  ],
+  "answer": 1,
+  "analysis": "C 的 argv 是 char**，argv[argc] 为 NULL 作为遍历结束标志，argv[i] 是各参数字符串的首地址；Python 的 sys.argv 是普通 list[str]，第 0 个是脚本名，len() 得个数，越界抛 IndexError，没有空指针哨兵。命令行参数解析还可以用 argparse，比 C 手工解析 argv 更安全；类型注解 list[str] 可写但不强制。"
+ },
+ "指-75": {
+  "stem": "```python\ns = [\"ab\", \"cd\", \"ef\"]\np = s\nprint(p[1], p[2][0])\n```",
+  "options": [
+   "ab c",
+   "cd f",
+   "cd e",
+   "cd c"
+  ],
+  "answer": 2,
+  "analysis": "C 的 *(p + 1) 取到第二个字符串 \"cd\"，**(p + 2) 两次解引用取到第三个字符串的首字符 'e'；Python 用 p[1] 取字符串、p[2][0] 取首字符，输出 cd e。区别：C 的 p + 1 以“一个指针宽度”为步长，Python 的下标以元素为单位；Python 的字符串没有 '\\0'，p[2][-1] 是最后一个字符 'f'，与 C 的 *(*(p+2)+2) 对应。"
+ },
+ "指-76": {
+  "stem": "```python\na = [0] * 5\nprint(len(a), a[1] - a[0])\n# id(a[1]) - id(a[0]) 是对象身份差，不是“下一个元素地址”\n```",
+  "options": [
+   "`id(a)` 加 1 就是下一个元素的地址",
+   "Python 没有指针算术：访问元素只能用下标 `a[i]`；要看字节偏移得用 `memoryview`/`array` 并手动乘元素宽度",
+   "`a + 1` 会把列表整体右移一位",
+   "`&a + 1` 越过整个列表"
+  ],
+  "answer": 1,
+  "analysis": "C 里 a + 1 是 int*（步长 4 字节）、&a + 1 是 int (*)[5]（步长整个数组 20 字节）、(char *)a + 1 步长 1 字节，同一条 +1 因类型不同差很多。Python 没有地址算术，a + 1 会 TypeError（列表不能与 int 相加），元素访问只有下标；要看字节偏移用 array('i').itemsize 或用 memoryview 转成 'B' 视图。id() 是对象身份标识，不是可用作算术的地址。"
+ },
+ "结-41": {
+  "stem": "```python\nclass Node:\n    def __init__(self, data, next=None):\n        self.data = data\n        self.next = next\n\ncur, prev = head, None\nwhile cur:\n    # ① ② ③ ④\n    ...\n```",
+  "options": [
+   "`cur.next = prev; nxt = cur.next; prev = cur; cur = nxt`",
+   "`nxt = cur.next; cur.next = prev; prev = cur; cur = nxt`",
+   "`nxt = cur.next; prev = cur; cur.next = prev; cur = nxt`",
+   "`prev = cur; nxt = cur.next; cur.next = prev; cur = nxt`"
+  ],
+  "answer": 1,
+  "analysis": "反转的本质是把每个结点的 next 指向前驱，但一改 next 就找不到后继，所以顺序必须是：先保存后继 nxt = cur.next，再改链 cur.next = prev，然后 prev 前移到 cur，最后 cur 前移到 nxt。Python 版只是把 -> 换成 .，逻辑完全相同；若先用 cur.next = prev 再取 nxt，取到的其实是 prev，链表在第一个结点就断了。循环结束时 prev 就是新表头，return prev。"
+ },
+ "结-42": {
+  "stem": "```python\nslow = fast = head\nwhile fast and fast.next:\n    slow = slow.next\n    fast = fast.next.next\nprint(slow.data)\n```",
+  "options": [
+   "第 4 个",
+   "第 3 个",
+   "第 5 个",
+   "第 6 个"
+  ],
+  "answer": 0,
+  "analysis": "6 个结点时逐轮模拟：初始都在第 1 个；第 1 轮后 slow=2、fast=3；第 2 轮后 slow=3、fast=5；第 3 轮 fast.next 是第 6 个非空，继续，slow=4、fast 越过表尾变 None，条件不成立退出，slow 停在第 4 个（后中点）。Python 里 while fast and fast.next 靠 None 为假短路，不需要写 != NULL；返回的 slow 是结点对象，取 .data 得值。"
+ },
+ "结-44": {
+  "stem": "```python\ndef has_cycle(head):\n    slow = fast = head\n    while fast and fast.next:\n        slow = slow.next\n        fast = fast.next.next\n        if slow is fast:\n            return True\n    return False\n```",
+  "options": [
+   "有环时它仍可能返回 0，因为 fast 会先绕完一整圈回到起点",
+   "无环时循环条件写成 `while fast:` 就够了，不必再检查 `fast.next`",
+   "有环时 slow 与 fast 一定会在环内相遇：fast 每轮相对 slow 多走 1 个结点，环内结点数有限，追上只是时间问题",
+   "判环必须额外保存访问过的结点地址，Floyd 算法只能求环长而不能判环"
+  ],
+  "answer": 2,
+  "analysis": "快慢指针在环内相对速度是 1 格/轮，环长 L 有限，slow 进环后最多再走 L 轮必被追上，所以有环一定相遇。无环时 fast 会走到 None，但循环体里要取 fast.next.next，必须同时保证 fast.next 非空，否则 AttributeError（Python 里 None.next 直接报错），所以 B 错。Python 里判同一结点用 is（对象身份），而不是 ==（除非自定义 __eq__）；Floyd 只用两个引用、O(1) 空间，能判环也能求入口。"
+ },
+ "结-46": {
+  "stem": "```python\nfast = slow = head\nprev = None\nfor _ in range(k):\n    fast = fast.next\nwhile fast:\n    prev = slow\n    slow = slow.next\n    fast = fast.next\n# 此时 slow 指向倒数第 k 个结点\n```",
+  "options": [
+   "指向头结点，因此直接 `del slow` 就能安全删掉它",
+   "是未定义的值，程序行为不可预测",
+   "指向被删结点的前驱，即倒数第 k+1 个结点",
+   "是 `None`；说明被删的正是首结点，必须单独用 `head = slow.next` 更新表头"
+  ],
+  "answer": 3,
+  "analysis": "fast 先走 k 步，k 等于链表长度时它正好到 None，后面的 while 一次都不执行：slow 仍停在 head，prev 保持初值 None。这对应“要删的是首结点”，必须改 head（head = slow.next），否则 head 继续指向被删结点。Python 里没有悬空指针，但 head 若还指向旧结点，链表会“多出一个已删结点”，逻辑错误依旧存在；用哑结点可以统一首结点分支。"
+ },
+ "结-47": {
+  "stem": "```python\nclass Stu:\n    def __init__(self, id_, name):\n        self.id = id_\n        self.name = name\n\na = [Stu(1, \"A\"), Stu(2, \"B\"), Stu(3, \"C\")]\np = a\nprint(len(p), p[1].name)\n```",
+  "options": [
+   "24 与 \"B\"",
+   "12 与 \"B\"",
+   "24 与 \"A\"",
+   "3 与 \"B\""
+  ],
+  "answer": 3,
+  "analysis": "C 的 struct Stu *p[3] 是指针数组，sizeof(p) = 3 × 8 = 24（64 位），与结构体多大无关；p[1]->name 取第二个元素的 name。Python 的 p = a 是“3 个引用的列表”，len(p) 是 3，p[1].name 是 \"B\"。Python 里没有“指针数组 vs 数组指针”的 sizeof 差异，只有“列表长度”和“对象引用”两个概念，所以答案从 24 变成 3。"
+ },
+ "结-50": {
+  "stem": "```python\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass Point:\n    x: int\n    y: int\n\na = Point(1, 2)\nb = Point(3, 4)\np1 = a\np1 = b            # 允许：重新绑定名字\n# p1.y = 4        # FrozenInstanceError\n```",
+  "options": [
+   "`a.x = 3`",
+   "`p1.y = 4`",
+   "`p2 = Point(1, 2)`",
+   "`p1 = b`"
+  ],
+  "answer": 1,
+  "analysis": "C 的“const 在 * 左边管内容、右边管指针”区分在 Python 里不存在；Python 用 frozen dataclass 表达“对象不可改”：p1.y = 4 会抛 FrozenInstanceError，但 p1 = b 重新绑定名字始终合法（名字不是对象的一部分）。a.x = 3 在 frozen 下同样报错；p2 = Point(1, 2) 只是新建对象。所以“错误”的那条是修改不可变对象的属性，而“改指向”在 Python 里没有对应限制。"
+ },
+ "结-51": {
+  "stem": "```python\nstudents = [{\"name\": \"Tom\", \"score\": 80}, {\"name\": \"Amy\", \"score\": 90}]\nstudents.sort(key=lambda s: s[\"score\"])\nprint(students[0][\"name\"])\n```",
+  "options": [
+   "key 函数必须返回负数/0/正数，否则排序结果错误",
+   "key 函数必须接收两个参数，分别表示待比较的两个元素",
+   "Python 的 sort 不稳定，相等键的先后顺序会被打乱",
+   "Python 用 key 函数（只接收一个元素、返回排序键），不需要“返回 int 的三值比较函数”；排序稳定，相等键保持原顺序"
+  ],
+  "answer": 3,
+  "analysis": "C 的 qsort 比较函数必须返回 int（负数/0/正数），形参是 const void*，所以 Cmp 是“指向返回 int、接收两个 const void* 的函数的指针”。Python 的 sort 用 key= 提取排序键（单参数），内部比较由语言完成，稳定排序；需要三值比较时用 functools.cmp_to_key。所以 Cmp 那套函数指针类型、强转、返回值约定在 Python 里都没有对应物。"
+ },
+ "结-53": {
+  "stem": "```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass Pack:\n    tag: str\n    value: int\n    ratio: float\n\nprint(Pack(\"a\", 1, 0.5))\n```",
+  "options": [
+   "4",
+   "5",
+   "8",
+   "Python 没有 offsetof 与内存对齐：属性按名字存储，没有“字节偏移”概念"
+  ],
+  "answer": 3,
+  "analysis": "C 的 offsetof(struct Pack, ratio) 算的是 ratio 相对结构体开头的字节偏移：tag 在 0、value 对齐到 4、ratio 对齐到 8，答案是 8。Python 的 dataclass 实例把属性放在 __dict__/槽里，按名字查找，没有“成员按声明顺序紧密排列 + 对齐填充”的布局，也就没有 offsetof；要算字节布局只能人工用 struct 格式串（如 '<ci d'）并通过 struct.calcsize 验证。本题在 Python 视角下变成“没有字节偏移这个概念”。"
+ },
+ "结-54": {
+  "stem": "```python\nclass Buf:\n    def __init__(self, n):\n        self.len = n\n        self.data = []\n\nb = Buf(0)\nb.data.extend([1] * 5)\nprint(b.len, len(b.data))\n```",
+  "options": [
+   "4；`[0] * 5` 只能得到 5 个元素，装不下 len",
+   "4；`bytearray(5)` 会得到 5 个可变的 0 字节",
+   "24；`[0] * 24` 按字节数开空间",
+   "Python 没有 sizeof 与柔性数组：`self.data = []` 后 append/extend，长度随元素变化，不需要预先算字节数"
+  ],
+  "answer": 3,
+  "analysis": "C 的柔性数组 int data[] 不参与 sizeof（sizeof(struct Buf) 只算 len 的 4 字节），运行时必须按 sizeof(struct) + n * sizeof(int) 一次申请，否则写 data 就越界。Python 的 list 是独立堆对象，先 self.data = []，再用 append/extend 增长，长度自动维护、空间自动扩容，没有“头部 + 尾部数据一次分配”的概念，也没有 sizeof 可用；b.len 只是自己记的元数据，与 len(b.data) 是否一致要靠代码保证。"
+ },
+ "结-57": {
+  "stem": "```python\nclass Node:\n    def __init__(self, data, next=None):\n        self.data = data\n        self.next = next\n\ndummy = Node(0)\ntail = dummy\n# while 合并两条有序链表：\n#     tail.next = 较小结点\n#     tail = tail.next\n# tail.next = a or b\n# return dummy.next\n```",
+  "options": [
+   "减少一次内存申请，提高运行速度",
+   "让“向空结果表追加第一个结点”和“追加后续结点”共用同一句 `tail.next = ...`，省掉为表头单独写的分支",
+   "哑结点会保留在最终结果中，用来标记链表长度",
+   "只有带哑结点的链表才能用 `.next` 访问后继结点"
+  ],
+  "answer": 1,
+  "analysis": "C 里用哑结点（一个局部结构体变量，不需要 malloc）当占位表头，tail 一开始就指向它，于是每次追加都统一写 tail->next = p; tail = tail->next，不需要判断“结果表是否为空、要不要改 head”；返回 dummy->next。Python 版同样适用，dummy = Node(0) 只是普通对象，最后 return dummy.next；它不会被返回，也不标记长度。Python 的推进写法 tail.next, tail = p, p 只是更简洁，逻辑不变。"
+ },
+ "结-58": {
+  "stem": "```python\nclass Node:\n    def __init__(self, data, next=None):\n        self.data = data\n        self.next = next\n\ndef push_front(head, v):\n    return Node(v, head)     # 返回新的表头\n\nhead = None\nhead = push_front(head, 5)\nprint(head.data)\n```",
+  "options": [
+   "因为函数返回了新结点，Python 会自动把它写回调用者的 head 名字",
+   "因为对象作为参数传递时默认按引用传递，函数内的 head 就是调用者的 head",
+   "Python 没有二级指针；函数内重新绑定形参不会影响调用者，只能返回新表头、由调用处重新赋值 head",
+   "因为 head 是可变对象，函数内给 head 重新赋值会同步改到主函数的变量"
+  ],
+  "answer": 2,
+  "analysis": "C 要改调用者的 head 变量，必须传 &head（二级指针），函数内 *head = p 改的正是调用者那个指针变量；只传 head（一级指针）只能改结点内容，改不了 head 本身。Python 没有指针，参数是对象引用绑定：push_front(head, 5) 里重新绑定局部 head 不会影响调用者，所以必须 return 新表头，调用处写 head = push_front(head, 5)。这是“返回新值”替代“输出参数/二级指针”的典型做法。"
+ },
+ "结-60": {
+  "analysis": "反转链表只改变每个结点 next 的方向，结点之间的先后次序完全颠倒：原表头前面不再有结点，它的 next 被置 None，成为新链表表尾；原表尾的 next 原本是 None，反转后指向原倒数第二个结点，自己成了新表头，所以新 head 应指向原表尾。Python 版三指针循环结束时 prev 正好停在这里，return prev 就是新表头；注意 Python 里“表尾/表头”只是对象引用，没有地址概念，但逻辑完全同构。"
+ },
+ "枚-13": {
+  "stem": "```python\nclass Color:\n    RED, GREEN, BLUE, COUNT = range(4)\n\nnames = [\"red\", \"green\", \"blue\"]\nc = Color.BLUE\nprint(names[c])\n```",
+  "options": [
+   "blue",
+   "BLUE",
+   "2",
+   "编译错误：枚举变量不能作数组下标"
+  ],
+  "answer": 0,
+  "analysis": "C 的枚举常量本质是 int（RED=0、GREEN=1、BLUE=2），可以直接作数组下标，names[BLUE] 取到 \"blue\"，COUNT 作为哨兵控制数组长度。Python 里普通 int 变量作下标当然可以；如果用的是 Enum 成员，则必须先 .value（Enum 成员不能直接作 list 下标，会 TypeError），IntEnum 才是 int 子类。更 Pythonic 的写法是 names = [\"red\", \"green\", \"blue\"]; names[Color.BLUE.value]。"
+ },
+ "枚-15": {
+  "stem": "```python\nfrom enum import IntFlag\n\nclass Perm(IntFlag):\n    READ = 1\n    WRITE = 2\n    EXEC = 4\n\np = Perm.READ | Perm.WRITE\nprint(bool(p & Perm.WRITE), Perm.WRITE in p)\n```",
+  "options": [
+   "`if p or Perm.WRITE:` 即可，因为只要 p 非 0 就说明有权限",
+   "`if p & Perm.WRITE:` 判断；IntFlag 支持按位运算，结果可直接判真，也可以用 `Perm.WRITE in p`",
+   "`if p and Perm.WRITE:` 即可，两个非 0 值相与为真就表示有该权限",
+   "枚举常量不能参与按位运算，`Perm.READ | Perm.WRITE` 会直接报错"
+  ],
+  "answer": 1,
+  "analysis": "C 用 1、2、4 这种“一位一个标志”的枚举，配合 | 组合、& 检测，判断要写 (p & WRITE) != 0，写成 p || WRITE 或 p && WRITE 都会因为只关心“是否为真”而误判。Python 的 IntFlag 专门做位标志：| & ^ 返回组合成员，bool(p & Perm.WRITE) 直接可用，Python 3.11+ 还支持 Perm.WRITE in p；普通 Enum 做按位运算会 TypeError。考点从“手写掩码判断”变成“用 IntFlag 的类型语义”。"
+ }
+}

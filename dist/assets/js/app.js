@@ -1,6 +1,6 @@
 /* =========================================================
-   C 语言程序设计基础 · 习题复习库
-   纯前端交互：筛选 / 作答 / 解析 / 进度 / 答题卡
+   程序设计基础 · C / C++ / Python 三语言习题复习库
+   纯前端交互：语言切换 / 筛选 / 作答 / 解析 / 进度 / 答题卡
    ========================================================= */
 (function () {
   'use strict';
@@ -12,16 +12,22 @@
     return;
   }
 
-  var STORAGE_KEY = 'c-review-bank-v1';
+  var STORAGE_KEY = 'c-review-bank-v2';
+  var LEGACY_KEY = 'c-review-bank-v1';
   var TYPE_LABEL = { choice: '选择题', fill: '程序填空', design: '程序设计' };
   var MODULE_CLASS = {
     'C语言基础': 'mod-basics', '数组': 'mod-array', '指针': 'mod-pointer',
     '结构体': 'mod-struct', '枚举': 'mod-enum', '函数': 'mod-function'
   };
   var MODULE_COLOR = {
-    'C语言基础': '#3b82f6', '数组': '#10b981', '指针': '#8b5cf6',
-    '结构体': '#f59e0b', '枚举': '#f43f5e', '函数': '#06b6d4'
+    'C语言基础': '#0071e3', '数组': '#30b06e', '指针': '#8b5cf6',
+    '结构体': '#f59e0b', '枚举': '#ff375f', '函数': '#06b6d4'
   };
+  var LANGS = (bank.meta && bank.meta.languages) || [
+    { key: 'c', label: 'C' }, { key: 'cpp', label: 'C++' }, { key: 'python', label: 'Python' }
+  ];
+  var LANG_MAP = {};
+  LANGS.forEach(function (l) { LANG_MAP[l.key] = l; });
   var LETTERS = 'ABCD';
 
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
@@ -30,9 +36,17 @@
   var byId = new Map();
   bank.questions.forEach(function (q) { byId.set(q.id, q); });
   var TOTAL = bank.questions.length;
+  var MODULE_DISPLAY = {};
+  bank.modules.forEach(function (m) { MODULE_DISPLAY[m.name] = m.display || m.name; });
+
+  function moduleLabel(name) { return MODULE_DISPLAY[name] || name; }
+  function langLabel(key) { return (LANG_MAP[key] || {}).label || String(key).toUpperCase(); }
+  function isLang(key) { return Object.prototype.hasOwnProperty.call(LANG_MAP, key); }
 
   /* ---------------- State ---------------- */
   var state = {
+    lang: 'c',
+    haptics: true,
     module: 'all',
     type: 'all',
     diff: 'all',
@@ -45,10 +59,28 @@
     theme: 'light'
   };
 
+  function parseJSON(raw) {
+    try { return JSON.parse(raw); } catch (e) { return null; }
+  }
+
   function loadState() {
-    var saved = null;
-    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) { saved = null; }
+    var saved = parseJSON(localStorage.getItem(STORAGE_KEY) || 'null');
+    if (!saved) {
+      var legacy = parseJSON(localStorage.getItem(LEGACY_KEY) || 'null');
+      if (legacy && typeof legacy === 'object') {
+        saved = legacy;
+        if (legacy.progress && typeof legacy.progress === 'object') {
+          var migrated = {};
+          Object.keys(legacy.progress).forEach(function (id) { migrated['c:' + id] = legacy.progress[id]; });
+          saved.progress = migrated;
+        }
+        saved.lang = 'c';
+        saved.haptics = true;
+      }
+    }
     if (saved && typeof saved === 'object') {
+      state.lang = isLang(saved.lang) ? saved.lang : 'c';
+      state.haptics = saved.haptics !== false;
       state.module = saved.module || 'all';
       state.type = saved.type || 'all';
       state.diff = saved.diff || 'all';
@@ -76,35 +108,35 @@
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignore quota */ }
   }
 
-  /* ---------------- Utils ---------------- */
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  /* ---------------- Localization ---------------- */
+  function localized(q, lang) {
+    lang = lang || state.lang;
+    var out = {};
+    Object.keys(q).forEach(function (k) {
+      if (k !== 'variants') out[k] = q[k];
     });
+    var variant = q.variants && q.variants[lang];
+    if (variant) {
+      Object.keys(variant).forEach(function (k) { out[k] = variant[k]; });
+    }
+    out.lang = lang;
+    out.baseId = q.id;
+    out.contextOnly = lang !== 'c' && q.type === 'choice' && !(variant && variant.stem);
+    return out;
   }
 
-  function icon(name, extra) {
-    return '<svg class="icon' + (extra ? ' ' + extra : '') + '"><use href="#i-' + name + '"></use></svg>';
-  }
-
-  function toast(msg) {
-    var el = $('#toast');
-    el.textContent = msg;
-    el.classList.add('show');
-    clearTimeout(toast._t);
-    toast._t = setTimeout(function () { el.classList.remove('show'); }, 1800);
-  }
-
-  function progressOf(q) {
-    var p = state.progress[q.id];
+  function progressOf(q, lang) {
+    var key = (lang || state.lang) + ':' + q.id;
+    var p = state.progress[key];
     return p && typeof p === 'object' ? p : null;
   }
 
-  function status(q) {
-    var p = progressOf(q);
+  function status(q, lang) {
+    var lq = localized(q, lang);
+    var p = progressOf(q, lang);
     if (!p) return 'none';
-    if (q.type === 'choice') {
-      if (typeof p.choice === 'number') return p.choice === q.answer ? 'ok' : 'bad';
+    if (lq.type === 'choice') {
+      if (typeof p.choice === 'number') return p.choice === lq.answer ? 'ok' : 'bad';
       return p.revealed ? 'seen' : 'none';
     }
     if (p.self === 'ok') return 'ok';
@@ -122,9 +154,21 @@
     return true;
   }
 
+  function variantText(q) {
+    var v = q.variants || {};
+    return Object.keys(v).map(function (k) {
+      var x = v[k] || {};
+      return [x.stem, x.analysis, (x.options || []).join(' '),
+        (x.blanks || []).map(function (b) { return (b.answer || '') + ' ' + (b.note || ''); }).join(' '),
+        x.solution].join(' ');
+    }).join(' ');
+  }
+
   function haystack(q) {
-    return [q.id, q.module, TYPE_LABEL[q.type], q.stem, (q.tags || []).join(' '),
-      (q.options || []).join(' '), q.blanks ? q.blanks.map(function (b) { return b.answer + ' ' + (b.note || ''); }).join(' ') : '']
+    return [q.id, moduleLabel(q.module), TYPE_LABEL[q.type], q.stem, (q.tags || []).join(' '),
+      (q.options || []).join(' '),
+      q.blanks ? q.blanks.map(function (b) { return b.answer + ' ' + (b.note || ''); }).join(' ') : '',
+      q.analysis, q.solution || '', variantText(q)]
       .join(' ').toLowerCase();
   }
 
@@ -152,18 +196,84 @@
     return arr;
   }
 
+  /* ---------------- Feedback ---------------- */
+  function haptic(pattern) {
+    if (!state.haptics || !navigator.vibrate) return;
+    try { navigator.vibrate(pattern); } catch (e) { /* ignore */ }
+  }
+
+  function toast(msg) {
+    var el = $('#toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove('show'); }, 1800);
+  }
+
+  function initRipple() {
+    document.addEventListener('pointerdown', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn || btn.disabled) return;
+      if (btn.dataset.noRipple === 'true') return;
+      var rect = btn.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      var size = Math.max(rect.width, rect.height) * 1.2;
+      var ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      ripple.style.width = size + 'px';
+      ripple.style.height = size + 'px';
+      ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+      ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+      btn.appendChild(ripple);
+      setTimeout(function () { ripple.remove(); }, 560);
+    }, { passive: true });
+  }
+
   /* ---------------- Markdown-ish rendering ---------------- */
-  var KEYWORDS = ('auto break case char const continue default do double else enum extern float for goto if ' +
+  var C_KEYWORDS = ('auto break case char const continue default do double else enum extern float for goto if ' +
     'inline int long register restrict return short signed sizeof static struct switch typedef union ' +
     'unsigned void volatile while _Bool bool true false NULL').split(' ');
-  var FUNCS = ('printf scanf puts gets putchar getchar malloc calloc realloc free strlen strcpy strncpy strcat strcmp ' +
+  var C_FUNCS = ('printf scanf puts gets putchar getchar malloc calloc realloc free strlen strcpy strncpy strcat strcmp ' +
     'strncmp memset memcpy fopen fclose fgets fputs fprintf fscanf sprintf sscanf qsort exit abs sqrt pow fabs ' +
     'toupper tolower isdigit isalpha isspace').split(' ');
-  var KW_SET = new Set(KEYWORDS);
-  var FN_SET = new Set(FUNCS);
+  var CPP_KEYWORDS = C_KEYWORDS.concat(('alignas alignof and and_eq asm bitand bitor catch class compl constexpr ' +
+    'const_cast decltype delete dynamic_cast explicit export friend mutable namespace new noexcept not not_eq ' +
+    'nullptr operator or or_eq private protected public reinterpret_cast static_assert static_cast template ' +
+    'this thread_local throw try typeid typename using virtual wchar_t xor xor_eq std string vector map set ' +
+    'unordered_map queue stack deque pair make_pair auto').split(' '));
+  var CPP_FUNCS = C_FUNCS.concat(('cout cin cerr endl getline push_back pop_back size empty begin end sort ' +
+    'reverse max min swap to_string stoi stod').split(' '));
+  var PY_KEYWORDS = ('False None True and as assert async await break class continue def del elif else except ' +
+    'finally for from global if import in is lambda nonlocal not or pass raise return try while with yield ' +
+    'match case self cls').split(' ');
+  var PY_FUNCS = ('print input len range enumerate zip map filter sorted reversed sum min max abs round ' +
+    'str int float list dict set tuple open type isinstance super append extend insert pop remove ' +
+    'split join strip replace startswith endswith lower upper format').split(' ');
 
-  function highlightC(code) {
-    var re = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^[ \t]*#[^\n]*|\b(?:printf|scanf|puts|gets|putchar|getchar|malloc|calloc|realloc|free|strlen|strcpy|strncpy|strcat|strcmp|strncmp|memset|memcpy|fopen|fclose|fgets|fputs|fprintf|fscanf|sprintf|sscanf|qsort|exit|abs|sqrt|pow|fabs|toupper|tolower|isdigit|isalpha|isspace)\b|\b(?:auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|inline|int|long|register|restrict|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while|_Bool|bool|true|false|NULL)\b|\b(?:0[xX][0-9a-fA-F]+|\d+(?:\.\d+)?[fFuUlL]*)\b)/gm;
+  function kwSet(words) { return new Set(words); }
+  var C_KW = kwSet(C_KEYWORDS), C_FN = kwSet(C_FUNCS);
+  var CPP_KW = kwSet(CPP_KEYWORDS), CPP_FN = kwSet(CPP_FUNCS);
+  var PY_KW = kwSet(PY_KEYWORDS), PY_FN = kwSet(PY_FUNCS);
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function icon(name, extra) {
+    return '<svg class="icon' + (extra ? ' ' + extra : '') + '"><use href="#i-' + name + '"></use></svg>';
+  }
+
+  function highlight(code, lang) {
+    var isPy = lang === 'python';
+    var isCpp = lang === 'cpp';
+    var kw = isPy ? PY_KW : (isCpp ? CPP_KW : C_KW);
+    var fn = isPy ? PY_FN : (isCpp ? CPP_FN : C_FN);
+    var re = isPy
+      ? /(#[^\n]*|"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:print|input|len|range|enumerate|zip|map|filter|sorted|reversed|sum|min|max|abs|round|str|int|float|list|dict|set|tuple|open|type|isinstance|super|append|extend|insert|pop|remove|split|join|strip|replace|startswith|endswith|lower|upper|format)\b|\b(?:False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield|match|case|self|cls)\b|\b(?:0[xX][0-9a-fA-F]+|\d+(?:\.\d+)?)\b)/gm
+      : /(\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^[ \t]*#[^\n]*|\b(?:std|cout|cin|cerr|endl|string|vector|map|set|queue|stack|pair|auto|class|public|private|protected|namespace|using|new|delete|nullptr|constexpr|template|typename|bool|true|false|NULL)\b|\b(?:printf|scanf|puts|gets|putchar|getchar|malloc|calloc|realloc|free|strlen|strcpy|strncpy|strcat|strcmp|strncmp|memset|memcpy|fopen|fclose|fgets|fputs|fprintf|fscanf|sprintf|sscanf|qsort|exit|abs|sqrt|pow|fabs|toupper|tolower|isdigit|isalpha|isspace|sort|reverse|max|min|swap|to_string|stoi|stod)\b|\b(?:auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|inline|int|long|register|restrict|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while|_Bool)\b|\b(?:0[xX][0-9a-fA-F]+|\d+(?:\.\d+)?[fFuUlL]*)\b)/gm;
     var out = '';
     var last = 0;
     var m;
@@ -171,12 +281,13 @@
       out += esc(code.slice(last, m.index));
       var tok = m[0];
       var cls = '';
-      if (tok.indexOf('//') === 0 || tok.indexOf('/*') === 0) cls = 'tok-com';
+      if (!isPy && (tok.indexOf('//') === 0 || tok.indexOf('/*') === 0)) cls = 'tok-com';
+      else if (isPy && tok.charAt(0) === '#') cls = 'tok-com';
       else if (tok.charAt(0) === '"' || tok.charAt(0) === "'") cls = 'tok-str';
-      else if (/^[ \t]*#/.test(tok)) cls = 'tok-pre';
+      else if (!isPy && /^[ \t]*#/.test(tok)) cls = 'tok-pre';
       else if (/^(0[xX][0-9a-fA-F]+|\d)/.test(tok)) cls = 'tok-num';
-      else if (FN_SET.has(tok)) cls = 'tok-fn';
-      else if (KW_SET.has(tok)) cls = 'tok-key';
+      else if (fn.has(tok)) cls = 'tok-fn';
+      else if (kw.has(tok)) cls = 'tok-key';
       out += cls ? '<span class="' + cls + '">' + esc(tok) + '</span>' : esc(tok);
       last = re.lastIndex;
     }
@@ -185,12 +296,12 @@
   }
 
   function renderCode(code, lang) {
-    var label = lang === 'text' ? '输入 / 输出样例' : (lang ? lang.toUpperCase() : 'C');
-    var body = (lang === 'text' || lang === 'output') ? esc(code) : highlightC(code);
+    var label = lang === 'text' ? '输入 / 输出样例' : (lang === 'python' ? 'PYTHON' : (lang ? lang.toUpperCase() : 'C'));
+    var body = (lang === 'text' || lang === 'output') ? esc(code) : highlight(code, lang);
     return '<div class="code-block">' +
       '<div class="code-head"><span class="code-dots"><i></i><i></i><i></i></span>' +
       '<span class="code-lang">' + esc(label) + '</span>' +
-      '<button class="code-copy" type="button" data-act="copy">' + icon('copy') + '复制</button></div>' +
+      '<button class="code-copy" type="button" data-act="copy" data-no-ripple="true">' + icon('copy') + '复制</button></div>' +
       '<pre><code>' + body + '</code></pre></div>';
   }
 
@@ -227,13 +338,14 @@
 
   /* ---------------- Card rendering ---------------- */
   function renderCard(q) {
+    var lq = localized(q, state.lang);
     var p = progressOf(q) || {};
-    var st = status(q);
-    var answeredChoice = q.type === 'choice' && typeof p.choice === 'number';
+    var answeredChoice = lq.type === 'choice' && typeof p.choice === 'number';
     var revealed = answeredChoice || p.revealed === true;
 
-    var badges = '<span class="pill ' + (MODULE_CLASS[q.module] || '') + '">' + esc(q.module) + '</span>' +
-      '<span class="pill type-' + q.type + '">' + TYPE_LABEL[q.type] + '</span>' +
+    var badges = '<span class="pill ' + (MODULE_CLASS[q.module] || '') + '">' + esc(moduleLabel(q.module)) + '</span>' +
+      '<span class="pill type-' + lq.type + '">' + TYPE_LABEL[lq.type] + '</span>' +
+      '<span class="pill lang-pill lang-' + lq.lang + '">' + esc(langLabel(lq.lang)) + '</span>' +
       '<span class="diff" title="难度 ' + q.difficulty + '/3">' +
       [1, 2, 3].map(function (i) { return '<i class="' + (i <= q.difficulty ? 'on' : '') + '">●</i>'; }).join('') +
       '</span>';
@@ -245,15 +357,20 @@
       '<button class="icon-btn fav' + (isFav(q.id) ? ' active' : '') + '" data-act="fav" type="button" title="' + (isFav(q.id) ? '取消收藏' : '收藏本题') + '" aria-pressed="' + isFav(q.id) + '">' + icon('star') + '</button>' +
       '</div></div>';
 
-    var body = '<div class="q-stem">' + renderRich(q.stem) + '</div>';
+    var body = '';
+    if (lq.contextOnly) {
+      body += '<div class="lang-context">' + icon('command') +
+        '<span>本题保留 C 语言题干，下方为 ' + esc(langLabel(lq.lang)) + ' 视角解析</span></div>';
+    }
+    body += '<div class="q-stem">' + renderRich(lq.stem) + '</div>';
 
-    if (q.type === 'choice') {
-      body += '<div class="options" role="radiogroup" aria-label="选项">' + (q.options || []).map(function (opt, i) {
+    if (lq.type === 'choice') {
+      body += '<div class="options" role="radiogroup" aria-label="选项">' + (lq.options || []).map(function (opt, i) {
         var cls = 'option';
         if (answeredChoice) {
-          if (i === q.answer) cls += ' correct';
+          if (i === lq.answer) cls += ' correct';
           else if (i === p.choice) cls += ' wrong';
-        } else if (revealed && i === q.answer) {
+        } else if (revealed && i === lq.answer) {
           cls += ' hint';
         }
         return '<button class="' + cls + '" type="button" data-act="option" data-index="' + i + '"' +
@@ -264,15 +381,15 @@
       }).join('') + '</div>';
 
       if (answeredChoice) {
-        var ok = p.choice === q.answer;
+        var ok = p.choice === lq.answer;
         body += '<div class="verdict ' + (ok ? 'ok' : 'bad') + '">' + icon(ok ? 'check' : 'x') +
-          '<span>' + (ok ? '回答正确' : '回答错误') + ' · 正确答案 ' + LETTERS[q.answer] +
+          '<span>' + (ok ? '回答正确' : '回答错误') + ' · 正确答案 ' + LETTERS[lq.answer] +
           (ok ? '' : '，对照解析看看错因') + '</span></div>';
       }
     }
 
     if (revealed) {
-      body += renderAnswerPanel(q, p);
+      body += renderAnswerPanel(lq, p);
     } else {
       body += '<div class="reveal-row"><button class="btn reveal" type="button" data-act="reveal">' +
         icon('eye') + '查看答案与解析</button><span class="hint-text">建议先独立写出答案</span></div>';
@@ -282,32 +399,33 @@
     el.className = 'q-card';
     el.id = 'q-' + q.id;
     el.dataset.id = q.id;
+    el.dataset.lang = state.lang;
     el.innerHTML = head + body;
     return el;
   }
 
-  function renderAnswerPanel(q, p) {
+  function renderAnswerPanel(lq, p) {
     var inner = '';
 
-    if (q.type === 'fill' && Array.isArray(q.blanks)) {
-      inner += '<div class="blank-list">' + q.blanks.map(function (b) {
+    if (lq.type === 'fill' && Array.isArray(lq.blanks)) {
+      inner += '<div class="blank-list">' + lq.blanks.map(function (b) {
         return '<div class="blank-row"><span class="blank-no">' + esc(b.no) + '</span>' +
           '<div class="blank-body"><div class="blank-answer"><code>' + esc(b.answer) + '</code></div>' +
           (b.note ? '<div class="blank-note">' + inline(b.note) + '</div>' : '') + '</div></div>';
       }).join('') + '</div>';
     }
 
-    if (q.type === 'design') {
-      inner += '<div class="solution-head"><span>参考程序（C）</span><span>可直接复制运行</span></div>' +
-        renderCode(String(q.solution || '').replace(/\n$/, ''), 'c');
-      if (Array.isArray(q.points) && q.points.length) {
-        inner += '<ul class="points">' + q.points.map(function (pt) { return '<li>' + inline(pt) + '</li>'; }).join('') + '</ul>';
+    if (lq.type === 'design') {
+      inner += '<div class="solution-head"><span>参考程序（' + esc(langLabel(lq.lang)) + '）</span><span>可直接复制运行</span></div>' +
+        renderCode(String(lq.solution || '').replace(/\n$/, ''), lq.lang);
+      if (Array.isArray(lq.points) && lq.points.length) {
+        inner += '<ul class="points">' + lq.points.map(function (pt) { return '<li>' + inline(pt) + '</li>'; }).join('') + '</ul>';
       }
     }
 
-    inner += '<div class="analysis"><h4>答案解析</h4>' + renderRich(q.analysis || '') + '</div>';
+    inner += '<div class="analysis"><h4>' + esc(langLabel(lq.lang)) + ' 答案解析</h4>' + renderRich(lq.analysis || '') + '</div>';
 
-    if (q.type === 'choice') {
+    if (lq.type === 'choice') {
       inner += '<div class="self-check"><span>做完啦？</span>' +
         '<button class="self-btn reset" type="button" data-act="reset">' + icon('reset') + '重做本题</button></div>';
     } else {
@@ -319,7 +437,7 @@
 
     return '<div class="answer-panel"><div class="answer-head">' + icon('book') +
       '<strong>答案与解析</strong><span class="answer-hint">' +
-      (q.type === 'fill' ? '先填空，再核对' : q.type === 'design' ? '先写代码，再对照' : '理解比记住更重要') +
+      (lq.type === 'fill' ? '先填空，再核对' : lq.type === 'design' ? '先写代码，再对照' : '理解比记住更重要') +
       '</span></div>' + inner + '</div>';
   }
 
@@ -341,7 +459,7 @@
     $('#resultCount').textContent = arr.length === TOTAL ? '共 ' + TOTAL + ' 题' : '筛选出 ' + arr.length + ' / ' + TOTAL + ' 题';
 
     var title = '全部题目';
-    if (state.module !== 'all') title = state.module;
+    if (state.module !== 'all') title = moduleLabel(state.module);
     else if (state.scope === 'wrong') title = '错题本';
     else if (state.scope === 'fav') title = '我的收藏';
     else if (state.scope === 'undone') title = '未做题目';
@@ -351,6 +469,7 @@
     var counts = { choice: 0, fill: 0, design: 0 };
     arr.forEach(function (q) { counts[q.type]++; });
     var sub = arr.length + ' 题 · 选择 ' + counts.choice + ' / 填空 ' + counts.fill + ' / 设计 ' + counts.design;
+    sub += ' · ' + langLabel(state.lang) + ' 模式';
     if (state.keyword.trim()) sub += ' · 关键词「' + state.keyword.trim() + '」';
     $('#listSub').textContent = sub;
     $('#collapseAllBtn').hidden = true;
@@ -359,9 +478,9 @@
   }
 
   function buildNav() {
-    var items = [{ name: 'all', label: '全部题目', count: TOTAL, color: '#1d4ed8' }];
+    var items = [{ name: 'all', label: '全部题目', count: TOTAL, color: '#0071e3' }];
     bank.modules.forEach(function (m) {
-      items.push({ name: m.name, label: m.name, count: m.count, color: MODULE_COLOR[m.name] || '#1d4ed8' });
+      items.push({ name: m.name, label: m.display || m.name, count: m.count, color: MODULE_COLOR[m.name] || '#0071e3' });
     });
     $('#moduleNav').innerHTML = items.map(function (it) {
       return '<button class="nav-item' + (state.module === it.name ? ' active' : '') + '" type="button" data-module="' + esc(it.name) + '">' +
@@ -438,7 +557,7 @@
   function buildSheet() {
     $('#sheetGrid').innerHTML = bank.questions.map(function (q) {
       return '<button class="sheet-cell" type="button" data-id="' + esc(q.id) + '" title="' +
-        esc(q.id + ' · ' + q.module + ' · ' + TYPE_LABEL[q.type]) + '">' + q.seq + '</button>';
+        esc(q.id + ' · ' + moduleLabel(q.module) + ' · ' + TYPE_LABEL[q.type]) + '">' + q.seq + '</button>';
     }).join('');
     updateSheet();
   }
@@ -455,14 +574,15 @@
   function updateStats() {
     var done = 0, attempt = 0, correct = 0, wrong = 0;
     bank.questions.forEach(function (q) {
+      var lq = localized(q, state.lang);
       var st = status(q);
       var p = progressOf(q);
       if (st !== 'none') done++;
       if (st === 'bad') wrong++;
-      if (q.type === 'choice' && p && typeof p.choice === 'number') {
+      if (lq.type === 'choice' && p && typeof p.choice === 'number') {
         attempt++;
-        if (p.choice === q.answer) correct++;
-      } else if (q.type !== 'choice' && p && (p.self === 'ok' || p.self === 'bad')) {
+        if (p.choice === lq.answer) correct++;
+      } else if (lq.type !== 'choice' && p && (p.self === 'ok' || p.self === 'bad')) {
         attempt++;
         if (p.self === 'ok') correct++;
       }
@@ -490,8 +610,14 @@
     $('#typeSelect').value = state.type;
     $('#diffSelect').value = state.diff;
     $('#shuffleBtn').setAttribute('aria-pressed', state.shuffle ? 'true' : 'false');
+    $('#hapticBtn').setAttribute('aria-pressed', state.haptics ? 'true' : 'false');
     $$('#moduleNav .nav-item').forEach(function (b) {
       b.classList.toggle('active', b.dataset.module === state.module);
+    });
+    $$('#langSwitch .lang-btn').forEach(function (b) {
+      var on = b.dataset.lang === state.lang;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
     updateChips();
   }
@@ -515,6 +641,7 @@
     var q = byId.get(card.dataset.id);
     if (!q) return;
     var act = btn.dataset.act;
+    var lq = localized(q, state.lang);
 
     if (act === 'option') {
       var p = progressOf(q) || {};
@@ -522,10 +649,11 @@
       p.choice = Number(btn.dataset.index);
       p.revealed = true;
       p.ts = Date.now();
-      state.progress[q.id] = p;
+      state.progress[state.lang + ':' + q.id] = p;
       saveState();
+      haptic(p.choice === lq.answer ? [12, 35, 18] : [42]);
       afterChange(q);
-      if (p.choice !== q.answer) toast('已自动加入错题本');
+      if (p.choice !== lq.answer) toast('已自动加入错题本');
       return;
     }
 
@@ -533,8 +661,9 @@
       var p2 = progressOf(q) || {};
       p2.revealed = true;
       p2.ts = Date.now();
-      state.progress[q.id] = p2;
+      state.progress[state.lang + ':' + q.id] = p2;
       saveState();
+      haptic(8);
       afterChange(q);
       return;
     }
@@ -544,16 +673,18 @@
       p3.self = btn.dataset.self;
       p3.revealed = true;
       p3.ts = Date.now();
-      state.progress[q.id] = p3;
+      state.progress[state.lang + ':' + q.id] = p3;
       saveState();
+      haptic(p3.self === 'ok' ? [10, 25, 12] : [35]);
       afterChange(q);
       toast(p3.self === 'ok' ? '已标记为掌握' : '已加入错题本');
       return;
     }
 
     if (act === 'reset') {
-      delete state.progress[q.id];
+      delete state.progress[state.lang + ':' + q.id];
       saveState();
+      haptic(10);
       afterChange(q);
       toast('已重置本题');
       return;
@@ -564,6 +695,7 @@
       if (idx >= 0) state.favorites.splice(idx, 1);
       else state.favorites.push(q.id);
       saveState();
+      haptic(10);
       afterChange(q);
       toast(idx >= 0 ? '已取消收藏' : '已收藏本题');
       return;
@@ -577,6 +709,7 @@
   }
 
   function copyText(text) {
+    function done() { haptic(8); toast('代码已复制'); }
     function fallback() {
       var ta = document.createElement('textarea');
       ta.value = text;
@@ -584,11 +717,11 @@
       ta.style.opacity = '0';
       document.body.appendChild(ta);
       ta.select();
-      try { document.execCommand('copy'); toast('代码已复制'); } catch (e) { toast('复制失败，请手动选择'); }
+      try { document.execCommand('copy'); done(); } catch (e) { toast('复制失败，请手动选择'); }
       document.body.removeChild(ta);
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { toast('代码已复制'); }, fallback);
+      navigator.clipboard.writeText(text).then(done, fallback);
     } else {
       fallback();
     }
@@ -638,6 +771,7 @@
     $('#searchInput').value = '';
     syncControls();
     renderList();
+    haptic(10);
     setTimeout(function () {
       var el = document.getElementById('q-' + q.id);
       if (!el) return;
@@ -656,6 +790,27 @@
       var t = ids[i]; ids[i] = ids[j]; ids[j] = t;
     }
     state.shufOrder = ids;
+  }
+
+  /* ---------------- Language ---------------- */
+  function buildLangSwitch() {
+    $('#langSwitch').innerHTML = LANGS.map(function (l) {
+      return '<button class="lang-btn' + (state.lang === l.key ? ' active' : '') + '" type="button" role="tab" ' +
+        'data-lang="' + l.key + '" aria-selected="' + (state.lang === l.key) + '">' +
+        '<span class="lang-name">' + esc(l.label) + '</span>' +
+        '<span class="lang-glow" aria-hidden="true"></span></button>';
+    }).join('');
+  }
+
+  function setLang(key) {
+    if (!isLang(key) || key === state.lang) return;
+    state.lang = key;
+    saveState();
+    haptic(10);
+    syncControls();
+    renderList();
+    updateSheet();
+    toast('已切换到 ' + langLabel(key) + ' 模式，答案与解析已同步');
   }
 
   /* ---------------- Events ---------------- */
@@ -686,6 +841,12 @@
       state.scope = btn.dataset.scope;
       syncControls();
       renderList();
+    });
+
+    $('#langSwitch').addEventListener('click', function (e) {
+      var btn = e.target.closest('.lang-btn');
+      if (!btn) return;
+      setLang(btn.dataset.lang);
     });
 
     $('#searchInput').addEventListener('input', function (e) {
@@ -726,6 +887,7 @@
       } else {
         toast('已恢复顺序练习');
       }
+      haptic(8);
       saveState();
       syncControls();
       renderList();
@@ -748,13 +910,14 @@
     list.addEventListener('click', onListClick);
 
     $('#resetBtn').addEventListener('click', function () {
-      if (!window.confirm('确定清空所有作答记录、错题和收藏吗？此操作不可撤销。')) return;
+      if (!window.confirm('确定清空三种语言的全部作答记录、错题和收藏吗？此操作不可撤销。')) return;
       state.progress = {};
       state.favorites = [];
       saveState();
+      haptic(18);
       syncControls();
       renderList();
-      toast('学习进度已重置');
+      toast('三种语言的学习进度已重置');
     });
 
     $('#clearFilterBtn').addEventListener('click', resetFilters);
@@ -762,6 +925,7 @@
 
     $('#startBtn').addEventListener('click', function () {
       $('#listTitle').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      haptic(8);
     });
     $('#randomBtn').addEventListener('click', randomQuestion);
 
@@ -769,6 +933,15 @@
       state.theme = state.theme === 'dark' ? 'light' : 'dark';
       applyTheme();
       saveState();
+      haptic(8);
+    });
+
+    $('#hapticBtn').addEventListener('click', function () {
+      state.haptics = !state.haptics;
+      saveState();
+      syncControls();
+      haptic(12);
+      toast(state.haptics ? '触感反馈已开启' : '触感反馈已关闭');
     });
 
     $('#menuBtn').addEventListener('click', openSidebar);
@@ -793,6 +966,8 @@
 
   function applyTheme() {
     document.documentElement.dataset.theme = state.theme;
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', state.theme === 'dark' ? '#000000' : '#f5f5f7');
   }
 
   function openSidebar() {
@@ -820,16 +995,17 @@
   /* ---------------- Init ---------------- */
   loadState();
   applyTheme();
+  buildLangSwitch();
   buildNav();
   buildChips();
   buildSheet();
   bind();
+  initRipple();
   initWeChatBanner();
   syncControls();
   renderList();
 
-  // 首次进入时，如果之前没有进度，给出轻提示
-  if (localStorage.getItem(STORAGE_KEY) === null) {
-    setTimeout(function () { toast('提示：按 / 可快速搜索题目'); }, 900);
+  if (localStorage.getItem(STORAGE_KEY) === null && localStorage.getItem(LEGACY_KEY) === null) {
+    setTimeout(function () { toast('提示：右上角可切换 C / C++ / Python，按 / 可搜索'); }, 900);
   }
 })();

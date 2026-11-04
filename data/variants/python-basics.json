@@ -1,0 +1,274 @@
+{
+  "基-03": {
+    "stem": "下面程序读入两个整数，输出它们的平均值（保留 2 位小数）。请填空。\n\n```python\na, b = map(int, input().split())\navg = ①\nprint(f\"{avg:②}\")\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "(a + b) / 2",
+        "note": "Python 的 / 是真除法，两个 int 相除也得到 float，不必像 C 那样写 2.0 或强转；写成 (a + b) // 2 会向下取整"
+      },
+      {
+        "no": "②",
+        "answer": ".2f",
+        "note": "f-string 的格式说明符，f\"{avg:.2f}\" 等价于 C 的 %.2f；冒号后必须写 .2f 才能固定两位小数，只写 f 会输出 6 位，写 %.2f 会抛 ValueError"
+      }
+    ],
+    "analysis": "本题考查整型除法、类型转换与格式化输出的配合，但 Python 与 C 的关键差异就在除法运算符上：Python 的 / 永远是“真除法”，(a + b) / 2 的两个操作数即使都是 int，结果也是 float，所以不需要像 C 那样把除数写成 2.0 或先做 (double) 强制转换；相反，如果写成 (a + b) // 2，得到的是向下取整的 int，再交给 .2f 格式化只会输出 x.00。第二空是 f-string 的格式说明符，f\"{avg:.2f}\" 与 C 的 printf(\"%.2f\", avg) 等价，冒号后面的 .2f 表示定点两位小数，漏写 f 或把 %.2f 塞进 f-string 都会出错。读入用 map(int, input().split()) 一次把一行里的两个字符串转成 int，对应 C 的 scanf(\"%d%d\", &a, &b)。常见错误：用 // 求平均值、格式说明符写错、以及以为 Python 也要像 C 一样做类型提升。"
+  },
+  "基-05": {
+    "stem": "下面程序判断输入的年份是否为闰年（能被 4 整除但不能被 100 整除，或者能被 400 整除）。请填空。\n\n```python\nyear = ①\nif year % 4 == 0 and year % 100 != 0 or ②:\n    print(\"yes\")\nelse:\n    print(\"no\")\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "int(input())",
+        "note": "input() 返回字符串，必须用 int() 转成整数；Python 没有 scanf，更没有“取地址 &year”这一步"
+      },
+      {
+        "no": "②",
+        "answer": "year % 400 == 0",
+        "note": "and 的优先级高于 or，与 C 的 && 高于 || 一致，整个条件不加括号也是对的"
+      }
+    ],
+    "analysis": "本题考查 if 条件与逻辑运算符的组合。闰年的判定是两条并列的充分条件：普通闰年（能被 4 整除且不能被 100 整除）与世纪闰年（能被 400 整除），前者的两个子条件用 and 连接，两部分之间用 or 连接。Python 的 and/or 与 C 的 &&/|| 优先级关系一致（and 高于 or）并且都短路求值，所以条件不加括号也正确。第一空 int(input())：input() 返回的是字符串，必须显式转换成 int，Python 没有 scanf，也就没有“必须传地址”这条规则，C 版的第一空 &year 在 Python 里根本不存在。易错点：把 == 写成 =（Python 会直接报语法错误）、把 and/or 写成 &/|（那是按位运算，优先级也不同）、把两条条件都用 and 连接（那样 2000 会被误判为非闰年）。输入 2024 输出 yes，输入 1900 输出 no，输入 2000 输出 yes。"
+  },
+  "基-07": {
+    "solution": "x = float(input())\n\nif x < 0:\n    y = x\nelif x < 10:\n    y = 2 * x + 1\nelse:\n    y = x - 3\n\nprint(f\"{y:.2f}\")\n",
+    "analysis": "本题训练 if-elif 多分支与浮点数的输入输出。三个区间互斥且连续，只要按 x < 0、x < 10、其余 的先后顺序判断，第二个分支自然就表示 0 ≤ x < 10，不必写复合条件；判断顺序不能颠倒，否则 x = -1 会先命中后面的分支。Python 用 float(input()) 读入实数，没有 C 的 %lf 与 double/float 之分，一个 float 就是双精度；输出 f\"{y:.2f}\" 等价于 printf(\"%.2f\", y)。一个有意思的差异：Python 支持链式比较，写成 0 <= x < 10 是正确且推荐的，而同样的写法在 C 里会先算 0 <= x 得到 0/1 再与 10 比较，结果恒真。时间复杂度 O(1)，空间复杂度 O(1)。易错点：用 int(input()) 读入（带小数点的实数会直接抛 ValueError）、把 2x + 1 写成 2 * (x + 1)、漏掉最后的 else 使某些输入没有输出、以及用 // 计算导致结果为整数。",
+    "points": [
+      "用 float(input()) 正确读入实数 x",
+      "按 x < 0、x < 10、其余 的顺序写出 if-elif-else 三分支",
+      "每个分支套用正确的表达式，特别是 2 * x + 1",
+      "用 f\"{y:.2f}\" 输出，结果保留两位小数"
+    ]
+  },
+  "基-10": {
+    "stem": "下面程序计算 1 + 2 + … + n 并输出。请填空。\n\n```python\nn = int(input())\ntotal = 0\nfor i in range(1, ①):\n    total += ②\nprint(total)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "n + 1",
+        "note": "range 的右端不包含，要取到 n 必须写 n + 1；写成 n 会漏加 n"
+      },
+      {
+        "no": "②",
+        "answer": "i",
+        "note": "把当前循环变量累加进 total；变量名用 total 是为了不遮蔽内置函数 sum"
+      }
+    ],
+    "analysis": "本题考查循环与累加求和，重点是 Python 的 for 与 C 的 for 完全不是一回事：Python 的 for 是“遍历可迭代对象”，没有初始化、条件、自增这三要素，range(1, n + 1) 依次产生 1、2、…、n，右端不包含，所以第一空必须写 n + 1，写成 n 会漏掉 n。第二空把当前循环变量 i 累加到 total 上。累加变量必须在循环之前初始化为 0；变量名用 total 而不是 sum，是为了不遮蔽内置函数 sum——Python 里 sum(range(1, n + 1)) 一行就能算完，作为解题写法也完全可以。若一定要用 while，就要自己维护三部分：i = 1、while i <= n:、i += 1。常见错误：range(1, n) 漏项、把 total += i 写成 total = i、忘记初始化 total。"
+  },
+  "基-13": {
+    "stem": "下面程序把输入的正整数按位逆序输出（例如输入 123 输出 321）。请填空。\n\n```python\nn = int(input())\nwhile n > 0:\n    r = ①\n    print(r, end=\"\")\n    n = ②\nprint()\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "n % 10",
+        "note": "取最低位；等价写法 n - n // 10 * 10，但没必要"
+      },
+      {
+        "no": "②",
+        "answer": "n // 10",
+        "note": "必须用整除 //；Python 的 / 会得到浮点，n 变成 float 后取位全部失效"
+      }
+    ],
+    "analysis": "本题考查 while 循环与整数取位。对正整数 n，n % 10 取出最低位，n // 10 去掉最低位，两者配合就能从低位到高位依次输出每一位，正好实现按位逆序；循环条件 n > 0 保证处理完所有位后自然结束。第二空必须用整除 //：Python 的 / 是真除法，n = n / 10 会让 n 变成 float（如 123 变成 12.3），下一轮 n > 0 仍然成立，但 n % 10 变成小数、n // 10 也不再是“去掉一位”，输出会错甚至死循环。输出用 print(r, end=\"\") 让各位数字紧挨着，对应 C 里不带换行的 printf(\"%d\", r)；循环结束后单独一个 print() 补上换行，对应 C 的 printf(\"\\n\")。输入 123 输出 321；输入 1200 会输出 0021，这是“按位逆序”的正常结果，str(n)[::-1] 也是同样效果。易错点：把 % 与 // 写反、用 / 代替 //、忘记 end=\"\" 导致每位占一行。"
+  },
+  "基-15": {
+    "solution": "n = int(input())\n\nterm = 1\ntotal = 0\nfor i in range(1, n + 1):\n    term *= i\n    total += term\n\nprint(total)\n",
+    "analysis": "核心是递推：i! = (i-1)! × i，所以在一次循环里维护“当前阶乘” term，每轮先 term *= i 再 total += term，边乘边加，时间复杂度 O(n)。如果每算一个阶乘都用内层循环从头再乘一遍，复杂度会退化到 O(n²)，虽然本题 n ≤ 10 也能通过，但不是好写法。Python 的 int 是任意精度整数，不存在 C 里 long long 溢出的问题：即使 n 取得更大也不会溢出，也不需要像 C 版那样用 %lld 输出，这是本题在 Python 下最省心的地方。实现细节：term 初值必须是 1（0 乘任何数都是 0），total 初值必须是 0，range 右端写 n + 1 才能取到 n。n = 5 时 1!+2!+3!+4!+5! = 1+2+6+24+120 = 153。也可以写 sum(math.factorial(i) for i in range(1, n + 1))，但那是 O(n²) 的写法，考试建议手写递推。易错点：total 忘记初始化为 0、term 忘记初始化为 1、把 term *= i 写成 term *= n、range 右端漏写 1。",
+    "points": [
+      "正确定义 term、total 并分别初始化为 1 和 0",
+      "每轮先用 term *= i 递推出 i 的阶乘",
+      "把 term 累加到 total 上，避免重复计算阶乘",
+      "range 右端写 n + 1，保证遍历到 n"
+    ]
+  },
+  "基-17": {
+    "stem": "下面程序按百分制成绩输出等级：90 分及以上为 A，80~89 为 B，70~79 为 C，70 分以下为 D。请填空。\n\n```python\nscore = int(input())\nmatch ①:\n    case 10 | 9:\n        print(\"A\")\n    case 8:\n        print(\"B\")\n    case 7:\n        print(\"C\")\n    case ②:\n        print(\"D\")\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "score // 10",
+        "note": "整数除法把 0~100 压缩成 0~10；不能写 score / 10，那样得到 float，匹配不上任何整数模式"
+      },
+      {
+        "no": "②",
+        "answer": "_",
+        "note": "case _ 是通配分支，相当于 C 的 default"
+      }
+    ],
+    "analysis": "本题考查多分支的写法。C 的 switch 在 Python 3.10+ 里由 match/case 承担：第一空 score // 10 用整数除法把 0~100 压缩成 0~10（C 里写 score / 10，因为两个 int 相除才自动取整；Python 的 / 得到 float，模式匹配会直接失配，必须写 //），90~99 得 9、100 得 10、80~89 得 8、70~79 得 7。第二空 case _ 是通配模式，相当于 C 的 default。两者还有两个重要差异：case 10 | 9 是“或模式”，一个分支并列多个取值，等价于 C 里 case 10: case 9: 共享同一段代码；Python 的 match 每个 case 执行完就自动结束，不需要 break，因此也不会出现 C 里漏写 break 而贯穿到下一个 case 的错误。如果不用 match，用 if-elif 判断 score >= 90、score >= 80、score >= 70 等区间也行，但边界要写对。易错点：用 score / 10 得到 float、把 case _ 写成 default、以及习惯性写 break（在 match 里是语法错误）。"
+  },
+  "基-20": {
+    "stem": "下面程序判断输入的大于 1 的整数是否为素数，要求发现因子后立即退出循环。请填空。\n\n```python\nn = int(input())\ni = 2\nflag = True\n\nwhile i * i <= n:\n    if n % i == 0:\n        flag = False\n        ①\n    i += 1\n\nif ②:\n    print(\"prime\")\nelse:\n    print(\"not prime\")\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "break",
+        "note": "已确定不是素数，立即跳出 while；写 continue 会继续无效试除"
+      },
+      {
+        "no": "②",
+        "answer": "flag",
+        "note": "flag 是 bool，本身就是真值，不必写 flag == True"
+      }
+    ],
+    "analysis": "本题考查素数判定与提前退出。Python 没有 C 的 for (i = 2; i * i <= n; i++) 三要素写法，这里用 while 手工维护 i：条件 i * i <= n 表示只需试除到 √n，既避免了调用开方函数，也避免了浮点误差；每轮判断 n % i == 0，一旦成立就置 flag = False 并立即 break（第一空），因为结论已经确定，继续试除只是浪费，写 continue 则循环仍会跑完。第二空直接用布尔变量 flag 作条件即可，True/False 本身就是真值。循环结束后若 flag 仍为 True，说明 2~√n 之间没有因子，n 是素数。输入 17 输出 prime，输入 18 输出 not prime，输入 2 也输出 prime（i * i <= 2 一开始就不成立，循环不执行）。更 Python 的写法是把判定封装成函数用 return 提前返回。易错点：用 / 代替 //、忘记 i += 1 造成死循环、以及只置 flag 而忘记 break（结果虽对但不满足“立即退出”）。"
+  },
+  "基-22": {
+    "solution": "import sys\n\ndata = sys.stdin.read().split()\nn = int(data[0])\n\nneg = zero = pos = 0\nfor tok in data[1:1 + n]:\n    x = int(tok)\n    if x > 0:\n        pos += 1\n    elif x < 0:\n        neg += 1\n    else:\n        zero += 1\n\nprint(neg, zero, pos)\n",
+    "analysis": "本题考的是“读一个处理一个”的在线统计：不需要把 n 个数存进列表，每读入一个就更新对应计数器，时间复杂度 O(n)，额外空间 O(1)。Python 里最稳妥的读法是 sys.stdin.read().split() 一次取出全部 token，第一个是 n，后面用切片 data[1:1 + n] 取 n 个数——这样不依赖换行位置，即使数据跨行也不会错。三个分支用 if-elif-else 保证互斥，顺序可以任意。输出顺序是“负数 零 正数”，与常见习惯不同，这是本题最主要的失分点；print(neg, zero, pos) 用单个空格分隔并自动换行，正好符合输出格式。易错点：输出顺序写反、把开头的 n 也当成数据统计（忘记切片）、以及用三个独立 if 时条件写错导致重复计数。样例 3 -1 0 5 -2 0 8 中负数 2 个、零 2 个、正数 3 个，输出 2 2 3。",
+    "points": [
+      "正确读入 n 以及其后的 n 个整数（切片或循环均可）",
+      "三个计数器初始化为 0",
+      "用 if-elif-else 三分支互斥地区分正数、负数和零",
+      "按“负数 零 正数”的顺序用 print 输出"
+    ]
+  },
+  "基-24": {
+    "stem": "下面程序用辗转相除法求两个正整数的最大公约数。请填空。\n\n```python\na, b = map(int, input().split())\nwhile ①:\n    a, b = b, a % b\nprint(②)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "b != 0",
+        "note": "也可直接写 b：非零即真"
+      },
+      {
+        "no": "②",
+        "answer": "a",
+        "note": "循环结束时 b 已为 0，最大公约数留在 a 中"
+      }
+    ],
+    "analysis": "本题考查辗转相除法（欧几里得算法）。循环条件是 b != 0（也可以直接写 b，非零即真）：令余数为 a % b，若余数不为 0，就让 a、b 整体后移继续，直到 b 为 0，此时 a 就是最大公约数。Python 的元组赋值 a, b = b, a % b 会先把右边两个表达式的值都算出来，再一起赋给左边，因此天然避免了 C 里必须引入临时变量 t 的问题——这是本题最值得体会的语言差异，C 版若不写 t 直接 a = b; b = a % b; 就会因为 a 被覆盖而算错。循环结束后答案在 a 中而不是 b 中（第二空），此时 b 已经等于 0。复杂度 O(log min(a, b))，比从较小值开始逐个试除快得多。输入 12 18 输出 6。实际开发中可以直接调用 math.gcd，但考试要求手写算法。易错点：条件写成 a != 0、输出 b、以及把元组赋值拆成两条语句。"
+  },
+  "基-27": {
+    "solution": "for i in range(1, 10):\n    row = [f\"{j}*{i}={j * i}\" for j in range(1, i + 1)]\n    print(\" \".join(row))\n",
+    "analysis": "本题考查二重循环与输出格式控制。外层 i 控制行号，从 1 到 9（range(1, 10) 右端不含 10）；内层 j 控制每行的列号，从 1 到 i，因此第 i 行恰好有 i 个算式，形成下三角。乘法的两个因数按“j*i”的顺序输出，与常见写法“i*j”相反，必须对照样例，否则数值相同而文本不同。行末不能有多余空格：先用列表推导拼出整行，再 \" \".join(row)，join 只在元素之间插入分隔符，天然不会在行末多出空格；C 版则要判断 j > 1 再补空格。时间复杂度 O(n²)，共输出 45 个算式。易错点：内层写成 range(1, 10) 得到完整方阵、用 print(end=\" \") 逐段输出导致行末多空格、把 j 和 i 的位置写反、以及忘记 f-string 的花括号会按值替换。若想写得更短，可以合成一行：print(\" \".join(f\"{j}*{i}={j * i}\" for j in range(1, i + 1)))。",
+    "points": [
+      "外层 range(1, 10) 控制行号 i 从 1 到 9",
+      "内层 range(1, i + 1) 控制列号 j 从 1 到 i，形成下三角",
+      "算式按 j*i=积 的顺序输出，因数位置正确",
+      "用 \" \".join(...) 保证相邻算式只有一个空格、行末无多余空格"
+    ]
+  },
+  "基-28": {
+    "stem": "下面程序统计一行字符中字母、数字和其他字符的个数（以回车结束）。请填空。\n\n```python\nletter = digit = other = 0\nline = input()\nfor ch in line:\n    if 'a' <= ch <= 'z' or 'A' <= ch <= 'Z':\n        ①\n    elif ②:\n        digit += 1\n    else:\n        other += 1\nprint(letter, digit, other)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "letter += 1",
+        "note": "也可写 letter = letter + 1；Python 没有 ++ 运算符"
+      },
+      {
+        "no": "②",
+        "answer": "'0' <= ch <= '9'",
+        "note": "Python 支持链式比较，等价于 ch >= '0' and ch <= '9'"
+      }
+    ],
+    "analysis": "本题考查逐字符统计。Python 没有 getchar 与独立的“字符”类型：input() 一次读入整行并自动去掉行末换行符，for ch in line 直接遍历字符串里的每个字符（长度为 1 的 str），所以 C 里 (ch = getchar()) != '\\n' 的循环控制、以及 EOF 处理都不需要了。第一空是字母计数自增，注意 Python 没有 ++ 运算符，必须写 letter += 1。第二空给出数字的判断条件，Python 支持链式比较，'0' <= ch <= '9' 等价于 ch >= '0' and ch <= '9'，这在 C 里是不成立的写法（C 会先算 0 <= ch 得到 0/1 再与 9 比较，结果恒真）。字母与数字字符的编码都是连续的，所以范围比较可行。易错点：用 ch.isalpha() / ch.isdigit() 代替范围判断——isdigit 对部分 Unicode 数字也为真，isalpha 会把汉字也算成字母，与 C 的 ASCII 语义不一致。输入 abc123!? 输出 3 3 2。"
+  },
+  "基-31": {
+    "solution": "import math\n\nm, n = map(int, input().split())\n\ncnt = 0\nfor i in range(m, n + 1):\n    if i < 2:\n        continue\n    is_prime = True\n    for j in range(2, math.isqrt(i) + 1):\n        if i % j == 0:\n            is_prime = False\n            break\n    if is_prime:\n        cnt += 1\n\nprint(cnt)\n",
+    "analysis": "本题是素数判定的区间版本，核心仍是试除到 √n。外层遍历 [m, n]，对每个 i 先排除 i < 2 的情况（0 和 1 都不是素数，这一步不能省：内层循环对它们一次都不执行，is_prime 会保持 True 而把 1 误判成素数）；内层从 2 试除到 √i，一旦发现 i % j == 0 就置 is_prime = False 并 break。Python 里推荐用 math.isqrt(i) 作为上界：它是精确的整数平方根，不会像 int(i ** 0.5) 那样在大数上因浮点误差少算 1，而且只算一次。总复杂度约为 O((n - m + 1)·√n)，n ≤ 1000 时非常快。样例 10 30 内的素数是 11、13、17、19、23、29，共 6 个。易错点：忘记排除 1、用 i ** 0.5 引入浮点误差、把 is_prime 初始化写在循环外导致上一轮的 False 残留、以及把“个数”和“和”混淆。",
+    "points": [
+      "正确读入区间端点 m、n",
+      "对每个 i 先排除 i < 2 的情况",
+      "用 math.isqrt(i) 作试除上界，发现因子立即 break 并置标记",
+      "循环结束后按标记累加计数，输出总个数"
+    ]
+  },
+  "基-34": {
+    "solution": "import sys\n\nparts = sys.stdin.read().split()\na = int(parts[0])\nop = parts[1]\nb = int(parts[2])\n\nif op == '+':\n    print(a + b)\nelif op == '-':\n    print(a - b)\nelif op == '*':\n    print(a * b)\nelif op == '/':\n    if b == 0:\n        print(\"error\")\n    else:\n        print(f\"{a / b:.2f}\")\nelse:\n    print(\"error\")\n",
+    "analysis": "读入一行“整数 运算符 整数”最省事的方式是 sys.stdin.read().split()（或 input().split()）按空白切成三段，第一、三段转 int，中间那段原样当作运算符字符串。C 里必须写 \"%d %c %d\" 并特别留意 %c 前面的空格，否则会把前一个整数残留的空白当成运算符读进来；Python 的 split() 天生按空白切分，这个问题完全不存在。除法分支要先判断 b == 0——Python 除以 0 会抛 ZeroDivisionError 而不是返回 inf——再输出 f\"{a / b:.2f}\"；因为 Python 的 / 是真除法，不需要像 C 那样先 (double)a 强制转换，也绝不能用 //（会向下取整）。加、减、乘输出整数结果，其余情况一律输出 error，保证任何输入都有输出。时间复杂度 O(1)。易错点：除数为 0 未处理、用 // 导致 7 / 2 输出 3、把运算符当数字去 int()、以及非法运算符时没有 else 分支而没有输出。样例 7 / 2 输出 3.50；5 % 3 与 8 / 0 都输出 error。",
+    "points": [
+      "正确切分并读入两个整数与一个运算符",
+      "按 +、-、*、/ 四个分支分别处理",
+      "除法分支先判断除数为 0，再用 / 计算并输出保留两位小数",
+      "非法运算符统一输出 error，保证任何输入都有输出"
+    ]
+  },
+  "基-36": {
+    "stem": "下面程序不断读入整数并统计个数与平均值，遇到第一个非数字输入时停止。请填空。\n\n```python\nimport sys\n\ntokens = ①\ncnt = 0\ntotal = 0\n\nfor tok in tokens:\n    try:\n        x = int(tok)\n    except ValueError:\n        break\n    cnt += 1\n    total += x\n\nif cnt > 0:\n    print(f\"{②:.2f}\")\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "sys.stdin.read().split()",
+        "note": "一次读入全部输入并按空白切分成字符串列表；只读一行可写 input().split()"
+      },
+      {
+        "no": "②",
+        "answer": "total / cnt",
+        "note": "Python 的 / 直接得到 float，不需要像 C 那样先强制转换"
+      }
+    ],
+    "analysis": "本题考查“读入直到非法输入”的写法。C 依赖 scanf 的返回值：%d 成功读入返回 1，遇到无法转换的字符返回 0，输入结束返回 EOF，所以循环条件写 == 1。Python 没有这种返回值，int() 在转换失败时会抛出 ValueError，因此这里采用 EAFP 风格：先 try 转换，捕获 ValueError 就 break，正好表达“遇到第一个非数字输入就停止”。第一空 sys.stdin.read().split() 一次读入全部输入再按空白切分成列表，这样能覆盖多行输入；如果确定只有一行，input().split() 也可以。第二空求平均值，Python 的 / 直接得到 float，不需要像 C 那样先 (double) 强制转换，也就不会出现整数除法截断。注意循环也可能因为输入耗尽而自然结束（例如 1 2 3 后直接 EOF），两种结束方式结果一致；cnt 为 0 时不输出，对应 C 的 if (cnt > 0)。输入 1 2 3 x 输出 2.00。细节差异：int(\"12abc\") 会整体失败，而 C 的 scanf(\"%d\") 会读走前缀 12。"
+  },
+  "基-39": {
+    "stem": "下面程序计算 S = 1 + (1 + 2) + … + (1 + 2 + … + n)。请填空。\n\n```python\nn = int(input())\ns = 0\nfor i in range(1, n + 1):\n    t = 0\n    for j in range(1, ①):\n        t += j\n    s += ②\nprint(s)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "i + 1",
+        "note": "第 i 轮要算 1+2+…+i，range 右端不包含，所以写 i + 1"
+      },
+      {
+        "no": "②",
+        "answer": "t",
+        "note": "把本轮的内层和累加到 s；整句也可写成 s = s + t"
+      }
+    ],
+    "analysis": "本题考查二重循环与累加。外层变量 i 表示“第几项”，第 i 项正是 1 + 2 + … + i，所以内层 range 的右端要写 i + 1（第一空）——range 右端不包含，写成 i 就会少加最后一项 i。内层用 t 累加出这一项，内层结束后再 s += t（第二空）把整项加到总和上。t = 0 必须写在 for i 循环体内、内层循环之前，这样每一轮都会重新清零；若把 t 移到循环外只初始化一次，上一轮的和会残留，结果偏大。n = 3 时三项分别为 1、3、6，总和为 10。该算法的时间复杂度是 O(n²)；注意到 1+2+…+i = i(i+1)//2，可以改成单层循环把复杂度降到 O(n)，Python 里也能写成 sum(sum(range(1, i + 1)) for i in range(1, n + 1))。易错点：range 右端写错、t 忘记清零、把 s += t 写成 s = t。"
+  },
+  "基-41": {
+    "solution": "year, month, day = map(int, input().split())\n\ndays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]\nif (year % 4 == 0 and year % 100 != 0) or year % 400 == 0:\n    days[1] = 29\n\ntotal = day + sum(days[:month - 1])\nprint(total)\n",
+    "analysis": "把每个月的天数放进列表 days，下标 0 对应 1 月；若是闰年就把 days[1] 改成 29（列表可变，直接赋值即可）。闰年条件是 (year % 4 == 0 and year % 100 != 0) or year % 400 == 0，两部分缺一不可，否则 1900 会被误判为闰年、2024 年 3 月 1 日也会算错。累加 1 月到 month - 1 月的天数直接用切片求和 sum(days[:month - 1])，比 C 的 for 循环更简洁，切片长度正好是 month - 1，也不容易像 C 那样写下标错位；最后加上 day。月份数最多 12 个，时间与空间都是 O(1)。样例 2024 3 1：31 + 29 + 1 = 61。易错点：把 days[month - 1] 当月的天数也加进去、闰年判断漏掉能被 400 整除这一条、以及写成 days[:month] 多算一个月。",
+    "points": [
+      "正确定义月份天数列表并读入年月日",
+      "用完整条件判断闰年，闰年时把 2 月改为 29 天",
+      "用 sum(days[:month - 1]) 累加之前各月天数，再加上 day",
+      "按格式输出结果"
+    ]
+  },
+  "基-43": {
+    "stem": "下面程序先读入一个整数，再统计随后一行中字符的个数（不含换行符）。请填空。\n\n```python\nn = int(input())\nline = ①\ncnt = ②\nprint(n, cnt)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "input()",
+        "note": "input() 读入一整行，并把行末的换行符去掉"
+      },
+      {
+        "no": "②",
+        "answer": "len(line)",
+        "note": "len() 直接返回字符串长度，不含换行符"
+      }
+    ],
+    "analysis": "本题是三种语言差异最明显的一题。C 的 scanf(\"%d\") 读入整数后会把后面的换行符留在输入缓冲区里，所以必须先用 getchar() 把它吃掉，否则后面的 getchar 立刻读到 '\\n'，while 条件第一次就不成立、cnt 恒为 0。Python 的 input() 天生按行读取，返回值里已经不含行末换行符，“读掉换行”这一步完全不存在：第一空 input() 读入随后的一整行，第二空 len(line) 直接得到字符个数（不含换行符）。输入第一行 5、第二行 hello，输出 5 5。若不用 len，也可以 cnt = 0 再 for ch in line: cnt += 1 手写计数，但 len() 才是 Python 的标准做法。易错点：以为 input() 会把换行也读进来；用 input().split() 后再求长度（那会变成单词数而不是字符数）；以及在读完整数后多调用一次 input() 想“吃掉换行”，结果把真正的数据行吃掉了。"
+  },
+  "基-46": {
+    "solution": "n = int(input())\n\ncnt = 0\nwhile n != 0:\n    cnt += n & 1\n    n >>= 1\n\nprint(cnt)\n",
+    "analysis": "把 n 看成二进制数：每轮用 n & 1 取出最低位并累加，然后 n >>= 1 整体右移一位，直到 n 变成 0。13 的二进制是 1101，其中有 3 个 1，所以输出 3。Python 的 int 是任意精度整数、也没有 unsigned 类型，因此不像 C 那样需要 unsigned int 配 %u：输入 4294967295 会直接读成普通整数，循环 32 轮得到 32，不会溢出。循环次数等于二进制位数，时间复杂度 O(log n)，空间 O(1)。更巧的写法是每轮 n &= n - 1，一次消掉最低位的 1，循环次数正好等于 1 的个数；实际开发中还可以直接用 int.bit_count()（Python 3.10+）或 bin(n).count(\"1\") 一行解决。易错点：用 n / 2 代替右移（会变成 float 造成死循环）、忘记右移、以及把输入当有符号数处理负数（Python 里负数右移是算术右移、永远不会变成 0，本题范围不含负数）。",
+    "points": [
+      "正确处理 32 位无符号整数的输入范围（Python 整数无需特殊类型）",
+      "循环条件为 n != 0，逐位处理",
+      "用 n & 1 判断最低位并计数",
+      "每轮把 n 右移一位，最后输出计数"
+    ]
+  },
+  "基-48": {
+    "stem": "下面程序利用 ASCII 码的位规律转换字母大小写：大写字母的二进制第 5 位（权值 0x20）为 0，小写字母为 1。请填空。\n\n```python\nc = input()[0]\nif 'A' <= c <= 'Z':\n    c = chr(ord(c) ① 0x20)      # 转成小写\nelif 'a' <= c <= 'z':\n    c = chr(ord(c) ② 0x20)      # 转成大写\nprint(c)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "|",
+        "note": "按位或 0x20，把第 5 位置 1"
+      },
+      {
+        "no": "②",
+        "answer": "& ~",
+        "note": "按位与 ~0x20 把第 5 位清 0；~0x20 的低 8 位即 0xDF，也可直接写 & 0xDF"
+      }
+    ],
+    "analysis": "本题考查 ASCII 码的位规律与大小写转换。大写 A~Z 的码值是 0x41~0x5A，小写 a~z 是 0x61~0x7A，两者恰好只差第 5 位（权值 0x20）：大写该位为 0，小写该位为 1。所以大写转小写用按位或把该位置 1（第一空 c | 0x20），小写转大写用按位与把该位清 0（第二空 c & ~0x20）。Python 没有 char 类型，单个字符是长度为 1 的 str，做位运算前必须先用 ord() 取出码点，算完再用 chr() 转回字符——这对应 C 里 (char) 的强制转换。Python 的整数是任意精度，~0x20 的值是 -33 而不是 C 里的 0xDF，但与正数按位与的结果仍然正确地清掉了第 5 位，写成 & 0xDF 完全等价。示例：G（0x47）| 0x20 = 0x67 → g；m（0x6D）& ~0x20 = 0x4D → M。程序中先判断字符是否在字母范围内，是因为位运算对其他字符会产生乱码。实际开发直接用 c.lower() / c.upper() / c.swapcase()，本题是位运算练习。易错点：漏写 ord()/chr()、把 | 与 & 用反、以及忘记范围判断。"
+  }
+}

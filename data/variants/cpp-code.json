@@ -1,0 +1,662 @@
+{
+ "基-03": {
+  "analysis": "C++ 用 cin/cout 取代 scanf/printf：输入直接写变量名，不用取地址符；输出用 fixed 与 setprecision(2) 控制两位小数，比 printf 的 %.2f 更容易写错，必须包含 <iomanip>。\n自动类型转换规则与 C 一致：(a + b) / 2.0 靠 double 字面量把整个除法提升为浮点除法，C++ 里还可以写 static_cast<double>(a + b) / 2。若想沿用 printf，包含 <cstdio> 即可，格式串 %.2f 的语义完全不变。",
+  "stem": "下面程序读入两个整数，输出它们的平均值（保留 2 位小数）。请填空。\n\n```cpp\n#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    int a, b;\n    double avg;\n\n    cin >> a >> b;\n    avg = ①;\n    cout << fixed << ② << avg << endl;\n    return 0;\n}\n```",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "(a + b) / 2.0",
+    "note": "也可写 static_cast<double>(a + b) / 2；两个 int 直接相除仍是整数除法"
+   },
+   {
+    "no": "②",
+    "answer": "setprecision(2)",
+    "note": "与 fixed 配合表示两位小数，需要包含 <iomanip>；少了 fixed 就变成两位有效数字"
+   }
+  ]
+ },
+ "基-05": {
+  "analysis": "C++ 的 >> 是流提取运算符重载，它按变量的类型自动解析输入并直接写入变量，所以第一空只写 year；这一点和 C 的 scanf(\"%d\", &year) 正好相反——在 C 里漏掉 & 是常见错误，在 C++ 里写成 &year 反而编译不过。\n第二空的整除判断在 C++ 中同样是整数模运算，逻辑运算符优先级也和 C 完全一致，短路求值保证 year % 100 != 0 与 year % 400 == 0 的组合判断不会出错。",
+  "stem": "下面程序判断输入的年份是否为闰年（能被 4 整除但不能被 100 整除，或者能被 400 整除）。请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int year;\n\n    cin >> ①;\n    if (year % 4 == 0 && year % 100 != 0 || ②)\n        cout << \"yes\" << endl;\n    else\n        cout << \"no\" << endl;\n    return 0;\n}\n```",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "year",
+    "note": "cin 直接绑定变量，不需要 C 语言 scanf 的 & 取地址符号"
+   },
+   {
+    "no": "②",
+    "answer": "year % 400 == 0",
+    "note": "&& 的优先级高于 ||，整个条件不必额外加括号"
+   }
+  ]
+ },
+ "基-07": {
+  "analysis": "C++ 用 cin >> x 直接按 double 类型解析输入：变量 x 已声明为 double，既不需要 scanf 的 %lf，也不需要 & 取地址；这部分与 C 最大的差别就在\"类型安全\"。\n输出用 fixed 配合 setprecision(2)，需要包含 <iomanip>；fixed 是粘性的，设置一次后后续浮点输出都保持定点格式。易错点有三处：把 0 ≤ x < 10 写成 10 > x >= 0 这种连写（C++ 与 C 都不支持），把两个分支的边界写成 x <= 0 / x <= 10 导致 0 和 10 被重复归类，以及忘记 fixed 导致输出科学计数法或位数不对。",
+  "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    double x, y;\n\n    cin >> x;\n    if (x < 0)\n        y = x;\n    else if (x < 10)\n        y = 2 * x + 1;\n    else\n        y = x - 3;\n    cout << fixed << setprecision(2) << y << endl;\n    return 0;\n}"
+ },
+ "基-10": {
+  "analysis": "本题逻辑与语言无关，C++ 版本只是把 scanf/printf 换成 cin/cout，循环条件与累加式一字未改。\n需要注意的是 C++ 里更常见的写法是 for (int i = 1; i <= n; i++)，把循环变量定义在 for 头部，作用域限制在循环内；本题为了与 C 版本逐字对应仍保留了外层声明。累加变量必须初始化为 0，C++ 的局部 int 同样不会自动清零。",
+  "stem": "下面程序计算 1 + 2 + … + n 并输出。请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int i, n, sum = 0;\n\n    cin >> n;\n    for (i = 1; ①; i++)\n        sum += ②;\n    cout << sum << endl;\n    return 0;\n}\n```"
+ },
+ "基-13": {
+  "analysis": "按位拆解用 % 10 取最低位、/ 10 丢掉最低位，C++ 的整数除法同样向零截断，所以对正整数来说 n / 10 就是去掉末位。\n输出改成 cout 后每位数字直接连写，不需要 \"%d\" 这样的格式符；末尾用 endl 换行。C++ 里还可以用 auto 或范围 for 处理这类遍历，但这里是对整数做位运算，仍用 while 最自然。",
+  "stem": "下面程序把输入的正整数按位逆序输出（例如输入 123 输出 321）。请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int n, r;\n\n    cin >> n;\n    while (n > 0) {\n        r = ①;\n        cout << r;\n        n = ②;\n    }\n    cout << endl;\n    return 0;\n}\n```"
+ },
+ "基-15": {
+  "analysis": "阶乘增长很快，5! = 120 尚在 int 范围内，但累加到 10! 时和已超过 int，因此累加项 term 与总和 sum 都用 long long；C++ 输出 long long 不需要格式串，cout 会自动匹配。\nC++ 也可以写 std::accumulate 或递归，但本题最优是\"边乘边加\"的单层循环，O(n) 时间、O(1) 空间。易错点：每轮忘记 term *= i 而重新从 1 连乘（会退化成 O(n²) 且容易溢出）、sum 未初始化、以及用 int 存结果导致溢出。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int i, n;\n    long long term = 1, sum = 0;\n\n    cin >> n;\n    for (i = 1; i <= n; i++) {\n        term *= i;\n        sum += term;\n    }\n    cout << sum << endl;\n    return 0;\n}"
+ },
+ "基-17": {
+  "analysis": "switch 的表达式在 C++ 中必须是整型或枚举类型，score / 10 把 0~100 压成 0~10 的整数，仍是整型，完全合法（C++ 不允许用浮点或字符串做 case 标签）。\n第二个空必须是 break 才能阻止贯穿：C++ 的 case 标签同样只是跳转目标，不会自动跳出。C++17 也可以用 if-else 链，但 switch 更贴近考点。",
+  "stem": "下面程序按百分制成绩输出等级：90 分及以上为 A，80~89 为 B，70~79 为 C，70 分以下为 D。请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int score;\n\n    cin >> score;\n    switch (①) {\n    case 10:\n    case 9:\n        cout << \"A\" << endl;\n        ②;\n    case 8:\n        cout << \"B\" << endl;\n        break;\n    case 7:\n        cout << \"C\" << endl;\n        break;\n    default:\n        cout << \"D\" << endl;\n    }\n    return 0;\n}\n```"
+ },
+ "基-20": {
+  "analysis": "试除到 i * i <= n 即可，C++ 的 int 乘法同样可能溢出，n 很大时更稳妥的写法是 i <= n / i。\n发现因子后必须 break 提前结束，写 continue 只是跳过本轮，循环还会白跑。第二个空判断标志位，C++ 更推荐用 bool isPrime = true; 表达语义，判断时写 if (isPrime)，本题保留 int 以便与 C 版本对照。",
+  "stem": "下面程序判断输入的大于 1 的整数是否为素数，要求发现因子后立即退出循环。请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int n, i, flag = 1;\n\n    cin >> n;\n    for (i = 2; i * i <= n; i++) {\n        if (n % i == 0) {\n            flag = 0;\n            ①;\n        }\n    }\n    if (②)\n        cout << \"prime\" << endl;\n    else\n        cout << \"not prime\" << endl;\n    return 0;\n}\n```"
+ },
+ "基-22": {
+  "analysis": "统计三类个数只需一个循环加三个计数器，C++ 的 cin >> x 会自动跳过空白，连续读 n 个整数非常自然。\n与 C 版本的区别仅在于输入输出：不需要 &x，也不需要记住 %d 的个数。易错点：输出顺序是\"负数、零、正数\"，与常见习惯（正负零）不同，题目样例 2 2 3 可以帮助自查；另外必须按题意读入 n 次，不能读到 EOF 才停。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int n, i, x;\n    int neg = 0, zero = 0, pos = 0;\n\n    cin >> n;\n    for (i = 0; i < n; i++) {\n        cin >> x;\n        if (x > 0)\n            pos++;\n        else if (x < 0)\n            neg++;\n        else\n            zero++;\n    }\n    cout << neg << \" \" << zero << \" \" << pos << endl;\n    return 0;\n}"
+ },
+ "基-24": {
+  "analysis": "辗转相除的核心是 while (b != 0) 持续用余数替换，循环结束时 b == 0，答案留在 a 中；C++ 的 % 运算对正整数与 C 完全相同。\nC++17 还可以直接调用 std::gcd（<numeric> 头文件），一行就能得到结果，但本题考查手写循环，考试中仍应写出过程。注意把 while 条件误写成 a != 0 会导致除零或死循环。",
+  "stem": "下面程序用辗转相除法求两个正整数的最大公约数。请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int a, b, t;\n\n    cin >> a >> b;\n    while (①) {\n        t = a % b;\n        a = b;\n        b = t;\n    }\n    cout << ② << endl;\n    return 0;\n}\n```"
+ },
+ "基-27": {
+  "analysis": "双层循环打印下三角：外层 i 从 1 到 9，内层 j 从 1 到 i，C++ 的 cout 链式输出让\"j*i=积\"这种拼接很直观。\n关键是行末不能有多余空格，所以采用\"先判断 j > 1 再输出空格\"的写法，而不是在每行末尾补空格。C 版本用 printf(\"%d*%d=%d\") 同样可行；C++ 也可以先用 ostringstream 拼好一行再整行输出。易错点：把算式写成 i*j（题目要求 j*i）、行末多空格导致判题 PE。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int i, j;\n\n    for (i = 1; i <= 9; i++) {\n        for (j = 1; j <= i; j++) {\n            if (j > 1)\n                cout << \" \";\n            cout << j << \"*\" << i << \"=\" << j * i;\n        }\n        cout << endl;\n    }\n    return 0;\n}"
+ },
+ "基-28": {
+  "analysis": "C++ 读单个字符用 cin.get(ch)，它不会跳过空白和换行，正好可以读到行末的 '\\n' 结束循环；如果写成 cin >> ch，空格会被当成分隔符跳过，字符总数就错了。\n字符大小写与数字的判断依旧依赖 ASCII 编码连续性，也可以改用 <cctype> 里的 isalpha(ch)、isdigit(ch)，但它们对字符的符号性有要求，不如直接比较区间稳妥。",
+  "stem": "下面程序统计一行字符中字母、数字和其他字符的个数（以回车结束）。请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nint main()\n{\n    char ch;\n    int letter = 0, digit = 0, other = 0;\n\n    while (cin.get(ch) && ch != '\\n') {\n        if (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z')\n            ①;\n        else if (②)\n            digit++;\n        else\n            other++;\n    }\n    cout << letter << \" \" << digit << \" \" << other << endl;\n    return 0;\n}\n```"
+ },
+ "基-31": {
+  "analysis": "判断素数的循环条件用 i * i <= n（等价于 i <= sqrt(n)），C++ 里同样成立；m、n 最大 1000，逐个试除完全够用。\n与 C 版本的差异只在 I/O：cin 连续读两个整数，cout 输出计数。易错点：小于 2 的数必须先排除（1 不是素数）；判断内层发现因子要立刻 break，否则重复判断只是浪费时间；i * i 在 n 接近 int 上限时可能溢出，稳健写法是 i <= n / i。若区间很大，应改用埃氏筛。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int m, n, i, cnt = 0;\n\n    cin >> m >> n;\n    for (i = m; i <= n; i++) {\n        int j, isPrime = 1;\n\n        if (i < 2)\n            isPrime = 0;\n        for (j = 2; j * j <= i; j++) {\n            if (i % j == 0) {\n                isPrime = 0;\n                break;\n            }\n        }\n        if (isPrime)\n            cnt++;\n    }\n    cout << cnt << endl;\n    return 0;\n}"
+ },
+ "基-34": {
+  "analysis": "读入\"整数 运算符 整数\"用 cin >> a >> op >> b 即可：op 声明为 char，流提取会自动跳过空格并读入一个字符，比 scanf(\"%d %c %d\") 更不容易写错。\n四种运算用 switch 分派；除法要先把 a 转成 double 再除（写 a / b 会做整数除法），并用 fixed + setprecision(2) 输出两位小数。除数为 0 与运算符非法都要输出 error，因此 default 分支不能漏。易错点：忘记 fixed 导致输出 3.5 而不是 3.50；把 error 的大小写写错；除法前未判 0 导致除零崩溃。",
+  "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    int a, b;\n    char op;\n\n    cin >> a >> op >> b;\n    switch (op) {\n    case '+':\n        cout << a + b << endl;\n        break;\n    case '-':\n        cout << a - b << endl;\n        break;\n    case '*':\n        cout << a * b << endl;\n        break;\n    case '/':\n        if (b == 0)\n            cout << \"error\" << endl;\n        else\n            cout << fixed << setprecision(2) << (double)a / b << endl;\n        break;\n    default:\n        cout << \"error\" << endl;\n    }\n    return 0;\n}"
+ },
+ "函-03": {
+  "analysis": "函数定义、参数传递和返回值在 C++ 中与 C 一致，都是值传递；第一个空返回累加结果 s，不能返回循环结束后的 i。\n第二个空直接把函数调用写在输出语句里，cout 会按返回类型自动匹配输出格式，不需要像 printf 那样写 \"%d\"。C++ 还可以用引用参数 void sum(int n, int &s) 带回结果，或用默认参数简化调用，但本函数只返回一个值，保持 int 返回值最简洁。",
+  "stem": "下面程序通过函数计算 1 + 2 + … + n。请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nint sum(int n)\n{\n    int i, s = 0;\n\n    for (i = 1; i <= n; i++)\n        s += i;\n    return ①;\n}\n\nint main()\n{\n    int n;\n\n    cin >> n;\n    cout << ② << endl;\n    return 0;\n}\n```",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "s",
+    "note": "返回累加结果，不能写 i（循环结束后 i 为 n + 1）"
+   },
+   {
+    "no": "②",
+    "answer": "sum(n)",
+    "note": "把函数调用写在 cout 的输出链里，int 返回值会被流按整数格式输出，不需要格式符"
+   }
+  ]
+ },
+ "函-06": {
+  "analysis": "把素数判定抽成独立函数 isPrime 是两种语言都推荐的模块化写法；C++ 里返回类型仍可用 int（0/1），也可以改成 bool 让语义更清楚。\n主函数边读边判，累计个数与和，cin 连续读取 n 个整数不需要格式串。易错点：n < 2 必须先返回 0；sum 要能容纳负数输入；判断条件写成 i < n 会把完全平方数误判；函数名与标准库无冲突，但若包含 <cmath> 要注意不要把 isPrime 写成 std:: 里的名字。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nint isPrime(int n)\n{\n    int i;\n\n    if (n < 2)\n        return 0;\n    for (i = 2; i * i <= n; i++)\n        if (n % i == 0)\n            return 0;\n    return 1;\n}\n\nint main()\n{\n    int n, i, x, cnt = 0, sum = 0;\n\n    cin >> n;\n    for (i = 0; i < n; i++) {\n        cin >> x;\n        if (isPrime(x)) {\n            cnt++;\n            sum += x;\n        }\n    }\n    cout << cnt << \" \" << sum << endl;\n    return 0;\n}"
+ },
+ "函-08": {
+  "analysis": "数组作形参会退化成指向首元素的指针，这一点 C++ 与 C 相同，所以函数内 sizeof(a) 得到的是指针大小而不是数组长度，必须额外传 n。\nC++ 版本给形参加上了 const，表示函数不会修改数组元素，这种 const 正确性检查比 C 更严格；第二个空要返回保存最大值的 m。实际工程里更推荐 int maxOf(const std::vector<int> &a)，用引用避免拷贝、用 a.size() 代替长度参数。",
+  "stem": "下面程序读入 n（1 ≤ n ≤ 100）个整数，通过函数求数组元素的最大值。请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nint maxOf(const int a[], int n)\n{\n    int i, m;\n\n    m = ①;\n    for (i = 1; i < n; i++)\n        if (a[i] > m)\n            m = a[i];\n    return ②;\n}\n\nint main()\n{\n    int n, i;\n    int a[100];\n\n    cin >> n;\n    for (i = 0; i < n; i++)\n        cin >> a[i];\n    cout << maxOf(a, n) << endl;\n    return 0;\n}\n```"
+ },
+ "函-11": {
+  "analysis": "把\"判断完数\"封装成函数是本题的核心要求：函数内枚举 1 ~ n-1 的真因子并求和，返回是否等于 n。C++ 可以把返回类型写成 bool，用 return s == n; 直接返回比较结果。\n主函数从 1 枚举到 n，用 found 标记是否输出过。易错点：真因子不含自身，所以循环上界是 i < n；1 不是完数（它的真因子只有 0 个，和为 0）；没有完数时要输出 none，不能什么也不输出。n ≤ 1000 时 O(n²) 完全够用。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nbool isPerfect(int n)\n{\n    int i, s = 0;\n\n    for (i = 1; i < n; i++)\n        if (n % i == 0)\n            s += i;\n    return s == n;\n}\n\nint main()\n{\n    int n, i, found = 0;\n\n    cin >> n;\n    for (i = 1; i <= n; i++) {\n        if (isPerfect(i)) {\n            cout << i << endl;\n            found = 1;\n        }\n    }\n    if (!found)\n        cout << \"none\" << endl;\n    return 0;\n}"
+ },
+ "函-13": {
+  "analysis": "递归出口返回 1（0! 与 1! 都是 1），递归体用 n * fact(n - 1) 把规模减一；C++ 的调用栈规则与 C 相同，递归深度同样受栈大小限制。\n返回值类型用 long long，20! 已经超出 int 范围；cout 也不需要 \"%lld\"，会按实参类型自动输出，这正是 iostream 比 printf 安全的地方（用 printf 时把 long long 配成 %d 是常见错误）。C++11 起还可以写成 constexpr 递归，在编译期求值。",
+  "stem": "下面程序用递归函数计算 n!（n ≥ 0）。请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nlong long fact(int n)\n{\n    if (n <= 1)\n        return ①;\n    return n * ②;\n}\n\nint main()\n{\n    int n;\n\n    cin >> n;\n    cout << fact(n) << endl;\n    return 0;\n}\n```"
+ },
+ "函-16": {
+  "analysis": "三个函数分别求最大值、最小值和平均值，参数改用 const vector<int> & 传引用：既避免拷贝，又用 a.size() 取代长度参数，这是 C++ 相对 C 最直接的改进。\n平均值要先把 sum 转成 double 再除，否则整数除法会截断；输出时 fixed + setprecision(2) 对应 C 的 %.2f。易错点：vector 为空时 a[0] 越界（题目保证 n ≥ 1）；把 avg 返回类型写成 int 会丢掉小数；三个函数的初值都应取 a[0] 而不是 0，否则全负数时最大值会错。",
+  "solution": "#include <iostream>\n#include <iomanip>\n#include <vector>\nusing namespace std;\n\nint maxOf(const vector<int> &a)\n{\n    int i, m = a[0];\n\n    for (i = 1; i < (int)a.size(); i++)\n        if (a[i] > m)\n            m = a[i];\n    return m;\n}\n\nint minOf(const vector<int> &a)\n{\n    int i, m = a[0];\n\n    for (i = 1; i < (int)a.size(); i++)\n        if (a[i] < m)\n            m = a[i];\n    return m;\n}\n\ndouble avgOf(const vector<int> &a)\n{\n    int i, sum = 0;\n\n    for (i = 0; i < (int)a.size(); i++)\n        sum += a[i];\n    return (double)sum / (int)a.size();\n}\n\nint main()\n{\n    int n, i;\n    vector<int> a;\n\n    cin >> n;\n    a.resize(n);\n    for (i = 0; i < n; i++)\n        cin >> a[i];\n    cout << maxOf(a) << \" \" << minOf(a) << \" \"\n         << fixed << setprecision(2) << avgOf(a) << endl;\n    return 0;\n}"
+ },
+ "函-17": {
+  "analysis": "static 局部变量的生命周期贯穿整个程序，只在第一次调用时初始化一次，之后每次进入函数都保留上次的值，所以初值必须写 0，返回 ++cnt 才会依次得到 1、2、3；写成 cnt++ 会输出 0、1、2。\nC++11 起局部静态变量的初始化是线程安全的（magic statics），这是 C++ 比 C 更进一步的地方；而函数内部的普通局部变量在两种语言里都不会自动初始化，初值必须显式给出。",
+  "stem": "下面程序用 static 局部变量实现一个计数器，三次调用依次输出 1、2、3（第二空要求使用前置自增 `++cnt`）。请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nint tick()\n{\n    static int cnt = ①;\n\n    return ②;\n}\n\nint main()\n{\n    for (int i = 0; i < 3; i++)\n        cout << tick() << \" \";\n    cout << endl;\n    return 0;\n}\n```"
+ },
+ "函-20": {
+  "analysis": "递归打印二进制利用的是\"先递归处理高位、回溯时打印当前位\"：printBinary(n / 2) 在前、输出 n % 2 在后，天然得到从高到低的顺序，不需要额外数组。\nC++ 的递归与 C 完全相同，只是输出改成 cout << n % 2（不带换行、不带分隔符）。易错点：递归出口要放在输出之前，否则 n == 0 时会多打印一个 0；本题输入 n ≥ 1，若允许 n == 0 应特判输出 0；n 最大 10⁹，int 够用，递归深度约 30 层。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nvoid printBinary(int n)\n{\n    if (n == 0)\n        return;\n    printBinary(n / 2);\n    cout << n % 2;\n}\n\nint main()\n{\n    int n;\n\n    cin >> n;\n    printBinary(n);\n    cout << endl;\n    return 0;\n}"
+ },
+ "数-03": {
+  "analysis": "数组遍历与类型提升的规则在 C++ 中与 C 完全相同：整数相除会截断，平均值必须靠 8.0 或 static_cast<double>(sum) 把除法提升为浮点除法。\nC++17 里 scanf/printf 仍然可用，只要包含 <cstdio> 并在 using namespace std 之后使用即可。若改用 iostream，代码会写成 cin >> a[i]（不需要 &）与 cout << fixed << setprecision(2) << sum / 8.0；也可以用 std::vector<int> a(8) 让数组带长度，避免越界。",
+  "stem": "下面程序读入 8 个整数存入数组，求它们的和与平均值并输出，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint main()\n{\n    int a[8], i, sum = 0;\n\n    for (i = 0; i < 8; i++)\n        scanf(\"%d\", ①);\n    for (i = 0; i < 8; i++)\n        sum += ②;\n    printf(\"sum=%d, avg=%.2f\\n\", sum, ③);\n    return 0;\n}\n```\n\n输入 `1 2 3 4 5 6 7 8` 时，程序应输出 `sum=36, avg=4.50`。"
+ },
+ "数-06": {
+  "analysis": "一次遍历同时维护最大值、最小值及其首次出现的下标；关键在于用严格大于 / 严格小于更新，这样相同值的后续出现不会覆盖第一次的下标。\nC++ 版本只是把 scanf/printf 换成 cin/cout，输出用字符串字面量与变量交替 << 拼接，格式 max=9 pos=1 min=-2 pos=2 与 C 的 printf 完全一致。\n易错点：下标初值应为 0（对应 a[0]）；把 > 写成 >= 会让下标变成最后一次出现；n == 1 时循环不执行，初值就要正确。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int a[50], n, i;\n    int max, min, maxPos = 0, minPos = 0;\n\n    cin >> n;\n    for (i = 0; i < n; i++)\n        cin >> a[i];\n\n    max = a[0];\n    min = a[0];\n    for (i = 1; i < n; i++) {\n        if (a[i] > max) {\n            max = a[i];\n            maxPos = i;\n        }\n        if (a[i] < min) {\n            min = a[i];\n            minPos = i;\n        }\n    }\n    cout << \"max=\" << max << \" pos=\" << maxPos\n         << \" min=\" << min << \" pos=\" << minPos << endl;\n    return 0;\n}"
+ },
+ "数-09": {
+  "analysis": "冒泡排序的内层边界随外层轮数收缩：第 i 轮结束后末尾 i 个元素已经就位，所以内层只比较到 5 - i。\nC++ 版本与 C 逐字相同，只是一分为二地用 <cstdio> 取得 printf。实际工程中一行 std::sort(a, a + 6)（<algorithm> 头文件）就够了，考场上要写出交换的三步，注意第二步写 a[j] = a[j + 1] 之前已把 a[j] 存进 t。",
+  "stem": "下面程序用冒泡排序把数组按升序排列，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint main()\n{\n    int a[6] = {5, 2, 9, 1, 7, 3};\n    int i, j, t;\n\n    for (i = 0; i < 5; i++)\n        for (j = 0; j < ①; j++)\n            if (a[j] > a[j + 1]) {\n                t = a[j];\n                a[j] = a[j + 1];\n                ②;\n            }\n    for (i = 0; i < 6; i++)\n        printf(\"%d \", a[i]);\n    return 0;\n}\n```\n\n程序运行后输出 `1 2 3 5 7 9`。"
+ },
+ "数-11": {
+  "analysis": "C++ 的惯用写法是一行搞定：a.erase(std::remove(a.begin(), a.end(), x), a.end())。std::remove 把不等于 x 的元素依次前移（保持相对顺序），返回新的逻辑尾，erase 再真正删除尾部残留，这就是所谓的 erase-remove 惯用法。\n若按 C 的思路手写双下标覆盖也完全可以：k 指向下一个写入位置，只把不等 x 的元素写进去。输出时要先输出 k，再逐个输出，元素之间加空格、行末不加；k == 0 时第二行输出空行。\n易错点：边遍历边 erase 会导致迭代器失效或漏删；忘记 erase 只 remove 的话 size() 不会变；输出格式里\"空行\"也要真的换行。",
+  "solution": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nint main()\n{\n    int n, i, x;\n    vector<int> a;\n\n    cin >> n;\n    a.resize(n);\n    for (i = 0; i < n; i++)\n        cin >> a[i];\n    cin >> x;\n\n    a.erase(remove(a.begin(), a.end(), x), a.end());\n\n    cout << a.size() << endl;\n    for (i = 0; i < (int)a.size(); i++) {\n        if (i > 0)\n            cout << \" \";\n        cout << a[i];\n    }\n    cout << endl;\n    return 0;\n}"
+ },
+ "数-14": {
+  "analysis": "二维数组的行列互换是纯下标变换，C++ 的数组布局同为行优先，b[j][i] = a[i][j] 的逻辑没有任何变化。\nC++ 版本可以直接沿用 printf，也可以写 cout << setw(2) << b[i][j] 控制列宽；真正要注意的是 sizeof：在函数形参里二维数组会退化成 int (*)[2]，所以 C++ 里传二维数组时列数必须固定写在类型里，或者改用 std::vector<std::vector<int>>。",
+  "stem": "下面程序把 2 行 3 列的二维数组转置成 3 行 2 列后输出，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint main()\n{\n    int a[2][3] = {{1, 2, 3}, {4, 5, 6}};\n    int b[3][2], i, j;\n\n    for (i = 0; i < 2; i++)\n        for (j = 0; j < 3; j++)\n            b[①][②] = a[i][j];\n    for (i = 0; i < 3; i++) {\n        for (j = 0; j < 2; j++)\n            printf(\"%d \", b[i][j]);\n        printf(\"\\n\");\n    }\n    return 0;\n}\n```\n\n程序输出：\n```text\n1 4\n2 5\n3 6\n```"
+ },
+ "数-16": {
+  "analysis": "矩阵加法就是对应元素相加，用 vector<vector<int>> 可以按输入的 m、n 动态建表，避免像 C 那样固定 10×10 上限，也免去了二维数组形参必须写列宽的麻烦。\n读入 A、B 后逐元素求和，输出时用\"先判断 j > 0 再打空格\"的办法保证行末无多余空格。C++ 版本与 C 版本的输出完全一致，只是 printf 换成了 cout 链式输出。\n易错点：m、n 的读入顺序；输出要 m 行、每行 n 个数；行末空格会导致判题格式错误。",
+  "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    int m, n, i, j;\n    vector<vector<int>> a, b, c;\n\n    cin >> m >> n;\n    a.assign(m, vector<int>(n));\n    b.assign(m, vector<int>(n));\n    c.assign(m, vector<int>(n));\n\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++)\n            cin >> a[i][j];\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++)\n            cin >> b[i][j];\n\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++)\n            c[i][j] = a[i][j] + b[i][j];\n\n    for (i = 0; i < m; i++) {\n        for (j = 0; j < n; j++) {\n            if (j > 0)\n                cout << \" \";\n            cout << c[i][j];\n        }\n        cout << endl;\n    }\n    return 0;\n}"
+ },
+ "数-19": {
+  "analysis": "C++ 版本改用 std::string：字符串对象自带长度，用 s.size() 就能取到长度，不必再调用 strlen，也不必担心忘记写 '\\0'。\n要注意 s.size() 返回的是无符号的 size_t，赋给 int 会发生隐式窄化转换（很多编译器只给警告不给错误），需要显式写 static_cast<int>(s.size()) 才能完全消除警告；第二个空 cout << s[i] 直接输出字符，比 putchar 更符合 C++ 风格。",
+  "stem": "下面程序读入一个不含空格的字符串并逆序输出，请填空。\n\n```cpp\n#include <iostream>\n#include <string>\nusing namespace std;\n\nint main()\n{\n    string s;\n    int i, len;\n\n    cin >> s;\n    len = ①;\n    for (i = len - 1; i >= 0; i--)\n        cout << ②;\n    cout << endl;\n    return 0;\n}\n```\n\n输入 `abcde` 时，程序输出 `edcba`。",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "s.size()",
+    "note": "std::string 自带长度，也可写 static_cast<int>(s.size()) 消除有符号/无符号转换警告"
+   },
+   {
+    "no": "②",
+    "answer": "s[i]",
+    "note": "string 支持下标访问，也可用 s.at(i)（会做越界检查）；换行用 cout << endl"
+   }
+  ]
+ },
+ "数-22": {
+  "analysis": "插入排序的 while 条件必须把 j >= 0 放在前面，C++ 同样保证 && 的短路求值，所以不会在 j 为 -1 时访问 a[j]。\nC++ 版本还可以把内层改成 `while (j >= 0 && a[j] > t)`，或直接用 std::rotate 完成整段后移；插入位置是循环结束后 j 的下一个位置，这是最容易写错的地方。",
+  "stem": "下面程序用直接插入排序把数组按升序排列，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint main()\n{\n    int a[6] = {5, 2, 4, 6, 1, 3};\n    int i, j, t;\n\n    for (i = 1; i < 6; i++) {\n        t = a[i];\n        j = i - 1;\n        while (①) {\n            a[j + 1] = a[j];\n            j--;\n        }\n        a[②] = t;\n    }\n    for (i = 0; i < 6; i++)\n        printf(\"%d \", a[i]);\n    return 0;\n}\n```\n\n程序运行后输出 `1 2 3 4 5 6`。"
+ },
+ "数-25": {
+  "analysis": "杨辉三角的两个边界都是 1，内部元素等于上一行相邻两列之和；C++ 的二维数组下标与循环边界与 C 完全一致。\nC++ 版本保留了 printf，因为 \"%4d\" 的定宽右对齐最直观；等价写法是 cout << setw(4) << a[i][j]（需要 <iomanip>），注意 setw 只对下一次输出生效，所以必须写在循环体内。用 std::vector<std::vector<int>> 可以让每行长度不同，更贴近杨辉三角的形状。",
+  "stem": "下面程序输出 6 行杨辉三角，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint main()\n{\n    int a[10][10], i, j, n = 6;\n\n    for (i = 0; i < n; i++)\n        a[i][0] = a[i][i] = 1;\n    for (i = 2; i < n; i++)\n        for (j = 1; j < ①; j++)\n            a[i][j] = ②;\n    for (i = 0; i < n; i++) {\n        for (j = 0; j <= i; j++)\n            printf(\"%4d\", a[i][j]);\n        printf(\"\\n\");\n    }\n    return 0;\n}\n```\n\n程序最后一行输出 `   1   5  10  10   5   1`。"
+ },
+ "数-26": {
+  "analysis": "杨辉三角的边界先置 1，内部用上一行相邻两元素之和递推，C++ 与 C 的递推式一样；用 vector<vector<int>> 可以只申请 n 行、第 i 行 i 个元素，比固定 15×15 更贴合形状。\n输出要求每个数占 5 列宽、右对齐且行末不留空格，C++ 对应写法是 cout << setw(5) << a[i][j]，setw 只对紧随其后的一次输出生效，所以必须写在循环体内；右对齐是流默认的对齐方式，无需额外设置。\n易错点：setw 需要 <iomanip>；三角形第 i 行下标 0..i，内层条件写 j <= i；不要用 printf 的 %5d 与其混用导致宽度不一致（%5d 是右对齐，两者等价）。",
+  "solution": "#include <iostream>\n#include <iomanip>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    int n, i, j;\n    vector<vector<int>> a;\n\n    cin >> n;\n    a.assign(n, vector<int>());\n\n    for (i = 0; i < n; i++) {\n        a[i].assign(i + 1, 0);\n        a[i][0] = 1;\n        a[i][i] = 1;\n    }\n    for (i = 2; i < n; i++)\n        for (j = 1; j < i; j++)\n            a[i][j] = a[i - 1][j - 1] + a[i - 1][j];\n\n    for (i = 0; i < n; i++) {\n        for (j = 0; j <= i; j++)\n            cout << setw(5) << a[i][j];\n        cout << endl;\n    }\n    return 0;\n}"
+ },
+ "数-28": {
+  "analysis": "二分查找的区间收缩规则与语言无关，C++ 版本保持 while (low <= high) 的闭区间写法，low = mid + 1、high = mid - 1 才是防止死循环的关键。\nmid 用 (low + high) / 2 计算在 C++ 里同样有 int 溢出风险，更稳妥的是 low + (high - low) / 2。标准库已经提供了 std::binary_search 与 std::lower_bound（<algorithm>，需要有序区间），但本题要求手写循环。",
+  "stem": "下面程序在有序数组中用二分查找查找 14，找到则输出下标，否则输出 -1，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint main()\n{\n    int a[10] = {2, 4, 6, 8, 10, 12, 14, 16, 18, 20};\n    int key = 14, low = 0, high = 9, mid, pos = -1;\n\n    while (low <= high) {\n        mid = ①;\n        if (a[mid] == key) {\n            pos = mid;\n            break;\n        } else if (a[mid] < key)\n            low = ②;\n        else\n            high = ③;\n    }\n    printf(\"%d\\n\", pos);\n    return 0;\n}\n```\n\n程序输出 `6`。"
+ },
+ "数-31": {
+  "analysis": "保持\"首次出现顺序\"去重的 C++ 惯用法是：遍历原序列，用 std::find 在结果 vector 中查找，找不到就 push_back。std::find 是线性查找，总复杂度 O(n²)，n ≤ 100 完全够用。\n如果只要求去重而不要求顺序，可以用 std::sort + std::unique；要求顺序时也可以借助 std::set 记录\"已出现\"（insert 的返回值 second 表示是否新插入），复杂度降到 O(n log n)。\n易错点：输出先个数后元素，两行；元素间 1 个空格、行末无空格；不要把结果排序（会破坏首次出现顺序）。",
+  "solution": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nint main()\n{\n    int n, i, x;\n    vector<int> a, b;\n\n    cin >> n;\n    a.resize(n);\n    for (i = 0; i < n; i++)\n        cin >> a[i];\n\n    for (i = 0; i < n; i++) {\n        if (find(b.begin(), b.end(), a[i]) == b.end())\n            b.push_back(a[i]);\n    }\n\n    cout << b.size() << endl;\n    for (i = 0; i < (int)b.size(); i++) {\n        if (i > 0)\n            cout << \" \";\n        cout << b[i];\n    }\n    cout << endl;\n    return 0;\n}"
+ },
+ "数-33": {
+  "analysis": "函数返回 double 而 sum 是 int，必须显式把 sum 转成 double 再做除法，C++ 里推荐用 static_cast<double>(sum) / n，语义比 C 风格强转更清楚。\n数组形参照样退化成指针，长度必须另传；C++ 更好的写法是 double average(const std::vector<int> &a)，用引用避免拷贝、用 a.size() 拿长度。第二个空把数组名和长度一起传进去，返回 double 后 cout 或 printf(\"%.2f\") 均可。",
+  "stem": "下面程序把数组传给函数求平均值，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\ndouble average(int a[], int n)\n{\n    int i, sum = 0;\n\n    for (i = 0; i < n; i++)\n        sum += a[i];\n    return ①;\n}\n\nint main()\n{\n    int x[6] = {3, 5, 7, 9, 11, 14};\n\n    printf(\"%.2f\\n\", ②);\n    return 0;\n}\n```\n\n程序输出 `8.17`。"
+ },
+ "数-35": {
+  "analysis": "C++ 版本用 std::getline 一次读入整行（保留空格、自动丢掉行末换行），再用 cin >> c 读目标字符，省去了 C 里手写 fgets 后判断并删除 '\\n' 的麻烦。\n删除所有 c 用 erase-remove 惯用法：s.erase(std::remove(s.begin(), s.end(), c), s.end())。std::remove 保持其余字符的相对顺序，正好符合题意；它只是把要保留的字符前移并返回新的逻辑尾，必须配合 erase 才真正缩短字符串。\n易错点：getline 与 >> 混用时的换行残留；把 c 读成字符串导致比较类型不匹配；用 s.erase(i, 1) 边遍历边删会造成下标错位。",
+  "solution": "#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint main()\n{\n    string s;\n    char c;\n\n    getline(cin, s);\n    cin >> c;\n\n    s.erase(remove(s.begin(), s.end(), c), s.end());\n\n    cout << s << endl;\n    return 0;\n}"
+ },
+ "数-38": {
+  "analysis": "fgets 会连行末的换行一起读入，所以循环里既要判 '\\0' 也要判 '\\n'，这两点和 C 完全相同；C++ 版本只是把字符串容器留在数组上。\n如果想更 C++ 一些，可以写 std::string line; std::getline(std::cin, line); 然后范围 for 遍历字符，这样连 '\\n' 都不用自己剔除。注意统计个数的变量必须先初始化为 0。",
+  "stem": "下面程序统计一行字符中数字、字母和其他字符的个数（不计行末换行符），请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint main()\n{\n    char s[80];\n    int i, digit = 0, alpha = 0, other = 0;\n\n    fgets(s, sizeof(s), stdin);\n    for (i = 0; s[i] != ① && s[i] != '\\n'; i++) {\n        if (s[i] >= '0' && s[i] <= '9')\n            digit++;\n        else if ((s[i] >= 'a' && s[i] <= 'z') || (s[i] >= 'A' && s[i] <= 'Z'))\n            alpha++;\n        else\n            ②;\n    }\n    printf(\"%d %d %d\\n\", digit, alpha, other);\n    return 0;\n}\n```\n\n输入 `C99 is fun!` 时，程序输出 `2 6 3`。"
+ },
+ "数-39": {
+  "analysis": "三重循环的矩阵乘法与 C 版本结构一致：外层 i、j 定位结果元素，内层 k 累加 a[i][k] * b[k][j]；矩阵用 vector<vector<int>> 按输入维度动态分配。\nC++ 里注意 c[i][j] 必须先置 0 再累加，assign 创建时已初始化为 0，但手写循环时容易漏掉清零。输出仍然要求每行 p 个数、行末无多余空格。\n易错点：B 的行数是 n、列数是 p，读入循环的上界不能写错；乘法不满足交换律，A×B 与 B×A 结果不同；m、n、p 最大 10 时 int 足够。",
+  "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    int m, n, p, i, j, k;\n    vector<vector<int>> a, b, c;\n\n    cin >> m >> n >> p;\n    a.assign(m, vector<int>(n));\n    b.assign(n, vector<int>(p));\n    c.assign(m, vector<int>(p, 0));\n\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++)\n            cin >> a[i][j];\n    for (i = 0; i < n; i++)\n        for (j = 0; j < p; j++)\n            cin >> b[i][j];\n\n    for (i = 0; i < m; i++)\n        for (j = 0; j < p; j++) {\n            c[i][j] = 0;\n            for (k = 0; k < n; k++)\n                c[i][j] += a[i][k] * b[k][j];\n        }\n\n    for (i = 0; i < m; i++) {\n        for (j = 0; j < p; j++) {\n            if (j > 0)\n                cout << \" \";\n            cout << c[i][j];\n        }\n        cout << endl;\n    }\n    return 0;\n}"
+ },
+ "数-41": {
+  "analysis": "C++ 版本把标记数组改成 bool 类型，false 比 0 更能表达\"不是素数\"的语义，并且用 = {} 做值初始化，避免像 C 那样漏初始化。\n内层从 i * i 开始、步长为 i 是筛法的关键，i * i 可能溢出时更稳妥的判据是 i <= n / i。C++ 里还可以用 std::vector<bool> is_prime(n + 1, true)，但要知道 vector<bool> 是位压缩的特化，取地址行为与普通容器不同。",
+  "stem": "下面程序用埃氏筛法求 50 以内的所有素数，请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int n = 50, i, j;\n    bool is_prime[51] = {};\n\n    for (i = 2; i <= n; i++)\n        is_prime[i] = true;\n    for (i = 2; i * i <= n; i++)\n        if (is_prime[i])\n            for (j = i * i; j <= n; j += ①)\n                is_prime[j] = ②;\n    for (i = 2; i <= n; i++)\n        if (is_prime[i])\n            cout << i << \" \";\n    return 0;\n}\n```\n\n程序输出 `2 3 5 7 11 13 17 19 23 29 31 37 41 43 47`。",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "i",
+    "note": "素数的倍数步长就是 i，从 i*i 开始向后标记"
+   },
+   {
+    "no": "②",
+    "answer": "false",
+    "note": "C++ 用 bool 数组时标记为非素数写 false，也可写 0"
+   }
+  ]
+ },
+ "数-42": {
+  "analysis": "二分查找用闭区间 [low, high]、循环条件 low <= high，mid 用 low + (high - low) / 2 防止相加溢出；命中就记录下标并跳出，未命中最后返回 -1。\nC++ 版本可以直接用标准库：std::binary_search 只返回是否存在，std::lower_bound 返回第一个不小于 key 的位置，再判断 *it == key 即可得到下标 it - a.begin()。本题要求手写，因此保留完整循环。\n易错点：high 初值写 n 而不是 n - 1（闭区间）；区间收缩忘了 +1/-1 导致死循环；找到后忘记 break 继续循环会把 pos 覆盖掉。",
+  "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    int n, i, key;\n    int low, high, mid, pos = -1;\n    vector<int> a;\n\n    cin >> n;\n    a.resize(n);\n    for (i = 0; i < n; i++)\n        cin >> a[i];\n    cin >> key;\n\n    low = 0;\n    high = n - 1;\n    while (low <= high) {\n        mid = low + (high - low) / 2;\n        if (a[mid] == key) {\n            pos = mid;\n            break;\n        } else if (a[mid] < key) {\n            low = mid + 1;\n        } else {\n            high = mid - 1;\n        }\n    }\n    cout << pos << endl;\n    return 0;\n}"
+ },
+ "指-03": {
+  "analysis": "指针版交换在 C++17 中完全合法：pa、pb 保存的是实参的地址，*pa 就是 x 本身，所以函数内部能真正改到调用者的变量。\nC++ 更常用的两种写法是引用参数 void swap(int &a, int &b)（调用时写 swap(x, y)，不用 &）和标准库的 std::swap(x, y)。注意本题函数名与 std::swap 同名但参数类型不同，靠重载解析区分；第三个空必须传地址 &x，传 x 只是值拷贝。",
+  "stem": "下面程序通过指针参数交换两个整数的值，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nvoid swap(int *pa, int *pb)\n{\n    int t = ①;\n    *pa = ②;\n    *pb = t;\n}\n\nint main()\n{\n    int x = 3, y = 8;\n    swap(③, &y);\n    printf(\"%d %d\\n\", x, y);\n    return 0;\n}\n```\n\n补全后程序输出 `8 3`。"
+ },
+ "指-07": {
+  "analysis": "指针遍历字符串的写法在 C++ 中同样成立：*src 取当前字符，src++ 让指针后移，末尾补 '\\0' 才是合法 C 风格字符串。\nC++ 里更推荐 std::string 与 std::string t = s; 一行完成拷贝；如果坚持手写指针版本，要注意 const char *src 不能被修改，而 char *dst 必须指向可写的缓冲区（写成字符串字面量会崩溃）。",
+  "stem": "下面程序用指针实现字符串复制，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nvoid my_copy(char *dst, const char *src)\n{\n    while (*src != '\\0') {\n        *dst = ①;\n        ②;\n        dst++;\n    }\n    *dst = ③;\n}\n\nint main()\n{\n    char s[] = \"abc\";\n    char t[20];\n    my_copy(t, s);\n    printf(\"%s\\n\", t);\n    return 0;\n}\n```"
+ },
+ "指-10": {
+  "analysis": "题目指定的接口是 void max_min(const int *a, int n, int *pmax, int *pmin)，C++ 版本完全保留这个签名：指针遍历与通过指针写回结果在 C++ 中同样合法。\n实现上用 const int *p 从 a+1 走到 a+n（尾后位置），比较时用严格大于/严格小于，保证相等元素不会覆盖第一次的结果。C++ 里也可以把后两个参数改成引用 int &pmax、int &pmin，调用处写 max_min(a, 8, max, min) 更简洁，但这会改变题目要求的接口，所以这里仍用指针。\n易错点：初值必须取 *a，不能取 0（全负数时最大值为 0 就错了）；写回时要用 *pmax = ... 而不是 pmax = ...；const int * 不能赋给 int *。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nvoid max_min(const int *a, int n, int *pmax, int *pmin)\n{\n    const int *p = a;\n    *pmax = *pmin = *p;\n    for (p = a + 1; p < a + n; p++) {\n        if (*p > *pmax)\n            *pmax = *p;\n        if (*p < *pmin)\n            *pmin = *p;\n    }\n}\n\nint main()\n{\n    int a[8], i, max, min;\n\n    for (i = 0; i < 8; i++)\n        cin >> a[i];\n    max_min(a, 8, &max, &min);\n    cout << max << \" \" << min << endl;\n    return 0;\n}"
+ },
+ "指-12": {
+  "analysis": "用两个指针相减求长度是 C 与 C++ 通用的手法：p - s 得到的是元素个数（ptrdiff_t 类型），首尾指针必须指向同一数组才合法。\nC++ 版本可以直接调用 <cstring> 里的 std::strlen，或用 std::string 的 s.size()；printf(\"%d\", ...) 输出 ptrdiff_t 时要注意类型匹配，严格些应写 printf(\"%td\\n\", p - s) 或显式转换。",
+  "stem": "下面程序用指针求字符串长度，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint my_strlen(const char *s)\n{\n    const char *p = s;\n    while (①)\n        p++;\n    return ②;\n}\n\nint main()\n{\n    char s[100];\n    scanf(\"%99s\", s);\n    printf(\"%d\\n\", my_strlen(③));\n    return 0;\n}\n```\n\n输入 `hello` 时输出 `5`。"
+ },
+ "指-14": {
+  "analysis": "两指针原地反转：right 先走到 '\\0'，再回退一格指向最后一个字符，然后 left/right 相向移动并交换，直到相遇；全程只用了临时变量，满足\"不申请额外数组\"的要求。\nC++ 里同样可以用指针完成，也可以直接 std::reverse(s, s + strlen(s))（<algorithm>），或对 std::string 用 std::reverse(str.begin(), str.end())，内部实现正是这套双指针。\n易错点：空串时 right == left 要直接返回，否则 right-- 会越界；读取用 cin >> s（题目保证不含空白）；交换后两个指针都要移动，漏掉一个就是死循环。",
+  "solution": "#include <iostream>\n#include <cstring>\nusing namespace std;\n\nvoid reverse(char *s)\n{\n    char *left = s;\n    char *right = s;\n\n    while (*right != '\\0')\n        right++;\n    if (right == left)\n        return;\n    right--;\n\n    while (left < right) {\n        char t = *left;\n        *left = *right;\n        *right = t;\n        left++;\n        right--;\n    }\n}\n\nint main()\n{\n    char s[100];\n\n    cin >> s;\n    reverse(s);\n    cout << s << endl;\n    return 0;\n}"
+ },
+ "指-17": {
+  "analysis": "用指针遍历数组是 C++ 也完全支持的写法：p < a + 6 判断是否越过末尾，*p 取当前元素，p++ 每次前进一个元素（步长是 sizeof(int)）。\nC++ 更推荐范围 for：for (int v : a) sum += v; 不需要显式指针，也不会越界。指针偏移的合法性同样要求 p 指向同一数组或数组末尾后一位，越界解引用是未定义行为。",
+  "stem": "下面程序用指针遍历数组并求和，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint main()\n{\n    int a[6] = {2, 4, 6, 8, 10, 12};\n    int *p = a, sum = 0;\n    for (; ①; p++)\n        sum += ②;\n    printf(\"%d\\n\", ③);\n    return 0;\n}\n```"
+ },
+ "指-19": {
+  "analysis": "题目明确要求用 malloc 申请恰好 n 个 int 并检查失败，所以 C++ 版本保留 malloc/free：C++ 里 void* 不能隐式转成 int*，这里的 (int *) 强制转换是必须的，C 则允许省去这个转换。\n输入 n 后先判断 n <= 0 与读入是否成功，再申请 (size_t)n * sizeof(int) 字节；逆序输出用倒序下标即可。C++ 更推荐 vector<int> a(n)（自动释放、越界可控）或 new int[n] 配 delete[]，但都改变了题目要求的\"malloc 申请并释放\"这个考点。\n易错点：忘记判 a == NULL；free 后再访问；n 为 0 时 malloc(0) 的返回值实现相关，应先拦截。",
+  "solution": "#include <iostream>\n#include <cstdlib>\nusing namespace std;\n\nint main()\n{\n    int n, i;\n    int *a;\n\n    if (!(cin >> n) || n <= 0)\n        return 0;\n\n    a = (int *)malloc((size_t)n * sizeof(int));\n    if (a == NULL)\n        return 1;\n\n    for (i = 0; i < n; i++)\n        cin >> a[i];\n\n    for (i = n - 1; i >= 0; i--)\n        cout << a[i] << (i > 0 ? ' ' : '\\n');\n\n    free(a);\n    return 0;\n}"
+ },
+ "指-21": {
+  "analysis": "函数指针作形参在 C++ 里照样合法，声明 int (*op)(int, int) 时括号不能省，否则变成\"返回函数指针的函数\"。\nC++ 还提供了更现代的写法：std::function<int(int, int)> 可以接函数、函数对象与 lambda，调用 fold(a, 5, [](int x, int y) { return x > y ? x : y; }) 无需事先定义函数；模板化写法 int fold(const int *a, int n, F op) 则能零开销内联。",
+  "stem": "下面程序把「比较规则」作为函数指针传入，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint my_max(int a, int b)\n{\n    return a > b ? a : b;\n}\n\nint fold(const int *a, int n, ①)\n{\n    int r = a[0];\n    int i;\n    for (i = 1; i < n; i++)\n        r = ②;   /* 约定：累计值 r 作为第一个实参 */\n    return r;\n}\n\nint main()\n{\n    int a[5] = {3, 9, 2, 7, 5};\n    printf(\"%d\\n\", fold(a, 5, ③));\n    return 0;\n}\n```\n\n补全后输出 `9`。"
+ },
+ "指-24": {
+  "analysis": "自己实现字符串比较的关键是\"两个指针同步前进、遇到不同或任一方结束就停\"：若同时到达 '\\0' 说明相等返回 0，否则按首处不同字符的大小返回 -1 或 1。\nC++ 里可以直接用 std::string 的关系运算符（a < b 就是字典序比较），或用 std::string::compare，比手写指针安全得多；标准库 strcmp（<cstring>）返回的是两字符之差，不一定恰好是 -1/1，所以本题要求自己实现。\n易错点：循环结束后必须再比较一次 *s1 == *s2（处理\"abc\"与\"abcd\"这类前缀情形）；返回 -1/1 而不是字符差；两指针必须同步自增。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nint my_strcmp(const char *s1, const char *s2)\n{\n    while (*s1 != '\\0' && *s2 != '\\0' && *s1 == *s2) {\n        s1++;\n        s2++;\n    }\n    if (*s1 == *s2)\n        return 0;\n    return *s1 < *s2 ? -1 : 1;\n}\n\nint main()\n{\n    char a[100], b[100];\n\n    cin >> a;\n    cin >> b;\n    cout << my_strcmp(a, b) << endl;\n    return 0;\n}"
+ },
+ "指-28": {
+  "analysis": "行指针 int (*p)[4] 的类型是\"指向含 4 个 int 的数组的指针\"，p[i][j] 等价于 a[i][j]；C++ 中这种写法同样合法，p[i] 得到的是第 i 行的数组。\nC++ 里更推荐把矩阵封装成 std::vector<std::vector<int>>，或者用 std::array<std::array<int,4>,3>，避免手工管理行指针。\n易错点：把 int (*p)[4] 写成 int *p[4]（指针数组，含义完全不同）；max 的初值取 p[i][0] 而不是 0；输出 3 个值，最后一个后面是换行不是空格。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int a[3][4];\n    int (*p)[4] = a;\n    int i, j;\n\n    for (i = 0; i < 3; i++)\n        for (j = 0; j < 4; j++)\n            cin >> a[i][j];\n\n    for (i = 0; i < 3; i++) {\n        int max = p[i][0];\n        for (j = 1; j < 4; j++)\n            if (p[i][j] > max)\n                max = p[i][j];\n        cout << max << (i < 2 ? ' ' : '\\n');\n    }\n    return 0;\n}"
+ },
+ "指-30": {
+  "analysis": "realloc 的第二个参数是字节数，扩容成两倍容量要写 cap * 2 * sizeof(int)；realloc 可能搬家，必须先用临时指针接住返回值再赋回 a，这一点在 C++ 里同样成立。\n与 C 的差别在 malloc 的返回值：C 允许 void* 隐式转成 int*，C++ 不允许，所以 (int *) 这个 C 风格转换不能省，也可以写 static_cast<int *>(realloc(...))。C++ 更推荐 std::vector<int>，push_back 会自动扩容，不用手写 realloc 和 free。",
+  "stem": "下面程序读入任意个整数，容量不足时用 `realloc` 扩容，请填空。\n\n```cpp\n#include <cstdio>\n#include <cstdlib>\nusing namespace std;\n\nint main()\n{\n    int cap = 2, n = 0, x;\n    int *a = (int *)malloc(cap * sizeof(int));\n    if (a == NULL)\n        return 1;\n    while (scanf(\"%d\", &x) == 1) {\n        if (n == cap) {\n            int *t = (int *)realloc(a, ①);\n            if (t == NULL) {\n                free(a);\n                return 1;\n            }\n            a = ②;\n            cap *= 2;\n        }\n        a[n++] = x;\n    }\n    for (int i = 0; i < n; i++)\n        printf(\"%d%c\", a[i], i + 1 < n ? ' ' : '\\n');\n    ③;\n    return 0;\n}\n```\n\n输入 `1 2 3 4 5` 时输出 `1 2 3 4 5`。"
+ },
+ "指-32": {
+  "analysis": "指针参数带回多个结果在 C++ 中依旧合法：形参 int *letters 指向主函数的变量，函数内要用 (*letters)++ 而不是 *letters++——后者会先把指针后移再解引用，含义完全不同。\nC++ 更推荐的替代是引用参数 void count(const char *s, int &letters, int &digits, int &others)，调用时直接写 count(s, L, D, O)，不需要取地址，也不会出现括号优先级的问题；但本题的题干明确要求“结果通过指针参数带回”，所以代码保留指针版本以对齐考点。",
+  "stem": "下面程序统计字符串中字母、数字和其他字符的个数，结果通过指针参数带回，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nvoid count(const char *s, int *letters, int *digits, int *others)\n{\n    *letters = *digits = *others = 0;\n    for (; ①; s++) {\n        if ((*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z'))\n            (*letters)++;\n        else if (*s >= '0' && *s <= '9')\n            (*digits)++;\n        else\n            ②;\n    }\n}\n\nint main()\n{\n    char s[100];\n    int L, D, O;\n    scanf(\"%99[^\\n]\", s);\n    count(s, ③);\n    printf(\"%d %d %d\\n\", L, D, O);\n    return 0;\n}\n```\n\n输入 `Hello2024!` 时输出 `5 4 1`。"
+ },
+ "指-34": {
+  "analysis": "strcmp 式的比较逻辑在 C++ 里同样成立：两个指针同步前进，只有当前字符相等才继续，最后按首处不同的字符大小返回 -1 或 1。\nC++ 的 std::string 已经重载了比较运算符，直接写 if (a < b) 就是字典序比较，比手写指针循环安全。注意函数返回值的语义：本题返回 -1/1 而不是两字符之差，若要模仿 strcmp 应返回 *s1 - *s2。",
+  "stem": "下面程序用指针实现字符串比较，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint cmp(const char *s1, const char *s2)\n{\n    while (*s1 != '\\0' && *s2 != '\\0' && *s1 == *s2) {\n        s1++;\n        ①;\n    }\n    if (*s1 == *s2)\n        return 0;\n    return ②;\n}\n\nint main()\n{\n    char a[50], b[50];\n    scanf(\"%49s %49s\", a, b);\n    printf(\"%d\\n\", ③);\n    return 0;\n}\n```"
+ },
+ "指-36": {
+  "analysis": "题目指定排序函数原型 void sort(int *a, int n, int (*cmp)(int, int))，比较器约定\"返回非 0 表示 x 应排在 y 前面\"，因此升序就用 x < y；选择排序每轮找出剩余部分中\"最小\"的元素换到前面。\nC++ 里同样的功能可以写成 std::sort(a, a + n) 或 std::sort(a, a + n, [](int x, int y) { return x < y; })，比较器可以是函数、函数对象或 lambda；本题要求手写选择排序并传函数指针，所以保留原结构。\n易错点：比较器方向写反会排成降序；best 初值应为 i；内层从 i + 1 开始；输出行末不能多空格。函数名 sort 与 std::sort 同名，靠参数列表（2 个迭代器）不同而重载解析互不影响。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nint less_than(int x, int y)\n{\n    return x < y;\n}\n\nvoid sort(int *a, int n, int (*cmp)(int, int))\n{\n    int i, j, best, t;\n\n    for (i = 0; i < n - 1; i++) {\n        best = i;\n        for (j = i + 1; j < n; j++)\n            if (cmp(a[j], a[best]))\n                best = j;\n        if (best != i) {\n            t = a[i];\n            a[i] = a[best];\n            a[best] = t;\n        }\n    }\n}\n\nint main()\n{\n    int a[50], n, i;\n\n    if (!(cin >> n) || n <= 0 || n > 50)\n        return 0;\n    for (i = 0; i < n; i++)\n        cin >> a[i];\n\n    sort(a, n, less_than);\n\n    for (i = 0; i < n; i++)\n        cout << a[i] << (i < n - 1 ? ' ' : '\\n');\n    return 0;\n}"
+ },
+ "指-38": {
+  "analysis": "C++ 里动态数组优先用 new int[n] 和 delete[]：new 返回的就是 int *，不需要像 malloc 那样强制转换；失败时抛 std::bad_alloc 而不是返回空指针，所以判空可以省去。\n二级指针带回首地址依旧可行，但 C++ 更常用的替代是引用参数 void get_array(int *&p, int n)，调用时直接写 get_array(a, n)，函数内 p = new int[n] 就能改变主函数的指针；再进一步可以用 std::vector<int> 或 std::unique_ptr<int[]> 自动管理内存。",
+  "stem": "下面程序在函数内部分配数组，并通过二级指针把首地址带回主函数，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nvoid get_array(int **pp, int n)\n{\n    *pp = new int[n];\n    for (int i = 0; i < n; i++)\n        ① = i * i;\n}\n\nint main()\n{\n    int *a = nullptr;\n    int n = 5;\n    get_array(②, n);\n    if (a != nullptr) {\n        for (int i = 0; i < n; i++)\n            printf(\"%d%c\", a[i], i + 1 < n ? ' ' : '\\n');\n        ③;\n    }\n    return 0;\n}\n```\n\n补全后输出 `0 1 4 9 16`。",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "(*pp)[i]",
+    "note": "先解引用得到 int *，再取下标；括号不能省，也可写 *(*pp + i)"
+   },
+   {
+    "no": "②",
+    "answer": "&a",
+    "note": "要修改主函数里的指针 a，必须传它的地址"
+   },
+   {
+    "no": "③",
+    "answer": "delete[] a",
+    "note": "new[] 必须配 delete[]；写 delete a 是未定义行为，malloc 版本才用 free(a)"
+   }
+  ]
+ },
+ "指-40": {
+  "analysis": "int ** 加 malloc 构造二维数组是 C 风格的动态矩阵：先申请 m 个 int*，再逐行申请 n 个 int；C++ 里这些 void* 返回值必须显式转换成 int*、int**，否则编译不过——这是 C 与 C++ 最重要的不兼容点之一。\n申请过程中途失败要\"回滚\"：先释放已经成功的行，再释放行指针数组，否则就是内存泄漏。使用完毕同样要先 free(a[i]) 再 free(a)。\nC++ 更安全的做法是 vector<vector<int>> a(m, vector<int>(n))，析构自动释放；若要一块连续内存则用 vector<int> a(m * n) 配合 i * n + j 寻址。",
+  "solution": "#include <iostream>\n#include <cstdlib>\nusing namespace std;\n\nint main()\n{\n    int m, n, i, j, sum = 0;\n    int **a;\n\n    if (!(cin >> m >> n) || m <= 0 || n <= 0)\n        return 0;\n\n    a = (int **)malloc((size_t)m * sizeof(int *));\n    if (a == NULL)\n        return 1;\n\n    for (i = 0; i < m; i++) {\n        a[i] = (int *)malloc((size_t)n * sizeof(int));\n        if (a[i] == NULL) {\n            for (j = 0; j < i; j++)\n                free(a[j]);\n            free(a);\n            return 1;\n        }\n    }\n\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++) {\n            cin >> a[i][j];\n            sum += a[i][j];\n        }\n\n    cout << sum << endl;\n\n    for (i = 0; i < m; i++)\n        free(a[i]);\n    free(a);\n    return 0;\n}"
+ },
+ "指-42": {
+  "analysis": "这里必须把指针数组写成 const char *s[5]：C++11 起字符串字面量的类型是 const char[N]，不允许隐式转换成 char*，若照抄 C 的 char *s[5] 会直接编译报错。\n排序只交换指针不复制字符，所以比较用 strcmp、交换用 const char * 临时指针即可。C++ 更简洁的写法是 std::vector<std::string> 配合 std::sort，字符串字面量数组也可以写成 std::array<const char *, 5>。",
+  "stem": "下面程序用指针数组对 5 个字符串按字典序排序（只交换指针，不复制字符），请填空。\n\n```cpp\n#include <cstdio>\n#include <cstring>\nusing namespace std;\n\nint main()\n{\n    const char *s[5] = {\"pear\", \"apple\", \"orange\", \"banana\", \"grape\"};\n    int i, j;\n\n    for (i = 0; i < 4; i++) {\n        int k = i;\n        for (j = i + 1; j < 5; j++)\n            if (strcmp(s[k], s[j]) ① 0)\n                k = j;\n        if (k != i) {\n            const char *t = s[i];\n            s[i] = ②;\n            s[k] = ③;\n        }\n    }\n\n    for (i = 0; i < 5; i++)\n        printf(\"%s%c\", s[i], i < 4 ? ' ' : '\\n');\n    return 0;\n}\n```\n\n补全后输出 `apple banana grape orange pear`。"
+ },
+ "指-44": {
+  "analysis": "读写双指针原地删除：p 扫描原串，q 指向下一个写入位置，只把不等于 c 的字符写回；结束时 *q = '\\0' 是必须的，否则原串尾部残留会被一起输出。\nC++ 里对 char 数组同样可以用这套指针写法；若改用 std::string，则一行 s.erase(std::remove(s.begin(), s.end(), c), s.end()) 即可，内部仍是同样的前移逻辑。\n易错点：读入含空格的整行必须用 fgets/getline，cin >> s 会截断在空格处；删除后忘记补结束符；把 c 读成整行（应该只读一个字符）。",
+  "solution": "#include <cstdio>\nusing namespace std;\n\nvoid remove_char(char *s, char c)\n{\n    char *p = s;\n    char *q = s;\n\n    while (*p != '\\0') {\n        if (*p != c)\n            *q++ = *p;\n        p++;\n    }\n    *q = '\\0';\n}\n\nint main()\n{\n    char s[100], c;\n\n    if (fgets(s, sizeof(s), stdin) == NULL)\n        return 0;\n    if (scanf(\" %c\", &c) != 1)\n        return 0;\n\n    remove_char(s, c);\n    printf(\"%s\", s);\n    return 0;\n}"
+ },
+ "结-03": {
+  "analysis": "C++ 中定义结构体变量可以省略 struct 关键字（Student s[3];），这是与 C 最直观的差别之一；成员访问、数组下标写法完全相同。\nscanf(\"%s%d\", s[i].name, &s[i].score) 的传参规则也没变：字符数组名退化为 char*，int 成员要传地址。C++ 里如果成员换成 std::string name，就不能再用 scanf，必须改成 cin >> s[i].name。",
+  "stem": "下面程序读入 3 名学生的姓名与成绩，再按输入顺序输出，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nstruct Student {\n    char name[20];\n    int score;\n};\n\nint main()\n{\n    Student s[3];\n    int i;\n\n    for (i = 0; i < 3; i++)\n        scanf(\"%s%d\", ①, &s[i].score);\n    for (i = 0; i < 3; i++)\n        printf(\"%s %d\\n\", s[i].name, ②);\n    return 0;\n}\n```"
+ },
+ "结-05": {
+  "analysis": "C++ 版本用 struct Student { string name; int score; }; 加 vector<Student> 组织数据：string 自动管理长度，cin >> s[i].name 不必写 %19s 限制宽度，也不会缓冲区溢出。\n求平均分要先把 sum 转成 double，再 fixed + setprecision(1) 输出一位小数；找最高分用严格大于比较，题目保证最高分唯一，所以记录下标即可。\n易错点：输出格式是 avg = 80.8 与 max = Amy（等号两边各有一个空格）；setprecision(1) 必须配合 fixed；平均分用整数除法会得到 80。",
+  "solution": "#include <iostream>\n#include <iomanip>\n#include <string>\n#include <vector>\nusing namespace std;\n\nstruct Student {\n    string name;\n    int score;\n};\n\nint main()\n{\n    vector<Student> s;\n    int n, i, sum = 0, best = 0;\n\n    cin >> n;\n    s.resize(n);\n    for (i = 0; i < n; i++) {\n        cin >> s[i].name >> s[i].score;\n        sum += s[i].score;\n    }\n\n    for (i = 1; i < n; i++)\n        if (s[i].score > s[best].score)\n            best = i;\n\n    cout << \"avg = \" << fixed << setprecision(1) << (double)sum / n << endl;\n    cout << \"max = \" << s[best].name << endl;\n    return 0;\n}"
+ },
+ "结-08": {
+  "analysis": "C++ 用引用参数取代指针参数：void grow(Rect &r, int dw, int dh) 里 r 就是 box 的别名，直接用 r.w 访问成员，调用时写 grow(box, 3, 4) 也不必取地址。\n这样写比指针版更安全，因为引用不能为空、也不能中途改指向。若保留指针版本，r->w 等价于 (*r).w，而不能写成 *r.w（. 的优先级高于 *）。",
+  "stem": "下面程序通过函数把矩形的宽和高分别增加 dw、dh，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nstruct Rect {\n    int w;\n    int h;\n};\n\nvoid grow(Rect &r, int dw, int dh)\n{\n    ① += dw;\n    r.h += dh;\n}\n\nint main()\n{\n    Rect box = {10, 5};\n\n    grow(②, 3, 4);\n    printf(\"%d %d\\n\", box.w, box.h);\n    return 0;\n}\n```",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "r.w",
+    "note": "引用直接当对象用，写 r.w；指针版本才需要 r->w 或 (*r).w"
+   },
+   {
+    "no": "②",
+    "answer": "box",
+    "note": "引用形参直接传对象本身，不需要 &box；形参是 Rect * 时才必须传地址"
+   }
+  ]
+ },
+ "结-10": {
+  "analysis": "题目要求\"总分相同保持输入顺序\"，也就是稳定排序。C++ 的 std::stable_sort 天生保证这一点，配合 lambda 比较器 return a.total > b.total; 即可，比手写冒泡更短也更可靠。\n注意冒泡版之所以稳定，是因为只在严格小于时才交换；如果写成 <= 就会把相等元素也换位。C++ 版本同样只在严格大于时认为 a 应排在 b 前面。\n易错点：使用 std::sort（不稳定）可能在总分相同时打乱顺序；比较器必须满足严格弱序，不能写 >=；姓名用 string 存储，输出不需要再控制宽度。",
+  "solution": "#include <iostream>\n#include <string>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nstruct Student {\n    string name;\n    int total;\n};\n\nint main()\n{\n    vector<Student> s;\n    int n, i, a, b, c;\n\n    cin >> n;\n    s.resize(n);\n    for (i = 0; i < n; i++) {\n        cin >> s[i].name >> a >> b >> c;\n        s[i].total = a + b + c;\n    }\n\n    stable_sort(s.begin(), s.end(),\n                [](const Student &x, const Student &y) { return x.total > y.total; });\n\n    for (i = 0; i < n; i++)\n        cout << s[i].name << \" \" << s[i].total << endl;\n    return 0;\n}"
+ },
+ "结-13": {
+  "analysis": "C++ 里 typedef 其实可以完全省略：struct Point 定义好之后，Point 本身就已经是类型名，可以直接写 Point p = {3, 4};，这正是 C++ 与 C 的又一个差别。\ntypedef struct Point Point; 在 C++ 中依然合法（只是冗余），而 C++11 更推荐用 using Point = Point; 风格的别名声明（对模板别名尤其方便）。第二个空访问成员用点号，注意 {3, 4} 是聚合初始化，成员按声明顺序赋值。",
+  "stem": "下面程序用 `typedef` 为结构体起别名，使定义变量时可以省略 `struct` 关键字，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nstruct Point {\n    int x;\n    int y;\n};\n\ntypedef ① Point;\n\nint main()\n{\n    Point p = {3, 4};\n\n    printf(\"%d\\n\", p.x + p.②);\n    return 0;\n}\n```"
+ },
+ "结-15": {
+  "analysis": "C++ 里 struct Complex 定义后可以直接写 Complex，不必像 C 那样每次带上 struct 关键字；函数返回结构体同样是按值返回，编译器会做返回值优化，没有额外开销。\n把加减乘封装成函数时，C++ 还可以重载运算符（Complex operator+(const Complex &x, const Complex &y)），让 add(a, b) 写成 a + b，这是 C 无法做到的；本题保持函数形式以便对照。\n易错点：复数的顺序不能乱——r.re 里的 a*c 与 b*d 相减；r.im = ad + bc 而不是 ad - bc；两个输出行都要 fixed + setprecision(2)。",
+  "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nstruct Complex {\n    double re;\n    double im;\n};\n\nComplex add(Complex x, Complex y)\n{\n    Complex r;\n\n    r.re = x.re + y.re;\n    r.im = x.im + y.im;\n    return r;\n}\n\nComplex mul(Complex x, Complex y)\n{\n    Complex r;\n\n    r.re = x.re * y.re - x.im * y.im;\n    r.im = x.re * y.im + x.im * y.re;\n    return r;\n}\n\nint main()\n{\n    Complex a, b, s, p;\n\n    cin >> a.re >> a.im;\n    cin >> b.re >> b.im;\n\n    s = add(a, b);\n    p = mul(a, b);\n\n    cout << fixed << setprecision(2) << s.re << \" \" << s.im << endl;\n    cout << fixed << setprecision(2) << p.re << \" \" << p.im << endl;\n    return 0;\n}"
+ },
+ "结-18": {
+  "analysis": "C++ 版本用 new Node 取代 malloc，用 delete 取代 free：new 直接返回 Node *，不需要强制转换，也不会返回空指针（失败时抛 std::bad_alloc），所以判空逻辑可以省掉。\n头插法的两步顺序仍是关键：先把新结点的 next 指向当前表头，再把表头指向新结点。C++11 起可以用 nullptr 代替 NULL，语义更明确；C++ 还可以写 p = new Node{x, head} 一次完成赋值。",
+  "stem": "下面程序用头插法建立单链表（读到 -1 结束），然后遍历输出并释放全部结点，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\nint main()\n{\n    int x;\n    Node *head = nullptr, *p;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->① = head;\n        head = ②;\n    }\n\n    for (p = head; p != nullptr; p = p->next)\n        printf(\"%d \", p->data);\n    printf(\"\\n\");\n\n    while (head != nullptr) {\n        p = head;\n        head = ③;\n        delete p;\n    }\n    return 0;\n}\n```",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "next",
+    "note": "新结点的 next 先指向当前表头，才能接上整条链"
+   },
+   {
+    "no": "②",
+    "answer": "p",
+    "note": "表头指针前移到新结点；两句顺序不能颠倒，否则会丢掉原链表"
+   },
+   {
+    "no": "③",
+    "answer": "head->next",
+    "note": "先保存下一个结点再 delete；此时 p == head，也可写 p->next"
+   }
+  ]
+ },
+ "结-19": {
+  "analysis": "尾插法建链表的关键是维护 head 与 tail：第一个结点同时赋给两者，之后只改 tail->next 并前移 tail；C++ 里用 new Node 取代 malloc，用 nullptr 取代 NULL。\n输出要求行末无多余空格，因此用 first 标记是否已输出过元素，而不是在末尾补空格；结点个数可以在遍历时顺带统计。链表为空时第一行是空行、第二行是 0，这一点容易漏。\n释放链表必须先用 q 保存 next，再 delete；C++ 版本同样注意 new 与 delete 成对出现。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\nint main()\n{\n    int x, count = 0, first = 1;\n    Node *head = nullptr, *tail = nullptr, *p, *q;\n\n    while (cin >> x && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->next = nullptr;\n        if (head == nullptr) {\n            head = tail = p;\n        } else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n\n    for (p = head; p != nullptr; p = p->next) {\n        if (!first)\n            cout << \" \";\n        cout << p->data;\n        first = 0;\n        count++;\n    }\n    cout << endl << count << endl;\n\n    p = head;\n    while (p != nullptr) {\n        q = p->next;\n        delete p;\n        p = q;\n    }\n    return 0;\n}"
+ },
+ "结-22": {
+  "analysis": "C++ 版本用 new Node 和 delete 取代 malloc/free，用 nullptr 取代 NULL：new 返回的就是 Node *，不需要 (struct Node *) 强转，也不会返回空指针，因此建表循环里的判空可以省去。\n尾插法的关键是 head 与 tail 的维护：第一个结点同时赋给 head 和 tail，之后只改 tail->next 与 tail。取最大值从 head->next 开始，因为首结点已经作为初值；遍历与释放必须分开进行，释放时先用 q 存住下一个结点。",
+  "stem": "下面程序用尾插法建立单链表（读到 -1 结束），再求所有结点中的最大值，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\nint main()\n{\n    int x, max;\n    Node *head = nullptr, *tail = nullptr, *p, *q;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->next = nullptr;\n        if (head == nullptr) {\n            head = tail = p;\n        } else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    if (head == nullptr)\n        return 0;\n\n    max = head->data;\n    for (p = ①; p != nullptr; p = p->next)\n        if (p->data > max)\n            max = ②;\n\n    printf(\"%d\\n\", ③);\n\n    p = head;\n    while (p != nullptr) {\n        q = p->next;\n        delete p;\n        p = q;\n    }\n    return 0;\n}\n```"
+ },
+ "结-23": {
+  "analysis": "删除\"所有\"值为 key 的结点，与只删第一个的差别在于删除后不能结束，而要继续检查新接上的结点：删完 p 后让 p = q 继续，只有不匹配时才 prev = p、p = p->next。\nC++ 版本用 new/delete，头结点被删时改 head，否则改 prev->next；空链表输出 empty，这点与 C 版本一致。\n易错点：删除后忘记把 p 前移成 q 会访问已释放内存；用 prev 时要注意第一次匹配可能就在表头；输出行末不能多空格。C++ 若用 std::list 可以一行 remove(key) 完成。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\nint main()\n{\n    int x, key, first = 1;\n    Node *head = nullptr, *tail = nullptr, *p, *prev, *q;\n\n    while (cin >> x && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->next = nullptr;\n        if (head == nullptr) {\n            head = tail = p;\n        } else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n\n    if (!(cin >> key))\n        return 0;\n\n    prev = nullptr;\n    p = head;\n    while (p != nullptr) {\n        if (p->data == key) {\n            q = p->next;\n            if (prev == nullptr)\n                head = q;\n            else\n                prev->next = q;\n            delete p;\n            p = q;\n        } else {\n            prev = p;\n            p = p->next;\n        }\n    }\n\n    if (head == nullptr) {\n        cout << \"empty\" << endl;\n    } else {\n        for (p = head; p != nullptr; p = p->next) {\n            if (!first)\n                cout << \" \";\n            cout << p->data;\n            first = 0;\n        }\n        cout << endl;\n    }\n\n    p = head;\n    while (p != nullptr) {\n        q = p->next;\n        delete p;\n        p = q;\n    }\n    return 0;\n}"
+ },
+ "结-26": {
+  "analysis": "边读边插入有序链表：对每个新值 x，从头找到第一个\"大于 x\"的结点 cur，插到 cur 之前；用 cur->data <= x 作为前进条件，就能让相同值插在已有相同值之后（稳定）。\nC++ 版本用 new/delete 与 nullptr，逻辑与 C 完全一致。注意插入位置分两种：prev 为空说明要插在表头，此时要更新 head；否则改 prev->next。\n易错点：前进条件写成 cur->data < x 会让相同值插到前面（不稳定）；插入后忘记 p->next = cur；空链表时 prev 为空、head 直接更新。C++ 里也可以用 std::multiset 自动维护有序序列。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\nint main()\n{\n    int x, first = 1;\n    Node *head = nullptr, *p, *prev, *cur, *q;\n\n    while (cin >> x && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->next = nullptr;\n\n        prev = nullptr;\n        cur = head;\n        while (cur != nullptr && cur->data <= x) {\n            prev = cur;\n            cur = cur->next;\n        }\n        p->next = cur;\n        if (prev == nullptr)\n            head = p;\n        else\n            prev->next = p;\n    }\n\n    if (head == nullptr) {\n        cout << \"empty\" << endl;\n    } else {\n        for (p = head; p != nullptr; p = p->next) {\n            if (!first)\n                cout << \" \";\n            cout << p->data;\n            first = 0;\n        }\n        cout << endl;\n    }\n\n    p = head;\n    while (p != nullptr) {\n        q = p->next;\n        delete p;\n        p = q;\n    }\n    return 0;\n}"
+ },
+ "结-28": {
+  "analysis": "C++ 里嵌套结构体的成员可以直接写 Point a;，不必像 C 那样重复写 struct Point；成员访问、取地址传参的规则完全相同。\n两点距离的平方就是 dx*dx + dy*dy，全程整数运算，不需要 sqrt，也不会有浮点误差；C++ 若要开方可包含 <cmath> 调用 std::sqrt，但本题只要求平方。注意 dx、dy 都应为 int，若声明成 char 会溢出。",
+  "stem": "下面程序读入一条线段的两个端点坐标，输出该线段长度的平方，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nstruct Point {\n    int x;\n    int y;\n};\n\nstruct Segment {\n    Point a;\n    Point b;\n};\n\nint main()\n{\n    Segment s;\n    int dx, dy;\n\n    scanf(\"%d%d%d%d\", &s.a.x, &s.a.y, &s.b.x, &s.b.y);\n\n    dx = s.b.x - s.a.x;\n    dy = ①;\n    printf(\"%d\\n\", ②);\n    return 0;\n}\n```"
+ },
+ "结-31": {
+  "analysis": "结构体数组的整体赋值（tmp = s[i]）在 C++ 中合法，效果是逐成员拷贝，所以选择排序可以直接交换两个结构体，不必逐个字段赋值。\nC++ 版本同样可以用 std::sort(s, s + 5, [](const Student &a, const Student &b) { return a.score > b.score; }) 一行完成降序排序，其中 lambda 取代了比较函数指针，这是 C 语言没有的语法。",
+  "stem": "下面程序把 5 名学生按成绩从高到低排序，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nstruct Student {\n    char name[20];\n    int score;\n};\n\nint main()\n{\n    Student s[5], tmp;\n    int i, j, k;\n\n    for (i = 0; i < 5; i++)\n        scanf(\"%s%d\", s[i].name, &s[i].score);\n\n    for (i = 0; i < 4; i++) {\n        k = i;\n        for (j = i + 1; j < 5; j++)\n            if (s[j].score > s[①].score)\n                k = j;\n        if (k != i) {\n            tmp = s[i];\n            s[i] = ②;\n            s[k] = ③;\n        }\n    }\n\n    for (i = 0; i < 5; i++)\n        printf(\"%s %d\\n\", s[i].name, s[i].score);\n    return 0;\n}\n```"
+ },
+ "结-33": {
+  "analysis": "日期结构体配合\"每月天数表 + 闰年修正\"是最直接的算法：先把 day 作为基数，累加前 month-1 个月的天数，若月份大于 2 且是闰年再加 1 天。\nC++ 里 static const int days[12] 可以放在函数内（常量表，只初始化一次），也可以写成 constexpr int days[] = {...} 或 std::array。闰年判断表达式与 C 相同。\n易错点：month > 2 这个条件不能漏（2 月之后的日期才补 1 天）；闰年规则必须是 (y%4==0 && y%100!=0) || y%400==0；边界 1 月 1 日应输出 1。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nstruct Date {\n    int year;\n    int month;\n    int day;\n};\n\nbool is_leap(int year)\n{\n    return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;\n}\n\nint day_of_year(Date d)\n{\n    static const int days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};\n    int i, total = d.day;\n\n    for (i = 0; i < d.month - 1; i++)\n        total += days[i];\n    if (d.month > 2 && is_leap(d.year))\n        total += 1;\n    return total;\n}\n\nint main()\n{\n    Date d;\n    int n, i;\n\n    cin >> n;\n    for (i = 0; i < n; i++) {\n        cin >> d.year >> d.month >> d.day;\n        cout << day_of_year(d) << endl;\n    }\n    return 0;\n}"
+ },
+ "结-36": {
+  "analysis": "C++ 版本把 malloc/free 换成 new/delete，所以删除结点时释放写 delete p 而不是 free(p)；关键仍是\"先改链、后释放\"，否则 p->next 就成了访问已释放内存。\n删第一个匹配结点要分两种情况：被删的是表头（prev 为空）就移动 head，否则让前驱跳过它。C++ 里常用\"带头结点的哨兵\"来统一这两种情况，或用 std::list::remove 一行完成。",
+  "stem": "下面程序建立单链表后，删除第一个值为 key 的结点（只删一个，找不到则链表不变），请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\nint main()\n{\n    int x, key;\n    Node *head = nullptr, *tail = nullptr, *p, *prev;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->next = nullptr;\n        if (head == nullptr) {\n            head = tail = p;\n        } else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    scanf(\"%d\", &key);\n\n    prev = nullptr;\n    p = head;\n    while (p != nullptr && p->data != key) {\n        prev = p;\n        p = ①;\n    }\n    if (p != nullptr) {\n        if (prev == nullptr)\n            head = p->next;\n        else\n            ②;\n        ③;\n    }\n\n    for (p = head; p != nullptr; p = p->next)\n        printf(\"%d \", p->data);\n    printf(\"\\n\");\n    return 0;\n}\n```",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "p->next",
+    "note": "让 p 沿链前进，prev 同时保存前驱"
+   },
+   {
+    "no": "②",
+    "answer": "prev->next = p->next",
+    "note": "让前驱越过被删结点；分号已给出"
+   },
+   {
+    "no": "③",
+    "answer": "delete p",
+    "note": "C++ 用 delete 释放 new 出来的结点；free(p) 只适用于 malloc 的版本"
+   }
+  ]
+ },
+ "结-38": {
+  "analysis": "结构体数组保存学号、姓名与三门成绩，读入时顺带算出总分，最后按输入顺序输出——顺序不变，所以不需要排序。\nC++ 版本把 char name[20] 换成 std::string，读入不再需要 %19s 限宽，也不会缓冲区溢出；其余字段保持 int。若用 cin 读 string，遇到空白自动停止，正好符合\"姓名不含空格\"的条件。\n易错点：输出顺序是\"学号 姓名 总分\"（不是成绩）；总分要在读入时算好，避免重复计算；n 行输出，每行一个学生。",
+  "solution": "#include <iostream>\n#include <string>\n#include <vector>\nusing namespace std;\n\nstruct Student {\n    int id;\n    string name;\n    int s1;\n    int s2;\n    int s3;\n    int total;\n};\n\nint main()\n{\n    vector<Student> s;\n    int n, i;\n\n    cin >> n;\n    s.resize(n);\n    for (i = 0; i < n; i++) {\n        cin >> s[i].id >> s[i].name >> s[i].s1 >> s[i].s2 >> s[i].s3;\n        s[i].total = s[i].s1 + s[i].s2 + s[i].s3;\n    }\n\n    for (i = 0; i < n; i++)\n        cout << s[i].id << \" \" << s[i].name << \" \" << s[i].total << endl;\n    return 0;\n}"
+ },
+ "枚-03": {
+  "analysis": "C++ 的 switch 可以直接以枚举变量为表达式，case 标签写枚举常量即可，MON、TUE 这些名字在 C++ 中被注入到外层作用域，不需要写 Weekday::MON。\nC++ 还提供强类型枚举 enum class Weekday { MON = 1, ... }，它不会隐式转成 int，此时输出或比较都要写 static_cast<int>(d)，也无法直接 scanf(\"%d\", &n) 后赋给枚举，需要显式转换。",
+  "stem": "下面程序读入 1~7 的整数，输出对应的英文星期名，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nenum Weekday {\n    MON = 1, TUE, WED, THU, FRI, SAT, SUN\n};\n\nint main()\n{\n    int n;\n    Weekday d;\n\n    scanf(\"%d\", &n);\n    d = (Weekday)n;\n\n    switch (①) {\n    case MON:\n        printf(\"Monday\\n\");\n        break;\n    case TUE:\n        printf(\"Tuesday\\n\");\n        break;\n    case ②:\n        printf(\"Wednesday\\n\");\n        break;\n    case THU:\n        printf(\"Thursday\\n\");\n        break;\n    case FRI:\n        printf(\"Friday\\n\");\n        break;\n    case SAT:\n    case SUN:\n        printf(\"Weekend\\n\");\n        break;\n    default:\n        printf(\"Invalid\\n\");\n        break;\n    }\n    return 0;\n}\n```"
+ },
+ "枚-06": {
+  "analysis": "枚举配合计数器数组是这类分段统计的标准写法：枚举值从 0 连续递增，正好可以当数组下标；grade_of 用从高到低的 if 链返回等级。\nC++ 里如果改用 enum class Grade，就必须写 cnt[static_cast<int>(grade_of(score))]；普通 enum 会隐式转成 int，所以可以直接当下标。GRADE_COUNT 放在枚举末尾自动等于 5，是\"用枚举表示数量\"的小技巧。\n易错点：if 链的顺序必须从高到低（否则 95 分会被当成良好）；边界 90、80、70、60 的归属要按题目\"90~100 优秀\"处理；输出 5 个整数、空格分隔。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nenum Grade {\n    EXCELLENT,\n    GOOD,\n    MEDIUM,\n    PASS,\n    FAIL,\n    GRADE_COUNT\n};\n\nGrade grade_of(int score)\n{\n    if (score >= 90)\n        return EXCELLENT;\n    if (score >= 80)\n        return GOOD;\n    if (score >= 70)\n        return MEDIUM;\n    if (score >= 60)\n        return PASS;\n    return FAIL;\n}\n\nint main()\n{\n    int n, i, score;\n    int cnt[GRADE_COUNT] = {0};\n\n    cin >> n;\n    for (i = 0; i < n; i++) {\n        cin >> score;\n        cnt[grade_of(score)]++;\n    }\n\n    for (i = 0; i < GRADE_COUNT; i++) {\n        if (i > 0)\n            cout << \" \";\n        cout << cnt[i];\n    }\n    cout << endl;\n    return 0;\n}"
+ },
+ "枚-08": {
+  "analysis": "四个方向循环，用 (start + step) % 4 把任意步数折算到 0~3，再转回枚举类型；C++ 从 int 到枚举必须显式转换，写 d = (start + step) % 4 会编译报错。\nC++ 的强类型枚举 enum class Dir 更严格，转换要写 static_cast<Dir>((start + step) % 4)；普通 enum 则可以直接做算术与比较。case 标签必须是常量表达式，写 NORTH 比写 3 更可读。",
+  "stem": "枚举 EAST、SOUTH、WEST、NORTH 依次表示 0~3 四个方向。下面程序读入起始方向编号与前进步数（非负整数），输出走完若干步后的方向（每走一步顺时针转 90 度），请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nenum Dir { EAST, SOUTH, WEST, NORTH };\n\nint main()\n{\n    int start, step;\n    Dir d;\n\n    scanf(\"%d%d\", &start, &step);\n    d = (Dir)(①);\n\n    switch (d) {\n    case EAST:\n        printf(\"EAST\\n\");\n        break;\n    case SOUTH:\n        printf(\"SOUTH\\n\");\n        break;\n    case WEST:\n        printf(\"WEST\\n\");\n        break;\n    case ②:\n        printf(\"NORTH\\n\");\n        break;\n    }\n    return 0;\n}\n```"
+ },
+ "枚-11": {
+  "analysis": "先用 to_op(char) 把字符映射成枚举，再用 switch 分派，这样\"非法运算符\"可以统一归到 OP_INVALID，代码比直接 switch 字符更清晰。\nC++ 里读入\"整数 运算符 整数\"用 cin >> a >> ch >> b；ch 是 char，流提取会自动跳过空格。若改用 enum class Op，case 标签要写 Op::OP_ADD，且不能隐式转 int。\n易错点：除法按整数除法，直接 a / b 即可（不要转 double）；除数为 0 题目保证不会出现，但为了稳妥仍可判断；default 分支负责非法运算符，输出 error。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nenum Op {\n    OP_ADD,\n    OP_SUB,\n    OP_MUL,\n    OP_DIV,\n    OP_INVALID\n};\n\nOp to_op(char c)\n{\n    switch (c) {\n    case '+':\n        return OP_ADD;\n    case '-':\n        return OP_SUB;\n    case '*':\n        return OP_MUL;\n    case '/':\n        return OP_DIV;\n    default:\n        return OP_INVALID;\n    }\n}\n\nint main()\n{\n    int a, b;\n    char ch;\n    Op op;\n\n    if (!(cin >> a >> ch >> b)) {\n        cout << \"error\" << endl;\n        return 0;\n    }\n\n    op = to_op(ch);\n    switch (op) {\n    case OP_ADD:\n        cout << a + b << endl;\n        break;\n    case OP_SUB:\n        cout << a - b << endl;\n        break;\n    case OP_MUL:\n        cout << a * b << endl;\n        break;\n    case OP_DIV:\n        if (b == 0)\n            cout << \"error\" << endl;\n        else\n            cout << a / b << endl;\n        break;\n    default:\n        cout << \"error\" << endl;\n        break;\n    }\n    return 0;\n}"
+ },
+ "基-36": {
+  "analysis": "scanf 返回成功赋值的项数，读到非数字时返回 0，遇到文件结束返回 EOF；C++ 里同样可以用 scanf，也可以写成 while (cin >> x) 利用流的布尔转换，更简洁而且不用记住返回值约定。\n平均值必须先把 sum 转成浮点再除，C++ 写法推荐 static_cast<double>(sum) / cnt；printf(\"%.2f\") 与 cout << fixed << setprecision(2) 的输出版本等价。",
+  "stem": "下面程序不断读入整数并统计个数与平均值，遇到第一个非数字输入时停止。请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint main()\n{\n    int x, cnt = 0, sum = 0;\n\n    while (scanf(\"%d\", &x) == ①) {\n        cnt++;\n        sum += x;\n    }\n    if (cnt > 0)\n        printf(\"%.2f\\n\", ②);\n    return 0;\n}\n```"
+ },
+ "基-39": {
+  "analysis": "双层循环的边界与累加关系在 C++ 中完全一致：第 i 轮内层算 1+2+…+i 存进 t，再把 t 累加到 s。\n内层变量 t 定义在循环体内，作用域仅限本轮，这是 C99 与 C++ 都支持的写法（C89 要求把变量声明放在块首）。C++ 里顺便可以用 int t = i * (i + 1) / 2 把内层循环换成公式，把复杂度从 O(n²) 降到 O(n)。",
+  "stem": "下面程序计算 S = 1 + (1 + 2) + … + (1 + 2 + … + n)。请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint main()\n{\n    int i, j, n, s = 0;\n\n    scanf(\"%d\", &n);\n    for (i = 1; i <= n; i++) {\n        int t = 0;\n\n        for (j = 1; j <= ①; j++)\n            t += j;\n        s += ②;\n    }\n    printf(\"%d\\n\", s);\n    return 0;\n}\n```"
+ },
+ "基-41": {
+  "analysis": "每月天数表加闰年判断是最简写法：先把 day 作为基数，累加前 month-1 个月的天数；是闰年就把 2 月的天数改成 29。\nC++ 版本把数组长度写成编译期常量（int days[12] = {...}），变量声明与循环写得和 C 一样，只是 I/O 换成 cin/cout。\n易错点：闰年条件必须同时覆盖\"能被 400 整除\"这一支；把 days[1] = 29 放在累加之前；month 恰好为 1 时循环不执行，直接输出 day。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int year, month, day, i, total;\n    int days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};\n\n    cin >> year >> month >> day;\n    if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0)\n        days[1] = 29;\n    total = day;\n    for (i = 0; i < month - 1; i++)\n        total += days[i];\n    cout << total << endl;\n    return 0;\n}"
+ },
+ "基-43": {
+  "analysis": "C++ 版本把\"读掉换行符\"写成 cin.ignore()：cin >> n 同样不会取走行末的 '\\n'，必须手动丢弃一个字符，才能让后面的 cin.get() 从下一行第一个字符开始读。\ncin.get() 返回的是 int（可能是 EOF），所以变量 c 必须声明为 int 而不是 char，这与 C 里 getchar() 的返回值规则相同。若要整行读取，C++ 更常用 std::getline(std::cin, line) 一次性拿到不含换行符的字符串。",
+  "stem": "下面程序先读入一个整数，再统计随后一行中字符的个数（不含换行符）。请填空。\n\n```cpp\n#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int n, cnt = 0, c;\n\n    cin >> n;\n    ①;                       /* 读掉整数后面的换行符 */\n    while ((c = cin.get()) != ②)\n        cnt++;\n    cout << n << \" \" << cnt << endl;\n    return 0;\n}\n```",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "cin.ignore()",
+    "note": "cin >> n 不取走换行符，用 cin.ignore() 丢弃一个字符；C 版本对应一次 getchar()"
+   },
+   {
+    "no": "②",
+    "answer": "'\\n'",
+    "note": "也可写 10，但字符常量 '\\n' 更清晰"
+   }
+  ]
+ },
+ "基-46": {
+  "analysis": "最低位法：n & 1 得到当前最低位，n >>= 1 右移一位，循环直到 n 为 0，循环次数等于最高位的位置，最多 32 次。\n必须用 unsigned int：若用 int，最高位为 1 时右移是算术右移，负数会陷入死循环（符号位不断补 1）。C++ 输出 unsigned 直接 cout << n 即可，读入也不用 %u。\nC++ 还有更简洁的标准写法 std::bitset<32>(n).count()（<bitset>），以及 C++20 的 std::popcount；本题保留手写循环以体现位运算考点。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    unsigned int n;\n    int cnt = 0;\n\n    cin >> n;\n    while (n != 0) {\n        cnt += (int)(n & 1u);\n        n >>= 1;\n    }\n    cout << cnt << endl;\n    return 0;\n}"
+ },
+ "基-48": {
+  "analysis": "大小写字母只差第 5 位（0x20）：转小写用按位或 c | 0x20，转大写用按位与 c & ~0x20，位运算规则与 C 完全一致。\nC++ 里 (char) 强转可以写成 static_cast<char>(c | 0x20)，语义更清楚；标准库还提供了 std::tolower/std::toupper（<cctype>），但它们的参数必须是 unsigned char 或 EOF，考试里按位操作更直观。",
+  "stem": "下面程序利用 ASCII 码的位规律转换字母大小写：大写字母的二进制第 5 位（权值 0x20）为 0，小写字母为 1。请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint main()\n{\n    char c;\n\n    scanf(\"%c\", &c);\n    if (c >= 'A' && c <= 'Z')\n        c = (char)(c ① 0x20);      /* 转成小写 */\n    else if (c >= 'a' && c <= 'z')\n        c = (char)(c ② 0x20);      /* 转成大写 */\n    printf(\"%c\\n\", c);\n    return 0;\n}\n```"
+ },
+ "函-24": {
+  "analysis": "函数指针在 C++ 中保持原样：int (*p)(int, int) = add; 函数名自动转换为函数指针，op(x, y) 与 (*op)(x, y) 两种调用等价。\nC++ 多了两种更灵活的替代：std::function<int(int, int)> 可以保存函数、函数对象与 lambda；模板参数 F op 则能让编译器内联，性能最好。用自动类型推导写 auto p = add; 也可以。",
+  "stem": "下面程序通过函数指针把不同的运算传给同一个函数。请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint add(int a, int b) { return a + b; }\nint mul(int a, int b) { return a * b; }\n\nint apply(int (*op)(int, int), int x, int y)\n{\n    return ①;\n}\n\nint main()\n{\n    int (*p)(int, int) = ②;\n\n    printf(\"%d %d\\n\", apply(p, 3, 4), apply(③, 3, 4));\n    return 0;\n}\n```"
+ },
+ "函-26": {
+  "analysis": "汉诺塔的递归结构：先把上面 n-1 个盘从 from 借助 to 移到 aux，再把最大的盘从 from 移到 to，最后把 n-1 个盘从 aux 借助 from 移到 to——三步顺序不能变。\nC++ 版本用全局 long long 统计步数（步数是 2ⁿ-1，n ≤ 10 时 int 也够，但用 long long 更保险），输出格式 A->B 用 cout 拼接字符即可。\n易错点：递归出口 n == 0；参数顺序（from, aux, to）在两次递归中要交换；忘记统计步数或把总步数写成 2n-1。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nlong long moves = 0;\n\nvoid hanoi(int n, char from, char aux, char to)\n{\n    if (n == 0)\n        return;\n    hanoi(n - 1, from, to, aux);\n    cout << from << \"->\" << to << endl;\n    moves++;\n    hanoi(n - 1, aux, from, to);\n}\n\nint main()\n{\n    int n;\n\n    cin >> n;\n    hanoi(n, 'A', 'B', 'C');\n    cout << \"total=\" << moves << endl;\n    return 0;\n}"
+ },
+ "函-28": {
+  "analysis": "二维数组形参必须写出行宽：int a[][C]，编译器据此计算 a[row][j] 的偏移量；C++ 用 constexpr int C = 4 取代 #define，既有类型也有作用域，是更现代的做法。\nC++ 里还可以写模板 int rowSum(const int (&a)[R][C], int row)，用引用保留完整类型，这样 sizeof 与范围 for 都能正常工作；实际工程则常用 std::vector<std::vector<int>>。",
+  "stem": "下面程序读入 3 行 4 列的整数矩阵，输出每一行元素之和。请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nconstexpr int R = 3;\nconstexpr int C = 4;\n\nint rowSum(int a[][C], int row)\n{\n    int j, s = 0;\n\n    for (j = 0; j < C; j++)\n        s += ①;\n    return s;\n}\n\nint main()\n{\n    int m[R][C];\n    int i, j;\n\n    for (i = 0; i < R; i++)\n        for (j = 0; j < C; j++)\n            scanf(\"%d\", &m[i][j]);\n    for (i = 0; i < R; i++)\n        printf(\"%d\\n\", ②);\n    return 0;\n}\n```"
+ },
+ "数-46": {
+  "analysis": "前缀和 pre[i] = pre[i-1] + a[i] 是纯递推，C++ 与 C 完全一致；查询时 pre[r] - pre[l-1] 把区间和降到 O(1)。\nC++ 里可以把数组换成 std::vector<int> pre(n + 1, 0)，长度按输入决定且自动清零，比固定 1005 的数组更安全。注意 pre[0] 必须为 0，否则 l = 1 时 pre[l-1] 会读未初始化值。",
+  "stem": "下面程序先读入 n 个整数，再回答 q 次区间和查询（下标从 1 开始），请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint main()\n{\n    int n, q, i, l, r;\n    int a[1005], pre[1005] = {0};\n\n    scanf(\"%d\", &n);\n    for (i = 1; i <= n; i++)\n        scanf(\"%d\", &a[i]);\n\n    for (i = 1; i <= n; i++)\n        pre[i] = ①;\n\n    scanf(\"%d\", &q);\n    while (q-- > 0) {\n        scanf(\"%d%d\", &l, &r);\n        printf(\"%d\\n\", ②);\n    }\n    return 0;\n}\n```\n\n例如依次输入 `5`、`2 4 1 7 3`、`1`、`2 4`，程序应输出 `12`。"
+ },
+ "数-48": {
+  "analysis": "滑动窗口最大值可以用 O(nk) 的暴力：每个窗口扫一遍取最大，n ≤ 1000 时足够；也可以像这里用单调队列（std::deque 存下标）做到 O(n)：队首始终是当前窗口最大值的下标，入队前把队尾所有不大于新元素的下标弹出。\nC++ 版本用 deque<int> 存下标而不是值，便于判断队首是否已经滑出窗口（dq.front() <= i - k 就弹出）。暴力版则对应 std::max_element(a.begin() + i, a.begin() + i + k)。\n易错点：输出只有 n-k+1 个数、行末无多余空格；队首出窗口的判断必须在取答案之前；k == n 时只输出一个数。",
+  "solution": "#include <iostream>\n#include <vector>\n#include <deque>\nusing namespace std;\n\nint main()\n{\n    int n, k, i;\n    vector<int> a;\n    deque<int> dq;\n    int first = 1;\n\n    cin >> n >> k;\n    a.resize(n);\n    for (i = 0; i < n; i++)\n        cin >> a[i];\n\n    for (i = 0; i < n; i++) {\n        while (!dq.empty() && a[dq.back()] <= a[i])\n            dq.pop_back();\n        dq.push_back(i);\n        if (dq.front() <= i - k)\n            dq.pop_front();\n        if (i >= k - 1) {\n            if (!first)\n                cout << \" \";\n            cout << a[dq.front()];\n            first = 0;\n        }\n    }\n    cout << endl;\n    return 0;\n}"
+ },
+ "数-50": {
+  "analysis": "双指针从两端向中间靠拢，只要当前字符相同就继续；循环结束时如果 i >= j 说明整串都配对成功，包括奇数长度时 i == j 的中间字符。\nC++ 可以直接用 std::string：判断 s == std::string(s.rbegin(), s.rend()) 一行完成；也可以 std::equal(s.begin(), s.begin() + s.size() / 2, s.rbegin())（<algorithm>）。注意 strlen 返回 size_t，减 1 前要确认字符串非空。",
+  "stem": "下面程序判断读入的字符串（不含空格）是否为回文：是则输出 `yes`，否则输出 `no`。请填空。\n\n```cpp\n#include <cstdio>\n#include <cstring>\nusing namespace std;\n\nint main()\n{\n    char s[100];\n    int i = 0, j;\n\n    scanf(\"%99s\", s);\n    j = (int)strlen(s) - 1;\n\n    while (i < j && ①) {\n        i++;\n        j--;\n    }\n\n    if (②)\n        printf(\"yes\\n\");\n    else\n        printf(\"no\\n\");\n    return 0;\n}\n```\n\n例如输入 `level` 输出 `yes`，输入 `levels` 输出 `no`。"
+ },
+ "数-53": {
+  "analysis": "鞍点判定分两步：先找出第 i 行的最大值 rowmax，再对行内每个等于 rowmax 的位置检查它是否是所在列的最小值；同一行可能有多个相等的最大值，所以不能只记录一个下标。\nC++ 版本用 vector<vector<int>> 动态建表，输出格式与 C 完全一致（行 列 值，行末换行）。若没有任何鞍点，found 仍为 0，输出 none。\n易错点：列最小值的比较用严格小于（允许相等，否则重复最大值会漏判）；found 要在找到时置 1；下标从 0 开始输出。",
+  "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    vector<vector<int>> a;\n    int m, n, i, j, k, found = 0;\n\n    cin >> m >> n;\n    a.assign(m, vector<int>(n));\n\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++)\n            cin >> a[i][j];\n\n    for (i = 0; i < m; i++) {\n        int rowmax = a[i][0];\n        int is_col_min;\n\n        for (j = 1; j < n; j++)\n            if (a[i][j] > rowmax)\n                rowmax = a[i][j];\n\n        for (j = 0; j < n; j++) {\n            if (a[i][j] != rowmax)\n                continue;\n            is_col_min = 1;\n            for (k = 0; k < m; k++)\n                if (a[k][j] < a[i][j])\n                    is_col_min = 0;\n            if (is_col_min) {\n                cout << i << \" \" << j << \" \" << a[i][j] << endl;\n                found = 1;\n            }\n        }\n    }\n\n    if (!found)\n        cout << \"none\" << endl;\n    return 0;\n}"
+ },
+ "数-54": {
+  "analysis": "二维数组形参必须带列宽：int a[][N]，C++ 用 constexpr int N = 4 取代 #define，既能参与数组维度计算，又有类型和作用域。\n判断边界用 i == 0 || i == rows - 1 || j == 0 || j == N - 1，四个条件用 || 连接；C++ 也可以写 std::vector<std::vector<int>> 并直接用 a.size()、a[0].size() 取维度。",
+  "stem": "下面程序用二维数组作形参，求 4×4 矩阵最外一圈（边界）元素之和，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nconstexpr int N = 4;\n\nint edge_sum(int a[][N], int rows)\n{\n    int i, j, s = 0;\n\n    for (i = 0; i < rows; i++)\n        for (j = 0; j < N; j++)\n            if (①)\n                s += a[i][j];\n    return s;\n}\n\nint main()\n{\n    int a[4][N] = {{1, 2, 3, 4},\n                   {5, 6, 7, 8},\n                   {9, 10, 11, 12},\n                   {13, 14, 15, 16}};\n\n    printf(\"%d\\n\", ②);\n    return 0;\n}\n```"
+ },
+ "数-57": {
+  "analysis": "朴素匹配的双层循环在 C++ 中语法完全相同：外层枚举起点 i（范围 i + m <= n），内层逐字符比较，j == m 表示全部匹配成功。\nC++ 里可以直接用 std::string::find：auto pos = s.find(p); 找不到返回 std::string::npos，再转成 int 输出。手写版本要注意 s[i + j] 的下标不能越界，所以外层条件是 i + m <= n 而不是 i < n。",
+  "stem": "下面程序在读入的文本串中查找模式串首次出现的位置（下标从 0 开始，找不到输出 -1），采用朴素匹配，请填空。\n\n```cpp\n#include <cstdio>\n#include <cstring>\nusing namespace std;\n\nint main()\n{\n    char s[200], p[50];\n    int n, m, i, j, pos = -1;\n\n    scanf(\"%199s\", s);\n    scanf(\"%49s\", p);\n    n = (int)strlen(s);\n    m = (int)strlen(p);\n\n    for (i = 0; i + m <= n; i++) {\n        for (j = 0; j < m; j++)\n            if (①)\n                break;\n        if (②) {\n            pos = i;\n            break;\n        }\n    }\n\n    printf(\"%d\\n\", pos);\n    return 0;\n}\n```\n\n例如输入 `ababc` 与 `abc`，输出 `2`。"
+ },
+ "数-58": {
+  "analysis": "归并两个非降序序列用双指针：每次取较小的那个放入结果，相等时先取前一个（<= 保证稳定），最后把剩余部分整段接上。\nC++ 里可以直接用 std::merge(a.begin(), a.end(), b.begin(), b.end(), back_inserter(c))（<algorithm> + <iterator>），内部就是这套双指针逻辑，结果同样非降序、同样保持相等元素的先后关系。\n易错点：两个序列长度可能不同，剩余的 while 不能漏；输出 n+m 个数、行末无空格；输入序列本身就是非降序，不需要再排序。",
+  "solution": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <iterator>\nusing namespace std;\n\nint main()\n{\n    int n, m, i;\n    vector<int> a, b, c;\n\n    cin >> n >> m;\n    a.resize(n);\n    b.resize(m);\n    for (i = 0; i < n; i++)\n        cin >> a[i];\n    for (i = 0; i < m; i++)\n        cin >> b[i];\n\n    merge(a.begin(), a.end(), b.begin(), b.end(), back_inserter(c));\n\n    for (i = 0; i < (int)c.size(); i++) {\n        if (i > 0)\n            cout << \" \";\n        cout << c[i];\n    }\n    cout << endl;\n    return 0;\n}"
+ },
+ "数-61": {
+  "analysis": "\"整体反转 + 分段反转\"的三步在 C++ 中一模一样，只是 <algorithm> 里已经有了 std::reverse(begin, end)，写 std::reverse(a, a + n) 即可（注意区间是左闭右开，和本题自定义函数的闭区间写法不同）。\n先做 k % n 是关键：k 可能大于 n，取模后 k 落在 0~n-1；k 为 0 时三个 reverse 都不会改变数组。C++17 还可以用 std::rotate(a, a + n - k, a + n) 一次完成循环右移。",
+  "stem": "下面程序把数组循环右移 k 位（k 可以大于 n），采用“整体反转 + 分段反转”的办法，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nvoid reverse(int a[], int left, int right)\n{\n    int t;\n\n    while (left < right) {\n        t = a[left];\n        a[left] = a[right];\n        a[right] = t;\n        left++;\n        right--;\n    }\n}\n\nint main()\n{\n    int a[100], n, k, i;\n\n    scanf(\"%d%d\", &n, &k);\n    for (i = 0; i < n; i++)\n        scanf(\"%d\", &a[i]);\n\n    k = ①;\n    reverse(a, 0, n - 1);\n    reverse(a, 0, ②);\n    reverse(a, ③, n - 1);\n\n    for (i = 0; i < n; i++) {\n        if (i > 0)\n            putchar(' ');\n        printf(\"%d\", a[i]);\n    }\n    printf(\"\\n\");\n    return 0;\n}\n```\n\n例如输入 `5 2` 与 `1 2 3 4 5`，程序应输出 `4 5 1 2 3`。"
+ },
+ "数-62": {
+  "analysis": "顺时针旋转 90° 的下标关系是 b[j][n-1-i] = a[i][j]：原第 i 行变成新第 n-1-i 列，原第 j 列变成新第 j 行。\nC++ 版本用 vector<vector<int>> 按 n 动态建表，输出与 C 完全一致（每行 n 个数、行末无多余空格）。若要求原地旋转，可以\"先转置再左右翻转\"：swap(a[i][j], a[j][i]) 之后对每行用 std::reverse。\n易错点：下标写反成 b[n-1-j][i] 就变成逆时针；行列都写成 i、j 会得到对称矩阵；n == 1 时直接输出原值。",
+  "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    int n, i, j;\n    vector<vector<int>> a, b;\n\n    cin >> n;\n    a.assign(n, vector<int>(n));\n    b.assign(n, vector<int>(n));\n\n    for (i = 0; i < n; i++)\n        for (j = 0; j < n; j++)\n            cin >> a[i][j];\n\n    for (i = 0; i < n; i++)\n        for (j = 0; j < n; j++)\n            b[j][n - 1 - i] = a[i][j];\n\n    for (i = 0; i < n; i++) {\n        for (j = 0; j < n; j++) {\n            if (j > 0)\n                cout << \" \";\n            cout << b[i][j];\n        }\n        cout << endl;\n    }\n    return 0;\n}"
+ },
+ "数-64": {
+  "analysis": "用 26 个桶统计出现次数是 C++ 与 C 通用的做法：cnt[s[i] - 'a'] 把字符映射到 0~25 的下标，第二遍扫描找到第一个计数为 1 的字符即答案。\nC++ 可以用 std::array<int, 26> cnt{}; 或 std::map<char, int>。第二个空必须 break，否则 pos 会被后面满足条件的字符覆盖，拿到的就不是\"第一个\"了。",
+  "stem": "下面程序找出字符串中第一个只出现一次的字符，输出该字符及其下标；若不存在则输出 `none`。请填空。\n\n```cpp\n#include <cstdio>\n#include <cstring>\nusing namespace std;\n\nint main()\n{\n    char s[100];\n    int cnt[26] = {0}, i, pos = -1;\n\n    scanf(\"%99s\", s);\n\n    for (i = 0; s[i] != '\\0'; i++)\n        cnt[①]++;\n\n    for (i = 0; s[i] != '\\0'; i++)\n        if (cnt[s[i] - 'a'] == 1) {\n            pos = i;\n            ②;\n        }\n\n    if (pos >= 0)\n        printf(\"%c %d\\n\", s[pos], pos);\n    else\n        printf(\"none\\n\");\n    return 0;\n}\n```\n\n例如输入 `abac`，输出 `b 1`。"
+ },
+ "指-51": {
+  "analysis": "返回函数指针的函数在 C++ 中同样要写 int (*pick(char op))(int, int)，读法是\"pick 是函数，参数 char，返回 int(*)(int,int)\"。\nC++11 可以用尾置返回类型写得更清楚：auto pick(char op) -> int (*)(int, int)；也能用 auto 让返回类型自动推导。若改用 std::function<int(int,int)>，则返回 add、sub 或 lambda 都可以。",
+  "stem": "下面程序让 `pick` 根据运算符返回对应的函数指针，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint add(int a, int b) { return a + b; }\nint sub(int a, int b) { return a - b; }\n\nint apply(int (*fn)(int, int), int x, int y)\n{\n    return fn(x, y);\n}\n\nint (*pick(char op))(int, int)\n{\n    if (op == '+')\n        return ①;\n    return sub;\n}\n\nint main()\n{\n    int (*f)(int, int) = ②;\n    printf(\"%d\\n\", apply(f, 9, 4));\n    f = pick('+');\n    printf(\"%d\\n\", ③);\n    return 0;\n}\n```\n\n补全后输出两行：`5` 和 `13`。"
+ },
+ "指-53": {
+  "analysis": "qsort 的比较函数签名固定是 int cmp(const void *, const void *)，内部先把 void* 转成 const int* 再解引用；返回负/零/正表示小于/等于/大于。C++ 里这个转换同样必须显式写。\n排序规则是\"先比绝对值，绝对值相同再比数值本身\"，所以比较函数分两级；若只写一级，-2 与 2 的先后就取决于实现。\n题面要求用 qsort，因此 C++ 版本也保留 qsort，只是把数组换成 vector<int> 并用 a.data() 取首地址（C++11 起保证连续）。C++ 的替代方案是 std::sort 加 lambda 比较器，不涉及 void*。\n易错点：abs 用 <cstdlib> 的 std::abs 时注意类型；比较函数不能返回 bool（qsort 需要三态）；n 与元素个数要匹配。",
+  "solution": "#include <iostream>\n#include <vector>\n#include <cstdlib>\nusing namespace std;\n\nstatic int abs_int(int x)\n{\n    return x < 0 ? -x : x;\n}\n\nint cmp(const void *pa, const void *pb)\n{\n    int a = *(const int *)pa;\n    int b = *(const int *)pb;\n    int aa = abs_int(a);\n    int bb = abs_int(b);\n\n    if (aa != bb)\n        return aa < bb ? -1 : 1;\n    if (a == b)\n        return 0;\n    return a < b ? -1 : 1;\n}\n\nint main()\n{\n    int n, i;\n    vector<int> a;\n\n    if (!(cin >> n) || n <= 0 || n > 100)\n        return 0;\n    a.resize(n);\n    for (i = 0; i < n; i++)\n        cin >> a[i];\n\n    qsort(a.data(), (size_t)n, sizeof(int), cmp);\n\n    for (i = 0; i < n; i++)\n        cout << a[i] << (i < n - 1 ? ' ' : '\\n');\n    return 0;\n}"
+ },
+ "指-54": {
+  "analysis": "读写指针 p、q 同向移动的\"原地压缩\"技巧在 C++ 中完全适用：q 只在字符与已写入的最后一个字符不同时才写，最后补 '\\0' 并返回新长度。\nC++ 里对应的一行是 s.erase(std::unique(s.begin(), s.end()), s.end())（<algorithm> + std::string）。注意 *(q - 1) 只有在 q 已经写过字符时才合法，所以判断顺序必须先是 q == s。",
+  "stem": "下面程序把字符串中连续重复的字符压缩成一个，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint compress(char *s)\n{\n    char *p = s, *q = s;\n    while (*p != '\\0') {\n        if (q == s || *p != ①)\n            *q++ = *p;\n        p++;\n    }\n    ②;\n    return (int)(q - s);\n}\n\nint main()\n{\n    char s[] = \"aaabbbcccd\";\n    int n = compress(s);\n    printf(\"%s %d\\n\", s, ③);\n    return 0;\n}\n```\n\n补全后输出 `abcd 4`。"
+ },
+ "指-57": {
+  "analysis": "左右指针向中间夹逼的判断在 C++ 中同样成立：left < right 时比较两端字符，不同立刻返回 0，全部相同则返回 1。\nC++ 可以用 const char * 指针，也可以直接 std::string 加两个下标，或用 std::equal(s.begin(), s.begin() + s.size() / 2, s.rbegin())。printf 的三目表达式输出 YES/NO 与 C 完全一致。",
+  "stem": "下面程序用双指针判断字符串是否为回文，请填空。\n\n```cpp\n#include <cstdio>\n#include <cstring>\nusing namespace std;\n\nint is_palindrome(const char *s)\n{\n    const char *left = s;\n    const char *right = s + strlen(s) - 1;\n\n    while (left < right) {\n        if (①)\n            return 0;\n        left++;\n        ②;\n    }\n    return 1;\n}\n\nint main()\n{\n    char s[100];\n    scanf(\"%99s\", s);\n    printf(\"%s\\n\", ③ ? \"YES\" : \"NO\");\n    return 0;\n}\n```\n\n输入 `level` 输出 `YES`，输入 `hello` 输出 `NO`。"
+ },
+ "指-59": {
+  "analysis": "题面要求只调用一次 malloc 申请 m*n 个 int 的连续内存，再用 i * n + j 做行优先寻址；这是\"用一维数组模拟二维\"的经典写法，转置输出时交换 i、j 的下标即可（不必真的移动数据）。\nC++ 里 malloc 的 void* 必须显式转成 int*，所以 (int *)malloc(...) 这个 C 风格转换不能省；也可以用 static_cast<int *>。若改用 new int[m * n]，释放要配 delete[]。\n易错点：malloc 的字节数必须乘 sizeof(int)；转置输出外层是 j（列）、内层是 i（行）；忘记 free 会泄漏。",
+  "solution": "#include <iostream>\n#include <cstdlib>\nusing namespace std;\n\nint main()\n{\n    int m, n, i, j;\n    int *a;\n\n    if (!(cin >> m >> n) || m <= 0 || n <= 0)\n        return 0;\n\n    a = (int *)malloc((size_t)m * n * sizeof(int));\n    if (a == NULL)\n        return 1;\n\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++)\n            cin >> a[i * n + j];\n\n    for (j = 0; j < n; j++) {\n        for (i = 0; i < m; i++)\n            cout << a[i * n + j] << (i < m - 1 ? ' ' : '\\n');\n    }\n\n    free(a);\n    return 0;\n}",
+  "stem": "输入 m 和 n（1 ≤ m, n ≤ 50），再输入 m 行 n 列的整数矩阵。要求**只调用一次 `malloc`** 申请一块连续内存\n\n```cpp\nint *a = (int *)malloc((size_t)m * n * sizeof(int));\n```\n\n存放整个矩阵，用 `a[i * n + j]` 访问元素，输出它的转置矩阵（共 n 行，每行 m 列），最后释放内存。\n\n**输入格式：** 第一行两个整数 m 和 n；随后 m 行，每行 n 个整数。\n\n**输出格式：** 转置后的 n 行，每行 m 个整数，相邻整数之间一个空格。\n\n**输入样例：**\n```text\n2 3\n1 2 3\n4 5 6\n```\n**输出样例：**\n```text\n1 4\n2 5\n3 6\n```"
+ },
+ "指-60": {
+  "analysis": "函数指针数组 int (*op[3])(int, int) 在 C++ 中依旧合法，初始化列表依次放 add、sub、mul，与 sym 数组的下标一一对应。\nC++17 提供了 std::size(op)（<iterator>），可以直接得到元素个数，比 sizeof(op) / sizeof(op[0]) 更安全；也可以用 std::array<int (*)(int, int), 3> 或 std::function<int(int, int)> 数组。注意 op[i](x, y) 与 (*op[i])(x, y) 等价。",
+  "stem": "下面程序用函数指针数组实现一个极简计算器，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint add(int a, int b) { return a + b; }\nint sub(int a, int b) { return a - b; }\nint mul(int a, int b) { return a * b; }\n\nint main()\n{\n    int (*op[3])(int, int) = {①};\n    char sym[3] = {'+', '-', '*'};\n    char c;\n    int x, y, i;\n\n    if (scanf(\"%d %d %c\", &x, &y, &c) != 3)\n        return 0;\n\n    for (i = 0; i < ②; i++)\n        if (sym[i] == c) {\n            printf(\"%d\\n\", ③);\n            break;\n        }\n    return 0;\n}\n```\n\n输入 `6 3 *` 时输出 `18`。"
+ },
+ "指-61": {
+  "analysis": "用一维数组模拟二维数组靠的是行优先映射 i * n + j，C++ 的数组内存布局与 C 一样是行优先，所以这种写法通用。\nmalloc 返回 void*，C 里可以隐式赋给 int*，C++ 必须写 (int *) 或 static_cast<int *>；C++ 也可以写 new int[m * n]，只是释放要配 delete[]。现代写法是 std::vector<int> a(m * n)，或用 std::vector<std::vector<int>> 直接得到二维容器。",
+  "stem": "下面程序用一块连续内存模拟 3 行 4 列的二维数组，请填空。\n\n```cpp\n#include <cstdio>\n#include <cstdlib>\nusing namespace std;\n\nint main()\n{\n    int m = 3, n = 4, i, j;\n    int *a = (int *)malloc((size_t)m * n * sizeof(int));\n\n    if (a == NULL)\n        return 1;\n\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++)\n            a[①] = i * 10 + j;\n\n    for (i = 0; i < m; i++)\n        for (j = 0; j < n; j++)\n            printf(\"%d%c\", a[i * n + j], j < n - 1 ? ' ' : '\\n');\n\n    printf(\"%d\\n\", a[②]);\n    ③;\n    return 0;\n}\n```\n\n程序输出前 3 行为 0~23 的矩阵，第 4 行是 `21`。"
+ },
+ "指-63": {
+  "analysis": "读写双指针原地压掉空格：p 扫描、q 写回，结束时 *q = '\\0' 并返回 q - s 作为新长度；读入用 fgets 保留空格，再把行末换行改成 '\\0'。\nC++ 里对 char 数组仍可用这套指针写法；若用 std::string，可以 s.erase(std::remove(s.begin(), s.end(), ' '), s.end()) 再输出 s.size()。注意题目要求\"不申请新数组\"，所以不要在函数里新建缓冲区。\n易错点：忘记去掉行末 '\\n' 会让长度多 1；忘记补 '\\0' 会输出脏字符；长度用 int 返回时注意 q - s 是 ptrdiff_t。",
+  "solution": "#include <cstdio>\nusing namespace std;\n\nint squeeze(char *s)\n{\n    char *p = s;\n    char *q = s;\n\n    while (*p != '\\0') {\n        if (*p != ' ')\n            *q++ = *p;\n        p++;\n    }\n    *q = '\\0';\n    return (int)(q - s);\n}\n\nint main()\n{\n    char s[200];\n    char *p;\n    int n;\n\n    if (fgets(s, sizeof(s), stdin) == NULL)\n        return 0;\n\n    p = s;\n    while (*p != '\\0' && *p != '\\n')\n        p++;\n    *p = '\\0';\n\n    n = squeeze(s);\n    printf(\"%s\\n%d\\n\", s, n);\n    return 0;\n}"
+ },
+ "指-65": {
+  "analysis": "void* 不能直接做指针算术，必须先转成 unsigned char*，C++ 同样如此；用 unsigned char 逐字节复制可以避免符号性问题，这正是 memcpy 的实现思路。\n第二个空要按字节数传 sizeof(x)，C++ 里 sizeof 返回 size_t，用 (int) 转成 int 更符合形参类型，也可以把形参改成 std::size_t。标准库已经提供了 std::memcpy（<cstring>），本题要求手写循环。",
+  "stem": "下面程序用指针逐字节复制内存，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nvoid copy_bytes(void *dst, const void *src, int n)\n{\n    unsigned char *d = (unsigned char *)dst;\n    const unsigned char *s = (const unsigned char *)src;\n\n    while (n-- > 0)\n        ①;\n}\n\nint main()\n{\n    int x = 0x11223344, y = 0;\n\n    copy_bytes(&y, &x, ②);\n    printf(\"%d\\n\", y == x);\n    printf(\"%d\\n\", ③);\n    return 0;\n}\n```\n\n补全后输出 `1` 和 `4`。"
+ },
+ "指-67": {
+  "analysis": "通用排序函数的关键是把 void* 转成 char* 后按字节寻址：第 i 个元素的地址是 p + i * size，交换时逐字节搬运，因而与元素类型无关；比较仍由调用者传入的函数指针对接。\nC++ 同样支持这套写法（void* 必须显式转 char*），但要注意 C++ 的对象模型：对非平凡可拷贝类型（如 std::string）做逐字节交换是未定义行为，这也是 std::sort 用移动赋值而不是 memcpy 的原因。本题元素是 int，字节交换安全。\n易错点：元素地址要用 i * size 而不是 i；比较函数返回负/零/正；swap 的 size 必须是单个元素的字节数。",
+  "solution": "#include <iostream>\n#include <cstddef>\nusing namespace std;\n\nint cmp_int(const void *pa, const void *pb)\n{\n    int a = *(const int *)pa;\n    int b = *(const int *)pb;\n\n    return (a > b) - (a < b);\n}\n\nstatic void swap_bytes(char *x, char *y, size_t size)\n{\n    size_t i;\n\n    for (i = 0; i < size; i++) {\n        char t = x[i];\n        x[i] = y[i];\n        y[i] = t;\n    }\n}\n\nvoid sort(void *base, size_t n, size_t size, int (*cmp)(const void *, const void *))\n{\n    char *p = (char *)base;\n    size_t i, j, best;\n\n    for (i = 0; i + 1 < n; i++) {\n        best = i;\n        for (j = i + 1; j < n; j++)\n            if (cmp(p + j * size, p + best * size) < 0)\n                best = j;\n        if (best != i)\n            swap_bytes(p + i * size, p + best * size, size);\n    }\n}\n\nint main()\n{\n    int a[50], n, i;\n\n    if (!(cin >> n) || n <= 0 || n > 50)\n        return 0;\n    for (i = 0; i < n; i++)\n        cin >> a[i];\n\n    sort(a, (size_t)n, sizeof(int), cmp_int);\n\n    for (i = 0; i < n; i++)\n        cout << a[i] << (i < n - 1 ? ' ' : '\\n');\n    return 0;\n}",
+  "stem": "输入 n（1 ≤ n ≤ 50）个整数，用你自己实现的**通用排序函数**\n\n```cpp\nvoid sort(void *base, size_t n, size_t size, int (*cmp)(const void *, const void *));\n```\n\n排序后输出。要求：函数内部必须用 `char *` 做字节级寻址、逐字节交换元素，从而对任意元素类型都适用；不得直接按 `int` 处理，也不得调用 `qsort`。\n\n**输入格式：** 第一行一个整数 n；第二行 n 个整数，用空格分隔。\n\n**输出格式：** 升序输出 n 个整数，相邻整数之间一个空格，行末换行。\n\n**输入样例：**\n```text\n6\n3 -1 4 1 5 9\n```\n**输出样例：**\n```text\n-1 1 3 4 5 9\n```"
+ },
+ "指-72": {
+  "analysis": "返回指针的查找函数在 C++ 里照旧可行：左闭右开区间 [begin, end)，找到就返回指向该元素的指针，找不到返回空指针。\nC++11 起空指针统一写 nullptr，它比 NULL（一般是 0 或 ((void*)0)）类型更安全，不会和整型 0 混淆。标准库 <algorithm> 已经提供了 std::find_if(begin, end, pred)，返回迭代器，找不到时返回 end，用返回值 != end 判断，比返回空指针更通用。",
+  "stem": "下面程序用函数指针实现「在区间内查找第一个满足条件的元素」，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nint is_odd(int x) { return x % 2 != 0; }\n\nint *find_if(int *begin, int *end, int (*pred)(int))\n{\n    for (; ①; begin++)\n        if (②)\n            return begin;\n    return ③;\n}\n\nint main()\n{\n    int a[6] = {2, 4, 7, 8, 9, 10};\n    int *p = find_if(a, a + 6, is_odd);\n\n    if (p != nullptr)\n        printf(\"%d %d\\n\", *p, (int)(p - a));\n    return 0;\n}\n```\n\n补全后输出 `7 2`。",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "begin < end",
+    "note": "左闭右开区间，end 指向尾后位置"
+   },
+   {
+    "no": "②",
+    "answer": "pred(*begin)",
+    "note": "也可写 (*pred)(*begin)；pred 是函数指针，*begin 是当前元素"
+   },
+   {
+    "no": "③",
+    "answer": "nullptr",
+    "note": "C++11 的空指针常量；C 版本写 NULL，C++ 里也兼容但 nullptr 类型更安全"
+   }
+  ]
+ },
+ "结-43": {
+  "analysis": "链表反转的三指针法在任何语言里都一样：先用 next 存住后继，再让 cur->next 指向 prev，最后 prev 与 cur 一起前进。\nC++ 版本改用 new Node 与 nullptr，不再需要 (struct Node *) 强转；释放链表时用 delete 而不是 free。标准库的 std::forward_list 和 std::list 都有 reverse() 成员函数，实际工程里不必手写这段。",
+  "stem": "下面程序用尾插法建立单链表，再调用 `reverse` 把它整体反转后输出，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\n/* 反转整条链表，返回新的表头 */\nNode *reverse(Node *head)\n{\n    Node *prev = nullptr, *cur = head, *next;\n\n    while (cur != nullptr) {\n        next = ①;\n        cur->next = ②;\n        prev = cur;\n        cur = ③;\n    }\n    return prev;\n}\n\nint main()\n{\n    int x;\n    Node *head = nullptr, *tail = nullptr, *p;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->next = nullptr;\n        if (head == nullptr)\n            head = tail = p;\n        else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n\n    head = reverse(head);\n\n    for (p = head; p != nullptr; p = p->next)\n        printf(\"%d \", p->data);\n    printf(\"\\n\");\n    return 0;\n}\n```",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "cur->next",
+    "note": "先保存后继，否则改链之后就找不到了"
+   },
+   {
+    "no": "②",
+    "answer": "prev",
+    "note": "让当前结点指向前驱；第一轮 prev 为 nullptr，所以原表头会变成新表尾"
+   },
+   {
+    "no": "③",
+    "answer": "next",
+    "note": "cur 前移到刚才保存的后继，不能写 cur->next（那已经指向 prev 了）"
+   }
+  ]
+ },
+ "结-45": {
+  "analysis": "链表反转的三指针法：先保存 cur->next，再让 cur->next 指向 prev，最后 prev 与 cur 同步前进；循环结束时 prev 就是新表头。\nC++ 版本用 new/delete 与 nullptr；建表用尾插法以保证输入顺序。输出要求行末无多余空格，用 first 标记；空链表输出 empty。\n易错点：改链前必须保存 next，否则后半段链表丢失；反转后要释放，且释放应在反转之后（顺序无关但指针要清）；输出完记得换行。std::forward_list 自带 reverse()，实际工程可直接用。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\nNode *reverse(Node *head)\n{\n    Node *prev = nullptr, *cur = head, *next;\n\n    while (cur != nullptr) {\n        next = cur->next;\n        cur->next = prev;\n        prev = cur;\n        cur = next;\n    }\n    return prev;\n}\n\nint main()\n{\n    int x, first = 1;\n    Node *head = nullptr, *tail = nullptr, *p, *q;\n\n    while (cin >> x && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->next = nullptr;\n        if (head == nullptr) {\n            head = tail = p;\n        } else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n\n    head = reverse(head);\n\n    if (head == nullptr) {\n        cout << \"empty\" << endl;\n        return 0;\n    }\n    for (p = head; p != nullptr; p = p->next) {\n        if (!first)\n            cout << \" \";\n        cout << p->data;\n        first = 0;\n    }\n    cout << endl;\n\n    p = head;\n    while (p != nullptr) {\n        q = p->next;\n        delete p;\n        p = q;\n    }\n    return 0;\n}"
+ },
+ "结-48": {
+  "analysis": "快慢指针找中点与语言无关：slow 每次走一步、fast 每次走两步，循环结束时 slow 正好在中间；偶数个结点时因循环条件 fast->next != nullptr 而停在后中间那个。\nC++ 版本同样要注意先判空再解引用 fast->next->next，参数写成 const Node * 会更规范（这里需要返回非 const 指针以便后续遍历）。标准库 std::list 没有 O(n) 取中点的接口，这类题只能手写。",
+  "stem": "下面程序用快慢指针返回链表的中间结点（偶数个结点时返回后中间的那个），请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\nNode *middle(Node *head)\n{\n    Node *slow = head, *fast = head;\n\n    while (fast != nullptr && fast->next != nullptr) {\n        slow = slow->next;\n        fast = ①;\n    }\n    return ②;\n}\n\nint main()\n{\n    int x;\n    Node *head = nullptr, *tail = nullptr, *p;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->next = nullptr;\n        if (head == nullptr)\n            head = tail = p;\n        else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    if (head == nullptr)\n        return 0;\n\n    p = middle(head);\n    printf(\"%d\\n\", p->data);\n    return 0;\n}\n```"
+ },
+ "结-49": {
+  "analysis": "两条升序链表合并用\"哑结点 + 尾指针\"：每次取较小的结点挂到 tail 后面，并把该链表指针前移；一方走空后把另一方整段接上。\nC++ 版本用 new/delete 与 nullptr，把建表逻辑封装成 build()，两次调用分别读两行序列（cin >> x 会自动跳过换行，所以不必额外处理行边界）。\n易错点：比较用 <= 才能保持相等元素的先后（稳定）；循环结束后的整段接上不能漏；合并结果为空时要输出 empty；释放时要沿着合并后的链表走。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\nNode *build()\n{\n    int x;\n    Node *head = nullptr, *tail = nullptr, *p;\n\n    while (cin >> x && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->next = nullptr;\n        if (head == nullptr) {\n            head = tail = p;\n        } else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    return head;\n}\n\nNode *merge(Node *a, Node *b)\n{\n    Node dummy;\n    Node *tail = &dummy;\n\n    dummy.next = nullptr;\n    while (a != nullptr && b != nullptr) {\n        if (a->data <= b->data) {\n            tail->next = a;\n            a = a->next;\n        } else {\n            tail->next = b;\n            b = b->next;\n        }\n        tail = tail->next;\n    }\n    tail->next = (a != nullptr) ? a : b;\n    return dummy.next;\n}\n\nint main()\n{\n    Node *a = build();\n    Node *b = build();\n    Node *m = merge(a, b);\n    Node *p, *q;\n    int first = 1;\n\n    if (m == nullptr) {\n        cout << \"empty\" << endl;\n        return 0;\n    }\n    for (p = m; p != nullptr; p = p->next) {\n        if (!first)\n            cout << \" \";\n        cout << p->data;\n        first = 0;\n    }\n    cout << endl;\n\n    p = m;\n    while (p != nullptr) {\n        q = p->next;\n        delete p;\n        p = q;\n    }\n    return 0;\n}"
+ },
+ "结-52": {
+  "analysis": "快慢指针相距 k 个结点是本题的核心：fast 先走 k 步，然后两者同步前进，fast 到空时 slow 正好是倒数第 k 个。\nC++ 版本同样要先判 fast = fast->next 前后是否为空（题目保证 k 合法，所以可以先走 k 步）。释放用 delete，删首结点时把头指针移到 slow->next，改完链再 delete slow。注意 prev 记录的是 slow 的前驱，这是唯一需要额外维护的指针。",
+  "stem": "下面程序删除单链表中倒数第 k 个结点（1 ≤ k ≤ 结点个数），请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\nint main()\n{\n    int x, k, i;\n    Node *head = nullptr, *tail = nullptr, *p, *q;\n    Node *fast, *slow, *prev;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->next = nullptr;\n        if (head == nullptr)\n            head = tail = p;\n        else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    scanf(\"%d\", &k);\n\n    fast = head;\n    for (i = 0; i < k; i++)\n        fast = fast->next;\n\n    slow = head;\n    prev = nullptr;\n    while (fast != nullptr) {\n        prev = slow;\n        slow = ①;\n        fast = ②;\n    }\n\n    if (prev == nullptr)\n        head = ③;\n    else\n        prev->next = slow->next;\n    delete slow;\n\n    for (p = head; p != nullptr; p = p->next)\n        printf(\"%d \", p->data);\n    printf(\"\\n\");\n\n    p = head;\n    while (p != nullptr) {\n        q = p->next;\n        delete p;\n        p = q;\n    }\n    return 0;\n}\n```",
+  "blanks": [
+   {
+    "no": "①",
+    "answer": "slow->next",
+    "note": "慢指针前移一格，prev 已经记住了它的前驱"
+   },
+   {
+    "no": "②",
+    "answer": "fast->next",
+    "note": "快指针同步前移，保证两者始终相距 k 个结点"
+   },
+   {
+    "no": "③",
+    "answer": "slow->next",
+    "note": "prev 为空说明要删的是首结点，直接让 head 指向第二个结点"
+   }
+  ]
+ },
+ "结-55": {
+  "analysis": "删除倒数第 k 个结点用快慢指针一次遍历完成：fast 先走 k 步，然后 fast 与 slow 同步前进，fast 到空时 slow 正好指向倒数第 k 个；prev 记录 slow 的前驱，便于删除。\nC++ 版本用 new/delete 与 nullptr，逻辑与 C 完全一致；k 等于结点个数时被删的是表头，此时 prev 为 NULL，直接移动 head。删空后输出 empty。\n易错点：fast 先走 k 步时题目保证 k 合法，但为了健壮可以边走边判空；删除后不要忘记 delete；改链之后再释放结点，避免 use-after-free。",
+  "solution": "#include <iostream>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\nint main()\n{\n    int x, k, i, first = 1;\n    Node *head = nullptr, *tail = nullptr, *p, *q;\n    Node *fast, *slow, *prev;\n\n    while (cin >> x && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->next = nullptr;\n        if (head == nullptr) {\n            head = tail = p;\n        } else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    if (!(cin >> k) || head == nullptr)\n        return 0;\n\n    fast = head;\n    for (i = 0; i < k; i++)\n        fast = fast->next;\n\n    slow = head;\n    prev = nullptr;\n    while (fast != nullptr) {\n        prev = slow;\n        slow = slow->next;\n        fast = fast->next;\n    }\n\n    if (prev == nullptr)\n        head = slow->next;\n    else\n        prev->next = slow->next;\n    delete slow;\n\n    if (head == nullptr) {\n        cout << \"empty\" << endl;\n        return 0;\n    }\n    for (p = head; p != nullptr; p = p->next) {\n        if (!first)\n            cout << \" \";\n        cout << p->data;\n        first = 0;\n    }\n    cout << endl;\n\n    p = head;\n    while (p != nullptr) {\n        q = p->next;\n        delete p;\n        p = q;\n    }\n    return 0;\n}"
+ },
+ "结-56": {
+  "analysis": "qsort 在 C++ 中仍然可用（<cstdlib>），比较函数的签名必须是 int(const void *, const void *)，函数内部把 void* 转回 const Stu* 后比较，转换在 C++ 中必须显式写。\n第三个参数必须是单个元素的大小，sizeof(s[0]) 与 sizeof(Stu) 等价；C++ 里更常见的做法是 std::sort(s, s + n, [](const Stu &a, const Stu &b) { if (a.score != b.score) return a.score > b.score; return strcmp(a.name, b.name) < 0; })，用 lambda 免去 void* 的强制转换。",
+  "stem": "下面程序用 `qsort` 把学生按成绩降序排列（成绩相同按姓名升序），请填空。\n\n```cpp\n#include <cstdio>\n#include <cstdlib>\n#include <cstring>\nusing namespace std;\n\nstruct Stu {\n    char name[20];\n    int score;\n};\n\nint by_score(const void *a, const void *b)\n{\n    const Stu *p = (const Stu *)a;\n    const Stu *q = (const Stu *)b;\n\n    if (p->score != q->score)\n        return q->score - p->score;\n    return ①;\n}\n\nint main()\n{\n    Stu s[50];\n    int n, i;\n\n    scanf(\"%d\", &n);\n    for (i = 0; i < n; i++)\n        scanf(\"%19s%d\", s[i].name, &s[i].score);\n\n    qsort(s, (size_t)n, ②, by_score);\n\n    for (i = 0; i < n; i++)\n        printf(\"%s %d\\n\", s[i].name, s[i].score);\n    return 0;\n}\n```"
+ },
+ "结-59": {
+  "analysis": "归并两条有序链表用\"哑结点 + 尾指针\"最省事，C++ 里同样可以写 Node dummy; Node *tail = &dummy; 把栈上的结点当哨兵，最后返回 dummy.next。\n合并过程只改指针不复制数据；循环结束后把没走完的那条链整段接上即可，这一点 C++ 与 C 完全一致。C++ 里也可以用 std::list 的 merge() 成员函数，或 std::merge 配合迭代器。",
+  "stem": "下面程序读入两条升序链表（各自以 -1 结束），把它们合并成一条升序链表后输出，请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nstruct Node {\n    int data;\n    Node *next;\n};\n\nNode *build()\n{\n    int x;\n    Node *head = nullptr, *tail = nullptr, *p;\n\n    while (scanf(\"%d\", &x) == 1 && x != -1) {\n        p = new Node;\n        p->data = x;\n        p->next = nullptr;\n        if (head == nullptr)\n            head = tail = p;\n        else {\n            tail->next = p;\n            tail = p;\n        }\n    }\n    return head;\n}\n\nNode *merge(Node *a, Node *b)\n{\n    Node dummy;\n    Node *tail = &dummy;\n\n    dummy.next = nullptr;\n    while (a != nullptr && b != nullptr) {\n        if (a->data <= b->data) {\n            tail->next = a;\n            a = ①;\n        } else {\n            tail->next = b;\n            b = ②;\n        }\n        tail = ③;\n    }\n    tail->next = (a != nullptr) ? a : b;\n    return dummy.next;\n}\n\nint main()\n{\n    Node *a = build(), *b = build(), *m, *p;\n\n    m = merge(a, b);\n    for (p = m; p != nullptr; p = p->next)\n        printf(\"%d \", p->data);\n    printf(\"\\n\");\n    return 0;\n}\n```"
+ },
+ "枚-14": {
+  "analysis": "用枚举 + switch 写状态机是 C++ 也支持的经典写法；state_name 数组用枚举值直接当下标，前提是枚举从 0 开始连续取值。\nC++ 的 enum class State 更安全，但用它当下标时必须写 static_cast<int>(s)。注意 switch 覆盖了所有枚举值后仍要保留最后的 return s，否则部分编译器会报\"可能没有返回值\"的警告；C++ 里也可以把转移逻辑写成函数对象或 std::function 表。",
+  "stem": "下面程序用枚举实现一个简单的运行状态机：`s` 启动、`p` 暂停、`r` 恢复、`x` 停止（停止后不可再变），请填空。\n\n```cpp\n#include <cstdio>\nusing namespace std;\n\nenum State { IDLE, RUNNING, PAUSED, STOPPED };\n\nstatic const char *state_name[] = {\"IDLE\", \"RUNNING\", \"PAUSED\", \"STOPPED\"};\n\nState next(State s, char cmd)\n{\n    switch (s) {\n    case IDLE:\n        return (cmd == 's') ? RUNNING : IDLE;\n    case RUNNING:\n        if (cmd == 'p')\n            return PAUSED;\n        if (cmd == 'x')\n            return STOPPED;\n        return RUNNING;\n    case PAUSED:\n        if (cmd == 'r')\n            return ①;\n        if (cmd == 'x')\n            return STOPPED;\n        return PAUSED;\n    case ②:\n        return STOPPED;\n    }\n    return s;\n}\n\nint main()\n{\n    char cmd;\n    State s = IDLE;\n\n    while (scanf(\" %c\", &cmd) == 1)\n        s = ③(s, cmd);\n\n    printf(\"%s\\n\", state_name[s]);\n    return 0;\n}\n```"
+ },
+ "枚-16": {
+  "analysis": "用枚举给三种操作编号，再用计数器数组 cnt[OP_COUNT] 统计；输出时按枚举常量的顺序遍历，用名字表 names[i] 输出字符串，保证\"顺序固定为 ADD、SUB、MUL\"。\nC++ 版本用 std::string 取代 char buf[16]，读入不必再限制 %15s 的宽度，也不会溢出；to_op 里改用 s == \"ADD\" 这样的字符串比较，比 strcmp 更直观。\n易错点：题目保证只出现这三种操作，但 to_op 的默认分支应返回 OP_MUL 或做兜底；OP_COUNT 放在枚举末尾自动等于 3，可以作为数组长度；输出三行、每行\"名字 次数\"。",
+  "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nenum Op {\n    OP_ADD,\n    OP_SUB,\n    OP_MUL,\n    OP_COUNT\n};\n\nstatic const char *names[OP_COUNT] = {\"ADD\", \"SUB\", \"MUL\"};\n\nOp to_op(const string &s)\n{\n    if (s == \"ADD\")\n        return OP_ADD;\n    if (s == \"SUB\")\n        return OP_SUB;\n    return OP_MUL;\n}\n\nint main()\n{\n    string buf;\n    int n, i;\n    int cnt[OP_COUNT] = {0};\n\n    cin >> n;\n    for (i = 0; i < n; i++) {\n        cin >> buf;\n        cnt[to_op(buf)]++;\n    }\n\n    for (i = 0; i < OP_COUNT; i++)\n        cout << names[i] << \" \" << cnt[i] << endl;\n    return 0;\n}"
+ }
+}

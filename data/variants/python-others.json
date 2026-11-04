@@ -1,0 +1,494 @@
+{
+  "结-03": {
+    "stem": "下面程序读入 3 名学生的姓名与成绩（每行形如 `Tom 88`），再按输入顺序输出，请填空。\n\n```python\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Student:\n    name: str = \"\"\n    score: int = 0\n\n\ns = [Student() for _ in range(3)]\n\nfor i in range(3):\n    parts = input().split()\n    s[i].① = parts[0]\n    s[i].score = int(parts[1])\n\nfor i in range(3):\n    print(s[i].name, ②)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "name",
+        "note": "给记录的 name 字段写入姓名；字段已在 dataclass 中声明，不需要预先分配字符数组，也不需要取地址"
+      },
+      {
+        "no": "②",
+        "answer": "s[i].score",
+        "note": "读取该对象保存的 score 字段；print 用逗号分隔多项，默认以空格分隔并换行"
+      }
+    ],
+    "analysis": "Python 用 `@dataclass` 把一个“记录”声明成类，`name: str`、`score: int` 就是字段，分别对应 C 的 `char name[20];` 与 `int score;`；`s = [Student() for _ in range(3)]` 是结构体数组的等价物——list 里存放对象引用，长度可动态变化。C 里 `scanf(\"%s%d\", s[i].name, &s[i].score)` 要处理数组退化与取地址，Python 用 `input().split()` 切分后 `int()` 转换，既不用 `&` 也没有缓冲区长度限制。① 给字段 `name` 赋值，② 直接读字段 `score` 输出，点号访问与 C 完全一致。补全后输入 `Tom 88`，输出 `Tom 88`。"
+  },
+  "结-05": {
+    "stem": "读入 n 名学生的姓名（不含空格，长度小于 20）和整数成绩，输出平均分（保留 1 位小数）与最高分学生的姓名（最高分唯一）。请用 `dataclass` 保存每条学生记录。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 50）；随后 n 行，每行一个姓名和一个整数成绩，用空格分隔。\n\n**输出格式：** 第一行 `avg = 平均分`，第二行 `max = 最高分姓名`。\n\n**输入样例：**\n```text\n4\nTom 78\nAmy 92\nBob 65\nCid 88\n```\n**输出样例：**\n```text\navg = 80.8\nmax = Amy\n```",
+    "solution": "import sys\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Student:\n    name: str\n    score: int\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    students = []\n    total = 0\n    idx = 1\n    for _ in range(n):\n        name = data[idx]\n        score = int(data[idx + 1])\n        idx += 2\n        students.append(Student(name, score))\n        total += score\n\n    best = 0\n    for i in range(1, n):\n        if students[i].score > students[best].score:\n            best = i\n\n    print(f\"avg = {total / n:.1f}\")\n    print(f\"max = {students[best].name}\")\n\n\nmain()\n",
+    "analysis": "思路：用 `@dataclass` 把“姓名 + 成绩”打包成一条记录，读入时顺带累加总分；再用一次遍历找出最高分的下标，最后按格式输出。Python 没有 `printf(\"%.1f\")`，用 f-string 的 `f\"{avg:.1f}\"` 同样是保留 1 位小数。两个关键点：第一，`total / n` 在 Python 中永远是真除法，直接得到 80.75，不会像 C 的 `sum / n` 那样被截断成 80，所以不需要强制类型转换；第二，找最大值用严格大于比较，最高分唯一保证结果确定。复杂度 O(n)，空间 O(n)。易错点：读入后忘记 `int()` 转换、写 `{avg:.1}` 只保留 1 位有效数字、以及忽略空输入。样例 323 / 4 = 80.75，输出 `avg = 80.8`。"
+  },
+  "结-08": {
+    "stem": "下面程序通过函数把矩形的宽和高分别增加 dw、dh，请填空。\n\n```python\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Rect:\n    w: int\n    h: int\n\n\ndef grow(r, dw, dh):\n    r.① += dw\n    r.h += dh\n\n\nbox = Rect(10, 5)\ngrow(②, 3, 4)\nprint(box.w, box.h)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "w",
+        "note": "访问 r 引用的对象的 w 字段；对应 C 的 r->w"
+      },
+      {
+        "no": "②",
+        "answer": "box",
+        "note": "直接把对象交给函数；Python 按对象引用传递，函数内修改的就是调用者的这个对象，对应 C 的 &box"
+      }
+    ],
+    "analysis": "Python 没有指针，对象以“引用的值”传递：`grow(box, 3, 4)` 把 box 引用的同一个对象绑定给形参 r，函数内 `r.w += dw` 修改的就是该对象，因此调用者能看到 `13 9`。① 是字段 w（对应 C 的 `r->w`），② 传对象本身 box（对应 `&box`）。要点：如果函数里写 `r = Rect(...)` 重新绑定形参，只是让局部名指向新对象，调用者的 box 不变——这正是 C 中“传值 vs 传地址”在 Python 里的对应形式。dataclass 默认生成可变对象，适合表达“由函数修改的记录”；若用不可变的 namedtuple 就改不动。"
+  },
+  "结-10": {
+    "stem": "读入 n 名学生的姓名和三门课成绩，按总分从高到低输出姓名与总分；总分相同时保持输入顺序（稳定排序）。请用 `dataclass` 保存记录。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 50）；随后 n 行，每行依次为姓名（不含空格，长度小于 20）和三个整数成绩。\n\n**输出格式：** 共 n 行，每行 `姓名 总分`，用空格分隔。\n\n**输入样例：**\n```text\n3\nTom 80 85 90\nAmy 90 90 90\nBob 70 70 70\n```\n**输出样例：**\n```text\nAmy 270\nTom 255\nBob 210\n```",
+    "solution": "import sys\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Student:\n    name: str\n    total: int\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    students = []\n    idx = 1\n    for _ in range(n):\n        name = data[idx]\n        total = int(data[idx + 1]) + int(data[idx + 2]) + int(data[idx + 3])\n        idx += 4\n        students.append(Student(name, total))\n\n    students.sort(key=lambda st: st.total, reverse=True)\n\n    for st in students:\n        print(st.name, st.total)\n\n\nmain()\n",
+    "analysis": "思路：把每条记录读成 `Student(name, total)`，读入时一次算好总分，再用 `list.sort(key=..., reverse=True)` 按总分降序。Python 的排序是稳定排序（Timsort），`reverse=True` 只是反转比较结果，不会打乱关键字相等的元素，所以总分相同的学生仍保持输入顺序——正好对应 C 版冒泡排序“严格小于才交换”的稳定性。C 版手工整体交换结构体元素，Python 版由排序算法搬运引用，代码更短且为 O(n log n)。易错点：先按总分排序再手动逆序（会把相等元素也反转）、忘记 `reverse=True`、或者重复累加总分。若还想“总分降序 + 姓名升序”，key 返回元组 `(-st.total, st.name)` 即可。"
+  },
+  "结-13": {
+    "stem": "下面程序用赋值语句为类起别名，效果相当于 C 的 `typedef`，请填空。\n\n```python\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Point:\n    x: int\n    y: int\n\n\n# 把类对象绑定到另一个名字\nPointT = ①\n\np = PointT(3, 4)\nprint(p.x + p.②)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "Point",
+        "note": "别名必须绑定到已有的类；`PointT = Point` 之后两个名字指向同一个类对象"
+      },
+      {
+        "no": "②",
+        "answer": "y",
+        "note": "成员访问用点号，输出 3 + 4 = 7"
+      }
+    ],
+    "analysis": "C 的 `typedef` 给已有类型起别名；Python 没有 typedef 关键字，最接近的做法是把类对象再绑定到另一个名字：`PointT = Point`。两个名字指向同一个类，`PointT(3, 4)` 与 `Point(3, 4)` 完全等价，不创建新类型，这一点与 typedef“只加别名、不产生新类型”一致。① 填已有的类名 `Point`，② 是字段 `y`，程序输出 7。注意 Python 的别名只是运行期的名字绑定，之后完全可以改指别的对象，也没有 C 那种编译期类型检查；若确实想要“派生出的新类型”，应写子类或 `typing.NewType`。"
+  },
+  "结-15": {
+    "stem": "用 `dataclass` 表示复数（实部、虚部均为实数），读入两个复数，分别输出它们的和与积的实部、虚部，均保留 2 位小数。设两个复数为 a+bi 与 c+di，则和为 (a+c)+(b+d)i，积为 (ac-bd)+(ad+bc)i。\n\n**输入格式：** 两行，每行两个实数，依次为实部与虚部。\n\n**输出格式：** 第一行为和的实部与虚部，第二行为积的实部与虚部，用空格分隔，各保留 2 位小数。\n\n**输入样例：**\n```text\n1 2\n3 4\n```\n**输出样例：**\n```text\n4.00 6.00\n-5.00 10.00\n```",
+    "solution": "from dataclasses import dataclass\n\n\n@dataclass\nclass Complex:\n    re: float\n    im: float\n\n\ndef add(x, y):\n    return Complex(x.re + y.re, x.im + y.im)\n\n\ndef mul(x, y):\n    return Complex(x.re * y.re - x.im * y.im, x.re * y.im + x.im * y.re)\n\n\ndef main():\n    a_re, a_im = map(float, input().split())\n    b_re, b_im = map(float, input().split())\n    a = Complex(a_re, a_im)\n    b = Complex(b_re, b_im)\n\n    s = add(a, b)\n    p = mul(a, b)\n\n    print(f\"{s.re:.2f} {s.im:.2f}\")\n    print(f\"{p.re:.2f} {p.im:.2f}\")\n\n\nmain()\n",
+    "analysis": "思路：用 `@dataclass` 定义 `Complex(re, im)`，写 `add`、`mul` 两个返回新对象的函数，对应 C 版“返回结构体”的两个函数。Python 的函数参数传递的是对象引用，但两个函数都只读取成员并构造新对象，从不修改实参，效果与 C 的传值调用一致。乘法必须先用原始值算完再构造结果，若先把某个成员改成中间结果就会污染另一项。输出用 f-string 的 `:.2f`，等价于 `printf(\"%.2f\")`，负数会自动带负号，样例中的 `-5.00` 就是 ac-bd = 3-8 的结果。复杂度 O(1)。易错点：把乘法写成 (a+c)(b+d)、用 `int()` 读入丢失小数、以及把格式写成 `{x:.2}`。"
+  },
+  "结-18": {
+    "stem": "下面程序用头插法建立单链表（读到 -1 结束），然后遍历输出并解除引用，请填空。\n\n```python\nimport sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\nhead = None\nfor x in (int(t) for t in sys.stdin.read().split()):\n    if x == -1:\n        break\n    p = Node(x)\n    p.① = head\n    head = ②\n\np = head\nwhile p is not None:\n    print(p.data, end=\" \")\n    p = p.next\nprint()\n\nwhile head is not None:\n    p = head\n    head = ③\n    p = None\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "next",
+        "note": "新结点的 next 先指向当前表头，才能接上整条链"
+      },
+      {
+        "no": "②",
+        "answer": "p",
+        "note": "表头前移到新结点；两句顺序不能颠倒，否则会丢掉原链表"
+      },
+      {
+        "no": "③",
+        "answer": "head.next",
+        "note": "先保存下一个结点再解除当前结点的引用；此时 p 就是 head，也可写 p.next"
+      }
+    ],
+    "analysis": "头插法的两个动作有严格顺序：先把新结点的 `next` 指向当前表头（① 填 `next`），再让 head 指向新结点（② 填 `p`）。如果先写 `head = p` 再写 `p.next = head`，新结点的 next 会指向自己并丢掉原链表。头插得到的顺序与读入相反，输入 `1 2 3 -1` 输出 `3 2 1`。Python 没有 `malloc/free`，`Node(x)` 创建的对象由变量引用；③ 先取 `head.next` 再让旧表头失去引用、`p = None` 解除最后一个引用，CPython 的引用计数会立即回收它，相当于 C 的 `free`。顺序颠倒先置 None 再取 next 就取不到后继了。整条链在程序结束或引用消失后由 GC 统一回收，不需要逐个 free。"
+  },
+  "结-19": {
+    "stem": "读入一串整数（以 -1 结束，-1 不计入链表），用尾插法建立单链表（结点用普通类 `Node` 表示），按链表顺序输出各结点值并统计结点个数。\n\n**输入格式：** 一行若干整数，以 -1 作为结束标志；序列可能为空（第一个数就是 -1）。\n\n**输出格式：** 第一行输出链表各结点值，相邻数字用一个空格分隔，行末无多余空格；第二行输出结点个数。若链表为空，第一行输出空行，第二行输出 0。\n\n**输入样例：**\n```text\n5 3 9 2 -1\n```\n**输出样例：**\n```text\n5 3 9 2\n4\n```",
+    "solution": "import sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\ndef build(values):\n    head = tail = None\n    for x in values:\n        if x == -1:\n            break\n        p = Node(x)\n        if head is None:\n            head = tail = p\n        else:\n            tail.next = p\n            tail = p\n    return head\n\n\ndef main():\n    data = [int(t) for t in sys.stdin.read().split()]\n    head = build(data)\n\n    values = []\n    p = head\n    while p is not None:\n        values.append(str(p.data))\n        p = p.next\n\n    print(\" \".join(values))\n    print(len(values))\n\n\nmain()\n",
+    "analysis": "思路：维护 head（表头）与 tail（表尾）两个引用。每读入一个值就创建一个 Node，`next` 置 None；若 head 为 None，说明是第一个结点，head 与 tail 同时指向它；否则挂到 `tail.next` 上并让 tail 前移。尾插得到与输入同序的链表，这与头插相反。输出用 `\" \".join(...)` 一次拼好，天然保证行末无多余空格（不必像 C 那样用 first 标志控制空格）；结点个数就是收集到的值的个数。空链表时 `\" \".join([])` 得到空字符串，打印一行空行，再打印 0，与题目要求一致。Python 里也可以用 list 直接完成，但本题为了对应 C 版的数据结构训练，仍保留链式结点。复杂度 O(n)。易错点：把 -1 也建进链表、空链表时访问 head.data。"
+  },
+  "结-22": {
+    "stem": "下面程序用尾插法建立单链表（读到 -1 结束），再求所有结点中的最大值，请填空。\n\n```python\nimport sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\nhead = tail = None\nfor x in (int(t) for t in sys.stdin.read().split()):\n    if x == -1:\n        break\n    p = Node(x)\n    if head is None:\n        head = tail = p\n    else:\n        tail.next = p\n        tail = p\n\nif head is None:\n    sys.exit(0)\n\nmax_v = head.data\np = ①\nwhile p is not None:\n    if p.data > max_v:\n        max_v = ②\n    p = p.next\nprint(③)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "head.next",
+        "note": "首结点已作为初值比较过，从第二个结点开始；写 head 也正确，只是多做一次无意义的比较"
+      },
+      {
+        "no": "②",
+        "answer": "p.data",
+        "note": "发现更大值就用它更新 max_v"
+      },
+      {
+        "no": "③",
+        "answer": "max_v",
+        "note": "输出最大值本身，不是结点对象"
+      }
+    ],
+    "analysis": "求链表最大值与求数组最大值同理：先把首结点的值当作当前最大，再从第二个结点开始逐个比较。① 填 `head.next` 后首结点不会重复比较，逻辑更清晰；② 发现更大值就用 `p.data` 更新；③ 输出 `max_v`。Python 的 `while p is not None` 对应 C 的 `p != NULL`，`p = p.next` 前进。若把 ① 写成 `head.next.next` 会跳过第二个结点；若把 ③ 写成 `p.data`，循环结束后 p 是 None，会抛 AttributeError。输入 `4 9 2 7 -1` 时输出 9。整个算法只遍历一遍，时间 O(n)、额外空间 O(1)。"
+  },
+  "结-23": {
+    "stem": "读入一串整数（以 -1 结束）建立单链表（结点用普通类 `Node` 表示），再读入一个整数 key，删除链表中所有值为 key 的结点，按原顺序输出剩余结点值。\n\n**输入格式：** 第一行为若干整数，以 -1 结束；第二行为一个整数 key。\n\n**输出格式：** 一行输出删除后链表的所有结点值，相邻数字用一个空格分隔，行末无多余空格；若链表已空，输出 `empty`。\n\n**输入样例：**\n```text\n1 2 3 2 4 -1\n2\n```\n**输出样例：**\n```text\n1 3 4\n```",
+    "solution": "import sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\ndef build(values):\n    head = tail = None\n    for x in values:\n        p = Node(x)\n        if head is None:\n            head = tail = p\n        else:\n            tail.next = p\n            tail = p\n    return head\n\n\ndef main():\n    tokens = [int(t) for t in sys.stdin.read().split()]\n    values = []\n    i = 0\n    while i < len(tokens) and tokens[i] != -1:\n        values.append(tokens[i])\n        i += 1\n    if i + 1 >= len(tokens):\n        return\n    key = tokens[i + 1]\n\n    head = build(values)\n\n    prev = None\n    p = head\n    while p is not None:\n        if p.data == key:\n            nxt = p.next\n            if prev is None:\n                head = nxt\n            else:\n                prev.next = nxt\n            p = nxt\n        else:\n            prev = p\n            p = p.next\n\n    if head is None:\n        print(\"empty\")\n        return\n\n    out = []\n    p = head\n    while p is not None:\n        out.append(str(p.data))\n        p = p.next\n    print(\" \".join(out))\n\n\nmain()\n",
+    "analysis": "思路：先用尾插法建表，再用“前驱 prev + 当前 p”删除所有匹配结点。命中时分两种情况：prev 为 None 说明删的是首结点，必须改 head；否则让前驱跳过它（`prev.next = p.next`）。每删除一个结点先把后继存到 nxt，再改链、最后把 p 移到 nxt，避免丢失后续结点。删除后 p 移走，被删结点失去引用，由 Python 的引用计数自动回收——不需要也不存在 C 的 `free`，但“先保存后继再断链”的顺序要求是一样的。若删除后 head 为 None 就输出 empty。复杂度 O(n)。易错点：删除首结点时忘记改 head、连续多个 key 相邻时只删掉一个、以及改链前先丢掉后继。"
+  },
+  "结-26": {
+    "stem": "读入一串整数（以 -1 结束），边读边插入，使链表始终按升序排列（相同值插在已有相同值之后），最后按升序输出链表。结点用普通类 `Node` 表示。\n\n**输入格式：** 一行若干整数，以 -1 结束。\n\n**输出格式：** 一行输出链表所有结点值，相邻数字用一个空格分隔，行末无多余空格。若没有有效数据，输出 `empty`。\n\n**输入样例：**\n```text\n5 1 3 9 3 -1\n```\n**输出样例：**\n```text\n1 3 3 5 9\n```",
+    "solution": "import sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\ndef insert_sorted(head, value):\n    p = Node(value)\n    prev = None\n    cur = head\n    while cur is not None and cur.data <= value:\n        prev = cur\n        cur = cur.next\n    p.next = cur\n    if prev is None:\n        head = p\n    else:\n        prev.next = p\n    return head\n\n\ndef main():\n    head = None\n    for x in (int(t) for t in sys.stdin.read().split()):\n        if x == -1:\n            break\n        head = insert_sorted(head, x)\n\n    if head is None:\n        print(\"empty\")\n        return\n\n    out = []\n    p = head\n    while p is not None:\n        out.append(str(p.data))\n        p = p.next\n    print(\" \".join(out))\n\n\nmain()\n",
+    "analysis": "思路：每读一个数就创建结点，然后找到第一个“值大于它”的结点，插到那个结点之前，从而链表始终有序。实现上用 prev（前驱，初值 None）和 cur（当前，初值 head）向后扫描，循环条件 `cur is not None and cur.data <= value`——用 `<=` 才能让相同值插在后面，保证稳定；结束时若 prev 为 None 说明新值比所有结点都小，它成为表头，否则插到 prev 之后。返回新的 head 是关键：插入表头时 head 会改变，若函数不返回而只改局部变量，调用者看不到。复杂度 O(n²)，n 不大时完全够用。易错点：比较用 `<` 让相同值逆序、忘记处理插表头、以及不接收返回值。"
+  },
+  "结-28": {
+    "stem": "下面程序读入一条线段的两个端点坐标，输出该线段长度的平方，请填空。\n\n```python\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Point:\n    x: int\n    y: int\n\n\n@dataclass\nclass Segment:\n    a: Point\n    b: Point\n\n\nx1, y1, x2, y2 = map(int, input().split())\ns = Segment(Point(x1, y1), Point(x2, y2))\n\ndx = s.b.x - s.a.x\ndy = ①\nprint(②)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "s.b.y - s.a.y",
+        "note": "终点 y 减起点 y；顺序写反只会多一个负号，平方后结果相同"
+      },
+      {
+        "no": "②",
+        "answer": "dx * dx + dy * dy",
+        "note": "勾股定理求长度平方，避免开方带来的浮点误差"
+      }
+    ],
+    "analysis": "嵌套 dataclass 的访问就是逐级点号：`s.b.y` 表示“s 的 b 字段（一个 Point 对象）的 y 字段”，与 C 的 `s.b.y` 一一对应，只是 Python 在运行期按属性名查找，不需要预先声明嵌套类型。① 是 `s.b.y - s.a.y`；② 输出 `dx * dx + dy * dy`。Python 的整数是任意精度，平方和不会像 C 的 int 那样溢出，所以可以放心直接算；这里也刻意不开方，避免 sqrt 的浮点误差。输入 `0 0 3 4` 时 dx=3、dy=4，输出 25。常见错误：写成 `s.b->y`（Python 没有 `->`）、把平方写成 `dx * dx + dy`（漏乘）、以及把 `Point` 当字典用下标访问。"
+  },
+  "结-31": {
+    "stem": "下面程序把 5 名学生按成绩从高到低排序，请填空。\n\n```python\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Student:\n    name: str\n    score: int\n\n\ns = []\nfor _ in range(5):\n    name, score = input().split()\n    s.append(Student(name, int(score)))\n\nfor i in range(4):\n    k = i\n    for j in range(i + 1, 5):\n        if s[j].score > s[①].score:\n            k = ②\n    if k != i:\n        s[i], s[k] = s[k], s[i]\n\nfor st in s:\n    print(st.name, st.score)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "k",
+        "note": "始终与“当前已找到的最大值”比较，k 记录它的下标；写成 i 会每轮拿固定元素比较"
+      },
+      {
+        "no": "②",
+        "answer": "j",
+        "note": "发现更大值就记录它的下标，本轮结束后 k 指向最大元素"
+      }
+    ],
+    "analysis": "选择排序每轮在未排序区间 [i, 4] 里找最大元素的下标 k，再与位置 i 交换。① 的比较对象必须是当前最大值 `s[k]`，不是 `s[i]`，否则每轮都拿固定的 s[i] 反复比较，结果错误；② 发现 `s[j]` 更大就把 k 更新为 j。Python 的交换不需要临时变量：`s[i], s[k] = s[k], s[i]` 先求右值再赋值，天然避免 C 中“先覆盖后丢失”的问题，也不需要像 C 那样借助同类型结构体整体赋值。数据用 list 保存 dataclass 对象，5 是题目给定的人数；若改成 `len(s)` 则更通用。易错点：比较写 `s[i]`、交换写成两条赋值语句导致两个元素变成一样。"
+  },
+  "结-33": {
+    "stem": "定义日期 `dataclass`，读入 n 个日期，分别输出每个日期是这一年的第几天（闰年规则：年份能被 4 整除且不能被 100 整除，或能被 400 整除）。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；随后 n 行，每行三个整数 year、month、day，表示一个合法日期。\n\n**输出格式：** 共 n 行，每行一个整数，表示对应日期是当年的第几天。\n\n**输入样例：**\n```text\n3\n2023 1 1\n2023 3 1\n2024 3 1\n```\n**输出样例：**\n```text\n1\n60\n61\n```",
+    "solution": "import sys\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Date:\n    year: int\n    month: int\n    day: int\n\n\nDAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]\n\n\ndef is_leap(year):\n    return (year % 4 == 0 and year % 100 != 0) or year % 400 == 0\n\n\ndef day_of_year(d):\n    total = d.day\n    for i in range(d.month - 1):\n        total += DAYS[i]\n    if d.month > 2 and is_leap(d.year):\n        total += 1\n    return total\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    idx = 1\n    out = []\n    for _ in range(n):\n        year, month, day = (int(data[idx]), int(data[idx + 1]), int(data[idx + 2]))\n        idx += 3\n        out.append(str(day_of_year(Date(year, month, day))))\n    print(\"\\n\".join(out))\n\n\nmain()\n",
+    "analysis": "思路：把日期封装成 `@dataclass class Date(year, month, day)`，写两个函数——`is_leap` 判断闰年，`day_of_year` 累计当月之前各月天数再加 day。月份天数用模块级列表 `DAYS` 保存，若闰年且月份大于 2 就额外加 1，比一长串 if 更清晰。关键易错点：闰年判断必须包含“能被 400 整除”的例外，写成 `year % 4 == 0` 会把 1900 年判成闰年；只有 3 月及以后才受 2 月 29 日影响，所以条件是 `d.month > 2`；列表下标从 0 开始，累加时循环写 `range(d.month - 1)`。样例中 2023-03-01 是 31+28+1 = 60 天，2024 年因闰年变成 61 天。时间 O(1)/次，空间 O(1)。"
+  },
+  "结-36": {
+    "stem": "下面程序建立单链表后，删除第一个值为 key 的结点（只删一个，找不到则链表不变），请填空。\n\n```python\nimport sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\ntokens = [int(t) for t in sys.stdin.read().split()]\nhead = tail = None\ni = 0\nwhile i < len(tokens) and tokens[i] != -1:\n    p = Node(tokens[i])\n    if head is None:\n        head = tail = p\n    else:\n        tail.next = p\n        tail = p\n    i += 1\nkey = tokens[i + 1]\n\nprev = None\np = head\nwhile p is not None and p.data != key:\n    prev = p\n    p = ①\nif p is not None:\n    if prev is None:\n        head = p.next\n    else:\n        ②\n    ③\n\np = head\nwhile p is not None:\n    print(p.data, end=\" \")\n    p = p.next\nprint()\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "p.next",
+        "note": "让 p 沿链前进，同时 prev 已经记住了它的前驱"
+      },
+      {
+        "no": "②",
+        "answer": "prev.next = p.next",
+        "note": "让前驱跳过被删结点；分号不需要，Python 一条语句就是一行"
+      },
+      {
+        "no": "③",
+        "answer": "del p",
+        "note": "改链之后再解除 p 的引用，CPython 的引用计数会回收该结点；顺序颠倒会先丢掉后继"
+      }
+    ],
+    "analysis": "删除结点的通用框架是“边遍历边记录前驱”：循环条件同时要求 p 非空且尚未找到 key，① 让 p 前移一格。找到之后分两种情形：prev 为 None 说明命中的是首结点，只能改 head；否则让前驱跳过它，② 写 `prev.next = p.next`。③ 用 `del p` 解除最后一个引用，CPython 立刻回收该结点，相当于 C 的 `free(p)`；顺序必须是“先改链、后解除引用”，若先 del 再访问 p.next 就是访问已释放对象。注意 `del` 只删除名字，若还有别的引用指向该结点，对象仍会存活，这一点比 free 更安全也更宽松。找不到 key 时 p 为 None，整段删除逻辑被跳过，链表保持不变。"
+  },
+  "结-38": {
+    "stem": "读入 n 名学生的学号、姓名和三门课成绩，输出每名学生的学号、姓名和总分，每行一名学生，顺序与输入一致。请用 `dataclass` 保存记录，并用属性或方法计算总分。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 50）；随后 n 行，每行依次为学号（整数）、姓名（不含空格，长度小于 20）和三个整数成绩。\n\n**输出格式：** 共 n 行，每行 `学号 姓名 总分`，用空格分隔。\n\n**输入样例：**\n```text\n2\n1001 Tom 80 90 70\n1002 Amy 60 60 60\n```\n**输出样例：**\n```text\n1001 Tom 240\n1002 Amy 180\n```",
+    "solution": "import sys\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Student:\n    sid: int\n    name: str\n    s1: int\n    s2: int\n    s3: int\n\n    @property\n    def total(self):\n        return self.s1 + self.s2 + self.s3\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    idx = 1\n    out = []\n    for _ in range(n):\n        sid = int(data[idx])\n        name = data[idx + 1]\n        s1 = int(data[idx + 2])\n        s2 = int(data[idx + 3])\n        s3 = int(data[idx + 4])\n        idx += 5\n        st = Student(sid, name, s1, s2, s3)\n        out.append(f\"{st.sid} {st.name} {st.total}\")\n    print(\"\\n\".join(out))\n\n\nmain()\n",
+    "analysis": "思路：用 `@dataclass` 把学号、姓名、三门成绩组织在一条记录里，再用 `@property` 定义只读的 `total` 属性，输出时直接写 `st.total`，访问方式与 C 版结构体的 `total` 成员一致。本题虽简单，却体现了“把逻辑上属于同一条记录的数据打包在一起”的价值：数组下标一换，整条记录都跟着换，不用维护多个平行列表。C 版在读入时就计算 total 存进成员；Python 版用属性按需计算，避免数据不一致（改了成绩却忘了改总分）。复杂度 O(n)。易错点：`input().split()` 后忘记 `int()` 转换、total 写成字符串拼接、以及输出顺序与输入不一致。"
+  },
+  "结-43": {
+    "stem": "下面程序用尾插法建立单链表，再调用 `reverse` 把它整体反转后输出，请填空。\n\n```python\nimport sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\ndef reverse(head):\n    prev = None\n    cur = head\n    while cur is not None:\n        nxt = ①\n        cur.next = ②\n        prev = cur\n        cur = ③\n    return prev\n\n\nhead = tail = None\nfor x in (int(t) for t in sys.stdin.read().split()):\n    if x == -1:\n        break\n    p = Node(x)\n    if head is None:\n        head = tail = p\n    else:\n        tail.next = p\n        tail = p\n\nhead = reverse(head)\n\np = head\nwhile p is not None:\n    print(p.data, end=\" \")\n    p = p.next\nprint()\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "cur.next",
+        "note": "先保存后继，否则改链之后就找不到了"
+      },
+      {
+        "no": "②",
+        "answer": "prev",
+        "note": "让当前结点指向前驱；第一轮 prev 为 None，原表头因此变成新表尾"
+      },
+      {
+        "no": "③",
+        "answer": "nxt",
+        "note": "cur 前移到刚才保存的后继，不能写 cur.next（它已经指向 prev 了）"
+      }
+    ],
+    "analysis": "三指针反转的关键是“先存后继、再改链、最后前移”。① 必须保存 `cur.next`，因为第 ② 步会覆盖它；② 把当前结点挂到前驱 prev 上，第一轮 prev 为 None，于是原表头的 next 被置空，正好成为新表尾；③ 让 cur 前进到已保存的 nxt，如果误写 `cur = cur.next`，cur 会退回 prev，形成死循环。循环结束后 prev 指向原来的最后一个结点，所以 `return prev` 作为新表头，调用处必须写 `head = reverse(head)`。与 C 的区别只是：结点是 Python 对象、引用由 GC 管理，不需要 free。输入 `1 2 3 4 5 -1` 输出 `5 4 3 2 1 `。时间 O(n)、额外空间 O(1)。"
+  },
+  "结-45": {
+    "stem": "读入一串整数（以 -1 结束）建立单链表（结点用普通类 `Node` 表示），把链表整体反转后按新顺序输出。\n\n**输入格式：** 一行若干整数，以 -1 结束，-1 不计入链表。\n\n**输出格式：** 一行输出反转后各结点值，相邻数字用一个空格分隔，行末无多余空格；若没有有效数据，输出 `empty`。\n\n**输入样例：**\n```text\n1 2 3 4 5 -1\n```\n**输出样例：**\n```text\n5 4 3 2 1\n```",
+    "solution": "import sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\ndef build(values):\n    head = tail = None\n    for x in values:\n        if x == -1:\n            break\n        p = Node(x)\n        if head is None:\n            head = tail = p\n        else:\n            tail.next = p\n            tail = p\n    return head\n\n\ndef reverse(head):\n    prev = None\n    cur = head\n    while cur is not None:\n        nxt = cur.next\n        cur.next = prev\n        prev = cur\n        cur = nxt\n    return prev\n\n\ndef main():\n    data = [int(t) for t in sys.stdin.read().split()]\n    head = reverse(build(data))\n\n    if head is None:\n        print(\"empty\")\n        return\n\n    out = []\n    p = head\n    while p is not None:\n        out.append(str(p.data))\n        p = p.next\n    print(\" \".join(out))\n\n\nmain()\n",
+    "analysis": "思路：先用尾插法建表（保证原顺序与输入一致），再原地反转——维护 prev（新表链方向）、cur（当前）、nxt（暂存后继）三个引用，每轮把 `cur.next` 指向 prev 后整体前移，最后返回 prev。原地反转时间 O(n)、额外空间 O(1)；若改用递归，代码短但递归深度等于 n，长链表可能触及递归上限。Python 里引用赋值即可完成“指针”操作，不需要 free。易错点：忘记把 `head = reverse(head)` 的结果接回去，导致打印的还是旧表头；建表时尾结点 next 未置 None；空链表没有单独输出 empty，访问 `p.data` 会报 AttributeError。"
+  },
+  "结-48": {
+    "stem": "下面程序用快慢指针返回链表的中间结点（偶数个结点时返回后中间的那个），请填空。\n\n```python\nimport sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\ndef middle(head):\n    slow = fast = head\n    while fast is not None and fast.next is not None:\n        slow = slow.next\n        fast = ①\n    return ②\n\n\nhead = tail = None\nfor x in (int(t) for t in sys.stdin.read().split()):\n    if x == -1:\n        break\n    p = Node(x)\n    if head is None:\n        head = tail = p\n    else:\n        tail.next = p\n        tail = p\n\nif head is None:\n    sys.exit(0)\nprint(middle(head).data)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "fast.next.next",
+        "note": "快指针一次走两步；循环条件已保证 fast 与 fast.next 都非空，因此这次访问安全"
+      },
+      {
+        "no": "②",
+        "answer": "slow",
+        "note": "循环结束时 slow 正好落在中间结点上，返回它而不是 fast"
+      }
+    ],
+    "analysis": "快慢指针的核心是“让 fast 替 slow 探路”：slow 每次走 1 步、fast 每次走 2 步，slow 走过的距离约为 fast 的一半，当 fast 到达表尾时 slow 刚好在中间。① 写 `fast.next.next`，因为循环条件 `fast is not None and fast.next is not None` 已经保证 `fast.next` 是有效结点，再取它的 next 是安全的；② 返回 slow。对 5 个结点返回第 3 个，对 4 个结点返回后中间的第 3 个，与 C 版一致。Python 用 None 表示空引用，判断写 `is not None`。常见错误：返回 fast（此时为 None）、循环条件只写 `fast is not None` 导致 `fast.next` 为 None 时抛 AttributeError。整个过程只遍历一遍，时间 O(n)、额外空间 O(1)。"
+  },
+  "结-49": {
+    "stem": "读入两个升序排列的整数序列（各自以 -1 结束），分别建成两个单链表（结点用普通类 `Node` 表示），合并成一个仍按升序排列的单链表并输出。\n\n**输入格式：** 第一行为第一个序列，以 -1 结束；第二行为第二个序列，以 -1 结束。两个序列都可能为空（第一个数就是 -1）。\n\n**输出格式：** 一行输出合并后的链表，相邻数字用一个空格分隔，行末无多余空格；若合并结果为空，输出 `empty`。\n\n**输入样例：**\n```text\n1 3 5 -1\n2 3 4 6 -1\n```\n**输出样例：**\n```text\n1 2 3 3 4 5 6\n```",
+    "solution": "import sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\ndef build(line):\n    head = tail = None\n    for x in (int(t) for t in line.split()):\n        if x == -1:\n            break\n        p = Node(x)\n        if head is None:\n            head = tail = p\n        else:\n            tail.next = p\n            tail = p\n    return head\n\n\ndef merge(a, b):\n    dummy = Node(0)\n    tail = dummy\n    while a is not None and b is not None:\n        if a.data <= b.data:\n            tail.next = a\n            a = a.next\n        else:\n            tail.next = b\n            b = b.next\n        tail = tail.next\n    tail.next = a if a is not None else b\n    return dummy.next\n\n\ndef main():\n    lines = sys.stdin.read().splitlines()\n    a = build(lines[0] if len(lines) > 0 else \"\")\n    b = build(lines[1] if len(lines) > 1 else \"\")\n\n    m = merge(a, b)\n    if m is None:\n        print(\"empty\")\n        return\n\n    out = []\n    p = m\n    while p is not None:\n        out.append(str(p.data))\n        p = p.next\n    print(\" \".join(out))\n\n\nmain()\n",
+    "analysis": "思路：先用尾插法建两条升序链表，再用“哑结点 + 尾指针”合并。`dummy = Node(0)` 让“结果表还没有结点”和“已经有结点”共用 `tail.next = ...` 一句，省掉大量 head 特判；每轮把较小的头结点挂到 tail 后面，比较用 `<=` 保证相等元素先取第一条表（稳定）；某条表走空后，把另一条的剩余部分整段接上即可。返回 `dummy.next` 而不是 dummy。时间复杂度 O(n+m)、额外空间 O(1)。易错点：返回 dummy 本身（多一个值为 0 的假结点）、忘记接剩余部分、三个引用前移不同步。Python 的对象引用让链式结构与 C 同构，但不需要申请或释放内存。"
+  },
+  "结-52": {
+    "stem": "下面程序删除单链表中倒数第 k 个结点（1 ≤ k ≤ 结点个数），请填空。\n\n```python\nimport sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\ntokens = [int(t) for t in sys.stdin.read().split()]\nhead = tail = None\ni = 0\nwhile i < len(tokens) and tokens[i] != -1:\n    p = Node(tokens[i])\n    if head is None:\n        head = tail = p\n    else:\n        tail.next = p\n        tail = p\n    i += 1\nk = tokens[i + 1]\n\nfast = head\nfor _ in range(k):\n    fast = fast.next\n\nslow = head\nprev = None\nwhile fast is not None:\n    prev = slow\n    slow = ①\n    fast = ②\n\nif prev is None:\n    head = ③\nelse:\n    prev.next = slow.next\ndel slow\n\np = head\nwhile p is not None:\n    print(p.data, end=\" \")\n    p = p.next\nprint()\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "slow.next",
+        "note": "慢指针前移一格，prev 已经记住了它的前驱"
+      },
+      {
+        "no": "②",
+        "answer": "fast.next",
+        "note": "快指针同步前移，保证两者始终相距 k 个结点"
+      },
+      {
+        "no": "③",
+        "answer": "slow.next",
+        "note": "prev 为 None 说明要删的是首结点，让 head 指向第二个结点"
+      }
+    ],
+    "analysis": "双指针定位倒数第 k 个的核心是“保持间距”：fast 先走 k 步，此时 slow 与 fast 相距 k 个结点；之后两者同步前进，当 fast 走到 None 时，slow 恰好落在倒数第 k 个结点上，而 prev 停在它的前驱。① 与 ② 分别让 slow、fast 前移一格，两者基指针不同，不能都写 `next` 了事；③ 是删除首结点的特殊分支，必须改 head，否则 head 会指向被删除的结点。删除时先改链、再 `del slow` 让结点失去最后一个引用。输入 `1 2 3 4 5 -1` 与 k=2 时输出 `1 2 3 5 `；k=1 时删除尾结点，k=5 时 prev 为 None、走 ③ 分支。时间 O(n)、额外空间 O(1)。"
+  },
+  "结-55": {
+    "stem": "读入一串整数（以 -1 结束）建立单链表（结点用普通类 `Node` 表示），再读入 k，删除链表中倒数第 k 个结点（1 ≤ k ≤ 结点个数），输出剩余链表。\n\n**输入格式：** 第一行为若干整数，以 -1 结束；第二行为一个整数 k。\n\n**输出格式：** 一行输出剩余结点值，相邻数字用一个空格分隔，行末无多余空格；若链表被删空，输出 `empty`。\n\n**输入样例：**\n```text\n1 2 3 4 5 -1\n2\n```\n**输出样例：**\n```text\n1 2 3 5\n```",
+    "solution": "import sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\ndef main():\n    tokens = sys.stdin.read().split()\n    if not tokens:\n        return\n\n    values = []\n    i = 0\n    while int(tokens[i]) != -1:\n        values.append(int(tokens[i]))\n        i += 1\n    if i + 1 >= len(tokens):\n        return\n    k = int(tokens[i + 1])\n\n    head = tail = None\n    for x in values:\n        p = Node(x)\n        if head is None:\n            head = tail = p\n        else:\n            tail.next = p\n            tail = p\n    if head is None:\n        print(\"empty\")\n        return\n\n    fast = head\n    for _ in range(k):\n        fast = fast.next\n\n    slow = head\n    prev = None\n    while fast is not None:\n        prev = slow\n        slow = slow.next\n        fast = fast.next\n\n    if prev is None:\n        head = slow.next\n    else:\n        prev.next = slow.next\n\n    if head is None:\n        print(\"empty\")\n        return\n\n    out = []\n    p = head\n    while p is not None:\n        out.append(str(p.data))\n        p = p.next\n    print(\" \".join(out))\n\n\nmain()\n",
+    "analysis": "思路：先用尾插法建表，再用双指针一次遍历完成删除。fast 先走 k 步，然后 fast 与 slow 同步前进并记录 slow 的前驱 prev，当 fast 为 None 时 slow 就是倒数第 k 个。删除时分两种情况：prev 为 None 说明命中的是首结点（k 等于长度），必须改 head；否则让 prev 跳过 slow。最后输出剩余链表，删空则输出 empty。时间复杂度 O(n)（只遍历一遍），额外空间 O(1)。Python 的 list 也能用 `pop(-k)` 一步完成，但本题的训练目标是链式结点与双指针，所以保留链式实现；结点被跳过并失去引用后由 GC 回收，不需要 free。易错点：k=1 时删的是尾结点、改链后忘记尾结点 next 已是 None、以及先断链再取后继。"
+  },
+  "结-56": {
+    "stem": "下面程序把学生按成绩降序排列（成绩相同按姓名升序），请填空。\n\n```python\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Stu:\n    name: str\n    score: int\n\n\ndef sort_key(st):\n    # 成绩降序、成绩相同时姓名升序\n    return (①, st.name)\n\n\nn = int(input())\ns = []\nfor _ in range(n):\n    name, score = input().split()\n    s.append(Stu(name, int(score)))\n\ns.sort(②)\n\nfor st in s:\n    print(st.name, st.score)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "-st.score",
+        "note": "key 返回的元组按升序比较，取负号就能让原成绩大的排在前面；成绩相同时再比较第二项 st.name"
+      },
+      {
+        "no": "②",
+        "answer": "key=sort_key",
+        "note": "Python 用关键字参数 key 指定排序依据，不再需要 qsort 的元素大小参数；也可以直接写 key=lambda st: (-st.score, st.name)"
+      }
+    ],
+    "analysis": "C 的 qsort 要求调用者给出元素个数、单个元素大小和比较函数；Python 的 `list.sort` / `sorted` 改成“关键字函数”模型：只需给出 `key`，元素怎么交换由解释器负责，因此没有 `sizeof(s[0])` 这一项。① 返回 `-st.score`：key 的结果按升序比较，负分越小说明原分越大，于是成绩降序；元组第二项 `st.name` 让成绩相同时按姓名升序（顺便避免了只按成绩排序时相等项的次序不确定）。② 把 `key=sort_key` 作为关键字参数传给 `s.sort()`。Python 的排序是稳定排序，且 key 函数对每个元素只调用一次，效率高于 C 中反复调用的比较函数。易错点：把 key 写成比较函数（返回正负号）——那是 C 的模型；返回 `st.score` 忘记负号；以及把 `key=sort_key` 写成 `sort_key`。"
+  },
+  "结-59": {
+    "stem": "下面程序读入两条升序链表（各自以 -1 结束），把它们合并成一条升序链表后输出，请填空。\n\n```python\nimport sys\n\n\nclass Node:\n    def __init__(self, data):\n        self.data = data\n        self.next = None\n\n\ndef build():\n    head = tail = None\n    for x in (int(t) for t in input().split()):\n        if x == -1:\n            break\n        p = Node(x)\n        if head is None:\n            head = tail = p\n        else:\n            tail.next = p\n            tail = p\n    return head\n\n\ndef merge(a, b):\n    dummy = Node(0)\n    tail = dummy\n    while a is not None and b is not None:\n        if a.data <= b.data:\n            tail.next = a\n            a = ①\n        else:\n            tail.next = b\n            b = ②\n        tail = ③\n    tail.next = a if a is not None else b\n    return dummy.next\n\n\nm = merge(build(), build())\np = m\nwhile p is not None:\n    print(p.data, end=\" \")\n    p = p.next\nprint()\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "a.next",
+        "note": "取了 a 的结点，a 自己向后移动一格"
+      },
+      {
+        "no": "②",
+        "answer": "b.next",
+        "note": "取了 b 的结点，b 向后移动一格"
+      },
+      {
+        "no": "③",
+        "answer": "tail.next",
+        "note": "tail 前移到刚挂上的结点；不能写 tail.next.next"
+      }
+    ],
+    "analysis": "合并的循环每一步做三件事：比较两个表头、把较小者挂到结果表尾、让被取走的那条链和 tail 各前移一格。① 与 ② 分别推进 a、b，两者不能写混，否则会跳过或重复元素；③ 让 tail 前进到刚接上的结点——上一步已经把 `tail.next` 指向它，所以写 `tail = tail.next` 即可。循环结束后必有一条表先空，剩下那条本来就有序，直接 `tail.next = a if a is not None else b` 整段接上，不必逐个搬。返回 `dummy.next` 而不是 dummy，否则结果会多出一个值为 0 的假结点。比较用 `<=` 保证相等元素先取第一条链，结果稳定。输入 `1 3 5 -1` 与 `2 3 4 6 -1`，输出 `1 2 3 3 4 5 6 `。"
+  },
+  "枚-03": {
+    "stem": "下面程序读入 1~7 的整数，输出对应的英文星期名，请填空。\n\n```python\nfrom enum import IntEnum\n\n\nclass Weekday(IntEnum):\n    MON = 1\n    TUE = 2\n    WED = 3\n    THU = 4\n    FRI = 5\n    SAT = 6\n    SUN = 7\n\n\nn = int(input())\nd = Weekday(n) if 1 <= n <= 7 else None\n\nif ① == Weekday.MON:\n    print(\"Monday\")\nelif d == Weekday.TUE:\n    print(\"Tuesday\")\nelif d == ②:\n    print(\"Wednesday\")\nelif d == Weekday.THU:\n    print(\"Thursday\")\nelif d == Weekday.FRI:\n    print(\"Friday\")\nelif d == Weekday.SAT or d == Weekday.SUN:\n    print(\"Weekend\")\nelse:\n    print(\"Invalid\")\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "d",
+        "note": "被判断的枚举对象，相当于 C 中 switch 的控制表达式；写 Weekday(n) 也能得到同样结果但会重复构造"
+      },
+      {
+        "no": "②",
+        "answer": "Weekday.WED",
+        "note": "枚举成员要用“类名.成员”访问；写 3 也能比较通过，但可读性差，不推荐"
+      }
+    ],
+    "analysis": "Python 用 `IntEnum` 表达 C 的枚举：成员是具名常量，同时又是 int 的子类，可以与整数比较、也能直接作列表下标。C 的 switch 在 Python 里通常写成 if/elif 链：① 填被判断的对象 `d`（对应 switch 的控制表达式），② 填 `Weekday.WED`（对应 case 标签）。成员必须写成 `Weekday.WED`，不能只写 `WED`——这一点比 C 更严格，好处是不会和普通变量混淆。构造 `Weekday(n)` 时若 n 不在 1~7 会抛 ValueError，所以代码先用条件表达式做了范围保护，非法输入落到 else 输出 Invalid，对应 C 的 default 分支。输入 3 输出 Wednesday，输入 6 或 7 输出 Weekend。"
+  },
+  "枚-06": {
+    "stem": "用 `IntEnum` 表示五个成绩等级（90~100 优秀、80~89 良好、70~79 中等、60~69 及格、60 以下不及格），读入 n 个百分制成绩，统计各等级人数。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；第二行 n 个 0~100 的整数成绩，用空格分隔。\n\n**输出格式：** 一行 5 个整数，依次为优秀、良好、中等、及格、不及格的人数，用空格分隔。\n\n**输入样例：**\n```text\n6\n95 82 76 60 45 88\n```\n**输出样例：**\n```text\n1 2 1 1 1\n```",
+    "solution": "import sys\nfrom enum import IntEnum\n\n\nclass Grade(IntEnum):\n    EXCELLENT = 0\n    GOOD = 1\n    MEDIUM = 2\n    PASS = 3\n    FAIL = 4\n\n\nGRADE_COUNT = len(list(Grade))\n\n\ndef grade_of(score):\n    if score >= 90:\n        return Grade.EXCELLENT\n    if score >= 80:\n        return Grade.GOOD\n    if score >= 70:\n        return Grade.MEDIUM\n    if score >= 60:\n        return Grade.PASS\n    return Grade.FAIL\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    cnt = [0] * GRADE_COUNT\n    for score in map(int, data[1:1 + n]):\n        cnt[grade_of(score)] += 1\n    print(\" \".join(str(c) for c in cnt))\n\n\nmain()\n",
+    "analysis": "思路：定义 `class Grade(IntEnum)` 表示五个等级，用 `GRADE_COUNT = len(list(Grade))` 取出等级个数，让计数列表的长度与枚举同步扩展，增减等级时不用改循环边界。`grade_of` 从高到低用 `>=` 判断并返回枚举成员；因为 IntEnum 是 int 的子类，返回值可以直接当列表下标使用（纯 Enum 不行，需要取 `.value`）。最后按枚举顺序输出计数，`\" \".join` 保证行末无多余空格。复杂度 O(n)。关键易错点是边界：90 分算优秀、60 分算及格，写成 `> 90` / `> 60` 会把边界判错；另外不要用普通 `Enum` 直接索引列表。样例 6 个成绩的等级依次是优秀、良好、中等、及格、不及格、良好，统计得 1 2 1 1 1。"
+  },
+  "枚-08": {
+    "stem": "枚举 EAST、SOUTH、WEST、NORTH 依次表示 0~3 四个方向。下面程序读入起始方向编号与前进步数（非负整数），输出走完若干步后的方向（每走一步顺时针转 90 度），请填空。\n\n```python\nfrom enum import IntEnum\n\n\nclass Dir(IntEnum):\n    EAST = 0\n    SOUTH = 1\n    WEST = 2\n    NORTH = 3\n\n\nstart, step = map(int, input().split())\nd = Dir(①)\n\nif d == Dir.EAST:\n    print(\"EAST\")\nelif d == Dir.SOUTH:\n    print(\"SOUTH\")\nelif d == Dir.WEST:\n    print(\"WEST\")\nelif d == ②:\n    print(\"NORTH\")\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "(start + step) % 4",
+        "note": "四个方向循环，对 4 取模；结果在 0~3 之间，Dir(...) 不会越界"
+      },
+      {
+        "no": "②",
+        "answer": "Dir.NORTH",
+        "note": "分支判断要用枚举成员；写 3 也能相等但可读性差"
+      }
+    ],
+    "analysis": "IntEnum 的成员值正好就是方向编号：EAST=0、SOUTH=1、WEST=2、NORTH=3，所以“走 step 步”就是对 4 取模，① 填 `(start + step) % 4`，再用 `Dir(...)` 把整数转成枚举成员；取模保证结果落在 0~3，不会触发 ValueError。② 填 `Dir.NORTH`，与其余分支保持同一风格。Python 的 if/elif 取代 C 的 switch，每个分支打印对应名字。输入 `0 1` 得到 SOUTH；输入 `0 5` 时 5 % 4 = 1 仍为 SOUTH，可见取模正确处理了绕圈。易错点：忘记取模导致越界、把方向顺序记反、以及只写 `NORTH` 而漏掉类名。"
+  },
+  "枚-11": {
+    "stem": "用 `Enum` 表示四则运算符，读入一个形如 `a op b` 的表达式并输出结果。其中 a、b 为非负整数，op 是 `+`、`-`、`*`、`/` 之一；除法按整数除法，且保证除数不为 0。若 op 不是这四个字符之一，输出 `error`。\n\n**输入格式：** 一行，形如 `7 * 6`，数与运算符之间用空格分隔。\n\n**输出格式：** 一行一个整数，为运算结果；运算符非法时输出 `error`。\n\n**输入样例：**\n```text\n7 * 6\n```\n**输出样例：**\n```text\n42\n```",
+    "solution": "import sys\nfrom enum import Enum\n\n\nclass Op(Enum):\n    ADD = \"+\"\n    SUB = \"-\"\n    MUL = \"*\"\n    DIV = \"/\"\n\n\ndef to_op(ch):\n    try:\n        return Op(ch)\n    except ValueError:\n        return None\n\n\ndef main():\n    parts = sys.stdin.read().split()\n    if len(parts) != 3:\n        print(\"error\")\n        return\n    a_text, ch, b_text = parts\n    try:\n        a = int(a_text)\n        b = int(b_text)\n    except ValueError:\n        print(\"error\")\n        return\n\n    op = to_op(ch)\n    if op is None:\n        print(\"error\")\n    elif op is Op.ADD:\n        print(a + b)\n    elif op is Op.SUB:\n        print(a - b)\n    elif op is Op.MUL:\n        print(a * b)\n    elif b == 0:\n        print(\"error\")\n    else:\n        print(a // b)\n\n\nmain()\n",
+    "analysis": "思路：用 `class Op(Enum)` 把四个运算符字符直接作为枚举值，`to_op` 通过 `Op(ch)` 完成“字符 → 枚举”的映射，非法字符捕获 ValueError 返回 None，对应 C 的 OP_INVALID。主函数只对枚举值分支，业务逻辑里不再出现字符比较。输入用 `sys.stdin.read().split()` 切成三段，比 C 的 `scanf(\"%d %c %d\")` 更宽松，也不会有“%c 读到空格”的坑。除法：题目保证非负整数，`a // b` 与 C 的整数除法结果一致；若允许负数，`//` 是向下取整而不是向零截断，需要另作处理。除数为 0 或运算符非法都输出 error。复杂度 O(1)。易错点：用 Enum 却拿字符串直接比、忘记处理除零、以及把 `/` 当成整数除法（Python 的 `/` 永远返回 float）。"
+  },
+  "枚-14": {
+    "stem": "下面程序用枚举实现一个简单的运行状态机：`s` 启动、`p` 暂停、`r` 恢复、`x` 停止（停止后不可再变），请填空。\n\n```python\nimport sys\nfrom enum import IntEnum\n\n\nclass State(IntEnum):\n    IDLE = 0\n    RUNNING = 1\n    PAUSED = 2\n    STOPPED = 3\n\n\nSTATE_NAME = [\"IDLE\", \"RUNNING\", \"PAUSED\", \"STOPPED\"]\n\n\ndef next_state(s, cmd):\n    if s == State.IDLE:\n        return State.RUNNING if cmd == \"s\" else State.IDLE\n    if s == State.RUNNING:\n        if cmd == \"p\":\n            return State.PAUSED\n        if cmd == \"x\":\n            return State.STOPPED\n        return State.RUNNING\n    if s == State.PAUSED:\n        if cmd == \"r\":\n            return ①\n        if cmd == \"x\":\n            return State.STOPPED\n        return State.PAUSED\n    if s == ②:\n        return State.STOPPED\n    return s\n\n\nstate = State.IDLE\nfor cmd in sys.stdin.read():\n    if cmd.isspace():\n        continue\n    state = ③(state, cmd)\n\nprint(STATE_NAME[state])\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "State.RUNNING",
+        "note": "从暂停恢复就是回到运行态，不能直接跳到 IDLE"
+      },
+      {
+        "no": "②",
+        "answer": "State.STOPPED",
+        "note": "STOPPED 分支的判断对象，必须是枚举成员，否则条件永远不成立"
+      },
+      {
+        "no": "③",
+        "answer": "next_state",
+        "note": "调用状态转移函数，再把返回值赋回外层变量 state"
+      }
+    ],
+    "analysis": "Python 没有 switch，用 if/elif 表达状态转移；状态用 IntEnum 保存，可读性优于裸整数，`STATE_NAME[state]` 能直接按枚举值取名字。① 从 PAUSED 收到 'r' 应回到 RUNNING；② 是 STOPPED 分支的判断对象，写 `State.STOPPED`，之后直接返回 STOPPED 实现“停止后不可再变”；③ 调用转移函数 `next_state` 并把结果赋回 state。主循环逐字符读取标准输入并跳过空白，因此输入 `s p r x` 与 `sprx` 都能正确解析，与 C 的 `scanf(\" %c\")` 跳过空白等价。状态机把“转移规则”和“输入处理”分开，增加状态只需改函数。输入 `s p r x` 时状态依次为 RUNNING、PAUSED、RUNNING、STOPPED，输出 STOPPED。"
+  },
+  "枚-16": {
+    "stem": "读入 n 个操作名（只可能是 `ADD`、`SUB`、`MUL`），用 `IntEnum` 表示这三种操作，统计每种操作出现的次数，并按枚举常量的顺序输出。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；随后 n 行，每行一个操作名，为大写字母组成的不超过 10 个字符的字符串。\n\n**输出格式：** 共 3 行，每行 `操作名 次数`，顺序固定为 ADD、SUB、MUL，用空格分隔。\n\n**输入样例：**\n```text\n5\nADD\nMUL\nSUB\nADD\nMUL\n```\n**输出样例：**\n```text\nADD 2\nSUB 1\nMUL 2\n```",
+    "solution": "import sys\nfrom enum import IntEnum\n\n\nclass Op(IntEnum):\n    ADD = 0\n    SUB = 1\n    MUL = 2\n\n\nNAMES = [\"ADD\", \"SUB\", \"MUL\"]\n\n\ndef to_op(text):\n    if text == \"ADD\":\n        return Op.ADD\n    if text == \"SUB\":\n        return Op.SUB\n    return Op.MUL\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    cnt = [0] * len(NAMES)\n    for name in data[1:1 + n]:\n        cnt[to_op(name)] += 1\n    for op in Op:\n        print(NAMES[op], cnt[op])\n\n\nmain()\n",
+    "analysis": "思路：`class Op(IntEnum)` 给出 ADD/SUB/MUL 三个成员，`NAMES` 列表按枚举顺序保存名字；`to_op` 把字符串映射成枚举值，其余情况返回 MUL，与 C 版“只可能是这三种、最后兜底 MUL”的写法一致。计数时用枚举值作下标 `cnt[to_op(name)] += 1`，输出时 `for op in Op` 按定义顺序遍历，保证固定输出 ADD、SUB、MUL 而不是输入顺序。IntEnum 既能当整数索引又能保留可读名字，这是它比裸数字更合适的地方。复杂度 O(n)。易错点：把输出写成输入顺序、计数列表长度写死成 3 却没有维护 NAMES 与枚举同步、以及用 `text == Op.ADD` 混比字符串和枚举（应比较枚举或字符串其中之一）。"
+  },
+  "函-03": {
+    "stem": "下面程序通过函数计算 1 + 2 + … + n。请填空。\n\n```python\ndef sum_to(n):\n    s = 0\n    for i in range(1, n + 1):\n        s += i\n    return ①\n\n\nn = int(input())\nprint(②)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "s",
+        "note": "返回累加结果；不能写 i，循环结束后 i 停在 n，不是和"
+      },
+      {
+        "no": "②",
+        "answer": "sum_to(n)",
+        "note": "调用函数并把返回值直接作为 print 的实参"
+      }
+    ],
+    "analysis": "本题考查函数的返回与调用。`sum_to` 内部用局部变量 s 累积 1 到 n 的和，循环结束后必须通过 return 把 s 送回调用处；如果写成 `return i`，返回的是循环结束时的 n，结果就错了。main 部分用 `sum_to(n)` 这个调用表达式作为 print 的实参，函数先把返回值算出来再参与输出，这是最常见的“返回值直接使用”写法。注意 s 必须在函数内部初始化为 0，函数里的局部变量不会自动清零。函数名用 `sum_to` 而不是 `sum`，是为了避免覆盖 Python 内置的 `sum()`。当 n = 5 时输出 15。"
+  },
+  "函-06": {
+    "stem": "定义函数 `is_prime(n)` 判断整数 n 是否为素数，主程序读入 n 个整数，统计其中素数的个数与总和。\n\n**输入格式：** 第一行一个正整数 n（1 ≤ n ≤ 100）；第二行 n 个整数（绝对值不超过 10000），以空格分隔。\n\n**输出格式：** 一行两个整数：素数的个数、这些素数的和，用单个空格分隔。\n\n**输入样例：**\n```text\n5\n3 4 5 6 7\n```\n**输出样例：**\n```text\n3 15\n```",
+    "solution": "import sys\n\n\ndef is_prime(n):\n    if n < 2:\n        return False\n    i = 2\n    while i * i <= n:\n        if n % i == 0:\n            return False\n        i += 1\n    return True\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    numbers = [int(t) for t in data[1:1 + n]]\n    cnt = 0\n    total = 0\n    for x in numbers:\n        if is_prime(x):\n            cnt += 1\n            total += x\n    print(cnt, total)\n\n\nmain()\n",
+    "analysis": "思路：把判定逻辑封装成 `is_prime(n)`，主程序只负责读入与累计，体现模块化。`is_prime` 先处理 n < 2 的边界（0、1 和负数都不是素数），再从 2 试除到 √n，一旦发现因子立即返回 False，全部试完返回 True。返回布尔值比 C 的返回 0/1 更直观，`if is_prime(x)` 直接使用。主程序每读入一个数就调用一次，为真则计数并累加。时间复杂度 O(n√max)，空间 O(1)。易错点：把 1 当素数、`while i * i <= n` 写成 `i < n` 造成不必要的循环、以及把返回值写反。"
+  },
+  "函-08": {
+    "stem": "下面程序读入 n（1 ≤ n ≤ 100）个整数，通过函数求数组元素的最大值。请填空。\n\n```python\ndef max_of(a, n):\n    m = ①\n    for i in range(1, n):\n        if a[i] > m:\n            m = a[i]\n    return ②\n\n\nn = int(input())\na = list(map(int, input().split()))\nprint(max_of(a, n))\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "a[0]",
+        "note": "以第一个元素作为最大值初值，从下标 1 开始比较；写 0 会在全负数据上出错"
+      },
+      {
+        "no": "②",
+        "answer": "m",
+        "note": "返回最终保存的最大值"
+      }
+    ],
+    "analysis": "本题考查“数组 + 长度”作参数的求最大值标准模式。C 里数组形参会退化为指针，无法用 sizeof 求长度，必须额外传 n；Python 的 list 自带 `len()`，但在教学上仍把 n 传进来，既对应 C 的接口，也明确“只处理前 n 个元素”。求最大值时先把 `a[0]` 当作当前最大，再从下标 1 开始逐个比较，只有严格大于才更新，这样能找到最靠前的最大值。初值不能写成 0 或某个很小的数，否则全部元素为负数时会得到错误结果。调用处 `max_of(a, n)` 把列表和长度分别传入。若 n 为 0 需要另外处理，本题保证 n ≥ 1；实际工程中也可以直接用内置的 `max(a)`。"
+  },
+  "函-11": {
+    "stem": "如果一个正整数等于它所有真因子（不含自身的因子）之和，就称它为完数，例如 6 = 1 + 2 + 3。定义函数 `is_perfect(n)` 判断完数，输出 [1, n] 内的所有完数。\n\n**输入格式：** 一行一个整数 n（2 ≤ n ≤ 1000）。\n\n**输出格式：** 每行一个完数，按从小到大输出；若区间内没有完数，输出 `none`。\n\n**输入样例：**\n```text\n100\n```\n**输出样例：**\n```text\n6\n28\n```",
+    "solution": "def is_perfect(n):\n    total = 0\n    for i in range(1, n):\n        if n % i == 0:\n            total += i\n    return total == n\n\n\ndef main():\n    n = int(input())\n    found = False\n    for i in range(1, n + 1):\n        if is_perfect(i):\n            print(i)\n            found = True\n    if not found:\n        print(\"none\")\n\n\nmain()\n",
+    "analysis": "思路：`is_perfect(n)` 枚举 1 到 n-1 的真因子并累加，返回 `total == n` 这个布尔值，对应 C 的 `return s == n`；主函数遍历 1..n，命中就打印并置 found，最后没有命中输出 none。Python 的 `range(1, n)` 天然不含 n，不会把自身算进因子，比 C 手写下标更不易出错。n ≤ 1000 时 O(n²) 约 10⁶ 次取模，完全够用。易错点：range 上界写成 n+1 把自身算进去、忘记 none 分支、以及把 1 当完数（1 的真因子和是 0，不是 1）。"
+  },
+  "函-13": {
+    "stem": "下面程序用递归函数计算 n!（n ≥ 0）。请填空。\n\n```python\ndef fact(n):\n    if n <= 1:\n        return ①\n    return n * ②\n\n\nn = int(input())\nprint(fact(n))\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "1",
+        "note": "0! 与 1! 都等于 1，这就是递归出口"
+      },
+      {
+        "no": "②",
+        "answer": "fact(n - 1)",
+        "note": "规模减一地向出口递归；写成 fact(n) 会无限递归"
+      }
+    ],
+    "analysis": "本题考查递归函数的两要素：递归出口和规模递减的递归调用。n ≤ 1 时直接返回 1，保证递归能够终止（否则会无限调用并触发 RecursionError，对应 C 的爆栈）；否则返回 n 乘以 `fact(n - 1)`，把求 n! 转化为求 (n-1)! 再乘 n。执行 fact(4) 时依次展开为 4 × fact(3)、3 × fact(2)…直到 fact(1) 返回 1，再逐层回代得到 24。Python 的整数是任意精度，不存在 C 中 long long 溢出的问题，但递归深度受解释器上限限制。第二空写成 `fact(n)` 会无限递归，写成 `n * fact(n)` 同样错误，参数必须向出口方向递减。"
+  },
+  "函-16": {
+    "stem": "定义三个函数，分别求整数列表的最大值、最小值和平均值，主程序读入 n 个整数后调用它们并输出结果。\n\n**输入格式：** 第一行一个正整数 n（1 ≤ n ≤ 100）；第二行 n 个整数，以空格分隔。\n\n**输出格式：** 一行三个值：最大值、最小值（整数）、平均值（保留 2 位小数），用单个空格分隔。\n\n**输入样例：**\n```text\n5\n3 9 1 7 5\n```\n**输出样例：**\n```text\n9 1 5.00\n```",
+    "solution": "import sys\n\n\ndef max_of(a):\n    m = a[0]\n    for x in a[1:]:\n        if x > m:\n            m = x\n    return m\n\n\ndef min_of(a):\n    m = a[0]\n    for x in a[1:]:\n        if x < m:\n            m = x\n    return m\n\n\ndef avg_of(a):\n    return sum(a) / len(a)\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n    n = int(data[0])\n    a = [int(t) for t in data[1:1 + n]]\n    print(f\"{max_of(a)} {min_of(a)} {avg_of(a):.2f}\")\n\n\nmain()\n",
+    "analysis": "思路：一数一函数，`max_of`、`min_of`、`avg_of` 都接收列表，各司其职；主程序只负责读入与格式化输出。最值函数以 `a[0]` 为初值、从第二个元素开始比较，避免全负数据出错；Python 也可以直接 `max(a)`/`min(a)`，但手写一遍更能对应 C 版“数组作参数”的训练目标。平均值用 `sum(a) / len(a)`，`/` 永远是真除法，不需要 C 的强制类型转换；输出用 f-string 的 `:.2f` 保留两位小数。复杂度 O(n)，三次遍历也可合并为一次，但分开写更清晰。易错点：空列表取 `a[0]`、用 `//` 得到整数平均值、以及输出顺序写成“最小 最大”。"
+  },
+  "函-17": {
+    "stem": "下面程序用闭包保持状态，实现一个计数器，三次调用依次输出 1、2、3。请填空。\n\n```python\ndef make_counter():\n    cnt = ①\n\n    def tick():\n        nonlocal cnt\n        cnt += 1\n        return ②\n\n    return tick\n\n\ntick = ③()\nfor _ in range(3):\n    print(tick(), end=\" \")\nprint()\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "0",
+        "note": "计数初值；它只在创建闭包时执行一次，之后由 tick 通过 nonlocal 持续累加"
+      },
+      {
+        "no": "②",
+        "answer": "cnt",
+        "note": "先自增再返回，第一次返回 1；对应 C 的前置自增 ++cnt"
+      },
+      {
+        "no": "③",
+        "answer": "make_counter",
+        "note": "调用工厂函数得到闭包 tick，状态 cnt 被闭包捕获，跨调用保留"
+      }
+    ],
+    "analysis": "C 用 `static int cnt` 让局部变量在函数调用之间保活；Python 没有函数内 static，最直接的等价写法是“工厂函数 + 闭包”：`make_counter` 里的 `cnt` 是外层局部变量，内层 `tick` 捕获它，并用 `nonlocal cnt` 声明“我要修改外层的 cnt”。这样 `cnt` 只在创建闭包时初始化一次，之后每次调用 `tick` 都沿用上次的值，① 填 0，② 返回自增后的 cnt（等价于 C 的 `++cnt`，若写成“先返回后自增”就会输出 0 1 2），③ 调用 `make_counter()` 得到 tick。每次调用 `make_counter()` 都会产生一个独立的计数器，这是比 static 更灵活的地方。若忘记写 `nonlocal`，`cnt += 1` 会把它当成局部变量而抛 UnboundLocalError。"
+  },
+  "函-20": {
+    "stem": "用递归函数把一个十进制正整数转换成二进制输出。\n\n**输入格式：** 一行一个正整数 n（1 ≤ n ≤ 10⁹）。\n\n**输出格式：** 一行，n 的二进制表示（不含前导零）。\n\n**输入样例：**\n```text\n13\n```\n**输出样例：**\n```text\n1101\n```",
+    "solution": "def print_binary(n):\n    if n == 0:\n        return\n    print_binary(n // 2)\n    print(n % 2, end=\"\")\n\n\ndef main():\n    n = int(input())\n    print_binary(n)\n    print()\n\n\nmain()\n",
+    "analysis": "思路：递归函数先递归处理 `n // 2`，返回后再输出 `n % 2`，这样高位先于低位打印，正好符合二进制从高到低的书写顺序。递归出口是 n == 0 时直接返回且不输出，避免前导零。Python 的整数除法用 `//`（向下取整），取余用 `%`；对正整数而言与 C 的 `/`、`%` 完全一致。`print(n % 2, end=\"\")` 不换行，等价于 C 的 `printf(\"%d\")`；函数没有 return 值（返回 None），对应 C 的 void 函数。复杂度 O(log n)，递归深度不超过 30 层。易错点：先输出再递归得到逆序位串、出口里输出 0 多一个前导零、以及用 `/` 得到浮点数。"
+  },
+  "函-24": {
+    "stem": "下面程序通过“把函数当参数传递”让同一个函数执行不同的运算。请填空。\n\n```python\ndef add(a, b):\n    return a + b\n\n\ndef mul(a, b):\n    return a * b\n\n\ndef apply(op, x, y):\n    return ①\n\n\np = ②\nprint(apply(p, 3, 4), apply(③, 3, 4))\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "op(x, y)",
+        "note": "形参 op 就是一个函数对象，直接调用即可；不需要像 C 那样写函数指针类型"
+      },
+      {
+        "no": "②",
+        "answer": "add",
+        "note": "函数名在表达式中求值为函数对象，可以直接赋值给变量"
+      },
+      {
+        "no": "③",
+        "answer": "mul",
+        "note": "把另一个函数对象作为实参传给 apply"
+      }
+    ],
+    "analysis": "C 用 `int (*op)(int, int)` 声明函数指针，apply 内部通过 `op(x, y)` 或 `(*op)(x, y)` 调用它；Python 的函数是一等对象（first-class function），直接写 `def apply(op, x, y): return op(x, y)` 就能把“函数”当普通参数传来传去，不需要声明指针类型，也不需要取地址或解引用。main 中 `p = add` 让 p 绑定到 add 这个函数对象（函数名求值就是函数本身，不加括号才是“函数对象”，加了括号是“调用结果”），第二次直接把 mul 传进去，于是第一次输出 3 + 4 = 7，第二次输出 3 × 4 = 12。这种写法就是回调、以及 `sorted(key=...)`、`map`、`filter` 等内置函数的基础。易错点：把 `p = add` 写成 `p = add()`（会先调用并拿返回值）、以及在 apply 里写 `op` 而不调用它。"
+  },
+  "函-26": {
+    "stem": "用递归实现汉诺塔：有 A、B、C 三根柱子，A 柱上从下到上放着 n 个大小不同的圆盘。要求把所有圆盘移到 C 柱，每次只能移动一个圆盘，且任何时刻小盘不能压在大盘上。输出每一步的移动过程和总步数。\n\n**输入格式：** 一行一个整数 n（1 ≤ n ≤ 10）。\n\n**输出格式：** 每行输出一步，格式为 `源柱->目标柱`；最后一行输出 `total=步数`。\n\n**输入样例：**\n```text\n2\n```\n**输出样例：**\n```text\nA->B\nA->C\nB->C\ntotal=3\n```",
+    "solution": "moves = 0\n\n\ndef hanoi(n, src, aux, dst):\n    global moves\n    if n == 0:\n        return\n    hanoi(n - 1, src, dst, aux)\n    print(f\"{src}->{dst}\")\n    moves += 1\n    hanoi(n - 1, aux, src, dst)\n\n\ndef main():\n    n = int(input())\n    hanoi(n, \"A\", \"B\", \"C\")\n    print(f\"total={moves}\")\n\n\nmain()\n",
+    "analysis": "把“将 n 个盘从 src 移到 dst”分解为三步：先把上面 n-1 个盘借助 dst 移到 aux，再把最大的盘从 src 移到 dst，最后把 n-1 个盘从 aux 借助 src 移到 dst。第一步和第三步与原问题结构相同但规模减一，正是递归；n == 0 时不需要移动，直接返回，作为递归出口。移动次数满足 T(n) = 2T(n-1) + 1、T(0) = 0，解得 T(n) = 2^n - 1，时间复杂度 O(2^n)，n ≤ 10 时最多 1023 步。Python 里用模块级变量 moves 计数，函数内必须写 `global moves` 才能修改全局变量，否则 `moves += 1` 会把 moves 当成局部变量并抛 UnboundLocalError。样例 n = 2 的移动顺序是 A->B、A->C、B->C，共 3 步。易错点：三根柱子的角色传错、漏写 global、以及出口写成 n == 1 后继续递归。"
+  },
+  "函-28": {
+    "stem": "下面程序读入 3 行 4 列的整数矩阵，输出每一行元素之和。请填空。\n\n```python\nR, C = 3, 4\n\n\ndef row_sum(a, row):\n    s = 0\n    for j in range(C):\n        s += ①\n    return s\n\n\nm = [list(map(int, input().split())) for _ in range(R)]\nfor i in range(R):\n    print(②)\n```",
+    "blanks": [
+      {
+        "no": "①",
+        "answer": "a[row][j]",
+        "note": "row 是行下标，j 是列下标；二维列表用两个方括号逐级取元素"
+      },
+      {
+        "no": "②",
+        "answer": "row_sum(m, i)",
+        "note": "把矩阵和当前行号传给函数；Python 的 list 自带长度，不需要像 C 那样声明列数"
+      }
+    ],
+    "analysis": "C 的二维数组形参 `int a[][C]` 必须写出列数，因为编译器要据此计算 `a[row][j]` 的地址；Python 的二维列表是“列表的列表”，`a[row][j]` 先取第 row 行（一个 list），再取第 j 个元素，行内长度由 list 自己记录，因此函数签名只需要 `(a, row)`，不必传列数。① 填 `a[row][j]`，② 调用 `row_sum(m, i)` 输出第 i 行之和。矩阵用列表推导 `[list(map(int, input().split())) for _ in range(R)]` 读入，每行正好 C 个整数。复杂度 O(R×C)。易错点：把 `a[row][j]` 写成 `a[row, j]`（Python 会把它当成元组下标而报错）、把行号与列号写反、以及读入时没有按行切分。"
+  }
+}
