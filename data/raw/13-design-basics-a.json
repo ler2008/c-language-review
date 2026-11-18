@@ -1,0 +1,403 @@
+[
+  {
+    "id": "基-69",
+    "type": "design",
+    "difficulty": 1,
+    "tags": [
+      "长整型",
+      "整数溢出",
+      "累加求和"
+    ],
+    "stem": "读入 n 个整数并求和。每个数的绝对值不超过 2×10^9，n 最多 1000，因此总和可能超出 32 位 int 的取值范围，需要用 64 位整型保存累加结果。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数 x（-2000000000 ≤ x ≤ 2000000000），相邻两个数之间用一个空格分隔。\n\n**输出格式：** 一行一个整数，为这 n 个数的和。\n\n**输入样例：**\n```text\n5\n2000000000 2000000000 -1000000000 1234567890 -1\n```\n**输出样例：**\n```text\n4234567889\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int n, i;\n    long long sum = 0;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 0; i < n; i++) {\n        int x;\n        if (scanf(\"%d\", &x) != 1)\n            return 0;\n        sum += x;\n    }\n    printf(\"%lld\\n\", sum);\n    return 0;\n}\n",
+    "points": [
+      "正确读入 n 与 n 个整数",
+      "用 long long 保存累加结果，避免 32 位 int 溢出",
+      "用 %lld 输出总和，输出只有一行且以换行结束",
+      "能说明为什么 double 不能用来累加大整数"
+    ],
+    "analysis": "思路：把 n 个数依次读入并累加，最后输出总和。题目的关键不在循环，而在「和的取值范围远大于单个加数」：单个 x 最大 2×10^9，1000 个数相加最大可达 2×10^12，而 32 位 int 只能表示约 ±2.1×10^9，用 int 累加会在中途发生有符号溢出（C 标准规定这是未定义行为，实际常表现为回绕成负数），因此必须用 long long（至少 64 位，上限约 9.2×10^18）保存 sum。\n\n关键步骤：① 用 scanf(\"%d\", &n) 读入个数；② 循环 n 次，用 scanf(\"%d\", &x) 读入每个加数，再执行 sum += x —— int 与 long long 混合运算时 int 会自动提升为 long long，不会先溢出；③ 用 printf(\"%lld\\n\", sum) 输出，格式符必须与 long long 实参匹配。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① 用 int sum 导致大数回绕，样例 4234567889 会被打成负数；② 输出用 %d 而不是 %lld，属于格式符与实参类型不匹配的未定义行为；③ 以为 double 能救场 —— double 只有 53 位有效位，超过 2^53 的整数会丢精度；④ 循环里把累加写成 sum = x（覆盖而不是累加）；⑤ 忘记处理 n 次读入失败的情况，遇到非法输入时使用了未初始化的 x。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int n;\n    if (!(cin >> n))\n        return 0;\n\n    long long sum = 0;\n    for (int i = 0; i < n; ++i) {\n        int x;\n        cin >> x;\n        sum += x;\n    }\n    cout << sum << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 cin 读入 n 与 n 个整数",
+          "用 long long 累加，避免 int 溢出",
+          "用 cout 输出一行结果并换行"
+        ],
+        "analysis": "思路：与 C 版完全一致 —— 逐个读入并累加到 long long，最后输出。C++ 的 iostream 在读入失败时会置 fail 位，因此可以用 if (!(cin >> n)) 提前返回，这一点比 scanf 的返回值判断更直观。\n\n关键步骤：① cin >> n 读入个数；② 用 int 变量接每个加数、用 long long 变量存总和，赋值时自动整型提升；③ 循环 n 次执行 sum += x；④ 用 cout << sum << '\\n' 输出。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① 用 int 做累加导致溢出回绕；② 忘记 C++ 的 >> 会自动跳过空白，不需要再手写 getchar 吃掉换行；③ 用 endl 频繁刷新虽然结果正确但效率低于 '\\n'；④ 输出时误用 printf(\"%d\", sum) 造成格式不匹配；⑤ 把 sum 声明在循环内部，每轮都被重置。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    total = 0\n    for i in range(n):\n        total += int(data[i + 1])\n\n    print(total)\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "按空白切分读入 n 与 n 个整数",
+          "用 Python 的任意精度整数累加，不会溢出",
+          "用 print 输出一行结果"
+        ],
+        "analysis": "思路：把整份输入按空白切分成记号列表，第一个记号是 n，后面 n 个记号转成整数累加。Python 的 int 是任意精度整数，不存在 32 位或 64 位溢出问题，这正是三种语言在「大整数求和」上的核心差异。\n\n关键步骤：① 用 sys.stdin.read().split() 一次性读入并按空白切分；② 判空后取 data[0] 转 int 作为 n；③ 循环 range(n)，把 data[i + 1] 转 int 累加到 total；④ print(total) 输出。\n\n复杂度：时间 O(n)，空间 O(n)（保存全部记号）。\n\n易错点：① 用 int(input()) 一次只能读一行，遇到「n 和数组分两行」的格式会出错；② 直接对字符串列表求和导致类型错误；③ 用 numpy 或 float 求和反而可能丢精度；④ 下标写成 i 而不是 i + 1（把 n 本身也加进去）；⑤ 数据有前导或多余空白时用 split(' ') 会切出空串。"
+      }
+    }
+  },
+  {
+    "id": "基-70",
+    "type": "design",
+    "difficulty": 1,
+    "tags": [
+      "字符编码",
+      "ASCII",
+      "类型转换"
+    ],
+    "stem": "读入一个大写英文字母，输出它的 ASCII 编码、对应的小写字母，以及它在字母表中的序号（A 为 1，Z 为 26）。\n英文字母在 ASCII 表中连续排列：大写 A 的编码是 65，小写 a 的编码是 97，同一个字母的大写与小写相差 32。\n\n**输入格式：** 一行一个字符 ch，保证是 A~Z 中的大写字母（前后可能有空格或换行）。\n\n**输出格式：** 三行：第一行为 ch 的 ASCII 编码；第二行为对应的小写字母；第三行为序号（1~26）。\n\n**输入样例：**\n```text\nG\n```\n**输出样例：**\n```text\n71\ng\n7\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    char ch;\n\n    if (scanf(\" %c\", &ch) != 1)\n        return 0;\n    printf(\"%d\\n\", (int)ch);\n    printf(\"%c\\n\", (char)(ch - 'A' + 'a'));\n    printf(\"%d\\n\", ch - 'A' + 1);\n    return 0;\n}\n",
+    "points": [
+      "用 scanf(\" %c\") 读入单个字符（格式串中的空格跳过前导空白）",
+      "用 %d 输出字符变量，得到它的 ASCII 编码",
+      "用 ch - 'A' + 'a' 完成大写转小写",
+      "用 ch - 'A' + 1 计算字母序号"
+    ],
+    "analysis": "思路：字符在 C 中本质是一个很小的整数（char 是 1 字节整型），所以同一个字符既能用 %c 按字符输出，也能用 %d 按编码输出。利用 ASCII 表中字母连续排列的性质，大写转小写只需加上 'a' - 'A'（即 32），求序号只需减去 'A' - 1。\n\n关键步骤：① 用 scanf(\" %c\", &ch) 读入一个字符，格式串开头的空格会跳过行首空白与换行，避免把上一行残留的换行符当字符读进来；② printf(\"%d\", ch) 输出编码，char 在可变参数中会整型提升为 int；③ 大写转小写写 ch - 'A' + 'a'，结果类型是 int，输出前转回 char 更严谨；④ 序号用 ch - 'A' + 1，因为 A 的序号是 1 而不是 0。\n\n复杂度：O(1)。\n\n易错点：① 把字符赋给 int 后用 %c 输出，或直接 cout << ch 拿不到编码；② 用 ch + 32 硬编码，遇到非 ASCII 编码的机器就不成立；③ 序号写成 ch - 'A'，A 会得到 0；④ scanf(\"%c\") 不跳空白，在循环或连续输入时读到上一行的换行符；⑤ 把 'a' 写成 a 或 \"a\"（单引号是字符常量，双引号是字符串）。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    char ch;\n    if (!(cin >> ch))\n        return 0;\n\n    cout << static_cast<int>(ch) << '\\n';\n    cout << static_cast<char>(ch - 'A' + 'a') << '\\n';\n    cout << (ch - 'A' + 1) << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 cin >> ch 读入字符（自动跳过空白）",
+          "用 static_cast<int> 输出 ASCII 编码",
+          "用 static_cast<char> 输出小写字母",
+          "用字符差值计算字母序号"
+        ],
+        "analysis": "思路：与 C 版一致 —— 字符的编码就是它的整数值，用 static_cast<int>(ch) 取编码，用 ch - 'A' + 'a' 得到小写字母的编码，再转回 char 输出。\n\n关键步骤：① cin >> ch 会自动跳过空白字符，比 scanf(\"%c\") 少一个坑；② static_cast<int>(ch) 输出编码，否则 cout << ch 只会打印字符本身；③ 大小写转换用字符算术 ch - 'A' + 'a'，结果类型提升为 int，输出前 static_cast<char>；④ 序号用 ch - 'A' + 1。\n\n复杂度：O(1)。\n\n易错点：① 直接 cout << ch 只输出字符，拿不到编码；② 用 getline 读入得到整行而不是单个字符；③ 忘记序号从 1 开始，A 被算成 0；④ 用 ch + 32 写死偏移量，可读性和可移植性都差；⑤ 混用 printf 与 cout 时忘记 <cstdio>。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    text = sys.stdin.read().strip()\n    if not text:\n        return\n\n    ch = text[0]\n    print(ord(ch))\n    print(chr(ord(ch) - ord(\"A\") + ord(\"a\")))\n    print(ord(ch) - ord(\"A\") + 1)\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 ord() 取得字符的编码",
+          "用 chr() 把编码还原成小写字母",
+          "用 ord(ch) - ord('A') + 1 求序号"
+        ],
+        "analysis": "思路：Python 没有单独的字符类型，长度为 1 的字符串就表示一个字符，用 ord(ch) 取编码、用 chr(code) 把编码还原成字符，正好对应 C 里的 char 与 int 互转。\n\n关键步骤：① 用 sys.stdin.read().strip() 读入整行并去掉首尾空白，取第一个字符作为 ch；② print(ord(ch)) 输出 ASCII 编码；③ 用 chr(ord(ch) - ord(\"A\") + ord(\"a\")) 完成大小写转换，也可以写 ch.lower()，但显式做编码运算更能体现字符与编码的关系；④ 序号用 ord(ch) - ord(\"A\") + 1。\n\n复杂度：O(1)。\n\n易错点：① 把 ch 当数字直接参与算术（str 不支持）；② chr() 传入字符串而不是整数；③ 用 input() 后没有 strip，把空白当成了字符；④ 序号写成 ord(ch) - ord('A')，A 得到 0；⑤ 用 ch.lower() 后忘了它返回新字符串而不是原字符。"
+      }
+    }
+  },
+  {
+    "id": "基-71",
+    "type": "design",
+    "difficulty": 1,
+    "tags": [
+      "整除取模",
+      "格式化输出",
+      "补零"
+    ],
+    "stem": "把一个非负整数 t（单位：秒）换算成「时:分:秒」的形式，并按两位补零输出。小时按实际值输出，超过 24 也不折算成天。\n\n**输入格式：** 一行一个整数 t（0 ≤ t ≤ 359999）。\n\n**输出格式：** 一行，形如 `hh:mm:ss`，时、分、秒各占两位，不足两位时在前面补 0。\n\n**输入样例：**\n```text\n3661\n```\n**输出样例：**\n```text\n01:01:01\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int t;\n    int h, m, s;\n\n    if (scanf(\"%d\", &t) != 1)\n        return 0;\n    h = t / 3600;\n    m = t % 3600 / 60;\n    s = t % 60;\n    printf(\"%02d:%02d:%02d\\n\", h, m, s);\n    return 0;\n}\n",
+    "points": [
+      "用 t / 3600 求小时、t % 3600 / 60 求分钟、t % 60 求秒",
+      "用 %02d 补前导 0，宽度 2",
+      "输出冒号分隔的 hh:mm:ss 并以换行结束"
+    ],
+    "analysis": "思路：这是「单位换算 + 格式化输出」的典型题。1 小时 3600 秒、1 分钟 60 秒：先用整除求出完整的小时数，再对 3600 取余得到不足一小时的秒数，除以 60 得到分钟，最后对 60 取余得到秒。\n\n关键步骤：① h = t / 3600；② m = t % 3600 / 60，也可以写成 t / 60 % 60，两者等价；③ s = t % 60；④ 用 printf(\"%02d:%02d:%02d\\n\", h, m, s) 输出，其中 0 表示用 0 填充、2 表示最小宽度为 2。\n\n复杂度：O(1)。\n\n易错点：① 用 double 做除法再把结果转 int，可能出现精度或截断问题，没必要；② 分钟写成 t / 60 而没有先对 3600 取余，3661 秒会输出 01:61:01；③ 用 %d 而不是 %02d，输出 1:1:1；④ 用 %2d 只补空格不补 0，在等宽字体下看起来对、复制出来就错了；⑤ 忘记换行，或把冒号写成中文全角符号；⑥ 误以为小时要按 24 取模，题目明确要求不折算成天。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    int t;\n    if (!(cin >> t))\n        return 0;\n\n    int h = t / 3600;\n    int m = t % 3600 / 60;\n    int s = t % 60;\n\n    cout << setfill('0') << setw(2) << h << ':'\n         << setw(2) << m << ':' << setw(2) << s << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用整除与取模求出时、分、秒",
+          "用 setfill('0') 与 setw(2) 补零",
+          "注意 setw 只对紧随其后的一次输出生效"
+        ],
+        "analysis": "思路：换算部分与 C 版相同，格式化交给 iomanip：先用 setfill('0') 设置填充字符，再对时、分、秒分别 setw(2) 输出。\n\n关键步骤：① 用 t / 3600、t % 3600 / 60、t % 60 求出三个量；② setfill('0') 设置填充字符，它一直有效；③ setw(2) 只对紧接着的一次输出生效，所以每个数前都要重新写；④ 冒号作为普通字符输出。\n\n复杂度：O(1)。\n\n易错点：① 忘了 setfill('0')，setw(2) 默认补空格；② 以为 setw 对后面所有输出生效，结果只有第一个数补了零；③ 把 setfill 写成 setw 的参数，编译报错；④ 时间单位换算顺序写反，先用 60 除；⑤ 使用 fixed/setprecision 影响整数输出格式。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    t = int(data[0])\n    h = t // 3600\n    m = t % 3600 // 60\n    s = t % 60\n    print(f\"{h:02d}:{m:02d}:{s:02d}\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 // 和 % 完成时、分、秒的换算",
+          "用 f-string 的 :02d 补零输出",
+          "冒号格式与单行输出正确"
+        ],
+        "analysis": "思路：用 // 和 % 完成换算，再用 f-string 的格式说明符 :02d 补零，是 Python 中最简洁的写法。\n\n关键步骤：① 读入一个整数 t；② h = t // 3600、m = t % 3600 // 60、s = t % 60；③ print(f\"{h:02d}:{m:02d}:{s:02d}\")，其中 0 表示补零、2 表示宽度；④ 也可以用 str(h).zfill(2)，但 f-string 更直观。\n\n复杂度：O(1)。\n\n易错点：① 用 / 得到浮点数，输出 1.0:1.0:1.0；② 用 format(h, '2d') 只保证宽度不补 0；③ 分钟忘记先对 3600 取余；④ 在 f-string 里写成 {h:2d}（默认补空格）；⑤ 用 divmod 层层嵌套时括号写错。"
+      }
+    }
+  },
+  {
+    "id": "基-72",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "整除",
+      "取模",
+      "类型转换"
+    ],
+    "stem": "给定两个整数 a、b（b 不为 0），按 C 语言的整数除法规则输出商和余数，并输出 a÷b 的实数结果。\nC99 规定：整数除法向零截断；余数与被除数同号，且满足 a = 商 × b + 余数。\n\n**输入格式：** 一行两个整数 a、b（-1000000000 ≤ a ≤ 1000000000，-1000 ≤ b ≤ 1000，b ≠ 0），用一个空格分隔。\n\n**输出格式：** 三行，依次为：\n- `quot: q`，q 为整数商（向零截断）；\n- `rem: r`，r 为余数，与 a 同号（a 为 0 时 r 为 0）；\n- `real: f`，f 为 a÷b 的实数结果，保留两位小数。\n\n**输入样例：**\n```text\n-7 3\n```\n**输出样例：**\n```text\nquot: -2\nrem: -1\nreal: -2.33\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    long long a, b;\n\n    if (scanf(\"%lld %lld\", &a, &b) != 2)\n        return 0;\n    printf(\"quot: %lld\\n\", a / b);\n    printf(\"rem: %lld\\n\", a % b);\n    printf(\"real: %.2f\\n\", (double)a / (double)b);\n    return 0;\n}\n",
+    "points": [
+      "用 / 与 % 求向零截断的商和与被除数同号的余数",
+      "用 (double)a / (double)b 做实数除法，而不是 (double)(a / b)",
+      "三行输出标签完整，实数保留两位小数",
+      "能说明 C 与 Python 在负数整除上的差异"
+    ],
+    "analysis": "思路：题目要求输出三样东西 —— 整数商、余数、实数商。前两个直接交给 C 的整数运算符 / 和 %，第三个必须先把操作数转换成 double 再做除法，否则会先整除丢掉小数部分。\n\n关键步骤：① 用 scanf(\"%lld %lld\", &a, &b) 读入两个 long long，防止大数溢出；② a / b 在 C99 中向零截断，-7 / 3 得 -2 而不是 -3；③ a % b 的结果与被除数同号，-7 % 3 得 -1，并且满足 (-7) = (-2) * 3 + (-1)；④ 实数结果用 (double)a / (double)b，再以 %.2f 输出；若写成 (double)(a / b)，会先算出整数 -2 再转成 -2.00。\n\n复杂度：O(1)。\n\n易错点：① 以为两个整数相除会自动得到小数；② 把 (double) 加在整个表达式外面；③ 把负数除法的商算成向下取整（Python 的 // 就是向下取整，-7 // 3 = -3，照搬会与 C 不一致）；④ 用 int 读入却用 %lld 输出，格式符与实参不匹配属于未定义行为；⑤ 输出标签拼错或漏行；⑥ b 为负数时余数符号仍然跟随 a，例如 7 % (-3) = 1。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    long long a, b;\n\n    if (!(cin >> a >> b))\n        return 0;\n\n    cout << \"quot: \" << a / b << '\\n';\n    cout << \"rem: \" << a % b << '\\n';\n    cout << \"real: \" << fixed << setprecision(2)\n         << static_cast<double>(a) / static_cast<double>(b) << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 long long 读入，避免溢出",
+          "用 / 和 % 得到向零截断的商与同号余数",
+          "用 fixed 与 setprecision(2) 输出两位小数"
+        ],
+        "analysis": "思路：同样用 / 和 % 得到 C++ 的商与余数（C++11 起也规定向零截断），实数部分用 static_cast<double> 显式转换后交给 iomanip 保留两位小数。\n\n关键步骤：① cin >> a >> b 读入两个 long long；② a / b、a % b 直接输出；③ fixed 与 setprecision(2) 组合表示定点、保留两位小数；④ 转换时把 a 或 b 中至少一个转成 double 即可，但不能只转换整个除法的结果。\n\n复杂度：O(1)。\n\n易错点：① 忘记 fixed，setprecision(2) 会变成「两位有效数字」，-2.33 变成 -2.3；② 把转换写成 static_cast<double>(a / b)；③ 用 int 存储导致大数溢出；④ 输出 real 时沿用整数的格式状态；⑤ 以为 C++ 与 Python 的负数除法语义相同。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef trunc_div(a, b):\n    q = abs(a) // abs(b)\n    if (a < 0) != (b < 0):\n        q = -q\n    return q\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    a = int(data[0])\n    b = int(data[1])\n\n    q = trunc_div(a, b)\n    r = a - q * b\n\n    print(f\"quot: {q}\")\n    print(f\"rem: {r}\")\n    print(f\"real: {a / b:.2f}\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "自己实现向零截断的整数除法（不能用 // 直接代替）",
+          "用 a - q * b 得到与被除数同号的余数",
+          "实数结果用 / 与 :.2f 输出两位小数"
+        ],
+        "analysis": "思路：Python 的 / 永远是真除法，// 和 % 则向负无穷取整（向下取整）：-7 // 3 得 -3、-7 % 3 得 2，与 C 的「向零截断 + 余数与被除数同号」不同，所以必须自己实现截断除法。\n\n关键步骤：① 先求绝对值的商 q = abs(a) // abs(b)，再根据 a、b 的符号决定是否取负，得到向零截断的商；② 余数用 a - q * b 计算，这样一定满足 a = q * b + r 且与 a 同号；③ 实数结果直接用 a / b，用 f-string 的 :.2f 保留两位小数；④ 输出三行带标签。\n\n复杂度：O(1)。\n\n易错点：① 直接写 a // b 和 a % b，负数时与 C 不一致；② 用 int(a / b) 求商，a、b 很大时浮点运算有误差风险；③ 用 round() 处理小数（银行家舍入）；④ 余数写成 a - a // b * b，用的是向下取整的商；⑤ 符号判断写成 a < 0 or b < 0（同号时会误判）。"
+      }
+    }
+  },
+  {
+    "id": "基-73",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "复合赋值",
+      "自增自减",
+      "整除取模"
+    ],
+    "stem": "一个整数变量 x 的初值为 n。按顺序执行 k 条操作指令，每条指令占一行，形式为下面之一：\n- `+ m`：x 加上 m\n- `- m`：x 减去 m\n- `* m`：x 乘以 m\n- `/ m`：x 除以 m，按 C 的整数除法向零截断\n- `% m`：x 对 m 取余，结果与 x 同号\n- `++`：x 加 1\n- `--`：x 减 1\n其中 m 是整数，`/` 与 `%` 的 m 保证不为 0。输出全部指令执行完后的 x。\n\n**输入格式：** 第一行两个整数 n 和 k（-10^9 ≤ n ≤ 10^9，1 ≤ k ≤ 100）；接下来 k 行，每行一条指令。带 m 的指令中运算符与 m 之间用一个空格分隔，`++`、`--` 之后没有其他内容。保证执行过程中 |x| 不超过 2×10^9。\n\n**输出格式：** 一行一个整数，为执行完所有指令后 x 的值。\n\n**输入样例：**\n```text\n20 6\n+ 5\n* 2\n/ 3\n% 7\n++\n--\n```\n**输出样例：**\n```text\n2\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nint main(void)\n{\n    long long x;\n    int k, i;\n    char op[8];\n\n    if (scanf(\"%lld %d\", &x, &k) != 2)\n        return 0;\n    for (i = 0; i < k; i++) {\n        long long m = 0;\n\n        if (scanf(\"%7s\", op) != 1)\n            return 0;\n        if (strcmp(op, \"++\") == 0) {\n            x++;\n        } else if (strcmp(op, \"--\") == 0) {\n            x--;\n        } else {\n            if (scanf(\"%lld\", &m) != 1)\n                return 0;\n            if (strcmp(op, \"+\") == 0)\n                x += m;\n            else if (strcmp(op, \"-\") == 0)\n                x -= m;\n            else if (strcmp(op, \"*\") == 0)\n                x *= m;\n            else if (strcmp(op, \"/\") == 0)\n                x /= m;\n            else if (strcmp(op, \"%\") == 0)\n                x %= m;\n        }\n    }\n    printf(\"%lld\\n\", x);\n    return 0;\n}\n",
+    "points": [
+      "读入 n、k 与 k 条指令，能区分带数值和不带数值两种形式",
+      "用 += -= *= /= %= 与 ++ -- 完成对应运算",
+      "除法与取模保持向零截断、余数与被除数同号",
+      "输出最终结果并处理多种运算符的分派"
+    ],
+    "analysis": "思路：这是一道「按指令序列更新一个变量」的模拟题，考的正是复合赋值运算符与自增自减运算符的语义。把 x 看成被更新的对象，逐行读入指令并按运算符分派即可。\n\n关键步骤：① 用 scanf(\"%lld %d\", &x, &k) 读入初值与指令条数；② 每轮先读一个字符串 op（格式 %7s 限制长度防溢出），这样 +、++、-- 都能读进同一个缓冲区；③ 若 op 是 \"++\" 或 \"--\"，直接执行 x++ / x--，不要再读 m；④ 否则再读一个整数 m，用 strcmp 依次匹配 +、-、*、/、% 后执行 x += m 等复合赋值；⑤ 全部执行完输出 x。\n\n复合赋值 x op= m 等价于 x = x op m，但左操作数只求值一次，并且结果会按目标类型转换；本题 x 与 m 都是 long long，不会产生截断。\n\n复杂度：时间 O(k)，空间 O(1)。\n\n易错点：① 用 %c 读运算符，导致 \"++\" 只能读到第一个 +，剩下的 + 留在缓冲区里干扰后续读入；② 读完 \"++\" 仍去读 m，把下一行指令当成数字读失败；③ 用浮点除法实现 \"/\"；④ 对负数取模忘记 C 的余数与被除数同号，-9 % 4 得 -1；⑤ 忘记按顺序执行，先算完了所有乘法再算加法。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main()\n{\n    long long x;\n    int k;\n\n    if (!(cin >> x >> k))\n        return 0;\n\n    for (int i = 0; i < k; ++i) {\n        string op;\n        cin >> op;\n        if (op == \"++\") {\n            ++x;\n        } else if (op == \"--\") {\n            --x;\n        } else {\n            long long m;\n            cin >> m;\n            if (op == \"+\")\n                x += m;\n            else if (op == \"-\")\n                x -= m;\n            else if (op == \"*\")\n                x *= m;\n            else if (op == \"/\")\n                x /= m;\n            else if (op == \"%\")\n                x %= m;\n        }\n    }\n\n    cout << x << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 string 读入运算符，正确区分单字符与双字符指令",
+          "用复合赋值与自增自减更新 x",
+          "用 long long 避免中间结果溢出"
+        ],
+        "analysis": "思路：与 C 版一致，用 string 读入运算符，用 if-else 链分派；C++11 起整数除法同样向零截断，所以 /=、%= 的语义与 C 完全相同。\n\n关键步骤：① cin >> x >> k；② 每轮 cin >> op；③ op 为 \"++\"/\"--\" 时直接 ++x / --x；④ 否则读入 m，按字符串比较结果执行 x += m、x -= m、x *= m、x /= m、x %= m；⑤ 输出 x。\n\n复杂度：时间 O(k)，空间 O(1)。\n\n易错点：① 用 char 读运算符，无法区分 + 与 ++；② 把 \"++\" 当成两次 +1 又额外读 m；③ 用 int 计算导致乘法溢出（本题用 long long 规避）；④ 用 switch 处理字符串（switch 只能用于整型，除非哈希）；⑤ 忘记 C++ 的 /、% 在负数上的语义与 Python 不同。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef trunc_div(a, b):\n    q = abs(a) // abs(b)\n    if (a < 0) != (b < 0):\n        q = -q\n    return q\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    x = int(data[0])\n    k = int(data[1])\n    pos = 2\n\n    for _ in range(k):\n        op = data[pos]\n        pos += 1\n        if op == \"++\":\n            x += 1\n        elif op == \"--\":\n            x -= 1\n        else:\n            m = int(data[pos])\n            pos += 1\n            if op == \"+\":\n                x += m\n            elif op == \"-\":\n                x -= m\n            elif op == \"*\":\n                x *= m\n            elif op == \"/\":\n                x = trunc_div(x, m)\n            elif op == \"%\":\n                x = x - trunc_div(x, m) * m\n\n    print(x)\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "按空白切分记号并按顺序取出运算符与操作数",
+          "用 += -= *= 实现复合赋值，用 x += 1 / x -= 1 代替 ++ --",
+          "用截断除法与减法实现与 C 一致的 / 和 %"
+        ],
+        "analysis": "思路：Python 没有自增运算符（++ 是语法错误），所以要把 \"++\"、\"--\" 翻译成 x += 1、x -= 1；同时 // 和 % 是向下取整语义，负数时与 C 不同，需要自己实现向零截断的除法，再用 x - q * m 得到同号余数。\n\n关键步骤：① 用 sys.stdin.read().split() 一次性切分所有记号，第 0、1 个是 n 和 k，后面的记号按顺序取；② 每条指令先取 op；若为 \"++\"/\"--\" 就加 1 或减 1；③ 否则再取 m，按 op 分别执行 +=、-=、*=、截断除法、取模（用 x - trunc_div(x, m) * m）；④ 输出最终 x。\n\n复杂度：时间 O(k)，空间 O(k)（一次性读入全部记号）。\n\n易错点：① 直接写 x // m 或 x % m，负数时结果与 C 不一致；② 试图写 x++，Python 会报语法错误；③ 读指令时误把 \"++\" 后面的记号当成 m，导致下标错位；④ 用 input() 逐行读，遇到行尾多余空白时 split 结果异常；⑤ 用 eval 执行指令（不安全且与题目要求的整数语义不符）。"
+      }
+    }
+  },
+  {
+    "id": "基-74",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "多组输入",
+      "浮点运算",
+      "格式控制"
+    ],
+    "stem": "有多组测试数据，每行一组，包含两个实数 a 和 b。对每一组数据，输出它们的和与积，均保留 3 位小数，中间用一个空格分隔。数据一直读到输入结束（EOF）为止。\n\n**输入格式：** 若干行，每行两个实数 a、b（|a| ≤ 10^6，|b| ≤ 10^6，小数位数不超过 3 位），至少有一行数据。\n\n**输出格式：** 每组数据输出一行，依次为 a+b 与 a×b，各保留 3 位小数，用一个空格分隔，行末换行。\n\n**输入样例：**\n```text\n1.5 2\n-3 0.25\n```\n**输出样例：**\n```text\n3.500 3.000\n-2.750 -0.750\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    double a, b;\n\n    while (scanf(\"%lf %lf\", &a, &b) == 2) {\n        printf(\"%.3f %.3f\\n\", a + b, a * b);\n    }\n    return 0;\n}\n",
+    "points": [
+      "用 while (scanf(...) == 2) 实现多组输入",
+      "每组输出一行，和与积各保留 3 位小数",
+      "读到 EOF 正常结束，不多输出空行"
+    ],
+    "analysis": "思路：题目没有给出数据组数，而是要求读到文件末尾，这是典型的「多组输入」模式。C 里用 scanf 的返回值判断：成功读入两个 double 时返回 2，遇到文件结束返回 EOF（即 -1），因此把 scanf(...) == 2 作为 while 条件即可。\n\n关键步骤：① 声明两个 double；② while (scanf(\"%lf %lf\", &a, &b) == 2)，注意读 double 必须用 %lf，而 printf 输出 double 用 %f；③ 循环体内用 %.3f 输出 a + b 与 a * b，中间一个空格；④ 每组都输出换行，循环结束后不要再补空行。\n\n复杂度：时间 O(T)，T 为数据组数；空间 O(1)。\n\n易错点：① 用 while (!feof(stdin)) 判断 —— feof 只有在读失败之后才置位，会多输出一组重复数据；② 把返回值条件写成 1，第二行数据读入失败后循环提前结束；③ 直接写 while (scanf(...))，EOF 是非零会死循环；④ 读入用 %f 导致参数类型不匹配；⑤ 用 float 保存时 10^6 附近相加，末尾几位不够精确；⑥ 忘记换行导致所有结果挤在一行。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    double a, b;\n\n    cout << fixed << setprecision(3);\n    while (cin >> a >> b) {\n        cout << a + b << ' ' << a * b << '\\n';\n    }\n    return 0;\n}\n",
+        "points": [
+          "用 while (cin >> a >> b) 循环读到 EOF",
+          "用 fixed 与 setprecision(3) 统一保留三位小数",
+          "每组一行，和与积之间一个空格"
+        ],
+        "analysis": "思路：C++ 直接用 cin >> a >> b 作为 while 条件：流在读取失败（包括 EOF）时状态变为 fail，条件为假，循环自然结束。输出格式用 fixed 与 setprecision(3) 一次性设好。\n\n关键步骤：① cout << fixed << setprecision(3) 设置定点三位小数；② while (cin >> a >> b) 循环读入；③ 循环体内输出 a + b 与 a * b，中间一个空格、行末换行；④ 读到文件结束自动退出，返回 0。\n\n复杂度：时间 O(T)，空间 O(1)。\n\n易错点：① 用 while (!cin.eof()) 造成多读一组；② 在循环里重复设置 fixed/setprecision（无害但多余）；③ 用 endl 频繁刷新缓冲区；④ 忘记 setprecision 只对浮点输出生效，误以为对整数也补小数位；⑤ 用 cin >> a >> b 后没有 clear() 就继续读取（本题不需要，但混合使用格式化与 getline 时要注意）。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    for line in sys.stdin:\n        parts = line.split()\n        if len(parts) < 2:\n            continue\n        a = float(parts[0])\n        b = float(parts[1])\n        print(f\"{a + b:.3f} {a * b:.3f}\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 for line in sys.stdin 逐行读到 EOF",
+          "用 split() 切分，跳过空行",
+          "用 :.3f 保留三位小数并输出一行"
+        ],
+        "analysis": "思路：直接把 sys.stdin 当成可迭代的行序列逐行读入；每行 split 成两个记号转 float，再用 f-string 的 :.3f 输出。遇到空行时跳过，保证与 C 的 scanf「跳过空白」行为一致。\n\n关键步骤：① for line in sys.stdin 遍历每一行；② parts = line.split()，若长度不足 2 则 continue（空行、行尾空白等情况）；③ a、b 用 float 转换；④ print(f\"{a + b:.3f} {a * b:.3f}\") 输出一行。\n\n复杂度：时间 O(T)，空间 O(1)（逐行处理）。\n\n易错点：① 用 input() 在数据结束后抛 EOFError；② 用 split(' ') 而不是 split()，遇到连续空格会切出空串；③ 用 round() 得到 float 再打印，3.000 会变成 3.0，丢掉末尾的 0；④ 忘记 :.3f 而直接用默认 str()；⑤ 用 sys.stdin.read().split() 后再按每两个一组配对，遇到空行会错位（本题仍可用，但逐行更稳）。"
+      }
+    }
+  },
+  {
+    "id": "基-75",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "位运算",
+      "掩码",
+      "十六进制"
+    ],
+    "stem": "给定一个非负整数 x（0 ≤ x < 2^31），用位运算完成下面四件事，并逐行输出结果：\n1. 取出 x 的最低 4 位（二进制下最右边的 4 位），输出它对应的十进制数；\n2. 把 x 的最低 4 位清零，其余位不变，输出结果；\n3. 把 x 的第 3 位（权值为 8 的那一位，最低位是第 0 位）置为 1，其余位不变，输出结果；\n4. 输出 x 的十六进制表示（大写字母，不带 0x 前缀，不补前导 0）。\n\n**输入格式：** 一行一个整数 x（0 ≤ x < 2^31）。\n\n**输出格式：** 四行，依次为：\n- `low4: t`\n- `clear: y`\n- `set: z`\n- `hex: h`\n\n**输入样例：**\n```text\n20\n```\n**输出样例：**\n```text\nlow4: 4\nclear: 16\nset: 28\nhex: 14\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    unsigned int x;\n    unsigned int mask = 0xFu;\n\n    if (scanf(\"%u\", &x) != 1)\n        return 0;\n    printf(\"low4: %u\\n\", x & mask);\n    printf(\"clear: %u\\n\", x & ~mask);\n    printf(\"set: %u\\n\", x | 0x8u);\n    printf(\"hex: %X\\n\", x);\n    return 0;\n}\n",
+    "points": [
+      "用 & 0xF 取出最低 4 位",
+      "用 & ~0xF 清零、用 | 0x8 置位",
+      "用 %X 输出大写十六进制且不带前缀",
+      "用无符号整型避免符号位干扰"
+    ],
+    "analysis": "思路：位运算题的关键是写出正确的「掩码」。最低 4 位的掩码是 0xF（二进制 1111），与运算保留这些位、其余位清零；清零则是与 ~0xF（1111...0000）相与；置位是与 0x8（1000）做或运算。\n\n关键步骤：① 用 unsigned int 存储 x，避免最高位被当成符号位；② x & 0xF 得到 low4；③ x & ~0xF 得到 clear，其中 ~0xF 在 32 位 unsigned 下是 0xFFFFFFF0；④ x | 0x8 得到 set；⑤ 用 %X 输出大写十六进制。\n\n样例验证：20 的二进制是 10100。low4 = 0100 = 4；清零最低 4 位后只剩 10000 = 16；第 3 位原来是 0，置 1 后为 11100 = 28；十六进制是 14。\n\n复杂度：O(1)。\n\n易错点：① 用 ^ 代替 | 做置位，当该位原本是 1 时反而会被清掉；② 掩码写成 0xF0，取到的是高 4 位；③ 写二进制字面量 0b1111，C99 不支持；④ 用有符号 int 时 ~ 的结果是负数，参加运算会带符号扩展；⑤ 十六进制用 %x 输出小写，与要求的大写不一致；⑥ 清零写成 x & 0xF，把「保留」当成了「清零」。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    unsigned int x;\n\n    if (!(cin >> x))\n        return 0;\n\n    cout << \"low4: \" << (x & 0xFu) << '\\n';\n    cout << \"clear: \" << (x & ~0xFu) << '\\n';\n    cout << \"set: \" << (x | 0x8u) << '\\n';\n    cout << \"hex: \" << uppercase << hex << x << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用无符号整型读写 x",
+          "用掩码与位运算完成取值、清零、置位",
+          "用 hex 与 uppercase 输出大写十六进制"
+        ],
+        "analysis": "思路：与 C 版完全对应，只是用 cout 的 hex 与 uppercase 控制十六进制输出。\n\n关键步骤：① 用 unsigned int x 读入；② x & 0xFu 输出 low4；③ x & ~0xFu 输出 clear（~ 作用于 unsigned 时按 32 位取反）；④ x | 0x8u 输出 set；⑤ cout << uppercase << hex << x 输出大写十六进制。\n\n复杂度：O(1)。\n\n易错点：① 忘记 uppercase，hex 输出小写；② hex 会一直影响后续输出，若后面还要输出十进制需要 dec 切回；③ 用 signed int 导致 ~ 的结果是负数；④ 掩码位数数错，把第 3 位当成权值 4 或 16；⑤ 把 0x8u 写成 0x8 后与有符号数混用产生意外提升。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    x = int(data[0])\n    mask = 0xF\n\n    print(f\"low4: {x & mask}\")\n    print(f\"clear: {x & ~mask}\")\n    print(f\"set: {x | 0x8}\")\n    print(f\"hex: {x:X}\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 & 0xF 取最低 4 位",
+          "用 & ~0xF 清零、| 0x8 置位",
+          "用 :X 输出大写十六进制"
+        ],
+        "analysis": "思路：Python 的整数是任意精度的，没有固定的 32 位宽度，但按位运算的补码语义对非负数是自然的：~0xF 等于 -16，而 x & -16 对非负 x 恰好等价于把最低 4 位清零，因此可以直接照搬掩码写法。\n\n关键步骤：① int(data[0]) 读入 x；② x & 0xF 输出 low4；③ x & ~0xF 输出 clear；④ x | 0x8 输出 set；⑤ 用 f-string 的 :X 输出大写十六进制。\n\n复杂度：O(1)。\n\n易错点：① 用 format(x, 'x') 得到小写；② 担心 Python 没有固定位宽而不敢用 ~ —— 对非负 x 它与「清零低位」等价；③ 用 ^ 0x8 当置位；④ 把第 3 位理解成权值 4（把最低位当成第 1 位）；⑤ 用 :#X 输出带 0x 前缀，与题目要求不符。"
+      }
+    }
+  },
+  {
+    "id": "基-76",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "逻辑运算",
+      "条件判断",
+      "浮点比较"
+    ],
+    "stem": "给定三条线段的长度 a、b、c，判断它们能否构成一个三角形。\n判定条件：三条边都大于 0，并且任意两边之和大于第三边。注意 1、2、3 这种两边之和恰好等于第三边的情形不算三角形。\n\n**输入格式：** 一行三个实数 a、b、c（-10000 ≤ a, b, c ≤ 10000，最多 3 位小数），用一个空格分隔。\n\n**输出格式：** 若能构成三角形，输出一行 `YES P`，其中 P 为周长，保留 2 位小数，YES 与 P 之间一个空格；否则只输出一行 `NO`。例如输入 `1 2 5` 时应输出 `NO`。\n\n**输入样例：**\n```text\n3 4 5\n```\n**输出样例：**\n```text\nYES 12.00\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    double a, b, c;\n\n    if (scanf(\"%lf %lf %lf\", &a, &b, &c) != 3)\n        return 0;\n\n    if (a > 0.0 && b > 0.0 && c > 0.0 &&\n        a + b > c && a + c > b && b + c > a)\n        printf(\"YES %.2f\\n\", a + b + c);\n    else\n        printf(\"NO\\n\");\n    return 0;\n}\n",
+    "points": [
+      "先判断三条边都为正数",
+      "用 && 连接三条「两边之和大于第三边」的条件",
+      "用 > 而不是 >=，共线情形判为 NO",
+      "输出 YES 时周长保留两位小数"
+    ],
+    "analysis": "思路：把三角形判定拆成 6 个条件的与：a > 0、b > 0、c > 0、a + b > c、a + c > b、b + c > a，只有全部成立才算三角形。\n\n关键步骤：① 用 scanf(\"%lf %lf %lf\") 读入三个 double；② 用 && 把 6 个条件串起来，C 的 && 从左往右求值并短路，任一条件为假后面就不再计算，既省时间也避免了无意义的比较；③ 三条不等式必须同时判断，只判断 a + b > c 是不够的，例如 1、5、3 满足 1 + 5 > 3，却不满足 1 + 3 > 5；④ 输出 YES 时用 %.2f 输出周长。\n\n复杂度：O(1)。\n\n易错点：① 只写一条不等式就下结论；② 用 >= 判断，导致共线（1、2、3）被判成三角形；③ 忘记判断正数，负边也能满足加法不等式；④ 输入 0.1、0.2、0.3 这类数时，0.1 + 0.2 在 double 中比 0.3 稍大，临界情况下要用 eps 比较 —— 本题数据最多 3 位小数且不会卡在临界值，直接比较即可；⑤ 输出多一个或漏一个空格，或给 NO 也加上周长。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    double a, b, c;\n\n    if (!(cin >> a >> b >> c))\n        return 0;\n\n    if (a > 0.0 && b > 0.0 && c > 0.0 &&\n        a + b > c && a + c > b && b + c > a)\n        cout << \"YES \" << fixed << setprecision(2) << a + b + c << '\\n';\n    else\n        cout << \"NO\\n\";\n    return 0;\n}\n",
+        "points": [
+          "读入三个 double",
+          "用 && 连接 6 个条件（短路求值）",
+          "用 fixed 与 setprecision(2) 输出周长"
+        ],
+        "analysis": "思路：与 C 版一致，用 && 把 6 个条件串成一个复合表达式，再按结果分两支输出。\n\n关键步骤：① cin >> a >> b >> c 读入三个 double；② 条件表达式按「正数 → 三条三角不等式」的顺序写，短路特性会让后面的比较在必要时才执行；③ 成立时输出 \"YES \"，再用 fixed 与 setprecision(2) 输出周长；④ 不成立时只输出 \"NO\"。\n\n复杂度：O(1)。\n\n易错点：① setprecision(2) 前忘记 fixed，12.00 会变成 12；② 把 YES 与周长分到两行；③ 用 >= 判共线；④ 条件顺序写成先判断不等式再判断正数（对负数仍然会误判，因为 0 以上的条件没有生效）；⑤ 在 NO 分支里也输出周长。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 3:\n        return\n\n    a = float(data[0])\n    b = float(data[1])\n    c = float(data[2])\n\n    if a > 0 and b > 0 and c > 0 and a + b > c and a + c > b and b + c > a:\n        print(f\"YES {a + b + c:.2f}\")\n    else:\n        print(\"NO\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 and 连接 6 个条件（短路求值）",
+          "用 > 保证共线情形判为 NO",
+          "用 f-string 的 :.2f 输出两位小数周长"
+        ],
+        "analysis": "思路：把判定写成一条由 and 连接的布尔表达式，Python 的 and 同样短路求值，任一条件为假即停止。\n\n关键步骤：① 用 sys.stdin.read().split() 读入三个记号并转 float；② 条件依次为 a > 0、b > 0、c > 0、a + b > c、a + c > b、b + c > a；③ 成立时输出 f\"YES {a + b + c:.2f}\"；④ 否则输出 \"NO\"。\n\n复杂度：O(1)。\n\n易错点：① 用 math.isclose 或 eps 比较把临界情况放过（本题不需要）；② 用 >= 把共线判成三角形；③ 用 int() 转换导致小数部分丢失；④ 输出 YES 时忘记两位小数，12.0 与 12.00 不一致；⑤ 忘记判断正数条件。"
+      }
+    }
+  },
+  {
+    "id": "基-77",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "浮点精度",
+      "取整",
+      "动态精度"
+    ],
+    "stem": "给定一个实数 x 和一个整数 n，完成下面五个输出：\n1. x 向零取整得到的整数；\n2. 不大于 x 的最大整数（向下取整）；\n3. x 四舍五入到最近的整数（恰好为 .5 时远离 0 取整）；\n4. x 减去「向零取整结果」后的小数部分，保留 6 位小数；\n5. x 保留 n 位小数的结果。\n\n**输入格式：** 一行一个实数 x 和一个整数 n（-10^9 < x < 10^9，x 最多 6 位小数；0 ≤ n ≤ 6），用一个空格分隔。\n\n**输出格式：** 五行，依次为：\n- `trunc: T`\n- `floor: F`\n- `round: R`\n- `frac: d`\n- `fixed: v`\n\n**输入样例：**\n```text\n-2.37 2\n```\n**输出样例：**\n```text\ntrunc: -2\nfloor: -3\nround: -2\nfrac: -0.370000\nfixed: -2.37\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    double x;\n    int n;\n    long long t, f, r;\n    double ax;\n\n    if (scanf(\"%lf %d\", &x, &n) != 2)\n        return 0;\n\n    t = (long long)x;\n    f = (x < (double)t) ? t - 1 : t;\n\n    ax = (x < 0.0) ? -x : x;\n    r = (long long)(ax + 0.5);\n    if (x < 0.0)\n        r = -r;\n\n    printf(\"trunc: %lld\\n\", t);\n    printf(\"floor: %lld\\n\", f);\n    printf(\"round: %lld\\n\", r);\n    printf(\"frac: %.6f\\n\", x - (double)t);\n    printf(\"fixed: %.*f\\n\", n, x);\n    return 0;\n}\n",
+    "points": [
+      "用强制类型转换实现向零取整",
+      "用比较修正得到向下取整（负数时减 1）",
+      "用 |x| + 0.5 再截断、按符号取负实现远离 0 的四舍五入",
+      "用 %.*f 按输入的 n 动态设置输出精度"
+    ],
+    "analysis": "思路：这道题把「浮点数的取整」拆成三个不同语义：向零取整（trunc）、向下取整（floor）和四舍五入（round）。三者在正数上结果一致，在负数上分道扬镳，正是浮点数最容易出错的地方。\n\n关键步骤：① 用 (long long)x 得到向零取整的结果 t，C 的浮点转整数就是截断；② 若 x < t（说明 x 是负数且带小数），则 floor 为 t - 1，否则等于 t；③ 四舍五入先取绝对值 ax，用 (long long)(ax + 0.5) 截断，再按符号取负，这样 .5 时总是远离 0，与 Python 的 round()（银行家舍入）不同；④ 小数部分用 x - (double)t，负数时结果也是负的，用 %.6f 输出；⑤ 用 printf(\"fixed: %.*f\\n\", n, x) 把精度作为参数传入，动态控制保留几位。\n\n复杂度：O(1)。\n\n易错点：① 把 floor 直接写成 (long long)x，-2.37 会得到 -2；② 用 printf(\"%.0f\") 做四舍五入，它按当前舍入模式（默认就近舍入到偶数）处理 .5；③ 小数部分用 x - t 就以为一定是正数；④ 精度用固定 6 位而不是 %.*f；⑤ 用 float 存 x，10^9 附近的有效位数不够，输出与样例不符；⑥ 忘记包含 stdio.h 就使用 printf。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <iomanip>\n#include <cmath>\nusing namespace std;\n\nint main()\n{\n    double x;\n    int n;\n\n    if (!(cin >> x >> n))\n        return 0;\n\n    long long t = static_cast<long long>(x);\n    long long f = (x < static_cast<double>(t)) ? t - 1 : t;\n    long long r = static_cast<long long>(fabs(x) + 0.5);\n    if (x < 0.0)\n        r = -r;\n\n    cout << \"trunc: \" << t << '\\n';\n    cout << \"floor: \" << f << '\\n';\n    cout << \"round: \" << r << '\\n';\n    cout << \"frac: \" << fixed << setprecision(6) << x - static_cast<double>(t) << '\\n';\n    cout << \"fixed: \" << fixed << setprecision(n) << x << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 static_cast<long long> 做向零取整",
+          "用 fabs 与符号处理实现远离 0 的四舍五入",
+          "用 setprecision 动态控制小数位数"
+        ],
+        "analysis": "思路：与 C 版一致，用 static_cast<long long>(x) 做截断，用 cmath 的 fabs 取绝对值，用 iomanip 动态设置精度。\n\n关键步骤：① 读入 double x 与 int n；② t = static_cast<long long>(x)；③ floor 用 t 与 x 比较后修正；④ fabs(x) + 0.5 再截断并按符号取负得到 round；⑤ 输出 frac 时 fixed 加 setprecision(6)；⑥ 输出 fixed 时把 setprecision 改成 n。\n\n复杂度：O(1)。\n\n易错点：① 把 setprecision(n) 与 fixed 的顺序用错，非定点模式下 setprecision 表示有效数字而不是小数位数；② 用 std::floor 返回 double，再转整数时还要注意负数；③ 对 -0.0 取负号导致输出 -0；④ 多次设置 setprecision 后忘记后面的输出沿用新精度；⑤ 用 (long long) 强转 double 超出 long long 范围时行为未定义（本题范围安全）。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    x = float(data[0])\n    n = int(data[1])\n\n    t = int(x)\n    f = t - 1 if x < t else t\n    r = int(abs(x) + 0.5)\n    if x < 0:\n        r = -r\n\n    print(f\"trunc: {t}\")\n    print(f\"floor: {f}\")\n    print(f\"round: {r}\")\n    print(f\"frac: {x - t:.6f}\")\n    print(f\"fixed: {x:.{n}f}\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 int(x) 实现向零取整",
+          "用比较修正得到向下取整",
+          "用 int(abs(x) + 0.5) 实现远离 0 的四舍五入",
+          "用嵌套格式说明符 {x:.{n}f} 动态设置精度"
+        ],
+        "analysis": "思路：Python 的 int(x) 与 C 的强制转换一样向零截断；math.floor 返回 int 且向下取整；round() 是银行家舍入（.5 取偶），所以四舍五入要自己用 int(abs(x) + 0.5) 实现。格式方面，f-string 允许嵌套格式说明符 {x:.{n}f} 实现动态精度。\n\n关键步骤：① 读入 float 与 int；② t = int(x)；③ f = t - 1 if x < t else t；④ r = int(abs(x) + 0.5)，若 x < 0 再取负；⑤ frac 用 f\"{x - t:.6f}\"；⑥ fixed 用 f\"{x:.{n}f}\"。\n\n复杂度：O(1)。\n\n易错点：① 用 // 求向零取整（对负数是向下取整）；② 用 round(x) 得到银行家舍入，2.5 会得到 2；③ 用 Decimal 却不设置精度上下文；④ 动态精度写成 {x:.nf}，把 n 当成字面量；⑤ 小数部分用 math.modf 时没有考虑负数的符号；⑥ 用 int(x + 0.5) 处理负数，-2.37 会得到 -2 而不是 -2。"
+      }
+    }
+  },
+  {
+    "id": "基-78",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "字符扫描",
+      "数字串解析",
+      "边界处理"
+    ],
+    "stem": "读入一行文本，其中可能包含字母、数字、空格和其他可见 ASCII 字符。把连续的阿拉伯数字字符看成一个整数段（允许前导 0，例如 `003` 表示 3），统计所有整数段的个数、总和与最大值。\n\n**输入格式：** 一行文本，长度 1~200，字符均为可见 ASCII 字符（不含换行），可能包含多个由非数字字符分隔的数字段。保证每个数字段不超过 9 位，且所有整数之和不大于 2×10^9。\n\n**输出格式：** 三行：\n- `count: c`，整数段个数；\n- `sum: s`，所有整数之和；\n- `max: m`，最大整数；若没有任何数字段，则输出 `max: NONE`。\n\n**输入样例：**\n```text\na12b003c45!\n```\n**输出样例：**\n```text\ncount: 3\nsum: 60\nmax: 45\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int ch;\n    int count = 0;\n    int inNum = 0;\n    long long sum = 0;\n    long long max = 0;\n    long long cur = 0;\n\n    while ((ch = getchar()) != EOF && ch != '\\n') {\n        if (ch >= '0' && ch <= '9') {\n            cur = cur * 10 + (ch - '0');\n            inNum = 1;\n        } else if (inNum) {\n            count++;\n            sum += cur;\n            if (count == 1 || cur > max)\n                max = cur;\n            cur = 0;\n            inNum = 0;\n        }\n    }\n\n    if (inNum) {\n        count++;\n        sum += cur;\n        if (count == 1 || cur > max)\n            max = cur;\n    }\n\n    printf(\"count: %d\\n\", count);\n    printf(\"sum: %lld\\n\", sum);\n    if (count == 0)\n        printf(\"max: NONE\\n\");\n    else\n        printf(\"max: %lld\\n\", max);\n    return 0;\n}\n",
+    "points": [
+      "用 getchar 逐字符扫描到换行或 EOF",
+      "把连续数字字符累加成当前整数（支持前导 0）",
+      "遇到非数字字符时结算当前数字段",
+      "循环结束后补结算行末数字段，并处理无数字的情况"
+    ],
+    "analysis": "思路：这是典型的「状态机」扫描题：逐个读入字符，维护「当前是否在数字段中」和「当前数字段的值」两个状态，遇到非数字字符时把当前数字段结算到 count、sum、max 中。\n\n关键步骤：① 用 getchar() 循环读字符，条件是 ch != EOF 且 ch != '\\n'（getchar 返回 int，不能存成 char，否则无法区分 -1 与 0xFF）；② 若是数字，cur = cur * 10 + (ch - '0')，并置 inNum = 1；③ 若不是数字且 inNum 为真，则 count++、sum += cur、更新 max，然后把 cur 与 inNum 复位；④ 循环结束后若 inNum 仍为真，说明行末还有一个数字段，要再结算一次 —— 这是最容易漏的一步；⑤ 若 count 为 0，max 输出 NONE。\n\n复杂度：时间 O(L)，L 为行长；空间 O(1)。\n\n易错点：① 用 scanf(\"%d\") 读数据，字母会被跳过，无法统计个数；② 忘记结算行末数字段，`abc12` 会统计成 0 个；③ 把 cur 声明成 int，9 位数最大 999999999 尚可，但 sum 累加可能超限，用 long long 更稳；④ 用 isdigit(ch) 时忘了包含 ctype.h；⑤ 处理前导 0 时误以为要跳过，其实 cur = cur * 10 + 0 自然正确；⑥ 无数字时输出 0 而不是 NONE；⑦ 用 gets 读行（C11 已删除该函数）。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main()\n{\n    string line;\n    if (!getline(cin, line))\n        return 0;\n\n    int count = 0;\n    long long sum = 0, mx = 0, cur = 0;\n    bool inNum = false;\n\n    for (char ch : line) {\n        if (ch >= '0' && ch <= '9') {\n            cur = cur * 10 + (ch - '0');\n            inNum = true;\n        } else if (inNum) {\n            ++count;\n            sum += cur;\n            if (count == 1 || cur > mx)\n                mx = cur;\n            cur = 0;\n            inNum = false;\n        }\n    }\n\n    if (inNum) {\n        ++count;\n        sum += cur;\n        if (count == 1 || cur > mx)\n            mx = cur;\n    }\n\n    cout << \"count: \" << count << '\\n';\n    cout << \"sum: \" << sum << '\\n';\n    if (count == 0)\n        cout << \"max: NONE\" << '\\n';\n    else\n        cout << \"max: \" << mx << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 getline 读入整行（保留空格）",
+          "用范围 for 逐字符扫描并累积数字段",
+          "结算行末数字段并处理无数字的输出分支"
+        ],
+        "analysis": "思路：用 getline 读入整行，再对字符串做一次线性扫描，状态机的结构与 C 版一致。\n\n关键步骤：① getline(cin, line) 读入整行（可以读入空格）；② 用范围 for 遍历每个 char；③ 数字字符时累加到 cur 并置 inNum；④ 非数字且 inNum 时结算 count、sum、mx，并复位；⑤ 循环结束后再补一次行末结算；⑥ 按 count 是否为 0 决定 max 的输出。\n\n复杂度：时间 O(L)，空间 O(L)（保存整行）。\n\n易错点：① 用 cin >> line 读入，遇到空格就截断，只能读到第一段；② 忘记处理行末数字段；③ 用 int 累加 sum 溢出；④ 用 isdigit 而不是显式区间判断，考虑到负数字符 '-' 会被当成分隔符反而正确，但 locale 相关的 isdigit 行为需谨慎；⑤ 把 inNum 声明成 int 而不是 bool，判断条件写成 inNum == 1。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    line = sys.stdin.readline()\n    if line == \"\":\n        return\n    line = line.rstrip(\"\\r\\n\")\n\n    count = 0\n    total = 0\n    mx = 0\n    cur = 0\n    in_num = False\n\n    for ch in line:\n        if \"0\" <= ch <= \"9\":\n            cur = cur * 10 + (ord(ch) - ord(\"0\"))\n            in_num = True\n        elif in_num:\n            count += 1\n            total += cur\n            if count == 1 or cur > mx:\n                mx = cur\n            cur = 0\n            in_num = False\n\n    if in_num:\n        count += 1\n        total += cur\n        if count == 1 or cur > mx:\n            mx = cur\n\n    print(f\"count: {count}\")\n    print(f\"sum: {total}\")\n    if count == 0:\n        print(\"max: NONE\")\n    else:\n        print(f\"max: {mx}\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 sys.stdin.readline() 读入一行并去掉行尾换行",
+          "用 '0' <= ch <= '9' 判断数字字符",
+          "状态机累积并结算数字段，行末补结算",
+          "无数字时输出 max: NONE"
+        ],
+        "analysis": "思路：用 sys.stdin.readline() 读入一行并去掉行尾换行，然后逐字符扫描；Python 字符串是 Unicode，判断数字要用 '0' <= ch <= '9' 而不是 isdigit()（isdigit 会接受全角数字、上标等字符，超出题目范围）。\n\n关键步骤：① line = sys.stdin.readline().rstrip(\"\\r\\n\")，同时兼容 Windows 的 \\r\\n；② 维护 count、total、mx、cur、in_num 五个变量；③ 数字字符时 cur = cur * 10 + (ord(ch) - ord(\"0\"))；④ 非数字且 in_num 时结算并复位；⑤ 扫描结束后补结算行末数字段；⑥ 按 count 是否为 0 输出 max 或 NONE。\n\n复杂度：时间 O(L)，空间 O(L)。\n\n易错点：① 用 ch.isdigit() 把全角数字也算进来；② 用 split() 或正则处理，容易把连续数字拆错；③ 忘记行末补结算，样例 `...c45!` 结尾是感叹号所以不易暴露，但 `abc12` 会漏；④ 用 int() 直接转换整行会失败；⑤ mx 在无数字时没有意义，必须用 count 分支判断；⑥ 用 input() 时行尾的 \\n 已被去掉，但空行会返回空串，需单独处理。"
+      }
+    }
+  }
+]

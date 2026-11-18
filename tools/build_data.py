@@ -33,11 +33,11 @@ MODULES = [
 BY_NAME = {m["name"]: m for m in MODULES}
 TYPES = {"choice", "fill", "design"}
 EXPECTED_MODULE_COUNTS = {
-    "C语言基础": 68, "数组": 90, "指针": 98,
-    "结构体": 78, "枚举": 20, "函数": 46,
+    "C语言基础": 88, "数组": 90, "指针": 98,
+    "结构体": 78, "枚举": 20, "函数": 66,
 }
-EXPECTED_TYPE_COUNTS = {"choice": 260, "fill": 70, "design": 70}
-TOTAL_EXPECTED = 400
+EXPECTED_TYPE_COUNTS = {"choice": 260, "fill": 70, "design": 110}
+TOTAL_EXPECTED = 440
 
 
 def die(errors: list[str]) -> None:
@@ -314,7 +314,7 @@ def main() -> None:
     bank = {
         "meta": {
             "title": "程序设计基础 · 三语言习题复习库",
-            "subtitle": "C / C++ / Python · PTA 风格 · 400 题 · 含答案解析",
+            "subtitle": "C / C++ / Python · PTA 风格 · 440 题 · 含答案解析",
             "version": "2.0",
             "total": len(questions),
             "languages": [

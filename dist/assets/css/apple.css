@@ -803,3 +803,24 @@ body.auth-open { overflow: hidden; }
 .foot { flex-wrap: wrap; }
 .foot-links { flex: 1 0 100%; order: 3; justify-content: flex-end; margin-top: 2px; padding-top: 12px; border-top: 1px solid var(--line); }
 @media (max-width: 700px) { .foot-links { justify-content: flex-start; } }
+
+/* ---------- 代码编辑区（填空 / 编程题） ---------- */
+.code-work { margin: 16px 0; border-radius: 16px; overflow: hidden; background: var(--code-bg); border: 1px solid rgba(255,255,255,.08); }
+.cw-head { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--code-head); color: #f5f5f7; flex-wrap: wrap; }
+.cw-title { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #d2d2d7; }
+.cw-title .icon { width: 15px; height: 15px; color: #2997ff; }
+.cw-acts { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.cw-acts button { border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.08); color: #f5f5f7; font: inherit; font-size: 11.5px; padding: 4px 10px; border-radius: 999px; cursor: pointer; transition: background .18s ease; }
+.cw-acts button:hover { background: rgba(255,255,255,.18); }
+.cw-acts button:active { transform: scale(.96); }
+.cw-body { display: flex; align-items: stretch; }
+.cw-gutter { margin: 0; padding: 12px 8px 12px 12px; min-width: 44px; text-align: right; font-family: var(--mono); font-size: 13px; line-height: 1.65; color: #6e6e73; background: #18181a; overflow: hidden; user-select: none; white-space: pre; }
+.cw-input { flex: 1; width: 100%; height: 220px; resize: vertical; border: 0; outline: 0; background: transparent; color: #f5f5f7; font-family: var(--mono); font-size: 13px; line-height: 1.65; padding: 12px 14px 12px 10px; tab-size: 4; white-space: pre; overflow: auto; caret-color: #2997ff; }
+.cw-input::placeholder { color: #6e6e73; }
+.cw-input:focus { box-shadow: inset 0 0 0 1px rgba(41,151,255,.55); }
+.cw-foot { display: flex; justify-content: space-between; gap: 8px; padding: 6px 12px; background: #18181a; border-top: 1px solid rgba(255,255,255,.06); font-size: 11px; color: #86868b; }
+@media (max-width: 520px) {
+  .cw-acts button { padding: 4px 8px; font-size: 11px; }
+  .cw-gutter { min-width: 36px; padding-left: 8px; }
+  .cw-input { height: 180px; padding-right: 10px; }
+}

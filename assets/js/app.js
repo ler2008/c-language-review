@@ -89,6 +89,7 @@
     shufOrder: [],
     progress: {},
     favorites: [],
+    drafts: {},
     theme: 'light'
   };
 
@@ -123,6 +124,7 @@
       state.shufOrder = Array.isArray(saved.shufOrder) ? saved.shufOrder : [];
       state.progress = saved.progress && typeof saved.progress === 'object' ? saved.progress : {};
       state.favorites = Array.isArray(saved.favorites) ? saved.favorites : [];
+      state.drafts = saved.drafts && typeof saved.drafts === 'object' ? saved.drafts : {};
       if (saved.theme === 'dark' || saved.theme === 'light') state.theme = saved.theme;
     } else {
       state.theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -330,6 +332,7 @@
     state.shufOrder = [];
     state.progress = {};
     state.favorites = [];
+    state.drafts = {};
   }
 
   function applyUserSwitch(oldKey, msg) {
@@ -602,6 +605,8 @@
       }
     }
 
+    if (lq.type !== 'choice') body += renderEditor(lq, revealed);
+
     if (revealed) {
       body += renderAnswerPanel(lq, p, q);
     } else {
@@ -616,6 +621,65 @@
     el.dataset.lang = state.lang;
     el.innerHTML = head + body;
     return el;
+  }
+
+  function editorTemplate(lq) {
+    var note = lq.type === 'fill' ? '在这里补全代码' : '在这里编写完整程序';
+    if (lq.lang === 'python') return '# ' + note + '\n';
+    if (lq.lang === 'cpp') {
+      return '#include <iostream>\nusing namespace std;\n\nint main()\n{\n    // ' + note + '\n\n    return 0;\n}\n';
+    }
+    return '#include <stdio.h>\n\nint main(void)\n{\n    /* ' + note + ' */\n\n    return 0;\n}\n';
+  }
+
+  function draftKey(lq) { return lq.lang + ':' + lq.id; }
+
+  function renderEditor(lq, revealed) {
+    var key = draftKey(lq);
+    var draft = state.drafts[key] || '';
+    var lines = draft ? draft.split('\n').length : 1;
+    var gutter = '';
+    for (var i = 1; i <= lines; i++) gutter += i + '\n';
+    var placeholder = lq.type === 'fill'
+      ? '按题目要求补全程序；可点「模板」插入起始代码'
+      : '在这里编写完整程序；可点「模板」插入起始代码';
+    return '<div class="code-work" data-key="' + esc(key) + '">' +
+      '<div class="cw-head"><span class="cw-title">' + icon('command') + '写代码 · ' + esc(langLabel(lq.lang)) + '</span>' +
+      '<div class="cw-acts">' +
+      '<button type="button" data-act="cw-template">模板</button>' +
+      '<button type="button" data-act="cw-copy">复制</button>' +
+      (revealed && lq.type === 'design' ? '<button type="button" data-act="cw-ref">对照参考</button>' : '') +
+      '<button type="button" data-act="cw-clear">清空</button>' +
+      '</div></div>' +
+      '<div class="cw-body"><pre class="cw-gutter" aria-hidden="true">' + gutter + '</pre>' +
+      '<textarea class="cw-input" spellcheck="false" autocomplete="off" autocapitalize="off" ' +
+      'aria-label="代码编辑区" placeholder="' + esc(placeholder) + '">' + esc(draft) + '</textarea></div>' +
+      '<div class="cw-foot"><span class="cw-status">草稿自动保存 · 仅本机</span>' +
+      '<span class="cw-lines">' + lines + ' 行</span></div>' +
+      '</div>';
+  }
+
+  function syncEditor(work) {
+    if (!work) return;
+    var ta = work.querySelector('.cw-input');
+    var gutter = work.querySelector('.cw-gutter');
+    var linesEl = work.querySelector('.cw-lines');
+    if (!ta || !gutter) return;
+    var lines = ta.value ? ta.value.split('\n').length : 1;
+    var text = '';
+    for (var i = 1; i <= lines; i++) text += i + '\n';
+    gutter.textContent = text;
+    gutter.scrollTop = ta.scrollTop;
+    if (linesEl) linesEl.textContent = lines + ' 行';
+  }
+
+  function saveDraft(lq, value) {
+    if (!lq) return;
+    var key = draftKey(lq);
+    if (value) state.drafts[key] = value;
+    else delete state.drafts[key];
+    clearTimeout(saveDraft._t);
+    saveDraft._t = setTimeout(saveState, 500);
   }
 
   function renderKnowledge(q, lq, bad) {
@@ -961,10 +1025,91 @@
       return;
     }
 
+    if (act === 'cw-copy') {
+      var taCopy = card.querySelector('.cw-input');
+      if (taCopy) copyText(taCopy.value);
+      return;
+    }
+
+    if (act === 'cw-template') {
+      var taTpl = card.querySelector('.cw-input');
+      if (!taTpl) return;
+      if (taTpl.value.trim() && !window.confirm('用起始模板覆盖当前代码？')) return;
+      taTpl.value = editorTemplate(lq);
+      syncEditor(card.querySelector('.code-work'));
+      saveDraft(lq, taTpl.value);
+      haptic(6);
+      taTpl.focus();
+      return;
+    }
+
+    if (act === 'cw-clear') {
+      var taClear = card.querySelector('.cw-input');
+      if (!taClear) return;
+      if (!taClear.value.trim()) return;
+      if (!window.confirm('清空这道题的代码草稿？')) return;
+      taClear.value = '';
+      syncEditor(card.querySelector('.code-work'));
+      saveDraft(lq, '');
+      haptic(14);
+      toast('已清空草稿');
+      return;
+    }
+
+    if (act === 'cw-ref') {
+      var sol = card.querySelector('.solution-head');
+      if (sol) sol.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      haptic(6);
+      return;
+    }
+
     if (act === 'copy') {
       var block = btn.closest('.code-block');
       var pre = block && block.querySelector('pre');
       if (pre) copyText(pre.innerText);
+    }
+  }
+
+  function onEditorInput(e) {
+    var ta = e.target.closest ? e.target.closest('.cw-input') : null;
+    if (!ta) return;
+    var card = ta.closest('.q-card');
+    var q = card && byId.get(card.dataset.id);
+    syncEditor(ta.closest('.code-work'));
+    if (q) saveDraft(localized(q, state.lang), ta.value);
+  }
+
+  function afterEditorEdit(ta) {
+    var card = ta.closest('.q-card');
+    var q = card && byId.get(card.dataset.id);
+    syncEditor(ta.closest('.code-work'));
+    if (q) saveDraft(localized(q, state.lang), ta.value);
+  }
+
+  function onEditorKeydown(e) {
+    var ta = e.target.closest ? e.target.closest('.cw-input') : null;
+    if (!ta) return;
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      var s = ta.selectionStart;
+      var en = ta.selectionEnd;
+      ta.setRangeText('    ', s, en, 'end');
+      afterEditorEdit(ta);
+      return;
+    }
+    if (e.key === 'Enter' && ta.selectionStart === ta.selectionEnd) {
+      var pos = ta.selectionStart;
+      var before = ta.value.slice(0, pos);
+      var line = before.slice(before.lastIndexOf('\n') + 1);
+      var indent = (line.match(/^[ \t]*/) || [''])[0];
+      var trimmed = line.replace(/[ \t]+$/, '');
+      var extra = '';
+      if (state.lang === 'python' && /:$/.test(trimmed)) extra = '    ';
+      else if (state.lang !== 'python' && /[{]$/.test(trimmed)) extra = '    ';
+      if (!indent && !extra) return;
+      e.preventDefault();
+      ta.setRangeText('\n' + indent + extra, pos, pos, 'end');
+      afterEditorEdit(ta);
     }
   }
 
@@ -1168,6 +1313,16 @@
     });
 
     list.addEventListener('click', onListClick);
+    list.addEventListener('input', onEditorInput);
+    list.addEventListener('keydown', onEditorKeydown);
+    list.addEventListener('scroll', function (e) {
+      var ta = e.target;
+      if (ta && ta.classList && ta.classList.contains('cw-input')) {
+        var work = ta.closest('.code-work');
+        var gutter = work && work.querySelector('.cw-gutter');
+        if (gutter) gutter.scrollTop = ta.scrollTop;
+      }
+    }, true);
 
     $('#resetBtn').addEventListener('click', function () {
       var who = authUser() ? authUser().name + ' 账号' : '游客模式';

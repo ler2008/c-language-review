@@ -1,0 +1,422 @@
+[
+  {
+    "id": "函-47",
+    "type": "design",
+    "difficulty": 1,
+    "tags": [
+      "函数定义",
+      "函数声明",
+      "无返回值函数"
+    ],
+    "stem": "请定义并调用两个函数完成下面的任务：\n\n1. 函数 `sum_to(n)`：返回 1 + 2 + … + n 的和；\n2. 函数 `print_bar(length)`：在一行内输出 length 个连续的 `-` 字符后换行，函数本身不返回值。\n\n主程序读入一个正整数 n，先调用 `print_bar(20)` 输出一条分隔线，再按 `sum = 结果` 的格式输出 1 到 n 的和，最后再调用一次 `print_bar(20)` 输出分隔线。求和与分隔线的输出都必须由函数完成，主程序中只负责读入、调用和打印求和结果。\n\n**输入格式：** 一行一个正整数 n（1 ≤ n ≤ 10000）。\n\n**输出格式：** 共三行：第一行和第三行各是 20 个 `-`；第二行为 `sum = ` 后接 1 到 n 的和。\n\n**输入样例：**\n```text\n100\n```\n**输出样例：**\n```text\n--------------------\nsum = 5050\n--------------------\n```",
+    "solution": "#include <stdio.h>\n\n/* 函数声明（原型）：定义写在 main 之后，调用前必须先声明 */\nint sum_to(int n);\nvoid print_bar(int len);\n\nint main(void)\n{\n    int n;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n\n    print_bar(20);\n    printf(\"sum = %d\\n\", sum_to(n));\n    print_bar(20);\n\n    return 0;\n}\n\n/* 返回 1 + 2 + ... + n 的和 */\nint sum_to(int n)\n{\n    int i, s = 0;\n\n    for (i = 1; i <= n; i++)\n        s += i;\n\n    return s;\n}\n\n/* 在一行内输出 len 个 '-'，没有返回值 */\nvoid print_bar(int len)\n{\n    int i;\n\n    for (i = 0; i < len; i++)\n        putchar('-');\n    putchar('\\n');\n}",
+    "points": [
+      "在 main 之前给出 sum_to 与 print_bar 的函数原型",
+      "sum_to 用累加循环并 return 结果，循环边界包含 n",
+      "print_bar 声明为 void，输出 20 个 '-' 后换行",
+      "main 中按“分隔线、sum = 5050、分隔线”的顺序调用，输出与样例一致"
+    ],
+    "analysis": "思路：题目要求把“求和”和“打印分隔线”两个动作分别封装成函数。`sum_to` 有返回值，用累加循环实现；`print_bar` 只负责输出，返回类型为 void。`main` 只做输入、两次调用分隔线函数和一次调用求和函数。\n\n关键步骤：① 在 `main` 之前写上两个函数的原型 `int sum_to(int n);` 和 `void print_bar(int len);`，这样函数定义可以放在 `main` 之后，编译器在调用点已经知道参数个数和返回类型；② `sum_to` 内部用 `int s = 0` 累加，`for (i = 1; i <= n; i++) s += i;`，循环结束后 `return s;`；③ `print_bar` 用 `putchar('-')` 循环输出 len 次，最后 `putchar('\\n')` 换行，void 函数执行完直接返回，不写 return；④ `main` 中先 `print_bar(20)`，再 `printf(\"sum = %d\\n\", sum_to(n))`，最后再调用一次 `print_bar(20)`。\n\n复杂度：`sum_to` 时间 O(n)、空间 O(1)；`print_bar` 时间 O(len)。n ≤ 10000 时 1 到 n 的和为 50005000，仍在 int 范围内，不必用 long long。\n\n易错点：① 漏写函数原型又把定义放在 main 之后，C99 会报隐式声明错误或链接失败；② 把 `print_bar` 的返回类型写成 int 却又不 return，属于未定义行为；③ 循环边界写成 `i < n`，结果少加一项；④ 分隔线长度写死成 19 或 21 个字符，与样例不符；⑤ `printf` 里用 `%f` 输出 `sum_to(n)` 的 int 返回值，输出是乱码。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nint sum_to(int n);\nvoid print_bar(int len);\n\nint main()\n{\n    int n;\n\n    if (!(std::cin >> n))\n        return 0;\n\n    print_bar(20);\n    std::cout << \"sum = \" << sum_to(n) << '\\n';\n    print_bar(20);\n\n    return 0;\n}\n\nint sum_to(int n)\n{\n    int s = 0;\n\n    for (int i = 1; i <= n; ++i)\n        s += i;\n\n    return s;\n}\n\nvoid print_bar(int len)\n{\n    for (int i = 0; i < len; ++i)\n        std::cout << '-';\n    std::cout << '\\n';\n}",
+        "points": [
+          "在 main 之前声明 sum_to 与 print_bar，定义写在 main 之后",
+          "sum_to 用 for 累加并返回 int 结果",
+          "print_bar 返回 void，循环输出 '-' 后输出换行",
+          "main 依次输出分隔线、sum = 5050、分隔线"
+        ],
+        "analysis": "思路：与 C 版完全一致，只是把输入输出换成 `std::cin` 和 `std::cout`。函数声明写在 `main` 之前、定义写在 `main` 之后，这是 C++ 中常见的组织方式；也可以在定义时加上 `static`，把两个函数限制在本翻译单元内。\n\n关键步骤：① 先写 `int sum_to(int n);` 与 `void print_bar(int len);` 两个原型；② `sum_to` 用 `for (int i = 1; i <= n; ++i) s += i;` 累加；③ `print_bar` 用循环 `std::cout << '-'`，循环结束后输出 `'\\n'`；④ `main` 中 `std::cin >> n` 后依次调用，输出行用 `'\\n'` 而不是 `std::endl`，避免每次换行都刷新缓冲区。\n\n复杂度：求和 O(n)、分隔线 O(len)，空间 O(1)。\n\n易错点：① 把 `print_bar` 写成返回 int 的函数却没有 return 语句；② 忘记在 main 前声明，编译报 `sum_to was not declared in this scope`；③ 读完 n 不判断输入是否成功，n 未初始化就参与加法；④ 输出 20 个字符时误用 `std::string(20, '-')` 之外的手写循环边界，多输出或少输出一个字符。"
+      },
+      "python": {
+        "solution": "def sum_to(n: int) -> int:\n    s = 0\n    for i in range(1, n + 1):\n        s += i\n    return s\n\n\ndef print_bar(length: int) -> None:\n    print(\"-\" * length)\n\n\ndef main() -> None:\n    n = int(input())\n    print_bar(20)\n    print(f\"sum = {sum_to(n)}\")\n    print_bar(20)\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "定义 sum_to 与 print_bar 两个函数，职责与题面一致",
+          "sum_to 用 range(1, n + 1) 累加并 return",
+          "print_bar 用字符串重复输出 length 个 '-'，无返回值",
+          "main 中调用顺序正确，输出与样例逐行一致"
+        ],
+        "analysis": "思路：Python 没有“函数原型”的概念，函数在调用发生时必须已经存在，因此把 `sum_to` 和 `print_bar` 定义在 `main()` 之前即可。`sum_to` 用 `range(1, n + 1)` 累加，`print_bar` 用字符串重复 `\"-\" * length` 一次输出。\n\n关键步骤：① `sum_to(n)` 中 `s = 0`，`for i in range(1, n + 1): s += i`，最后 `return s`；② `print_bar(length)` 直接 `print(\"-\" * length)`，函数没有 return，默认返回 `None`；③ `main()` 用 `int(input())` 读入 n，依次调用两个函数；④ 用 `if __name__ == \"__main__\": main()` 作为入口，模块被导入时不会自动执行。\n\n复杂度：求和 O(n)、分隔线 O(length)，空间 O(1)（字符串重复会产生 O(length) 的临时字符串）。\n\n易错点：① 写成 `range(1, n)`，少算第 n 项；② 忘记 `int()` 转换，字符串无法参与累加；③ `print_bar` 里加了 `end=\"\"` 却没补换行，三行输出挤成一行；④ 函数名与内置函数重名（如把求和函数命名为 `sum`），覆盖内置函数后 `sum()` 无法再使用。"
+      }
+    }
+  },
+  {
+    "id": "函-48",
+    "type": "design",
+    "difficulty": 1,
+    "tags": [
+      "素数判断",
+      "返回值",
+      "区间枚举"
+    ],
+    "stem": "请编写函数 `is_prime(x)` 判断整数 x 是否为素数：是素数返回真，否则返回假（C 中返回 1 或 0）。主程序读入两个整数 a 和 b（a ≤ b），统计闭区间 [a, b] 内素数的个数，并输出其中最大的素数；如果区间内没有素数，最大素数输出 -1。要求素数判断只能由 `is_prime` 完成，主程序中不能再写判断素数的循环。\n\n**输入格式：** 一行两个整数 a 和 b（0 ≤ a ≤ b ≤ 10000），用空格分隔。\n\n**输出格式：** 两行：第一行是区间内素数的个数，第二行是其中最大的素数（没有素数时输出 -1）。\n\n**输入样例：**\n```text\n10 30\n```\n**输出样例：**\n```text\n6\n29\n```",
+    "solution": "#include <stdio.h>\n\nint is_prime(int x);\n\nint main(void)\n{\n    int a, b, i, cnt = 0, mx = -1;\n\n    if (scanf(\"%d %d\", &a, &b) != 2)\n        return 0;\n\n    for (i = a; i <= b; i++) {\n        if (is_prime(i)) {\n            cnt++;\n            mx = i;\n        }\n    }\n\n    printf(\"%d\\n\", cnt);\n    printf(\"%d\\n\", mx);\n    return 0;\n}\n\n/* 判断 x 是否为素数：是返回 1，不是返回 0 */\nint is_prime(int x)\n{\n    int i;\n\n    if (x < 2)\n        return 0;\n    for (i = 2; i * i <= x; i++)\n        if (x % i == 0)\n            return 0;\n    return 1;\n}",
+    "points": [
+      "is_prime 先用 x < 2 排除 0、1 和负数",
+      "用 i * i <= x 作为循环条件试除，及时 return 0",
+      "主程序遍历区间时同时更新个数与最大素数",
+      "无素数时 mx 保持 -1，与题面要求一致"
+    ],
+    "analysis": "思路：把“判断一个数是不是素数”单独抽成 `is_prime`，主程序只负责枚举区间并累计。这样判断逻辑只写一次，主函数里没有嵌套的试除循环，结构清晰。\n\n关键步骤：① `is_prime(x)` 先处理 `x < 2` 返回 0（0、1 和负数都不是素数）；② 从 2 枚举到 `i * i <= x`，只要有一个因子就返回 0，循环结束返回 1；用 `i * i <= x` 而不是 `i < x`，把单次判断的复杂度从 O(x) 降到 O(√x)；③ 主程序读入 a、b 后用 `for (i = a; i <= b; i++)` 枚举，命中素数时 `cnt++` 并更新 `mx = i`；④ `mx` 初值设为 -1，区间内没有素数时正好输出 -1。\n\n复杂度：单次判断 O(√x)，整个区间 O((b−a+1)·√b)，b ≤ 10000 时最坏约 10⁶ 次运算；空间 O(1)。\n\n易错点：① 忘记处理 x < 2，把 1 当成素数；② 循环条件写成 `i < x`，效率低且 b 大时容易超时；③ 在循环体内无条件 `return 1`，只要 2 不整除就判为素数，9、15 等都会被误判；④ `mx` 初值写 0，区间无素数时输出 0 而不是 -1；⑤ 主程序里又写一遍试除循环，不符合“判断只由函数完成”的要求。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nbool is_prime(int x);\n\nint main()\n{\n    int a, b;\n\n    if (!(std::cin >> a >> b))\n        return 0;\n\n    int cnt = 0;\n    int mx = -1;\n    for (int i = a; i <= b; ++i) {\n        if (is_prime(i)) {\n            ++cnt;\n            mx = i;\n        }\n    }\n\n    std::cout << cnt << '\\n' << mx << '\\n';\n    return 0;\n}\n\nbool is_prime(int x)\n{\n    if (x < 2)\n        return false;\n    for (int i = 2; i * i <= x; ++i)\n        if (x % i == 0)\n            return false;\n    return true;\n}",
+        "points": [
+          "is_prime 返回 bool，先处理 x < 2 的情况",
+          "循环条件用 i * i <= x，找到因子立即返回 false",
+          "主程序用 bool 返回值直接判断并累计",
+          "无素数时 mx 为 -1 并按两行输出"
+        ],
+        "analysis": "思路：C++ 中判断类函数习惯返回 `bool`，`if (is_prime(i))` 直接使用布尔值，不必和 1 比较。其余逻辑与 C 版相同：`is_prime` 负责单点判断，`main` 负责区间枚举与统计。\n\n关键步骤：① 声明 `bool is_prime(int x);`；② 函数先 `if (x < 2) return false;`，再 `for (int i = 2; i * i <= x; ++i)` 试除，能整除立即 `return false`，循环结束 `return true`；③ 主程序读入 a、b，`for` 枚举区间，命中时 `++cnt` 并记录 `mx = i`；④ `std::cout << cnt << '\\n' << mx << '\\n';` 一次输出两行。\n\n复杂度：单次 O(√x)，区间 O((b−a+1)·√b)，空间 O(1)。\n\n易错点：① 用 `bool` 返回却写成 `return 1/0` 之外的整数，虽然可隐式转换但可读性差；② 循环写成 `i <= x / 2` 时 2 需要单独讨论，容易漏判；③ `i * i` 在 int 下对大数可能溢出，本题 b ≤ 10000 不会触发；④ 最大值初值写成 0，无素数区间输出错误；⑤ 用 `std::endl` 逐行刷新，虽结果正确但没必要。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef is_prime(x: int) -> bool:\n    if x < 2:\n        return False\n    i = 2\n    while i * i <= x:\n        if x % i == 0:\n            return False\n        i += 1\n    return True\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    a, b = int(data[0]), int(data[1])\n    cnt = 0\n    mx = -1\n    for x in range(a, b + 1):\n        if is_prime(x):\n            cnt += 1\n            mx = x\n\n    print(cnt)\n    print(mx)\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "is_prime 用 bool 返回，先排除小于 2 的数",
+          "用 while i * i <= x 试除，命中因子立即返回 False",
+          "主程序用 range(a, b + 1) 遍历闭区间并累计",
+          "无素数时输出 -1，两行输出与样例一致"
+        ],
+        "analysis": "思路：`is_prime(x)` 用 `while i * i <= x` 试除并返回布尔值，主程序用 `range(a, b + 1)` 遍历闭区间，统计个数并记录最大值。\n\n关键步骤：① 函数开头 `if x < 2: return False`；② `i = 2` 起循环，`x % i == 0` 时立即 `return False`，否则 `i += 1`；③ 循环结束 `return True`；④ 主程序用 `sys.stdin.read().split()` 一次读出两个整数，避免多行输入问题；⑤ `mx = -1`，命中素数时更新，最后分两行 `print`。\n\n复杂度：单次判断 O(√x)，区间 O((b−a+1)·√b)，空间 O(1)。\n\n易错点：① 忘记 `x < 2` 分支，1 被判为素数；② 把 `return True` 写在循环内部，导致第一个不整除的因子就判为素数；③ 用 `range(a, b)` 漏掉右端点 b；④ 用 `while i < x` 全枚举，b 接近 10000 时明显变慢；⑤ 把结果写成一行输出两个数，与样例的两行格式不符。"
+      }
+    }
+  },
+  {
+    "id": "函-49",
+    "type": "design",
+    "difficulty": 1,
+    "tags": [
+      "数组传参",
+      "最大值最小值",
+      "函数封装"
+    ],
+    "stem": "请编写三个函数，分别求一组整数的最大值、最小值和总和（建议命名为 `find_max`、`find_min`、`sum_array`），数组和元素个数都作为参数传入。主程序读入 n 和这 n 个整数，依次输出最大值、最小值和总和，每行一项，格式见输出样例。要求三项统计都调用函数完成，主程序中不得直接写找最大值或累加的循环。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数，用空格分隔，每个整数的绝对值不超过 10⁶。\n\n**输出格式：** 三行，依次为 `max=最大值`、`min=最小值`、`sum=总和`。\n\n**输入样例：**\n```text\n5\n3 1 4 1 5\n```\n**输出样例：**\n```text\nmax=5\nmin=1\nsum=14\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 1000\n\nint find_max(const int a[], int n);\nint find_min(const int a[], int n);\nint sum_array(const int a[], int n);\n\nint main(void)\n{\n    int n, i, a[MAXN];\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++)\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n\n    printf(\"max=%d\\n\", find_max(a, n));\n    printf(\"min=%d\\n\", find_min(a, n));\n    printf(\"sum=%d\\n\", sum_array(a, n));\n    return 0;\n}\n\nint find_max(const int a[], int n)\n{\n    int i, best = a[0];\n\n    for (i = 1; i < n; i++)\n        if (a[i] > best)\n            best = a[i];\n    return best;\n}\n\nint find_min(const int a[], int n)\n{\n    int i, best = a[0];\n\n    for (i = 1; i < n; i++)\n        if (a[i] < best)\n            best = a[i];\n    return best;\n}\n\nint sum_array(const int a[], int n)\n{\n    int i, s = 0;\n\n    for (i = 0; i < n; i++)\n        s += a[i];\n    return s;\n}",
+    "points": [
+      "三个函数都以 const 数组加长度作为参数，返回值类型正确",
+      "最大值与最小值以 a[0] 为初值，避免全负数时出错",
+      "求和从下标 0 开始累加全部元素",
+      "main 只负责读入和三行格式化输出，统计逻辑都在函数里"
+    ],
+    "analysis": "思路：读入数组后，最大值、最小值、总和是三个独立的统计量，各自封装一个函数，主函数只负责调用和格式化输出。数组通过 `const int a[]` 形参传入，函数内部按下标遍历，`const` 表示函数不会修改数组内容。\n\n关键步骤：① `find_max` 把 `a[0]` 作为初始最大值，从下标 1 开始比较，遇到更大的就更新；② `find_min` 同理，只是比较方向相反；③ `sum_array` 用 `int s = 0` 累加所有元素；④ `main` 中先校验 `scanf` 返回值，再循环读入 n 个整数，最后三行输出。\n\n复杂度：三个函数各 O(n)，总时间 O(n)，空间 O(n)（存放数组）。n ≤ 1000、每个数绝对值不超过 10⁶ 时总和最大 10⁹，仍在 int 范围内。\n\n易错点：① 把最大值初值写成 0，数组全是负数时输出 0；② 循环从下标 0 开始与自身比较，虽然结果不变但多一次无意义比较；③ `scanf(\"%d\", &a[i])` 写成 `scanf(\"%d\", a[i])`，漏掉取地址符导致程序崩溃；④ 数组开得太小（如 `int a[100]`）而 n 可达 1000，造成越界；⑤ 把三个统计写回 main 里，不符合“统计都调用函数完成”的要求。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nint find_max(const std::vector<int> &a);\nint find_min(const std::vector<int> &a);\nint sum_array(const std::vector<int> &a);\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 1000)\n        return 0;\n\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    std::cout << \"max=\" << find_max(a) << '\\n';\n    std::cout << \"min=\" << find_min(a) << '\\n';\n    std::cout << \"sum=\" << sum_array(a) << '\\n';\n    return 0;\n}\n\nint find_max(const std::vector<int> &a)\n{\n    int best = a[0];\n    for (int i = 1; i < static_cast<int>(a.size()); ++i)\n        if (a[i] > best)\n            best = a[i];\n    return best;\n}\n\nint find_min(const std::vector<int> &a)\n{\n    int best = a[0];\n    for (int i = 1; i < static_cast<int>(a.size()); ++i)\n        if (a[i] < best)\n            best = a[i];\n    return best;\n}\n\nint sum_array(const std::vector<int> &a)\n{\n    int s = 0;\n    for (int x : a)\n        s += x;\n    return s;\n}",
+        "points": [
+          "三个函数都以 const vector<int>& 接收数组，避免拷贝",
+          "最大值、最小值以 a[0] 为初值，循环从下标 1 开始",
+          "求和可用范围 for 遍历全部元素",
+          "main 负责人工读入与三行输出，尺寸用 static_cast<int> 比较"
+        ],
+        "analysis": "思路：C++ 用 `std::vector<int>` 代替定长数组，函数参数写成 `const std::vector<int> &`，既避免拷贝又保证只读。三个函数的职责和 C 版完全一致。\n\n关键步骤：① 主函数读入 n 后 `std::vector<int> a(n);`，循环 `std::cin >> a[i]` 填满；② `find_max`、`find_min` 以 `a[0]` 为初值，循环中 `a.size()` 是 `size_t`，用 `static_cast<int>` 转换后再与 int 比较，避免有符号/无符号警告；③ `sum_array` 用范围 for `for (int x : a) s += x;` 更简洁；④ 输出用 `\"max=\"` 前缀加 `'\\n'` 逐行打印。\n\n复杂度：三个函数各 O(n)，空间 O(n)。\n\n易错点：① 参数写成 `std::vector<int> a` 按值传递，每次调用都拷贝整个数组；② 忘记 `#include <vector>`；③ `for (int i = 1; i < a.size(); ++i)` 出现有符号与无符号比较警告；④ 把初值写成 0，全负数数组时最大值错误；⑤ 用 `std::endl` 三次刷新，输出正确但效率稍低。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef find_max(a: list[int]) -> int:\n    best = a[0]\n    for x in a[1:]:\n        if x > best:\n            best = x\n    return best\n\n\ndef find_min(a: list[int]) -> int:\n    best = a[0]\n    for x in a[1:]:\n        if x < best:\n            best = x\n    return best\n\n\ndef sum_array(a: list[int]) -> int:\n    total = 0\n    for x in a:\n        total += x\n    return total\n\n\ndef main() -> None:\n    data = list(map(int, sys.stdin.read().split()))\n    n = data[0]\n    a = data[1:1 + n]\n\n    print(f\"max={find_max(a)}\")\n    print(f\"min={find_min(a)}\")\n    print(f\"sum={sum_array(a)}\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "三个函数接收列表并返回 int，职责与题面一致",
+          "最大值、最小值以首元素为初值，遍历其余元素",
+          "用 sys.stdin 一次读入 n 与全部数据，切片得到数组",
+          "三行 f-string 输出与样例格式一致"
+        ],
+        "analysis": "思路：Python 的列表直接作为参数传递，函数拿到的是列表对象的引用，读取元素即可，不需要额外传长度（`len(a)` 就是元素个数）。三个函数分别求最大值、最小值和总和，`main` 只负责读数据与打印。\n\n关键步骤：① `find_max(a)` 令 `best = a[0]`，遍历 `a[1:]` 更新更大值；② `find_min` 同理，比较方向相反；③ `sum_array(a)` 用循环累加，避免直接调用内置 `sum`，以体现函数封装；④ `main` 用 `sys.stdin.read().split()` 一次取全部数据，`n = data[0]`、`a = data[1:1 + n]`；⑤ 三行 `f-string` 输出。\n\n复杂度：三个函数各 O(n)，总时间 O(n)，空间 O(n)。\n\n易错点：① 用 `a = data[1:]` 而没有按 n 截断，输入有多余数据时会把它们也算进去；② 直接写 `max(a)` 虽然结果正确，但没有实现题目要求的函数封装；③ `find_max` 初值写成 0，全负数数组时结果错误；④ 输入只有一行时用 `input().split()` 只能读到第一行，第二行的数组读不到；⑤ 读入空输入时 `data[0]` 抛 IndexError。"
+      }
+    }
+  },
+  {
+    "id": "函-50",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "地址传递",
+      "指针交换",
+      "选择排序"
+    ],
+    "stem": "请编写函数 `swap` 交换两个整数（C 用指针参数，C++ 用引用，Python 直接交换列表中的两个元素），再编写函数 `sort_desc`，用选择排序把一组整数按从大到小排列，排序过程中的元素交换必须调用 `swap` 完成。主程序读入 n 和 n 个整数，输出降序排列后的序列。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数，用空格分隔，每个整数的绝对值不超过 10⁶。\n\n**输出格式：** 一行，n 个整数从大到小排列，相邻两个整数之间用一个空格分隔，行末不能有多余空格。\n\n**输入样例：**\n```text\n5\n3 1 4 1 5\n```\n**输出样例：**\n```text\n5 4 3 1 1\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 1000\n\nvoid swap(int *p, int *q);\nvoid sort_desc(int a[], int n);\nvoid print_array(const int a[], int n);\n\nint main(void)\n{\n    int n, i, a[MAXN];\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++)\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n\n    sort_desc(a, n);\n    print_array(a, n);\n    return 0;\n}\n\n/* 通过指针交换调用方的两个变量 */\nvoid swap(int *p, int *q)\n{\n    int t = *p;\n    *p = *q;\n    *q = t;\n}\n\n/* 选择排序：每轮把未排序区间的最大元素换到区间首部 */\nvoid sort_desc(int a[], int n)\n{\n    int i, j, k;\n\n    for (i = 0; i < n - 1; i++) {\n        k = i;\n        for (j = i + 1; j < n; j++)\n            if (a[j] > a[k])\n                k = j;\n        if (k != i)\n            swap(&a[i], &a[k]);\n    }\n}\n\nvoid print_array(const int a[], int n)\n{\n    int i;\n\n    for (i = 0; i < n; i++) {\n        if (i > 0)\n            putchar(' ');\n        printf(\"%d\", a[i]);\n    }\n    putchar('\\n');\n}",
+    "points": [
+      "swap 用 int * 形参并通过 *p、*q 修改调用方变量",
+      "sort_desc 外层控制轮次，内层找出最大元素下标 k",
+      "只在 k != i 时调用 swap(&a[i], &a[k])，交换真正生效",
+      "输出用空格分隔且行末没有多余空格"
+    ],
+    "analysis": "思路：`swap` 通过指针直接修改调用方的变量，`sort_desc` 用选择排序：每一轮在未排序区间里找最大值的下标，与区间首元素交换。排序中的交换全部通过 `swap(&a[i], &a[k])` 完成，体现地址传递的作用。\n\n关键步骤：① `swap(int *p, int *q)` 内部用临时变量 `t = *p; *p = *q; *q = t;`；② 外层 `i` 从 0 到 n−2，内层 `j` 从 i+1 到 n−1 找最大下标 k；③ `if (k != i) swap(&a[i], &a[k]);`；④ 输出时用 `if (i > 0) putchar(' ')` 控制分隔，保证行末没有多余空格。\n\n复杂度：比较次数 n(n−1)/2，时间 O(n²)，空间 O(1)。\n\n易错点：① `swap` 形参写成 `int p, int q`，函数内交换的只是副本，调用方数组完全不变；② 调用时漏写 `&`，把元素值当地址传入，运行时崩溃；③ 内层循环里每次都把 `k` 重置为 i，或者写成 `j < i`，排序结果错乱；④ 输出用 `printf(\"%d \", a[i])`，行末多一个空格；⑤ 外层写成 `i < n`，访问 `a[i+1]` 时越界。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nvoid swap(int &x, int &y);\nvoid sort_desc(std::vector<int> &a);\nvoid print_array(const std::vector<int> &a);\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 1000)\n        return 0;\n\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    sort_desc(a);\n    print_array(a);\n    return 0;\n}\n\nvoid swap(int &x, int &y)\n{\n    int t = x;\n    x = y;\n    y = t;\n}\n\nvoid sort_desc(std::vector<int> &a)\n{\n    int n = static_cast<int>(a.size());\n    for (int i = 0; i < n - 1; ++i) {\n        int k = i;\n        for (int j = i + 1; j < n; ++j)\n            if (a[j] > a[k])\n                k = j;\n        if (k != i)\n            ::swap(a[i], a[k]);\n    }\n}\n\nvoid print_array(const std::vector<int> &a)\n{\n    for (int i = 0; i < static_cast<int>(a.size()); ++i) {\n        if (i > 0)\n            std::cout << ' ';\n        std::cout << a[i];\n    }\n    std::cout << '\\n';\n}",
+        "points": [
+          "swap 用 int& 引用形参，函数内直接交换原变量",
+          "sort_desc 以 vector& 接收数组，内层找最大下标",
+          "交换处用 ::swap 明确调用自定义版本",
+          "输出同行空格分隔，行末无多余空格"
+        ],
+        "analysis": "思路：C++ 用引用代替指针，`swap(int &x, int &y)` 的形参就是实参的别名，函数内赋值会直接改到调用方。排序部分用 `std::vector<int> &` 传数组，结构与 C 版一致。\n\n关键步骤：① 声明并定义 `void swap(int &x, int &y)`，内部 `int t = x; x = y; y = t;`；② `sort_desc` 外层 i 到 n−2，内层找最大下标 k；③ 交换时写 `::swap(a[i], a[k])`，明确的全局限定避免与 `std::swap` 混淆；④ `print_array` 用 `if (i > 0) std::cout << ' '` 控制分隔。\n\n复杂度：O(n²) 时间，O(1) 额外空间。\n\n易错点：① 写成 `void swap(int x, int y)` 按值传递，数组顺序不会改变；② 忘记加 `::` 同时包含了 `<utility>`，可能因 `std::swap` 参与重载而产生歧义；③ 用标准库 `std::sort` 排序，虽然结果正确但不符合“选择排序、交换必须调用 swap”的要求；④ 输出末尾多打印一个空格；⑤ `a.size()` 与 int 比较产生有符号/无符号警告。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef swap(a: list[int], i: int, j: int) -> None:\n    a[i], a[j] = a[j], a[i]\n\n\ndef sort_desc(a: list[int]) -> None:\n    n = len(a)\n    for i in range(n - 1):\n        k = i\n        for j in range(i + 1, n):\n            if a[j] > a[k]:\n                k = j\n        if k != i:\n            swap(a, i, k)\n\n\ndef main() -> None:\n    data = list(map(int, sys.stdin.read().split()))\n    n = data[0]\n    a = data[1:1 + n]\n\n    sort_desc(a)\n    print(\" \".join(str(x) for x in a))\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "swap 通过列表下标原地交换两个元素",
+          "sort_desc 用选择排序找出最大元素下标",
+          "排序中的交换统一调用 swap 完成",
+          "join 输出，行末无多余空格"
+        ],
+        "analysis": "思路：Python 没有指针，函数参数传递的是对象的引用。对列表而言，函数内通过下标赋值可以原地修改调用方看到的列表，相当于“地址传递”的效果；因此 `swap(a, i, j)` 把列表和两个下标一起传入，在函数内完成 `a[i], a[j] = a[j], a[i]`。\n\n关键步骤：① `swap` 用元组解包一行完成交换；② `sort_desc` 外层 `i` 到 `n - 2`，内层 `j` 从 `i + 1` 找最大下标 `k`；③ `k != i` 时调用 `swap(a, i, k)`，保证排序过程确实使用了该函数；④ 输出用 `\" \".join(...)`，天然不会产生行末空格。\n\n复杂度：比较次数 n(n−1)/2，时间 O(n²)，空间 O(1)（不考虑输入列表）。\n\n易错点：① 把 `swap` 写成 `def swap(x, y)` 并交换形参，调用方列表不会变化；② `swap(a, i, k)` 传成 `swap(a[i], a[k])`，只交换了两个临时值；③ 内层写成 `range(i, n)` 时会把 `k = i` 的元素再比较一次，不影响正确性但低效；④ 输出用 `print(*a)` 时自定义分隔符写法不当，产生多余空格；⑤ 外层写成 `range(n)`，内层访问越界。"
+      }
+    }
+  },
+  {
+    "id": "函-51",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "返回多值",
+      "指针作参数",
+      "最大公约数"
+    ],
+    "stem": "请编写函数 `gcd(a, b)`，用辗转相除法求两个正整数的最大公约数；再编写函数 `reduce(a, b, ...)`，把分数 a/b 约分成最简分数，并把约分后的分子、分母带回调用处（C 用两个指针参数，C++ 用引用，Python 可以直接返回两个值）。主程序读入分子 a 和分母 b，输出约分后的分数，格式为 `分子/分母`。\n\n**输入格式：** 一行两个正整数 a 和 b（1 ≤ a, b ≤ 10⁹），用空格分隔。\n\n**输出格式：** 一行，形如 `p/q` 的最简分数，分子和分母都是正整数，中间没有空格。\n\n**输入样例：**\n```text\n18 24\n```\n**输出样例：**\n```text\n3/4\n```",
+    "solution": "#include <stdio.h>\n\nint gcd(int a, int b);\nvoid reduce(int a, int b, int *p, int *q);\n\nint main(void)\n{\n    int a, b, p, q;\n\n    if (scanf(\"%d %d\", &a, &b) != 2 || a <= 0 || b <= 0)\n        return 0;\n\n    reduce(a, b, &p, &q);\n    printf(\"%d/%d\\n\", p, q);\n    return 0;\n}\n\n/* 辗转相除法求最大公约数 */\nint gcd(int a, int b)\n{\n    int t;\n\n    while (b != 0) {\n        t = a % b;\n        a = b;\n        b = t;\n    }\n    return a;\n}\n\n/* 约分，结果通过指针 p、q 带回调用处 */\nvoid reduce(int a, int b, int *p, int *q)\n{\n    int g = gcd(a, b);\n\n    *p = a / g;\n    *q = b / g;\n}",
+    "points": [
+      "gcd 用 while (b != 0) 辗转相除，循环内正确更新 a、b",
+      "reduce 先求 gcd，再分别除以 gcd 得到最简分子分母",
+      "通过 int *p、int *q 把两个结果写回 main 的局部变量",
+      "main 传 &p、&q 并按 p/q 格式输出"
+    ],
+    "analysis": "思路：gcd 用辗转相除，reduce 先求 gcd，再分别除以 gcd，通过两个指针把结果写回 main 的局部变量。这展示了“一个函数产生多个结果”的典型做法：返回值只够带一个结果，其余结果用地址传递带回。\n\n关键步骤：① `gcd` 循环 `while (b != 0) { t = a % b; a = b; b = t; }`，返回 a；② `reduce(a, b, &p, &q)` 内部 `int g = gcd(a, b); *p = a / g; *q = b / g;`；③ main 中声明 p、q，调用 `reduce(a, b, &p, &q)` 后输出 `p/q`；④ 输入范围到 10⁹，仍在 int 的正数范围内，取余运算不会溢出。\n\n复杂度：gcd 时间 O(log min(a,b))，reduce 同阶，空间 O(1)。\n\n易错点：① reduce 的形参写成 `int p, int q`，函数内改的是副本，main 里的 p、q 仍是随机值；② 调用时漏写 `&p`、`&q`，链接或运行出错；③ gcd 里把 `a % b` 写成 `a / b`，求出的不是公约数；④ 忘记先求 gcd 就直接输出 a/b，没有约分；⑤ 用 `int` 存 a、b 时 10⁹ 在范围内，但若上限提高到 10¹⁸ 必须换 long long。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nint gcd(int a, int b);\nvoid reduce(int a, int b, int &p, int &q);\n\nint main()\n{\n    int a, b, p, q;\n\n    if (!(std::cin >> a >> b) || a <= 0 || b <= 0)\n        return 0;\n\n    reduce(a, b, p, q);\n    std::cout << p << '/' << q << '\\n';\n    return 0;\n}\n\nint gcd(int a, int b)\n{\n    while (b != 0) {\n        int t = a % b;\n        a = b;\n        b = t;\n    }\n    return a;\n}\n\nvoid reduce(int a, int b, int &p, int &q)\n{\n    int g = gcd(a, b);\n    p = a / g;\n    q = b / g;\n}",
+        "points": [
+          "gcd 用辗转相除，循环条件与更新顺序正确",
+          "reduce 通过 int& 引用形参直接写回调用方变量",
+          "调用处直接传 p、q，无需取地址符",
+          "输出严格为 p/q 格式，不带空格"
+        ],
+        "analysis": "思路：C++ 用引用实现多结果返回：`reduce(int a, int b, int &p, int &q)` 的 p、q 是调用方变量的别名，函数内赋值即写回。gcd 与 C 版完全一致。\n\n关键步骤：① `gcd` 循环 `int t = a % b; a = b; b = t;` 直到 b 为 0，返回 a；② `reduce` 内 `int g = gcd(a, b); p = a / g; q = b / g;`；③ main 声明 p、q 后直接 `reduce(a, b, p, q);`——引用形参不需要 `&`；④ `std::cout << p << '/' << q` 输出。\n\n复杂度：O(log min(a,b)) 时间，O(1) 空间。\n\n易错点：① 把形参写成 `int p, int q` 而漏掉 `&`，函数内只改副本；② 调用时按 C 的习惯写 `reduce(a, b, &p, &q)`，编译报错；③ 同时提供指针重载造成调用歧义；④ 忘记检查 a、b 为正，除以 0 的 gcd 会崩溃；⑤ 把 `/` 与 `%` 写反，辗转相除变成无限循环。"
+      },
+      "python": {
+        "solution": "def gcd(a: int, b: int) -> int:\n    while b != 0:\n        a, b = b, a % b\n    return a\n\n\ndef reduce_fraction(a: int, b: int) -> tuple[int, int]:\n    g = gcd(a, b)\n    return a // g, b // g\n\n\ndef main() -> None:\n    a, b = map(int, input().split())\n    p, q = reduce_fraction(a, b)\n    print(f\"{p}/{q}\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "gcd 用元组赋值实现辗转相除，循环到 b 为 0",
+          "reduce_fraction 返回 (分子, 分母) 元组实现多结果",
+          "用 // 做整数除法，避免出现浮点分子分母",
+          "按 p/q 格式输出且不带空格"
+        ],
+        "analysis": "思路：Python 函数天然支持多返回值：`return a // g, b // g` 实际返回一个元组，调用处 `p, q = reduce_fraction(a, b)` 自动解包，相当于 C 中两个指针输出参数的效果，且不需要额外声明。\n\n关键步骤：① `gcd` 用 `while b != 0: a, b = b, a % b`，循环结束返回 a；② `reduce_fraction` 先调用 gcd，再用 `//` 整除得到最简分子分母并返回元组；③ main 用 `map(int, input().split())` 读入两个数；④ `print(f\"{p}/{q}\")` 输出。\n\n复杂度：O(log min(a,b)) 时间，O(1) 空间。\n\n易错点：① 用 `/` 而不是 `//`，得到 `3.0/4.0` 这样的浮点结果，输出格式错误；② 返回 `[p, q]` 列表后忘记解包，打印出整个列表；③ gcd 里写成 `a, b = b, a // b`，混淆了取余与整除，循环不收敛；④ 对负数使用 `%` 时符号与 C 不同，本题保证正整数所以不受影响，但扩展时要注意；⑤ 直接调用 `math.gcd` 而不写自己的函数，不符合题目要求。"
+      }
+    }
+  },
+  {
+    "id": "函-52",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "嵌套调用",
+      "阶乘",
+      "组合数"
+    ],
+    "stem": "请编写函数 `fact(n)` 返回 n 的阶乘（n ≤ 20，用 64 位整数保存结果）；再编写函数 `comb(n, k)`，在内部调用 `fact` 计算组合数 C(n, k) = n! / (k! × (n−k)!)。主程序读入 n 和 k，输出 C(n, k) 的值。\n\n**输入格式：** 一行两个整数 n 和 k（0 ≤ k ≤ n ≤ 20），用空格分隔。\n\n**输出格式：** 一行一个整数，表示 C(n, k) 的值。\n\n**输入样例：**\n```text\n6 2\n```\n**输出样例：**\n```text\n15\n```",
+    "solution": "#include <stdio.h>\n\nlong long fact(int n);\nlong long comb(int n, int k);\n\nint main(void)\n{\n    int n, k;\n\n    if (scanf(\"%d %d\", &n, &k) != 2 || n < 0 || k < 0 || k > n || n > 20)\n        return 0;\n\n    printf(\"%lld\\n\", comb(n, k));\n    return 0;\n}\n\n/* 返回 n!，n <= 20 时 20! 仍在 long long 范围内 */\nlong long fact(int n)\n{\n    long long r = 1;\n    int i;\n\n    for (i = 2; i <= n; i++)\n        r *= i;\n    return r;\n}\n\n/* 组合数：在函数内部调用 fact，体现嵌套调用 */\nlong long comb(int n, int k)\n{\n    return fact(n) / (fact(k) * fact(n - k));\n}",
+    "points": [
+      "fact 用 long long 返回，n = 0 或 1 时循环不执行、结果为 1",
+      "comb 内部三次调用 fact，按 n!/(k!(n−k)!) 计算",
+      "main 校验 0 ≤ k ≤ n ≤ 20 后再调用",
+      "用 %lld 输出 long long，避免格式与类型不匹配"
+    ],
+    "analysis": "思路：`fact(n)` 返回 n!，`comb(n,k)` 内三次调用 `fact`，按公式计算组合数。这是“函数 A 调用函数 B”的直观例子：主函数只调用 comb，comb 再把阶乘计算委托给 fact。\n\n关键步骤：① `fact` 用 `long long r = 1`，从 2 乘到 n，n = 0 或 1 时循环不执行直接返回 1；② `comb` 返回 `fact(n) / (fact(k) * fact(n - k))`，三个阶乘都是整数，除法是整除且结果一定为整数；③ main 读入 n、k 并检查 `0 ≤ k ≤ n ≤ 20`；④ 输出用 `%lld` 匹配 long long。\n\n复杂度：三次阶乘各 O(n)，总时间 O(n)，空间 O(1)。\n\n易错点：① 阶乘用 `int`，13! 就溢出，n = 20 时结果完全错误；② 漏写括号写成 `fact(n) / fact(k) * fact(n - k)`，运算顺序变成先除后乘，结果不对；③ n = 20 时 20! = 2432902008176640000，仍在 long long 范围内，但 21! 会溢出，需要靠约束保证；④ 忘记处理 k = 0 或 k = n 的边界，而 fact 从 2 开始累乘正好保证 0! = 1；⑤ 输出用 `%d` 打印 long long，在 Windows 上会截断成错误结果。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nlong long fact(int n);\nlong long comb(int n, int k);\n\nint main()\n{\n    int n, k;\n\n    if (!(std::cin >> n >> k) || n < 0 || k < 0 || k > n || n > 20)\n        return 0;\n\n    std::cout << comb(n, k) << '\\n';\n    return 0;\n}\n\nlong long fact(int n)\n{\n    long long r = 1;\n    for (int i = 2; i <= n; ++i)\n        r *= i;\n    return r;\n}\n\nlong long comb(int n, int k)\n{\n    return fact(n) / (fact(k) * fact(n - k));\n}",
+        "points": [
+          "fact 以 long long 返回，循环从 2 乘到 n",
+          "comb 调用 fact 三次并按括号分组做整除",
+          "main 检查输入范围 k ≤ n ≤ 20",
+          "用 std::cout 直接输出 long long，无需格式符"
+        ],
+        "analysis": "思路：与 C 版相同，`comb` 内部调用 `fact` 完成阶乘计算，形成嵌套调用。C++ 的 `std::cout` 会根据类型自动选择输出格式，因此 long long 不需要 `%lld` 这样的格式符。\n\n关键步骤：① `fact` 返回 `long long`，从 2 乘到 n；② `comb` 直接 `return fact(n) / (fact(k) * fact(n - k));`；③ 主函数读入并校验范围；④ 输出 `std::cout << comb(n, k) << '\\n'`。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① 把返回值写成 `int`，n = 13 起结果溢出；② `fact(k) * fact(n - k)` 少写括号导致运算顺序错误；③ 用 `double` 计算阶乘再做除法，大数会丢精度，n = 20 时结果可能差 1；④ 在头文件之外重复定义导致重定义错误；⑤ 用 `std::endl` 刷新，正确但没有必要。"
+      },
+      "python": {
+        "solution": "def fact(n: int) -> int:\n    r = 1\n    for i in range(2, n + 1):\n        r *= i\n    return r\n\n\ndef comb(n: int, k: int) -> int:\n    return fact(n) // (fact(k) * fact(n - k))\n\n\ndef main() -> None:\n    n, k = map(int, input().split())\n    print(comb(n, k))\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "fact 用循环累乘，0! 与 1! 返回 1",
+          "comb 调用 fact 三次并用 // 做整除",
+          "主程序读入 n、k 后直接输出结果",
+          "整数运算天然无溢出，结果与 C 版一致"
+        ],
+        "analysis": "思路：`fact` 用循环累乘，`comb` 调用三次 `fact` 后做整除。Python 的整数是任意精度，20! 甚至更大的阶乘都不会溢出，但为了与 C/C++ 版本保持同一算法，仍按公式用三个阶乘相除。\n\n关键步骤：① `fact(n)` 中 `r = 1`，`for i in range(2, n + 1): r *= i`；② `comb` 用 `//` 整除，避免 `/` 产生浮点数；③ `main` 用 `map(int, input().split())` 读入 n、k；④ `print(comb(n, k))` 输出。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① 用 `/` 而不是 `//`，输出变成 `15.0`，与样例不符；② `range(2, n + 1)` 写成 `range(1, n + 1)`，结果虽然相同但多一次乘 1，不影响正确性；③ `comb` 里写成 `fact(n) // fact(k) * fact(n - k)`，运算顺序错误；④ 直接用 `math.comb`，虽然结果正确但不符合“调用 fact 计算”的要求；⑤ 输入多空格或换行时用一次 `input()` 读不全，可改用 `sys.stdin`。"
+      }
+    }
+  },
+  {
+    "id": "函-53",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "数学公式",
+      "函数调用",
+      "浮点数"
+    ],
+    "stem": "用泰勒级数计算 e^x 的近似值：e^x ≈ Σ(i=0…n−1) x^i / i!，即取 i 从 0 到 n−1 的前 n 项之和。要求把公式拆成三个函数实现：\n\n- `power(x, e)`：返回 x 的 e 次方（e ≥ 0，用循环连乘，不许调用库函数 `pow`）；\n- `factorial(m)`：返回 m 的阶乘；\n- `exp_taylor(x, n)`：调用上面两个函数，返回前 n 项之和。\n\n主程序读入实数 x 和整数 n，输出 `exp_taylor(x, n)` 的结果，保留 4 位小数。\n\n**输入格式：** 一行一个实数 x（−5.0 ≤ x ≤ 5.0）和一个整数 n（1 ≤ n ≤ 12），用空格分隔。\n\n**输出格式：** 一行一个实数，保留 4 位小数。\n\n**输入样例：**\n```text\n2 8\n```\n**输出样例：**\n```text\n7.3810\n```",
+    "solution": "#include <stdio.h>\n\ndouble power(double x, int e);\ndouble factorial(int m);\ndouble exp_taylor(double x, int n);\n\nint main(void)\n{\n    double x, s;\n    int n;\n\n    if (scanf(\"%lf %d\", &x, &n) != 2 || n < 1 || n > 12)\n        return 0;\n\n    s = exp_taylor(x, n);\n    printf(\"%.4f\\n\", s);\n    return 0;\n}\n\n/* x 的 e 次方，用循环连乘，e = 0 时返回 1 */\ndouble power(double x, int e)\n{\n    double r = 1.0;\n    int i;\n\n    for (i = 0; i < e; i++)\n        r *= x;\n    return r;\n}\n\n/* m 的阶乘，用 double 保存以避免整数溢出 */\ndouble factorial(int m)\n{\n    double r = 1.0;\n    int i;\n\n    for (i = 2; i <= m; i++)\n        r *= i;\n    return r;\n}\n\n/* 前 n 项之和：i 从 0 到 n-1，每项调用 power 与 factorial */\ndouble exp_taylor(double x, int n)\n{\n    double s = 0.0;\n    int i;\n\n    for (i = 0; i < n; i++)\n        s += power(x, i) / factorial(i);\n    return s;\n}",
+    "points": [
+      "power 用循环连乘，e = 0 时返回 1，不调用 pow",
+      "factorial 返回 double，从 2 乘到 m，0! 与 1! 为 1",
+      "exp_taylor 累加 i = 0..n−1 共 n 项，每项调用前两个函数",
+      "用 %.4f 输出，保留 4 位小数"
+    ],
+    "analysis": "思路：把 e^x 的泰勒公式拆成幂、阶乘、求和三个函数：`exp_taylor` 在第 i 项调用 `power(x, i)` 和 `factorial(i)`，形成两层嵌套调用；main 只负责读入和格式化输出。\n\n关键步骤：① `power` 用 `double r = 1.0`，循环 e 次乘 x，e = 0 时返回 1；② `factorial` 返回 double，从 2 乘到 m，0!、1! 返回 1，用 double 避免大整数溢出；③ `exp_taylor` 从 i = 0 到 n−1 累加 `power(x, i) / factorial(i)`；④ main 用 `scanf(\"%lf %d\", &x, &n)` 读入，`printf(\"%.4f\\n\", s)` 输出。\n\n复杂度：第 i 项要 O(i) 次乘法，总时间 O(n²)（本题 n ≤ 12，影响很小；若用递推 `term *= x / i` 可降到 O(n)）；空间 O(1)。\n\n易错点：① 把“前 n 项”理解成 i = 1..n，漏掉常数项 1；② `scanf` 用 `%f` 读 double，数据错误，必须用 `%lf`；③ `power` 的循环写成 `i <= e`，多乘一次；④ 输出用 `%f` 默认 6 位小数，与要求的 4 位不符；⑤ 阶乘用 int 保存，n 超过 12 后很快溢出，本题虽在范围内，但用 double 更稳妥。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <iomanip>\n\ndouble power(double x, int e);\ndouble factorial(int m);\ndouble exp_taylor(double x, int n);\n\nint main()\n{\n    double x;\n    int n;\n\n    if (!(std::cin >> x >> n) || n < 1 || n > 12)\n        return 0;\n\n    std::cout << std::fixed << std::setprecision(4) << exp_taylor(x, n) << '\\n';\n    return 0;\n}\n\ndouble power(double x, int e)\n{\n    double r = 1.0;\n    for (int i = 0; i < e; ++i)\n        r *= x;\n    return r;\n}\n\ndouble factorial(int m)\n{\n    double r = 1.0;\n    for (int i = 2; i <= m; ++i)\n        r *= i;\n    return r;\n}\n\ndouble exp_taylor(double x, int n)\n{\n    double s = 0.0;\n    for (int i = 0; i < n; ++i)\n        s += power(x, i) / factorial(i);\n    return s;\n}",
+        "points": [
+          "用 <iomanip> 的 fixed 与 setprecision(4) 控制小数位",
+          "power 用循环连乘，e = 0 时返回 1.0",
+          "factorial 返回 double，避免阶乘整数溢出",
+          "exp_taylor 中调用 power 与 factorial，项数为 n"
+        ],
+        "analysis": "思路：C++ 版与 C 版算法相同，差别在输入输出：`std::cin >> x >> n` 读实数与整数，`std::fixed << std::setprecision(4)` 把输出固定为 4 位小数。\n\n关键步骤：① 三个函数的声明与定义与 C 版一一对应；② `power` 返回 double，循环 e 次；③ `factorial` 从 2 乘到 m；④ `exp_taylor` 累加 i = 0..n−1；⑤ 输出前设置 `std::fixed`，否则 `setprecision(4)` 表示有效数字位数而不是小数位数。\n\n复杂度：O(n²) 时间，O(1) 空间。\n\n易错点：① 只写 `std::setprecision(4)` 而不加 `std::fixed`，得到 4 位有效数字（如 7.381）而不是 4 位小数；② `std::cin >> x` 对 `2` 这样的整数输入同样能正确解析为 2.0；③ 把累加写成 `i <= n`，多算一项；④ 用 `pow(x, i)` 代替自己的 `power`，不符合题目要求；⑤ 忘记包含 `<iomanip>` 导致 `setprecision` 未声明。"
+      },
+      "python": {
+        "solution": "def power(x: float, e: int) -> float:\n    r = 1.0\n    for _ in range(e):\n        r *= x\n    return r\n\n\ndef factorial(m: int) -> float:\n    r = 1.0\n    for i in range(2, m + 1):\n        r *= i\n    return r\n\n\ndef exp_taylor(x: float, n: int) -> float:\n    total = 0.0\n    for i in range(n):\n        total += power(x, i) / factorial(i)\n    return total\n\n\ndef main() -> None:\n    data = input().split()\n    x = float(data[0])\n    n = int(data[1])\n    print(f\"{exp_taylor(x, n):.4f}\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "power 用循环连乘，e = 0 时返回 1.0",
+          "factorial 返回 float，循环从 2 到 m",
+          "exp_taylor 累加 i = 0..n−1 共 n 项",
+          "f-string 的 :.4f 保证输出 4 位小数"
+        ],
+        "analysis": "思路：三个函数的拆分与 C 版一致：`power` 连乘求幂，`factorial` 连乘求阶乘，`exp_taylor` 累加前 n 项。Python 中除法 `/` 天然得到浮点数，不需要把整数强制转换成 double。\n\n关键步骤：① `power(x, e)` 用 `r = 1.0`，循环 e 次乘 x；② `factorial(m)` 返回 float，`range(2, m + 1)` 累乘；③ `exp_taylor` 中 `total += power(x, i) / factorial(i)`；④ `main` 用 `input().split()` 读两个字段，`float()` 与 `int()` 分别转换；⑤ `f\"{value:.4f}\"` 输出 4 位小数。\n\n复杂度：O(n²) 时间，O(1) 空间。\n\n易错点：① 用 `x ** i` 代替 `power` 函数，虽然结果相近，但没有实现题目要求的函数拆分；② 用 `/` 之外的整除 `//` 处理幂或阶乘，结果变成 0；③ 项数写成 `range(1, n + 1)`，漏掉常数项；④ 输出用 `round(value, 4)`，末尾的 0 会被丢掉（如 7.381 而不是 7.3810）；⑤ 读入时把 `n` 也转成 float，`range()` 报错。"
+      }
+    }
+  },
+  {
+    "id": "函-54",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "菜单分派",
+      "整数除法",
+      "除零判断"
+    ],
+    "stem": "请编写四个函数分别实现整数的加、减、乘、除（建议命名为 `add`、`sub`、`mul`、`divide`）。除法函数在除数为 0 时要报告失败，否则给出商（C 用返回 0/1 加指针输出参数的方式，C++ 可用返回 0/1 加引用，Python 可以用 None 表示失败）。主程序读入一个操作码 op 和两个整数 a、b，按下面的菜单分派：\n\n- op 为 1：输出 a + b；\n- op 为 2：输出 a − b；\n- op 为 3：输出 a × b；\n- op 为 4：输出 a ÷ b，结果保留 2 位小数；若 b 为 0，输出 `error: divide by zero`；\n- 其它操作码：输出 `error: unknown operator`。\n\n加减乘的结果按整数输出，除法的结果保留 2 位小数。\n\n**输入格式：** 一行三个整数 op、a、b（0 ≤ op ≤ 9，|a| ≤ 1000，|b| ≤ 1000），用空格分隔。\n\n**输出格式：** 一行，按上面的规则输出对应的结果。\n\n**输入样例：**\n```text\n4 7 2\n```\n**输出样例：**\n```text\n3.50\n```",
+    "solution": "#include <stdio.h>\n\nint add(int a, int b);\nint sub(int a, int b);\nint mul(int a, int b);\nint divide(int a, int b, double *result);\n\nint main(void)\n{\n    int op, a, b;\n    double r;\n\n    if (scanf(\"%d %d %d\", &op, &a, &b) != 3)\n        return 0;\n\n    switch (op) {\n    case 1:\n        printf(\"%d\\n\", add(a, b));\n        break;\n    case 2:\n        printf(\"%d\\n\", sub(a, b));\n        break;\n    case 3:\n        printf(\"%d\\n\", mul(a, b));\n        break;\n    case 4:\n        if (divide(a, b, &r))\n            printf(\"%.2f\\n\", r);\n        else\n            printf(\"error: divide by zero\\n\");\n        break;\n    default:\n        printf(\"error: unknown operator\\n\");\n        break;\n    }\n\n    return 0;\n}\n\nint add(int a, int b)\n{\n    return a + b;\n}\n\nint sub(int a, int b)\n{\n    return a - b;\n}\n\nint mul(int a, int b)\n{\n    return a * b;\n}\n\n/* 成功返回 1 并通过指针带回商；除数为 0 返回 0 */\nint divide(int a, int b, double *result)\n{\n    if (b == 0)\n        return 0;\n    *result = (double)a / b;\n    return 1;\n}",
+    "points": [
+      "四个运算函数各自独立实现，签名为 int 参数与返回值",
+      "divide 先判断 b == 0 再除法，用返回值表示成功或失败",
+      "商通过 double *result 带回调用方，避免整数除法截断",
+      "switch 四个分支加 default，除零提示与未知操作码文案完全匹配"
+    ],
+    "analysis": "思路：四个运算各自成函数，main 用 switch 按操作码分派。除法需要“成功/失败”两个信息，因此让 `divide` 返回 int 状态、通过 `double *result` 带回商，主函数根据返回值决定打印商还是错误提示。\n\n关键步骤：① add/sub/mul 直接返回 int；② `divide(a, b, &r)` 先判断 `b == 0` 返回 0，否则 `*result = (double)a / b; return 1;`；③ switch 的每个分支处理完 break，default 输出未知操作码；④ 除法用 `printf(\"%.2f\\n\", r)`，加减乘用 `printf(\"%d\\n\", ...)`。\n\n复杂度：O(1) 时间与空间。\n\n易错点：① 除法用整数相除 `a / b`，7/2 得到 3 而不是 3.50；② 先做除法再判断除零，程序直接崩溃；③ `divide` 的第三个参数写成 `double result`，商写不回 main；④ switch 分支漏写 break 造成贯穿，例如 op 为 1 时把减法也执行了；⑤ 除零提示写成 `error` 或 `Divide by zero`，与样例要求的 `error: divide by zero` 不一致。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <iomanip>\n\nint add(int a, int b);\nint sub(int a, int b);\nint mul(int a, int b);\nbool divide(int a, int b, double &result);\n\nint main()\n{\n    int op, a, b;\n\n    if (!(std::cin >> op >> a >> b))\n        return 0;\n\n    switch (op) {\n    case 1:\n        std::cout << add(a, b) << '\\n';\n        break;\n    case 2:\n        std::cout << sub(a, b) << '\\n';\n        break;\n    case 3:\n        std::cout << mul(a, b) << '\\n';\n        break;\n    case 4: {\n        double r;\n        if (divide(a, b, r))\n            std::cout << std::fixed << std::setprecision(2) << r << '\\n';\n        else\n            std::cout << \"error: divide by zero\\n\";\n        break;\n    }\n    default:\n        std::cout << \"error: unknown operator\\n\";\n        break;\n    }\n\n    return 0;\n}\n\nint add(int a, int b)\n{\n    return a + b;\n}\n\nint sub(int a, int b)\n{\n    return a - b;\n}\n\nint mul(int a, int b)\n{\n    return a * b;\n}\n\nbool divide(int a, int b, double &result)\n{\n    if (b == 0)\n        return false;\n    result = static_cast<double>(a) / b;\n    return true;\n}",
+        "points": [
+          "四个运算函数各自实现，divide 返回 bool 并用引用带回商",
+          "switch 分派四个操作码并处理默认分支",
+          "除法分支用 fixed 与 setprecision(2) 输出两位小数",
+          "除零与未知操作码的提示文案与题面完全一致"
+        ],
+        "analysis": "思路：C++ 中把除法状态改用 `bool` 返回，商通过 `double &result` 引用带回；`switch` 的 case 4 内部声明 `double r` 并加花括号形成独立作用域。\n\n关键步骤：① 四个函数分别实现加减乘除；② `divide` 中 `if (b == 0) return false;`，否则 `result = static_cast<double>(a) / b; return true;`；③ main 中 `switch (op)` 分派，case 4 用 `if (divide(...))` 判断；④ 除法输出前设置 `std::fixed << std::setprecision(2)`。\n\n复杂度：O(1) 时间与空间。\n\n易错点：① 除法写成 `a / b` 整数除法，输出 3 而不是 3.50；② case 4 中忘写花括号，`double r` 的声明跨越 case 标签导致编译错误；③ `divide` 形参漏写 `&`，商写不回；④ 缺少 default 分支，非法操作码没有任何输出；⑤ 每次输出都设置一次 `std::fixed`，虽然正确但可提前统一设置。"
+      },
+      "python": {
+        "solution": "def add(a: int, b: int) -> int:\n    return a + b\n\n\ndef sub(a: int, b: int) -> int:\n    return a - b\n\n\ndef mul(a: int, b: int) -> int:\n    return a * b\n\n\ndef divide(a: int, b: int) -> float | None:\n    if b == 0:\n        return None\n    return a / b\n\n\ndef main() -> None:\n    op, a, b = map(int, input().split())\n\n    if op == 1:\n        print(add(a, b))\n    elif op == 2:\n        print(sub(a, b))\n    elif op == 3:\n        print(mul(a, b))\n    elif op == 4:\n        result = divide(a, b)\n        if result is None:\n            print(\"error: divide by zero\")\n        else:\n            print(f\"{result:.2f}\")\n    else:\n        print(\"error: unknown operator\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "四个运算函数独立实现，divide 用 None 表示除零失败",
+          "菜单分支用 if/elif/else 覆盖 1~4 与非法操作码",
+          "除法结果用 f-string 的 :.2f 保留两位小数",
+          "错误提示文案与样例完全一致"
+        ],
+        "analysis": "思路：Python 没有指针和引用，最自然的“失败”表示是返回 `None`：`divide` 在除数为 0 时返回 `None`，调用方用 `is None` 判断，其余情况返回浮点商。菜单用 if/elif 链分派。\n\n关键步骤：① add/sub/mul 各一行返回；② `divide(a, b)` 先判断 `b == 0` 返回 `None`，否则 `return a / b`；③ `main` 用 `map(int, input().split())` 一次读入三个整数；④ `op == 4` 时先调用 divide，再判断 `result is None`；⑤ 用 `f\"{result:.2f}\"` 输出两位小数。\n\n复杂度：O(1) 时间与空间。\n\n易错点：① 用 `if not result:` 判断失败，商为 0.0 时会被误判成除零；② 除法写成 `a // b`，7//2 得到 3；③ 把 `None` 直接参与格式化，抛出 TypeError；④ 用 `1/0` 触发异常却不捕获，程序崩溃；⑤ 输出的错误文案大小写或空格与题面不一致。"
+      }
+    }
+  },
+  {
+    "id": "函-55",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "数组统计",
+      "数组传参",
+      "平均值"
+    ],
+    "stem": "给定 n 个整数，要求把统计任务拆成四个函数，由主函数依次调用完成：\n\n- `read_array`：读入 n 个整数；\n- `sum_array`：返回所有元素之和；\n- `index_of_max`：返回最大值第一次出现的下标（下标从 0 开始）；\n- `count_above_average`：返回严格大于平均值的元素个数，平均值 = 总和 / n，按实数除法计算。\n\n主程序读入 n 和 n 个整数后，输出三行：`sum=总和`、`max_index=最大值首次出现的下标`、`above=严格大于平均值的元素个数`。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数，用空格分隔，每个整数的绝对值不超过 10⁶。\n\n**输出格式：** 三行，依次为 `sum=总和`、`max_index=最大值首次出现的下标`、`above=严格大于平均值的元素个数`。\n\n**输入样例：**\n```text\n6\n4 7 2 9 5 6\n```\n**输出样例：**\n```text\nsum=33\nmax_index=3\nabove=3\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 1000\n\nvoid read_array(int a[], int n);\nlong long sum_array(const int a[], int n);\nint index_of_max(const int a[], int n);\nint count_above_average(const int a[], int n);\n\nint main(void)\n{\n    int n, a[MAXN];\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > MAXN)\n        return 0;\n\n    read_array(a, n);\n    printf(\"sum=%lld\\n\", sum_array(a, n));\n    printf(\"max_index=%d\\n\", index_of_max(a, n));\n    printf(\"above=%d\\n\", count_above_average(a, n));\n    return 0;\n}\n\nvoid read_array(int a[], int n)\n{\n    int i;\n\n    for (i = 0; i < n; i++)\n        scanf(\"%d\", &a[i]);\n}\n\nlong long sum_array(const int a[], int n)\n{\n    int i;\n    long long total = 0;\n\n    for (i = 0; i < n; i++)\n        total += a[i];\n    return total;\n}\n\nint index_of_max(const int a[], int n)\n{\n    int i, idx = 0;\n\n    for (i = 1; i < n; i++)\n        if (a[i] > a[idx])\n            idx = i;\n    return idx;\n}\n\nint count_above_average(const int a[], int n)\n{\n    double average = (double)sum_array(a, n) / n;\n    int i, cnt = 0;\n\n    for (i = 0; i < n; i++)\n        if (a[i] > average)\n            cnt++;\n    return cnt;\n}",
+    "points": [
+      "四个函数职责清晰：读入、求和、最大下标、超平均值计数",
+      "count_above_average 内部调用 sum_array 求平均值，体现函数协作",
+      "求和用 long long，避免 1000 × 10⁶ 量级在 int 边缘出问题",
+      "最大下标用严格大于更新，保证相同最大值时取第一次出现的下标"
+    ],
+    "analysis": "思路：本题的核心是“拆分”：读入、求和、找最大下标、统计超平均值个数分别由四个函数完成，`count_above_average` 内部再调用 `sum_array` 求平均值，形成函数之间的嵌套调用。main 只负责读 n、调用 read_array 并按格式输出三行。\n\n关键步骤：① `read_array` 用循环 `scanf` 读入 n 个数；② `sum_array` 用 long long 累加；③ `index_of_max` 从下标 1 开始与当前最大下标比较，只有严格大于才更新，保证得到第一次出现的下标；④ `count_above_average` 先 `(double)sum_array(a, n) / n` 求平均值，再统计严格大于平均值的元素个数；⑤ 输出 `sum=`、`max_index=`、`above=` 三行。\n\n复杂度：四个函数合计 O(n) 时间（`count_above_average` 内部再求一次和，仍是线性），空间 O(n)。\n\n易错点：① 最大下标更新条件写成 `>=`，遇到重复最大值时返回最后一个下标；② 平均值用整数除法 `sum / n`，小数部分被截断，边界元素判断错误；③ `count_above_average` 里忘记把 sum 转成 double，同样是整数除法；④ 下标从 1 开始输出，与样例的 0 基下标不符；⑤ 把全部工作写在 main 里，没有拆成四个函数，不符合题目要求；⑥ 求和用 int，数据规模放大后溢出。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nvoid read_array(std::vector<int> &a, int n);\nlong long sum_array(const std::vector<int> &a);\nint index_of_max(const std::vector<int> &a);\nint count_above_average(const std::vector<int> &a);\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 1000)\n        return 0;\n\n    std::vector<int> a;\n    read_array(a, n);\n\n    std::cout << \"sum=\" << sum_array(a) << '\\n';\n    std::cout << \"max_index=\" << index_of_max(a) << '\\n';\n    std::cout << \"above=\" << count_above_average(a) << '\\n';\n    return 0;\n}\n\nvoid read_array(std::vector<int> &a, int n)\n{\n    a.resize(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n}\n\nlong long sum_array(const std::vector<int> &a)\n{\n    long long total = 0;\n    for (int x : a)\n        total += x;\n    return total;\n}\n\nint index_of_max(const std::vector<int> &a)\n{\n    int idx = 0;\n    for (int i = 1; i < static_cast<int>(a.size()); ++i)\n        if (a[i] > a[idx])\n            idx = i;\n    return idx;\n}\n\nint count_above_average(const std::vector<int> &a)\n{\n    double average = static_cast<double>(sum_array(a)) / a.size();\n    int cnt = 0;\n    for (int x : a)\n        if (x > average)\n            ++cnt;\n    return cnt;\n}",
+        "points": [
+          "read_array 用 vector& 按引用扩容并读入数据",
+          "sum_array 返回 long long，范围 for 累加",
+          "index_of_max 用严格大于更新，返回首次出现的下标",
+          "count_above_average 调用 sum_array 求平均，按 double 比较"
+        ],
+        "analysis": "思路：C++ 用 `std::vector<int>` 承载不定长数组，四个函数的职责与 C 版相同。`read_array(std::vector<int> &a, int n)` 通过引用修改调用方的容器，`a.resize(n)` 后逐个读入。\n\n关键步骤：① `read_array` 中先 `a.resize(n)` 再循环 `std::cin >> a[i]`；② `sum_array` 用范围 for 累加到 long long；③ `index_of_max` 从 1 开始比较，严格大于才更新；④ `count_above_average` 先 `static_cast<double>(sum_array(a)) / a.size()` 求平均，再统计；⑤ 主函数按三行输出。\n\n复杂度：O(n) 时间，O(n) 空间。\n\n易错点：① 参数写成按值传递 `std::vector<int> a`，`read_array` 读入的数据丢失；② 未调用 `resize` 就直接 `a[i] = ...`，越界写入；③ 平均值写成 `sum_array(a) / a.size()`，整数除法截断；④ `index_of_max` 用 `>=` 更新，重复最大值时下标错误；⑤ `a.size()` 与 int 比较产生有符号/无符号警告。"
+      },
+      "python": {
+        "solution": "def read_array(n: int) -> list[int]:\n    a: list[int] = []\n    while len(a) < n:\n        a.extend(map(int, input().split()))\n    return a\n\n\ndef sum_array(a: list[int]) -> int:\n    total = 0\n    for x in a:\n        total += x\n    return total\n\n\ndef index_of_max(a: list[int]) -> int:\n    idx = 0\n    for i in range(1, len(a)):\n        if a[i] > a[idx]:\n            idx = i\n    return idx\n\n\ndef count_above_average(a: list[int]) -> int:\n    average = sum_array(a) / len(a)\n    cnt = 0\n    for x in a:\n        if x > average:\n            cnt += 1\n    return cnt\n\n\ndef main() -> None:\n    n = int(input())\n    a = read_array(n)\n\n    print(f\"sum={sum_array(a)}\")\n    print(f\"max_index={index_of_max(a)}\")\n    print(f\"above={count_above_average(a)}\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "read_array 支持数组跨多行输入，直到凑满 n 个元素",
+          "sum_array 循环累加，index_of_max 严格大于才更新",
+          "count_above_average 内部调用 sum_array，用真除法求平均",
+          "三行 f-string 输出与样例格式一致"
+        ],
+        "analysis": "思路：`read_array(n)` 通过循环 `input()` 收集数据，兼容数字跨行书写的情况；`sum_array` 累加，`index_of_max` 找首次出现的最大下标，`count_above_average` 调用 `sum_array` 后用真除法求平均值再统计。\n\n关键步骤：① `read_array` 用 `while len(a) < n: a.extend(map(int, input().split()))`，凑满 n 个元素后返回；② `sum_array` 用循环累加；③ `index_of_max` 从下标 1 开始，严格大于才更新；④ `count_above_average` 中 `average = sum_array(a) / len(a)`，再遍历统计；⑤ main 读 n 后调用四个函数并打印三行。\n\n复杂度：O(n) 时间，O(n) 空间。\n\n易错点：① 用 `sum / n` 之外还做 `int()` 截断，平均值精度丢失导致边界判断错误；② 最大下标用 `>=` 更新，返回最后一个最大值的位置；③ `read_array` 只读一行，数组跨行时数据缺失；④ 输入为空时 `int(input())` 抛异常；⑤ 直接用内置 `max` 和 `sum`，没有实现题目要求的四个函数。"
+      }
+    }
+  },
+  {
+    "id": "函-56",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "进制转换",
+      "取模",
+      "字符映射"
+    ],
+    "stem": "请编写函数 `digit_char(d)`，把 0~15 的数值转换成对应的大写十六进制字符（0~9 对应 `0`~`9`，10~15 对应 `A`~`F`）；再编写函数 `to_base(n, base, ...)`，把非负整数 n 转换成 base 进制（2 ≤ base ≤ 16）的字符串并把结果交给调用方（C 用字符数组输出参数，C++ 返回 `std::string`，Python 直接返回字符串），函数内部要调用 `digit_char` 完成数值到字符的映射。主程序读入 n 和 base，输出转换结果。\n\n**输入格式：** 一行两个整数 n 和 base（0 ≤ n ≤ 10⁹，2 ≤ base ≤ 16），用空格分隔。\n\n**输出格式：** 一行，n 的 base 进制表示，10~15 用大写字母 A~F 表示；n 为 0 时输出 `0`。\n\n**输入样例：**\n```text\n255 16\n```\n**输出样例：**\n```text\nFF\n```",
+    "solution": "#include <stdio.h>\n\nchar digit_char(int d);\nvoid to_base(long long n, int base, char *out);\n\nint main(void)\n{\n    long long n;\n    int base;\n    char buf[70];\n\n    if (scanf(\"%lld %d\", &n, &base) != 2)\n        return 0;\n    if (n < 0 || base < 2 || base > 16)\n        return 0;\n\n    to_base(n, base, buf);\n    printf(\"%s\\n\", buf);\n    return 0;\n}\n\n/* 数值 0~15 映射为大写十六进制字符 */\nchar digit_char(int d)\n{\n    if (d < 10)\n        return (char)('0' + d);\n    return (char)('A' + d - 10);\n}\n\n/* 把 n 写成 base 进制字符串，存进调用方提供的 out 缓冲区 */\nvoid to_base(long long n, int base, char *out)\n{\n    int len = 0, i;\n\n    if (n == 0) {\n        out[0] = '0';\n        out[1] = '\\0';\n        return;\n    }\n\n    while (n > 0) {\n        out[len++] = digit_char((int)(n % base));\n        n /= base;\n    }\n    out[len] = '\\0';\n\n    /* 此时 out 中是低位在前的逆序串，首尾对调后得到正确顺序 */\n    for (i = 0; i < len / 2; i++) {\n        char t = out[i];\n        out[i] = out[len - 1 - i];\n        out[len - 1 - i] = t;\n    }\n}",
+    "points": [
+      "digit_char 正确映射 0~9 与 10~15 到大写字符",
+      "to_base 用取余得到最低位、取整去掉最低位，循环直到 n 为 0",
+      "逆序串首尾对调，并补字符串结束符 '\\0'",
+      "n 为 0 时单独输出 \"0\"，缓冲区足够大（2 进制需 30 位）"
+    ],
+    "analysis": "思路：进制转换分成两步：“数值 → 字符”由 `digit_char` 完成，“整数 → 进制字符串”由 `to_base` 完成，`to_base` 内部调用 `digit_char`，体现嵌套调用；结果写入调用方提供的字符数组，属于地址传递。`char buf[70]` 由 main 提供，`to_base` 只负责填充。\n\n关键步骤：① `digit_char(d)` 用 if 判断：d < 10 返回 `'0' + d`，否则返回 `'A' + d - 10`；② `to_base` 特判 `n == 0` 时写入 `\"0\"`；③ 循环 `out[len++] = digit_char((int)(n % base)); n /= base;`，得到的是低位在前的逆序串；④ 循环结束后补 `'\\0'`，再首尾对调完成反转；⑤ main 中 n 用 long long 读入，最多需要 30 位（2 进制），70 字节缓冲区足够。\n\n复杂度：位数 O(log_base n)，时间 O(log n)，空间 O(log n)。\n\n易错点：① 忘记处理 n == 0，输出空串；② 忘记补 `'\\0'`，printf 越界读取乱码；③ 忘记反转，输出的是低位在前的反向串；④ `digit_char` 返回 `'a' + d - 10` 小写字母，与要求的大写不符；⑤ 缓冲区太小（如 `char buf[8]`）而 10⁹ 的 2 进制需要 30 位，造成栈溢出；⑥ 每轮都调用 `printf` 输出单个字符，顺序是反的。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n\nchar digit_char(int d);\nstd::string to_base(long long n, int base);\n\nint main()\n{\n    long long n;\n    int base;\n\n    if (!(std::cin >> n >> base) || n < 0 || base < 2 || base > 16)\n        return 0;\n\n    std::cout << to_base(n, base) << '\\n';\n    return 0;\n}\n\nchar digit_char(int d)\n{\n    if (d < 10)\n        return static_cast<char>('0' + d);\n    return static_cast<char>('A' + d - 10);\n}\n\nstd::string to_base(long long n, int base)\n{\n    if (n == 0)\n        return \"0\";\n\n    std::string s;\n    while (n > 0) {\n        s.push_back(digit_char(static_cast<int>(n % base)));\n        n /= base;\n    }\n\n    for (int i = 0, j = static_cast<int>(s.size()) - 1; i < j; ++i, --j) {\n        char t = s[i];\n        s[i] = s[j];\n        s[j] = t;\n    }\n    return s;\n}",
+        "points": [
+          "digit_char 返回 char，大小写与题面要求一致",
+          "to_base 返回 std::string，内部调用 digit_char",
+          "用 push_back 追加低位字符后双指针反转",
+          "主函数按 long long 读入 n，避免 10⁹ 溢出"
+        ],
+        "analysis": "思路：C++ 用 `std::string` 作为返回值，比字符数组输出参数更自然：`to_base` 内部把每一位 `push_back` 到字符串，再用双指针交换完成反转。数值到字符的映射仍由 `digit_char` 负责，保证嵌套调用。\n\n关键步骤：① `digit_char(int d)` 返回 `char`，d < 10 时 `'0' + d`，否则 `'A' + d - 10`；② `to_base` 中 `n == 0` 直接返回 `\"0\"`；③ 循环 `s.push_back(digit_char(static_cast<int>(n % base))); n /= base;`；④ 用 `for (int i = 0, j = size - 1; i < j; ++i, --j)` 首尾交换；⑤ 返回字符串。\n\n复杂度：O(log n) 时间，O(log n) 空间。\n\n易错点：① 用 `std::to_string(n)` 再按十进制处理，完全偏离进制转换；② 把 `digit_char` 写成返回 `std::string`，push_back 时类型不匹配；③ 反转循环条件写成 `i <= j`，中间字符被交换两次；④ `n` 用 int 读入，10⁹ 虽在 int 内，但若输入更大就会溢出；⑤ 输出用 `std::endl`，结果正确但多一次刷新。"
+      },
+      "python": {
+        "solution": "def digit_char(d: int) -> str:\n    if d < 10:\n        return str(d)\n    return chr(ord(\"A\") + d - 10)\n\n\ndef to_base(n: int, base: int) -> str:\n    if n == 0:\n        return \"0\"\n\n    digits: list[str] = []\n    while n > 0:\n        digits.append(digit_char(n % base))\n        n //= base\n    return \"\".join(reversed(digits))\n\n\ndef main() -> None:\n    n, base = map(int, input().split())\n    print(to_base(n, base))\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "digit_char 用 str 与 chr 完成 0~15 到大写字符的映射",
+          "to_base 用取余取整循环，内部调用 digit_char",
+          "列表追加低位字符后 reversed 拼接成正确顺序",
+          "n 为 0 时返回 \"0\"，输出与样例一致"
+        ],
+        "analysis": "思路：`digit_char` 用 `str(d)` 处理 0~9，用 `chr(ord(\"A\") + d - 10)` 处理 10~15；`to_base` 反复取余得到低位字符追加到列表，最后 `reversed` 反转拼接。Python 无需担心整数上界，10⁹ 甚至更大的输入都能直接处理。\n\n关键步骤：① `digit_char(d)` 分两支返回单个字符；② `to_base` 先特判 `n == 0`；③ 循环中 `digits.append(digit_char(n % base))`，然后 `n //= base`；④ `\"\".join(reversed(digits))` 得到正确顺序；⑤ main 读入两个整数并打印。\n\n复杂度：O(log n) 时间与空间（位数）。\n\n易错点：① 用 `hex(n)` 直接转换，只能处理 16 进制，base 为 2~15 时错误；② `n //= base` 写成 `n /= base`，n 变成浮点数，循环条件失效；③ 忘记反转，输出是低位在前的反向串；④ `digit_char` 用 `\"a\"` 小写，与要求的大写不符；⑤ 特判 n == 0 缺失，返回空字符串。"
+      }
+    }
+  }
+]

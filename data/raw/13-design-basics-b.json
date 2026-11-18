@@ -1,0 +1,392 @@
+[
+  {
+    "id": "基-79",
+    "type": "design",
+    "difficulty": 1,
+    "tags": [
+      "多分支",
+      "switch",
+      "成绩等级"
+    ],
+    "stem": "输入一个百分制成绩（0~100 的整数），按下列规则输出对应的等级：\n\n- 90 ~ 100 分：输出 `A`\n- 80 ~ 89 分：输出 `B`\n- 70 ~ 79 分：输出 `C`\n- 60 ~ 69 分：输出 `D`\n- 0 ~ 59 分：输出 `E`\n\n要求用多分支结构实现，注意 100 分和 0 分这两个边界。\n\n**输入格式：** 一行一个整数 score（0 ≤ score ≤ 100）。\n\n**输出格式：** 一行一个大写字母，表示等级。\n\n**输入样例：**\n```text\n87\n```\n**输出样例：**\n```text\nB\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int score;\n    char grade = 'E';\n\n    if (scanf(\"%d\", &score) != 1)\n        return 0;\n\n    switch (score / 10) {\n    case 10:\n    case 9:\n        grade = 'A';\n        break;\n    case 8:\n        grade = 'B';\n        break;\n    case 7:\n        grade = 'C';\n        break;\n    case 6:\n        grade = 'D';\n        break;\n    default:\n        grade = 'E';\n        break;\n    }\n\n    printf(\"%c\\n\", grade);\n    return 0;\n}",
+    "points": [
+      "正确读入整数成绩",
+      "用 switch 的 case 贯穿（或 else if 链）正确划分五个分数段，100 分归入 A",
+      "按格式输出单个大写字母并换行"
+    ],
+    "analysis": "思路：成绩是 0~100 的整数，十位数字恰好决定等级，因此可以把 `score / 10` 作为 `switch` 的控制表达式。90~99 落在 `case 9`，80~89 落在 `case 8`，依此类推；100 的十位是 10，单独用 `case 10` 表示。`case 10` 后面故意不写 `break`，让执行流「贯穿」到 `case 9` 的语句，这样 100 分也会被赋为 `A`，这是 `switch` 中多个标签共用同一段代码的标准写法。\n\n关键步骤：① `scanf` 读入成绩；② 整数除法 `score / 10` 自动向下取整；③ 每个分支末尾写 `break`，防止继续执行后面的 `case`；④ 用 `default` 兜住 60 分以下的情况；⑤ `printf(\"%c\\n\", grade)` 输出字符并换行。\n\n复杂度：只有一次判断，时间 O(1)，空间 O(1)。\n\n易错点：① 忘记在 `case 10` 与 `case 9` 之间保持贯穿，结果 100 分落进 `default` 输出 `E`；② 某个分支漏写 `break`，出现意外的贯穿；③ 把 `switch` 的表达式写成 `score` 却仍用 `case 90`；④ 用 `if / else if` 时条件顺序写反，95 分被 `score >= 80` 提前截获；⑤ 输出字符用了 `%s`；⑥ `case` 后面只写一个分号会形成空语句，语法合法但分支什么也不做，调试时容易漏看。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nint main()\n{\n    int score;\n    char grade = 'E';\n\n    if (!(std::cin >> score))\n        return 0;\n\n    switch (score / 10) {\n    case 10:\n    case 9:\n        grade = 'A';\n        break;\n    case 8:\n        grade = 'B';\n        break;\n    case 7:\n        grade = 'C';\n        break;\n    case 6:\n        grade = 'D';\n        break;\n    default:\n        grade = 'E';\n        break;\n    }\n\n    std::cout << grade << '\\n';\n    return 0;\n}",
+        "points": [
+          "用 std::cin 读入成绩并处理输入失败",
+          "用 switch 分派十位数字，case 10 与 case 9 共用一个分支得到 A",
+          "用 std::cout 输出字符并换行"
+        ],
+        "analysis": "思路与 C 版完全一致：用 `score / 10` 把成绩压缩为十位数字，再用 `switch` 分派。C++ 的 `switch` 同样要求标签是整型常量表达式，`case 10` 与 `case 9` 之间不写 `break` 就会顺序贯穿，正好把 100 分并入 `A`。\n\n关键步骤：① `std::cin >> score`，失败时直接返回；② 用 `char` 保存等级；③ 每个分支末尾 `break`，`default` 处理 60 分以下；④ `std::cout << grade << '\\n'` 输出字符。\n\n与 C 的差异：`<iostream>` 不需要格式串，输入输出按类型自动处理；字符用单引号，输出时不会像 `printf(\"%c\")` 那样依赖格式符。C++ 允许在 `case` 里定义变量，但必须用大括号形成独立作用域，否则后面的 `case` 会看到未初始化的变量并报「jump to case label crosses initialization」。\n\n复杂度 O(1)。\n\n易错点：① `case 10` 与 `case 9` 之间误加 `break`；② `switch` 表达式与 `case` 常量类型不匹配；③ 用 `std::endl` 虽正确但会多一次刷新；④ 漏掉输入失败判断导致读取未初始化值。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    score = int(data[0])\n    if score >= 90:\n        grade = \"A\"\n    elif score >= 80:\n        grade = \"B\"\n    elif score >= 70:\n        grade = \"C\"\n    elif score >= 60:\n        grade = \"D\"\n    else:\n        grade = \"E\"\n\n    print(grade)\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "用 sys.stdin 读入成绩，空输入时安全返回",
+          "用 if / elif 按从高到低的顺序划分五个分数段",
+          "打印单个大写字母"
+        ],
+        "analysis": "思路：Python 没有 C 那样的 `switch` 贯穿语义，最直接的写法是把五个区间写成 `if / elif / else` 链，条件从高到低排列，每个分支只负责一个等级。\n\n关键步骤：① 用 `sys.stdin.read().split()` 一次读入并按空白切分，空输入直接返回；② `int(data[0])` 转成整数；③ 从 `score >= 90` 开始依次判断，命中就赋等级；④ `print(grade)` 输出。\n\nPython 3.10 起也可以用结构化模式匹配 `match score // 10:` 加 `case 9 | 10:`，写法更接近 C 的 `switch`；但 `match` 不会自动贯穿，每个 `case` 只执行第一个匹配的分支，所以 100 与 99 要用 `|` 合并成一个模式，不能像 C 那样靠省略 `break` 实现。\n\n复杂度 O(1)。\n\n易错点：① 条件从小到大排列，90 分先被 `>= 60` 截获；② `score // 10` 与 `score / 10` 混用，后者得到浮点数；③ 使用 `match` 时写成 `case 9, 10`（这是序列模式，不是「或」）；④ 输入为空时直接 `data[0]` 会抛 `IndexError`；⑤ 输出成字符串列表而不是单个字母。"
+      }
+    }
+  },
+  {
+    "id": "基-80",
+    "type": "design",
+    "difficulty": 1,
+    "tags": [
+      "while循环",
+      "数字拆位",
+      "边界处理"
+    ],
+    "stem": "给定一个非负整数 n，输出它的十进制位数以及各位数字之和。规定 n = 0 时位数为 1、各位数字之和为 0。\n\n**输入格式：** 一行一个整数 n（0 ≤ n ≤ 2 000 000 000）。\n\n**输出格式：** 一行两个整数，依次为 n 的位数与各位数字之和，用一个空格分隔。\n\n**输入样例：**\n```text\n40512\n```\n**输出样例：**\n```text\n5 12\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    long long n;\n    int digits = 0;\n    int sum = 0;\n\n    if (scanf(\"%lld\", &n) != 1 || n < 0)\n        return 0;\n\n    do {\n        sum += (int)(n % 10);\n        n /= 10;\n        digits++;\n    } while (n > 0);\n\n    printf(\"%d %d\\n\", digits, sum);\n    return 0;\n}",
+    "points": [
+      "用 64 位整数读入 n",
+      "用 do-while 逐位取余、整除，正确处理 n = 0 的边界",
+      "按「位数 数字和」的顺序输出两个整数"
+    ],
+    "analysis": "思路：十进制数的每一位可以通过「对 10 取余」得到最低位，再用「整除 10」把它去掉，反复执行直到 n 变成 0。位数就是循环执行的次数，各位数字之和在每次循环中累加 `n % 10`。\n\n关键步骤：① 用 `long long` 保存 n（题目上限 2×10⁹，虽然能放进 32 位有符号 int，但统一用 64 位更稳妥）；② 用 `do-while` 而不是 `while`：n = 0 时循环体仍会执行一次，正好得到「位数 1、数字和 0」的规定结果，不需要额外特判；③ 先累加 `n % 10`，再执行 `n /= 10`，最后位数加一；④ 按「位数 数字和」的顺序输出。\n\n复杂度：循环次数等于十进制位数，时间 O(log₁₀ n)，空间 O(1)。\n\n易错点：① 用 `while (n > 0)` 又不特判 0，n = 0 时位数输出 0，与规定不符；② 把 `%` 与 `/` 的顺序写反，先除后取余会丢掉末位；③ 累加时写成 `n % 10 / 10`，整数运算结果恒为 0；④ 用 int 存 2×10⁹ 以外的数据导致溢出；⑤ 输出顺序颠倒；⑥ 循环里忘记更新 n，造成死循环。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nint main()\n{\n    long long n;\n    int digits = 0;\n    int sum = 0;\n\n    if (!(std::cin >> n) || n < 0)\n        return 0;\n\n    do {\n        sum += static_cast<int>(n % 10);\n        n /= 10;\n        ++digits;\n    } while (n > 0);\n\n    std::cout << digits << ' ' << sum << '\\n';\n    return 0;\n}",
+        "points": [
+          "正确读入 long long 类型的 n",
+          "do-while 至少执行一次，n = 0 时也能得到位数 1、数字和 0",
+          "用 std::cout 按空格分隔输出位数与数字和"
+        ],
+        "analysis": "思路：与 C 版相同，用取余和整除逐位拆解。`do-while` 保证循环体至少执行一次，因此 `n = 0` 时也只会进入一次，恰好得到「位数 1、数字和 0」，不需要额外特判。\n\n关键步骤：① `std::cin >> n` 读入 `long long`；② `do { sum += static_cast<int>(n % 10); n /= 10; ++digits; } while (n > 0);`；③ 输出 `digits` 与 `sum`。`static_cast<int>` 显式说明 `n % 10` 是 `long long`，而 `sum` 用 `int` 足够（每位最大 9，最多 10 位）。\n\n与 C 的差异：C++ 的 `long long` 同样是 64 位，输入输出不再需要 `%lld` 格式串。也可以先用 `std::to_string(n)` 再统计字符个数与数字和，但那样会额外分配字符串，按位取余更贴近题意。\n\n复杂度 O(log₁₀ n)。\n\n易错点：① 用 `while` 又忘了特判 0；② 把 `n % 10` 与 `n / 10` 的顺序写反；③ `sum` 用 `char` 保存导致溢出；④ 输出顺序颠倒；⑤ 循环中忘记 `n /= 10` 造成死循环。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    if n == 0:\n        print(1, 0)\n        return\n\n    digits = 0\n    total = 0\n    while n > 0:\n        total += n % 10\n        n //= 10\n        digits += 1\n\n    print(digits, total)\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "从 sys.stdin 读入并转换为整数",
+          "单独处理 n = 0，或用循环保证至少统计一位",
+          "用整除 // 逐位拆解并输出位数与数字和"
+        ],
+        "analysis": "思路：Python 没有 `do-while`，最接近的写法是先单独处理 `n == 0`，再用 `while n > 0` 循环；每轮用 `n % 10` 取末位、`n // 10` 去掉末位（注意是整除 `//`，不是 `/`）。\n\n关键步骤：① `sys.stdin.read().split()` 读入；② `n = int(data[0])`；③ 特判 0，直接输出 `1 0`；④ 循环累加 `total += n % 10`、`n //= 10`、`digits += 1`；⑤ `print(digits, total)` 默认用空格分隔。\n\nPython 的整数是任意精度，不存在溢出问题；也可以用更短的写法 `print(len(str(n)), sum(map(int, str(n))))`，但字符串转换会多占内存，而且练习循环时仍建议用取余写法。`n = 0` 时 `len(str(0))` 恰好是 1、数字和为 0，两种写法结果相同。\n\n复杂度：O(log₁₀ n)。\n\n易错点：① 用 `/` 得到浮点数，后续 `%` 结果出错；② 循环条件写成 `n >= 0` 造成死循环；③ 忘记 0 的特判导致输出 `0 0`；④ 把各位和与位数输出顺序写反；⑤ 循环里忘记更新 n。"
+      }
+    }
+  },
+  {
+    "id": "基-81",
+    "type": "design",
+    "difficulty": 1,
+    "tags": [
+      "for循环",
+      "数列求和",
+      "浮点输出"
+    ],
+    "stem": "输入正整数 n，按下式计算 S 的值并输出（保留 4 位小数）：\n\nS = 1 − 1/2 + 1/3 − 1/4 + … + (−1)^(n+1) · 1/n\n\n**输入格式：** 一行一个整数 n（1 ≤ n ≤ 10 000）。\n\n**输出格式：** 一行一个实数，表示 S 的值，四舍五入保留 4 位小数。\n\n**输入样例：**\n```text\n5\n```\n**输出样例：**\n```text\n0.7833\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int n, i;\n    double sum = 0.0;\n    int sign = 1;\n\n    if (scanf(\"%d\", &n) != 1 || n < 1)\n        return 0;\n\n    for (i = 1; i <= n; i++) {\n        sum += sign * 1.0 / i;\n        sign = -sign;\n    }\n\n    printf(\"%.4f\\n\", sum);\n    return 0;\n}",
+    "points": [
+      "用循环从 1 累加到 n",
+      "用符号变量交替实现正负项，累加项写成 1.0 / i",
+      "用 printf 的 %.4f 输出四位小数"
+    ],
+    "analysis": "思路：把通项写成 `(-1)^(i+1) / i`，循环变量 i 从 1 到 n，用一个整型符号变量 `sign` 在 1 与 -1 之间来回翻转即可，不必调用 `pow`。\n\n关键步骤：① 用 `scanf` 读入 n；② 初始化 `sum = 0.0`、`sign = 1`；③ 每轮执行 `sum += sign * 1.0 / i`，然后 `sign = -sign`；④ 用 `printf(\"%.4f\\n\", sum)` 四舍五入保留 4 位小数。\n\n关键细节是 `1.0 / i`：如果写成 `1 / i`，两边都是整数，除 0 以外的结果全部是 0，最终和会变成 1.0000，这是本题最常见的错误。`sum` 必须是 `double`，`sign` 用 `int` 即可。\n\n复杂度：循环 n 次，时间 O(n)，空间 O(1)。\n\n易错点：① 整数除法导致结果错误；② 符号翻转写在累加之前，第一项变成 -1；③ 用 `float` 精度不足，n 较大时末位出现偏差；④ 输出格式写成 `%d` 或忘了小数位数；⑤ n = 1 时循环仍然正确输出 1.0000，可用来检查边界。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iomanip>\n#include <iostream>\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 1)\n        return 0;\n\n    double sum = 0.0;\n    int sign = 1;\n    for (int i = 1; i <= n; ++i) {\n        sum += sign * 1.0 / i;\n        sign = -sign;\n    }\n\n    std::cout << std::fixed << std::setprecision(4) << sum << '\\n';\n    return 0;\n}",
+        "points": [
+          "用 for 循环逐项累加并翻转符号",
+          "用 double 保存累加和，保证 1.0 / i 是浮点除法",
+          "用 std::fixed 与 std::setprecision(4) 输出四位小数"
+        ],
+        "analysis": "思路：与 C 版一致，用循环逐项累加，符号在 `1` 与 `-1` 之间交替。C++ 的 `1.0 / i` 中 `1.0` 是 `double` 字面量，因此是浮点除法；若写成 `1 / i` 会做整数除法，除第一项外全部为 0。\n\n关键步骤：① `std::cin >> n`；② `double sum = 0.0; int sign = 1;`；③ 循环 `sum += sign * 1.0 / i; sign = -sign;`；④ 输出前设置 `std::fixed` 与 `std::setprecision(4)`，这两个操纵符会一直生效到被修改为止；⑤ `std::cout << sum << '\\n'`。\n\n与 C 的差异：C 用 `printf(\"%.4f\")`，C++ 用 `<iomanip>` 中的 `std::fixed` 加 `std::setprecision(4)`；两者都按四舍五入保留 4 位小数。若只写 `std::setprecision(4)` 而不写 `std::fixed`，输出的是 4 位有效数字而不是 4 位小数，这是很容易踩的坑。\n\n复杂度 O(n)。\n\n易错点：① 整数除法；② 忘记 `std::fixed`；③ 符号翻转顺序错误，第一项变成负的；④ 用 `float` 精度不足；⑤ 输出后没有换行。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    total = 0.0\n    sign = 1\n    for i in range(1, n + 1):\n        total += sign / i\n        sign = -sign\n\n    print(f\"{total:.4f}\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "用 range(1, n + 1) 遍历每一项",
+          "累加 sign / i，并正确翻转符号",
+          "用 f-string 的 .4f 保留四位小数"
+        ],
+        "analysis": "思路：用 `for i in range(1, n + 1)` 遍历，`sign` 在 `1` 与 `-1` 之间翻转，累加 `sign / i`。Python 3 的 `/` 永远是浮点除法，所以不需要像 C 那样写 `1.0 / i`，这是与 C 版最重要的差异。\n\n关键步骤：① 读入并转换 n；② 初始化 `total = 0.0`、`sign = 1`；③ 循环中 `total += sign / i`、`sign = -sign`；④ 用 f-string `f\"{total:.4f}\"` 格式化输出，`.4f` 表示保留 4 位小数。\n\n也可以写成生成器表达式：`total = sum((1 if i % 2 else -1) / i for i in range(1, n + 1))`，更紧凑，但可读性不如显式循环。n = 10000 时循环只有一万次，浮点误差远小于 10⁻⁴，不影响 4 位小数的结果。\n\n复杂度 O(n)，空间 O(1)。\n\n易错点：① 写成 `sign // i` 或 `1 // i`，得到整数 0；② `range(1, n)` 漏掉第 n 项；③ 格式化写成 `{total:.4}` 变成 4 位有效数字；④ 忘记空输入判断；⑤ 把符号翻转写在累加之前。"
+      }
+    }
+  },
+  {
+    "id": "基-82",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "循环",
+      "continue",
+      "区间统计"
+    ],
+    "stem": "给定两个正整数 a 和 b（a ≤ b），统计闭区间 [a, b] 内所有「能被 7 整除但不能被 5 整除」的整数，输出这些数的个数与它们的和。\n\n**输入格式：** 一行两个整数 a 和 b（1 ≤ a ≤ b ≤ 100 000）。\n\n**输出格式：** 一行两个整数，依次为满足条件的整数个数与它们的和，用一个空格分隔；若一个也没有，输出 `0 0`。\n\n**输入样例：**\n```text\n1 50\n```\n**输出样例：**\n```text\n6 161\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int a, b, i;\n    int count = 0;\n    long long sum = 0;\n\n    if (scanf(\"%d %d\", &a, &b) != 2)\n        return 0;\n\n    for (i = a; i <= b; i++) {\n        if (i % 7 != 0)\n            continue;\n        if (i % 5 == 0)\n            continue;\n        count++;\n        sum += i;\n    }\n\n    printf(\"%d %lld\\n\", count, sum);\n    return 0;\n}",
+    "points": [
+      "正确读入区间端点 a、b，并让循环覆盖闭区间",
+      "用 continue 依次过滤「不是 7 的倍数」和「是 5 的倍数」的数",
+      "用 long long 累加并输出个数与总和（含空区间输出 0 0）"
+    ],
+    "analysis": "思路：在 [a, b] 上做一次遍历，用两个条件筛选：能被 7 整除、且不能被 5 整除。对不满足条件的数直接 `continue` 跳过本轮，满足条件的数再更新个数和总和。\n\n关键步骤：① 读入 a、b；② `for (i = a; i <= b; i++)` 遍历区间；③ 第一个 `if (i % 7 != 0) continue;` 过滤掉不是 7 的倍数的数；④ 第二个 `if (i % 5 == 0) continue;` 过滤掉同时是 5 的倍数（也就是 35 的倍数）的数；⑤ `count++`、`sum += i`；⑥ 输出 `count` 与 `sum`。\n\n累计和要用 `long long`：区间长度可达 10⁵，7 的倍数约 1.4×10⁴ 个，最坏情况下总和接近 7×10⁸，虽然本题仍在 int 范围内，但用 64 位可以避免将来扩大数据范围时溢出。\n\n复杂度：时间 O(b − a + 1)，空间 O(1)。\n\n易错点：① 把两个条件用 `&&` 写成一个 `if` 却把 `%` 用反；② `continue` 写在了累加之后，等于没起作用；③ 忘记处理区间内一个数都不满足的情况，应输出 `0 0`；④ 直接用 `(b/7 - (a-1)/7)` 之类的公式却漏掉「不能被 5 整除」的条件；⑤ 循环边界写成 `i < b`，漏掉 b 本身。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nint main()\n{\n    int a, b;\n    if (!(std::cin >> a >> b))\n        return 0;\n\n    int count = 0;\n    long long sum = 0;\n    for (int i = a; i <= b; ++i) {\n        if (i % 7 != 0)\n            continue;\n        if (i % 5 == 0)\n            continue;\n        ++count;\n        sum += i;\n    }\n\n    std::cout << count << ' ' << sum << '\\n';\n    return 0;\n}",
+        "points": [
+          "用 std::cin 读入 a、b，循环覆盖闭区间",
+          "用两个 continue 正确表达两个筛选条件",
+          "用 long long 累加并输出个数与和"
+        ],
+        "analysis": "思路与 C 版相同：遍历区间，用两个 `if` 加 `continue` 过滤，满足条件的数才累加。C++ 的 `continue` 语义与 C 一致，直接跳到下一次迭代。\n\n关键步骤：① `std::cin >> a >> b`；② `for (int i = a; i <= b; ++i)`；③ 不是 7 的倍数就 `continue`；④ 是 5 的倍数也 `continue`；⑤ `++count; sum += i;`；⑥ 输出。\n\n`sum` 用 `long long`：区间长度 10⁵，满足条件的数最多约 1.4×10⁴ 个，最坏和接近 7×10⁸，仍在 32 位 `int` 范围内，但扩大数据范围后就会溢出，用 64 位更稳妥。C++ 中 `i % 7`、`i % 5` 对正整数结果与数学定义一致。\n\n复杂度 O(b − a + 1)。\n\n易错点：① `continue` 放在累加之后，等于没过滤；② 两个条件合并时把 `||` 与 `&&` 写反；③ 忘记空区间输出 `0 0`；④ 循环写成 `i < b` 漏掉 b；⑤ `count` 与 `sum` 输出顺序颠倒。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    a = int(data[0])\n    b = int(data[1])\n    count = 0\n    total = 0\n    for i in range(a, b + 1):\n        if i % 7 != 0:\n            continue\n        if i % 5 == 0:\n            continue\n        count += 1\n        total += i\n\n    print(count, total)\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "用 range(a, b + 1) 正确覆盖闭区间",
+          "用 continue 过滤不满足条件的数",
+          "打印个数与总和，空区间自然输出 0 0"
+        ],
+        "analysis": "思路：`for i in range(a, b + 1)` 遍历闭区间，注意 `range` 的右端不包含，所以上界要写 `b + 1`。用两个 `continue` 过滤不满足条件的数，逻辑与 C 版一致。\n\n关键步骤：① 读入 `a`、`b`；② 循环中先判断 `i % 7 != 0` 就跳过，再判断 `i % 5 == 0` 就跳过；③ 剩余的数累加到 `total` 并让 `count` 加一；④ `print(count, total)`。\n\n也可以写成带条件的生成器 `nums = [i for i in range(a, b + 1) if i % 7 == 0 and i % 5 != 0]`，再 `len(nums)` 与 `sum(nums)`，但这样会额外保存整个列表；数据量大时直接循环更省内存。Python 整数没有溢出问题，`total` 不需要特殊类型。\n\n复杂度 O(b − a + 1)，额外空间 O(1)。\n\n易错点：① `range(a, b)` 漏掉 b；② `i % 7 == 0 and i % 5 == 0` 把「不能被 5 整除」写反；③ `continue` 写在累加之后；④ 没有处理一个都不满足的情况（应输出 `0 0`）；⑤ 把 `count` 与 `total` 的顺序输出反。"
+      }
+    }
+  },
+  {
+    "id": "基-83",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "素数判断",
+      "break",
+      "平方根优化"
+    ],
+    "stem": "给定一个整数 n（n ≥ 2），判断它是否为素数。若是素数输出 `YES`；否则输出 `NO` 以及 n 的最小正因数（大于 1 且小于 n），两者用一个空格分隔。\n\n**输入格式：** 一行一个整数 n（2 ≤ n ≤ 2 000 000 000）。\n\n**输出格式：** 若 n 是素数，输出一行 `YES`；否则输出一行 `NO` 与 n 的最小因数，中间用一个空格分隔。\n\n**输入样例：**\n```text\n91\n```\n**输出样例：**\n```text\nNO 7\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    long long n, i;\n    long long factor = 0;\n\n    if (scanf(\"%lld\", &n) != 1 || n < 2)\n        return 0;\n\n    for (i = 2; i * i <= n; i++) {\n        if (n % i == 0) {\n            factor = i;\n            break;\n        }\n    }\n\n    if (factor == 0)\n        printf(\"YES\\n\");\n    else\n        printf(\"NO %lld\\n\", factor);\n\n    return 0;\n}",
+    "points": [
+      "用 64 位整数读入 n，并从 2 开始试除",
+      "循环条件用 i * i <= n 控制试除范围，找到因数立即 break",
+      "根据是否找到因数输出 YES 或 NO 加最小因数"
+    ],
+    "analysis": "思路：素数只能被 1 和自身整除，因此从 2 开始逐个试除，只要找到一个因数就能判定它不是素数，并且这个因数就是最小因数。试除到 √n 即可：如果 n 有大于 √n 的因数，必然还有一个小于 √n 的配对因数，所以循环条件写 `i * i <= n` 就够。\n\n关键步骤：① 读入 n；② `for (i = 2; i * i <= n; i++)` 试除；③ 一旦 `n % i == 0`，记录因数并 `break`，用 `break` 提前结束循环，相当于用循环出口代替 `goto`；④ 循环结束后根据是否找到因数输出 `YES` 或 `NO 最小因数`。\n\n因为 n 可达 2×10⁹，i 最大约 44722，`i * i` 在 `long long` 中不会溢出；若用 32 位 int，当 i 超过 46340 时 `i * i` 会溢出成负数，循环条件失真。\n\n复杂度：时间 O(√n)，空间 O(1)。\n\n易错点：① 循环条件写成 `i < n`，最坏要试除 2×10⁹ 次；② 从 1 开始试除，任何数都会被 1 整除；③ 没有单独处理 n = 2、n = 3 的情况（本写法天然正确，因为循环一次也不执行）；④ 忘了 `break`，找到因数后继续循环，输出的不再是「最小」因数；⑤ `i * i` 用 int 溢出；⑥ 输出把 `NO` 与因数之间的空格漏掉。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nint main()\n{\n    long long n;\n    if (!(std::cin >> n) || n < 2)\n        return 0;\n\n    long long factor = 0;\n    for (long long i = 2; i * i <= n; ++i) {\n        if (n % i == 0) {\n            factor = i;\n            break;\n        }\n    }\n\n    if (factor == 0)\n        std::cout << \"YES\\n\";\n    else\n        std::cout << \"NO \" << factor << '\\n';\n\n    return 0;\n}",
+        "points": [
+          "用 long long 保存 n 与试除变量，避免 i * i 溢出",
+          "从 2 试除到 √n，找到第一个因数就 break",
+          "按格式输出 YES 或 NO 与最小因数"
+        ],
+        "analysis": "思路：与 C 版一致，从 2 试除到 √n，第一个能整除 n 的数就是最小因数，找到后立即 `break`。\n\n关键步骤：① `std::cin >> n`；② `for (long long i = 2; i * i <= n; ++i)`；③ `if (n % i == 0) { factor = i; break; }`；④ 根据 `factor` 是否为 0 输出 `YES` 或 `NO` 加最小因数。\n\n类型选择：n 最大 2×10⁹，本身仍在 32 位 `int` 范围内，但 `i * i` 在 i 超过 46340 时会超出 `int` 上限（46341² ≈ 2.147×10⁹），变成负数后循环条件失真，所以 i、n 统一用 `long long`。也可以把条件改写成 `i <= n / i`，完全避开乘法。\n\n复杂度 O(√n)，最多约 4.5×10⁴ 次试除。\n\n易错点：① `i * i` 用 int 溢出；② 循环条件写成 `i <= n`；③ 从 1 开始试除；④ 找到因数后不 `break`；⑤ 输出 `NO` 与因数之间漏空格；⑥ 忘记处理 n = 2、n = 3（本写法循环不执行，天然正确）。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    if n < 2:\n        return\n\n    factor = 0\n    i = 2\n    while i * i <= n:\n        if n % i == 0:\n            factor = i\n            break\n        i += 1\n\n    if factor == 0:\n        print(\"YES\")\n    else:\n        print(\"NO\", factor)\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "用 while i * i <= n 控制试除范围",
+          "找到第一个因数后记录并 break",
+          "按格式输出 YES 或 NO 与最小因数"
+        ],
+        "analysis": "思路：从 2 开始用 `while i * i <= n` 试除，找到第一个因数就记录并 `break`，与 C 版逻辑完全一致。Python 的整数没有溢出问题，`i * i` 可以放心写。\n\n关键步骤：① 读入 `n`；② `factor = 0`、`i = 2`；③ `while i * i <= n:` 中判断 `n % i == 0`，成立就赋值并 `break`，否则 `i += 1`；④ 根据 `factor` 输出 `YES` 或 `NO` 与因数。\n\n也可以用 `for i in range(2, int(n ** 0.5) + 1)`，但 `n ** 0.5` 是浮点运算，n 很大时可能出现 `int()` 截断误差，`i * i <= n` 的写法更稳妥。本题 n 最大 2×10⁹，循环最多约 4.5×10⁴ 次，Python 也只需几毫秒。\n\n复杂度 O(√n)。\n\n易错点：① 循环条件写成 `i < n`，最坏要跑 2×10⁹ 次；② 从 1 开始试除；③ 找到因数后忘记 `break`，输出的不是最小因数；④ 没有单独考虑 n = 2、3；⑤ 把 `NO` 与因数分成两行输出；⑥ 用浮点开方判断上界引入误差。"
+      }
+    }
+  },
+  {
+    "id": "基-84",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "嵌套循环",
+      "图形输出",
+      "条件表达式"
+    ],
+    "stem": "输入一个正整数 n（1 ≤ n ≤ 9），输出一个由 `*` 组成的实心菱形：菱形高 2n−1 行，最宽的一行有 2n−1 个 `*`，并且相对于最宽行居中。每行由若干空格和若干 `*` 组成，行末不得有多余空格。\n\n**输入格式：** 一行一个整数 n（1 ≤ n ≤ 9）。\n\n**输出格式：** 共 2n−1 行，为对应的菱形图案。\n\n**输入样例：**\n```text\n3\n```\n**输出样例：**\n```text\n  *\n ***\n*****\n ***\n  *\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int n, i, k, dist, stars;\n\n    if (scanf(\"%d\", &n) != 1 || n < 1)\n        return 0;\n\n    for (i = 0; i < 2 * n - 1; i++) {\n        dist = (i < n - 1) ? (n - 1 - i) : (i - (n - 1));\n        stars = 2 * (n - dist) - 1;\n        for (k = 0; k < dist; k++)\n            putchar(' ');\n        for (k = 0; k < stars; k++)\n            putchar('*');\n        putchar('\\n');\n    }\n\n    return 0;\n}",
+    "points": [
+      "循环枚举行号 0 ~ 2n-2，共 2n-1 行",
+      "用条件表达式求当前行到中心行的距离，并据此计算空格数与星号数",
+      "按「先空格、后星号、再换行」输出，行末无多余空格"
+    ],
+    "analysis": "思路：菱形共 2n−1 行，可以把它看成「上半部分 + 中间最宽行 + 下半部分」。第 i 行（i 从 0 开始）到中心行 n−1 的距离是 `dist = |i − (n−1)|`，这一行前面有 `dist` 个空格，星号个数是 `2 × (n − dist) − 1`。把上下两半统一成一个公式，就不用写两个循环。\n\n关键步骤：① 读入 n；② 用 `for` 循环枚举行号 i = 0..2n−2；③ 用条件表达式 `i < n - 1 ? n - 1 - i : i - (n - 1)` 求距离，避免引入 `math.h` 或 `stdlib.h` 的 `abs`；④ 内层循环先输出 `dist` 个空格，再输出 `2*(n-dist)-1` 个星号；⑤ 每行结束输出换行符，行末不能有多余空格。\n\n复杂度：星号与空格总数约为 2n²，时间 O(n²)，空间 O(1)。\n\n易错点：① 行数写成 2n 或 2n−2；② 上下两半分别写循环但星号数算错；③ 每行末尾多输出一个空格，导致评测判格式错误；④ 用 `printf(\"* \")` 输出星号，行末残留空格；⑤ 用 `abs` 却没有包含 `<stdlib.h>`；⑥ n = 1 时只输出一行一个星号，循环边界要能覆盖。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 1)\n        return 0;\n\n    for (int i = 0; i < 2 * n - 1; ++i) {\n        int dist = (i < n - 1) ? (n - 1 - i) : (i - (n - 1));\n        int stars = 2 * (n - dist) - 1;\n        std::cout << std::string(dist, ' ') << std::string(stars, '*') << '\\n';\n    }\n\n    return 0;\n}",
+        "points": [
+          "用 2n-1 次循环枚举行号",
+          "用条件表达式计算到中心行的距离，得到空格数与星号数",
+          "用 std::string(count, ch) 构造整行并换行输出"
+        ],
+        "analysis": "思路：菱形共 2n−1 行，第 i 行到中心行 n−1 的距离 `dist = |i − (n−1)|` 决定缩进，星号数为 `2*(n−dist)−1`。C++ 可以用 `std::string` 的「重复字符构造」一次生成整行，省去内层循环。\n\n关键步骤：① `std::cin >> n`；② `for (int i = 0; i < 2 * n - 1; ++i)`；③ `int dist = (i < n - 1) ? (n - 1 - i) : (i - (n - 1));`；④ `std::cout << std::string(dist, ' ') << std::string(stars, '*') << '\\n';`。\n\n`std::string(count, ch)` 会构造由 count 个 ch 组成的字符串，长度参数是 `std::size_t`，传入非负 int 会自动转换；这种写法比两层 `for` 加 `putchar` 更简洁，也不会有行末多余空格。\n\n与 C 的差异：C 需要 `<stdlib.h>` 的 `abs` 或用条件表达式；C++ 也可以写 `std::abs(i - (n - 1))`（`<cstdlib>`），但条件表达式最轻量。\n\n复杂度：输出总量 O(n²)，空间 O(n)（每行一个临时字符串）。\n\n易错点：① 行数写成 2n；② dist 公式写成 `n - i`；③ 星号数公式少乘 2；④ 用 `std::string` 时第二个参数传成字符串 `\"*\"` 导致编译错误；⑤ 行末多输出空格；⑥ n = 1 边界。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    if n < 1:\n        return\n\n    for i in range(2 * n - 1):\n        dist = abs(i - (n - 1))\n        stars = 2 * (n - dist) - 1\n        print(\" \" * dist + \"*\" * stars)\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "用 range(2 * n - 1) 控制行数",
+          "用 abs 求到中心行的距离，计算空格数与星号数",
+          "用字符串乘法拼出整行并 print"
+        ],
+        "analysis": "思路：Python 可以直接用字符串乘法构造一行：`\" \" * dist + \"*\" * stars`，比 C 的两层循环更简洁。行数仍为 `2 * n - 1`，距离用 `abs(i - (n - 1))` 计算。\n\n关键步骤：① 读入 n；② `for i in range(2 * n - 1)`；③ `dist = abs(i - (n - 1))`；④ `stars = 2 * (n - dist) - 1`；⑤ `print(\" \" * dist + \"*\" * stars)`。\n\n`print` 会自动在行末补一个换行，但不会补空格，因此不会出现「行末多余空格」的格式错误。字符串乘法是 O(长度) 的，总输出量约 2n² 个字符，n ≤ 9 时完全无压力。\n\n复杂度 O(n²) 时间（输出本身就有这么多字符），空间 O(n)。\n\n易错点：① `range(2 * n)` 多一行；② `range(2 * n - 2)` 少一行；③ 用 `range(n)` 只画上半部分；④ 星号数写成 `n - dist`；⑤ 用 `print(\"*\" * stars, \" \" * dist)` 把空格放到行尾；⑥ 忘记 `int()` 转换导致字符串参与算术。"
+      }
+    }
+  },
+  {
+    "id": "基-85",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "while循环",
+      "模拟",
+      "边界判断"
+    ],
+    "stem": "一口井深 h 米。蜗牛白天向上爬 a 米，夜里下滑 b 米（0 < b < a）。如果蜗牛在某天白天爬到或超过井口，它就爬出井口，当天夜里不再下滑。求蜗牛第几天爬出井口。\n\n**输入格式：** 一行三个整数 h、a、b（1 ≤ h ≤ 1 000 000，1 ≤ b < a ≤ 1000）。\n\n**输出格式：** 一行一个整数，表示蜗牛爬出井口的天数。\n\n**输入样例：**\n```text\n10 3 2\n```\n**输出样例：**\n```text\n8\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    long long h, a, b;\n    long long height = 0;\n    int day = 0;\n\n    if (scanf(\"%lld %lld %lld\", &h, &a, &b) != 3)\n        return 0;\n\n    while (height < h) {\n        height += a;\n        day++;\n        if (height >= h)\n            break;\n        height -= b;\n    }\n\n    printf(\"%d\\n\", day);\n    return 0;\n}",
+    "points": [
+      "用循环按天模拟白天爬升与夜间下滑",
+      "爬到或超过井口时用 break 结束，当天不再下滑",
+      "正确累计天数并输出"
+    ],
+    "analysis": "思路：按天模拟。蜗牛白天先向上爬 a 米，如果此时高度达到或超过 h，就爬出井口，当天不再下滑；否则夜里下滑 b 米。用一个 `while` 循环表示「还没爬出去」，循环内先爬、再判断、最后下滑。\n\n关键步骤：① 读入 h、a、b；② 初始化 `height = 0`、`day = 0`；③ `while (height < h)` 中先 `height += a`、`day++`；④ 如果 `height >= h` 就 `break`，跳过下滑；⑤ 否则 `height -= b`；⑥ 输出 day。\n\n不能用 `h / (a - b)` 直接算：最后一天爬出去之后不再下滑，所以结果会比「按净上升速度」的估算少；若 h ≤ a，答案恒为 1。本题 h 最大 10⁶，逐天模拟最多循环 10⁶ 次，完全够快；也可以推导出闭式公式 `(h - a + (a - b) - 1) / (a - b) + 1` 在 h > a 时成立。\n\n复杂度：时间 O(天数)，空间 O(1)。\n\n易错点：① 先下滑再判断，导致 h = a 时输出 2；② 忘记 `break`，爬出去后又滑下来，陷入死循环；③ 用浮点数做高度计算引入误差；④ 循环条件写成 `height <= h` 导致多算一天；⑤ 天数从 0 开始却没有在循环里先加一。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nint main()\n{\n    long long h, a, b;\n    if (!(std::cin >> h >> a >> b))\n        return 0;\n\n    long long height = 0;\n    int day = 0;\n    while (height < h) {\n        height += a;\n        ++day;\n        if (height >= h)\n            break;\n        height -= b;\n    }\n\n    std::cout << day << '\\n';\n    return 0;\n}",
+        "points": [
+          "读入 h、a、b 并按天循环模拟",
+          "爬升后判断是否到顶，到顶立即 break",
+          "输出爬出井口所需的天数"
+        ],
+        "analysis": "思路：与 C 版一致的按天模拟。用 `while (height < h)` 表示「还在井里」，循环内先加上白天的爬升，判断是否到顶，到顶就 `break`，否则减去夜里下滑的距离。\n\n关键步骤：① `std::cin >> h >> a >> b`；② `long long height = 0; int day = 0;`；③ 循环中 `height += a; ++day;`；④ `if (height >= h) break;`；⑤ `height -= b;`；⑥ 输出 `day`。\n\n类型：h ≤ 10⁶、a ≤ 1000，`int` 就够，但 `height` 用 `long long` 更保险；天数最多约 10⁶，`int` 足够。C++ 中 `break` 只跳出当前一层循环，本题只有一层，正合适；如果有多层循环，就需要标志变量或函数返回，而不是 `goto`。\n\n复杂度：O(天数)，最坏 10⁶ 次。\n\n易错点：① 先下滑再判断，h = a 时会输出 2；② 判断条件写成 `height > h`；③ 忘记 `break` 导致死循环；④ 用浮点数计算高度；⑤ 天数从 0 开始却忘记自增；⑥ 输入三个变量时顺序写错。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    h, a, b = (int(x) for x in data[:3])\n    height = 0\n    day = 0\n    while height < h:\n        height += a\n        day += 1\n        if height >= h:\n            break\n        height -= b\n\n    print(day)\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "从标准输入读入 h、a、b 三个整数",
+          "用 while 按天模拟，到顶后 break 不再下滑",
+          "输出累计的天数"
+        ],
+        "analysis": "思路：用 `while height < h` 按天模拟：先加上白天的爬升并让天数加一，再判断是否已经到达井口，到了就 `break`，否则减去夜里下滑的距离。\n\n关键步骤：① `data = sys.stdin.read().split()` 后取前三个数转成 `int`；② 初始化 `height = 0`、`day = 0`；③ 循环中 `height += a`、`day += 1`；④ `if height >= h: break`；⑤ `height -= b`；⑥ 输出天数。\n\nPython 也可以直接写闭式公式：当 `h <= a` 时答案是 1，否则 `(h - a + (a - b) - 1) // (a - b) + 1`。但模拟写法更直观，也更能体现「最后一天不再下滑」这个关键点；h ≤ 10⁶ 时循环最多一百万次，Python 大约零点几秒，可以接受。\n\n复杂度 O(天数)，空间 O(1)。\n\n易错点：① 循环条件写成 `height <= h`；② 先下滑再判断；③ 忘记 `break`，爬出去后又滑回井里；④ 用 `/` 做除法得到浮点数；⑤ 三个输入的顺序读反；⑥ 空输入时直接取值。"
+      }
+    }
+  },
+  {
+    "id": "基-86",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "嵌套循环",
+      "完数",
+      "因子枚举"
+    ],
+    "stem": "如果一个正整数等于它的所有真因子（小于它本身且能整除它的正整数）之和，就称它为完数。例如 6 = 1 + 2 + 3，28 = 1 + 2 + 4 + 7 + 14，6 和 28 都是完数。\n\n给定正整数 n，按从小到大的顺序输出 1 到 n 之间的所有完数，每行一个；如果区间内没有完数，输出 `none`。\n\n**输入格式：** 一行一个整数 n（2 ≤ n ≤ 1000）。\n\n**输出格式：** 每行一个完数；若一个也没有，输出一行 `none`。\n\n**输入样例：**\n```text\n30\n```\n**输出样例：**\n```text\n6\n28\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int n, i, d;\n    int sum, found = 0;\n\n    if (scanf(\"%d\", &n) != 1 || n < 2)\n        return 0;\n\n    for (i = 2, found = 0; i <= n; i++) {\n        for (d = 1, sum = 0; d < i; d++) {\n            if (i % d == 0)\n                sum += d;\n        }\n        if (sum == i) {\n            printf(\"%d\\n\", i);\n            found = 1;\n        }\n    }\n\n    if (!found)\n        printf(\"none\\n\");\n\n    return 0;\n}",
+    "points": [
+      "外层枚举 2~n，内层枚举小于 i 的真因子并累加",
+      "每换一个 i 都把因子和清零，用逗号表达式完成多个变量的初始化",
+      "输出所有完数；一个也没有时输出 none"
+    ],
+    "analysis": "思路：外层循环枚举 2~n 的每个数 i，内层循环枚举 i 的真因子（1 ≤ d < i），把能整除 i 的 d 累加起来，最后判断累加和是否等于 i。\n\n关键步骤：① 读入 n；② 外层 `for (i = 2, found = 0; i <= n; i++)` 用逗号表达式同时初始化两个变量；③ 内层 `for (d = 1, sum = 0; d < i; d++)` 每换一个 i 都要把 `sum` 清零，这一步如果漏掉，后面的数会沿用前面数的因子和；④ `if (i % d == 0) sum += d;`；⑤ 若 `sum == i` 就输出并置 `found = 1`；⑥ 循环结束后若 `found` 仍为 0，输出 `none`。\n\n注意内层条件必须是 `d < i`，不能写成 `d <= i`，否则 i 会把自己算进因子和，完数永远判不出来；1 的真因子和为 0，不等于 1，所以从 2 开始枚举。\n\n复杂度：时间 O(n²)，n ≤ 1000 时约 5×10⁵ 次内层判断，空间 O(1)。\n\n易错点：① `sum` 没有在内层循环前清零；② 内层写成 `d <= i`；③ 输出格式要求每行一个，不要把多个完数输出在同一行；④ 忘记 `found` 标志，没有完数时什么都不输出；⑤ 把 1 当作完数；⑥ 逗号表达式误写成两条语句却放在 for 的初始化位置。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 2)\n        return 0;\n\n    bool found = false;\n    for (int i = 2; i <= n; ++i) {\n        int sum = 0;\n        for (int d = 1; d < i; ++d) {\n            if (i % d == 0)\n                sum += d;\n        }\n        if (sum == i) {\n            std::cout << i << '\\n';\n            found = true;\n        }\n    }\n\n    if (!found)\n        std::cout << \"none\\n\";\n\n    return 0;\n}",
+        "points": [
+          "外层枚举 2~n，内层累加真因子",
+          "把因子和定义在外层循环体内，保证每个数都重新从 0 开始",
+          "按行输出完数，无结果时输出 none"
+        ],
+        "analysis": "思路：外层枚举 2~n 的每个数，内层枚举它的真因子并累加，最后比较累加和与自身。C++ 中把 `sum` 定义在外层循环体内，作用域限制在每次外层迭代，天然保证「换一个 i 就重新从 0 开始」。\n\n关键步骤：① `std::cin >> n`；② `for (int i = 2; i <= n; ++i)`；③ 内层 `for (int d = 1; d < i; ++d)`，能整除就累加；④ `if (sum == i)` 输出并置 `found = true`；⑤ 最后按 `found` 输出 `none`。\n\n作用域：若把 `sum` 定义在两层循环之外，必须每轮手动清零；定义在外层循环体内更安全，这正是 C++ 允许在 `for` 初始化语句和块内声明变量的好处。C 版可以在 `for (d = 1, sum = 0; ...)` 中用逗号表达式完成同样的初始化。\n\n复杂度 O(n²)，n ≤ 1000 时约 5×10⁵ 次判断。\n\n易错点：① `sum` 忘记清零；② 内层条件写成 `d <= i`，把自身算进因子和；③ 把 1 当成完数；④ 忘记录 `found`，没有完数时输出为空；⑤ 多个完数输出在同一行；⑥ 用 `int` 之外的类型没有必要。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    if n < 2:\n        return\n\n    found = False\n    for i in range(2, n + 1):\n        total = 0\n        for d in range(1, i):\n            if i % d == 0:\n                total += d\n        if total == i:\n            print(i)\n            found = True\n\n    if not found:\n        print(\"none\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "用 range(2, n + 1) 枚举候选数",
+          "内层 range(1, i) 累加真因子，注意每轮清零",
+          "打印完数，没有结果时输出 none"
+        ],
+        "analysis": "思路：外层 `for i in range(2, n + 1)` 枚举每个数，内层 `for d in range(1, i)` 枚举真因子并累加，最后判断 `total == i`。\n\n关键步骤：① 读入 n；② 外层循环；③ 每轮先令 `total = 0`；④ 内层遍历 `1 ~ i-1`，`i % d == 0` 就累加；⑤ 相等就 `print(i)` 并置 `found = True`；⑥ 循环结束仍没有完数就输出 `none`。\n\n注意变量名用 `total` 而不是 `sum`：虽然 Python 允许覆盖内置函数 `sum`，但覆盖之后同一作用域内就无法再使用 `sum(...)`，容易埋下隐患。行内还可以写成 `total = sum(d for d in range(1, i) if i % d == 0)`，更紧凑，但显式循环更适合练习嵌套结构。\n\n复杂度 O(n²)，n ≤ 1000 时约 5×10⁵ 次取模，Python 也能瞬间完成。\n\n易错点：① `total` 没有每轮清零；② `range(1, i)` 写成 `range(1, i + 1)`，把自身算进去；③ 把 1 判成完数；④ 没有 `found` 标志，空结果时什么都不输出；⑤ 输出格式多了空格或少了换行；⑥ 内层变量名与外层重复导致逻辑混乱。"
+      }
+    }
+  },
+  {
+    "id": "基-87",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "数字拆位",
+      "循环嵌套",
+      "自幂数"
+    ],
+    "stem": "一个 k 位正整数，如果它的各位数字的 k 次幂之和等于它本身，就称为自幂数。例如 153 是 3 位数，且 1³ + 5³ + 3³ = 153，所以 153 是自幂数（按定义，1~9 这些一位数也都满足）。\n\n给定区间 [m, n]，按从小到大的顺序输出区间内所有的自幂数，每行一个；若一个也没有，输出 `none`。\n\n**输入格式：** 一行两个整数 m 和 n（1 ≤ m ≤ n ≤ 1 000 000）。\n\n**输出格式：** 每行一个自幂数；若一个也没有，输出一行 `none`。\n\n**输入样例：**\n```text\n100 999\n```\n**输出样例：**\n```text\n153\n370\n371\n407\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int m, n, x, t, k, d, p, j;\n    int sum, found = 0;\n\n    if (scanf(\"%d %d\", &m, &n) != 2 || m < 1 || m > n)\n        return 0;\n\n    for (x = m; x <= n; x++) {\n        k = 0;\n        t = x;\n        while (t > 0) {\n            k++;\n            t /= 10;\n        }\n\n        t = x;\n        sum = 0;\n        while (t > 0) {\n            d = t % 10;\n            p = 1;\n            for (j = 0; j < k; j++)\n                p *= d;\n            sum += p;\n            t /= 10;\n        }\n\n        if (sum == x) {\n            printf(\"%d\\n\", x);\n            found = 1;\n        }\n    }\n\n    if (!found)\n        printf(\"none\\n\");\n\n    return 0;\n}",
+    "points": [
+      "对区间内每个数先求位数 k，再逐位求 k 次幂之和",
+      "用连乘代替 pow，避免浮点误差；拆位时使用临时变量",
+      "输出所有满足条件的数，没有结果时输出 none"
+    ],
+    "analysis": "思路：对区间内每个数 x，先求出它的位数 k，再把每一位取出来求 k 次幂并累加，最后与 x 比较。\n\n关键步骤：① 读入 m、n；② 外层循环枚举 x；③ 用临时变量 `t = x`，通过 `while (t > 0) { k++; t /= 10; }` 求位数；④ 再次令 `t = x`，用 `while (t > 0) { d = t % 10; ... t /= 10; }` 逐位处理；⑤ 求 d 的 k 次幂时用内层 `for` 连乘，避免 `pow` 的浮点误差（例如 5³ 可能算成 124.999…，取整后变成 124）；⑥ 若累加和等于 x 就输出，并记录 `found`；⑦ 一个都没有时输出 `none`。\n\n注意每个 x 的位数 k 都不同，幂次不能写死成 3；1 位数 1~9 的 1 次幂等于自身，按定义它们也是自幂数。\n\n复杂度：外层 O(n−m+1)，每个数最多 7 位、每位最多 7 次乘法，整体近似 O((n−m+1)·k²)，k ≤ 7，空间 O(1)。\n\n易错点：① 用 `pow` 后直接 `(int)` 截断，浮点误差导致漏解；② 位数 k 在外层忘记重新计算；③ 拆位循环把 x 本身改掉，之后再比较时 x 已经变成 0；④ 内层累加变量没有清零；⑤ 幂次写成固定 3，只能处理三位数；⑥ 没有输出 `none` 的分支。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nint main()\n{\n    int m, n;\n    if (!(std::cin >> m >> n) || m < 1 || m > n)\n        return 0;\n\n    bool found = false;\n    for (int x = m; x <= n; ++x) {\n        int k = 0;\n        for (int t = x; t > 0; t /= 10)\n            ++k;\n\n        int sum = 0;\n        for (int t = x; t > 0; t /= 10) {\n            int d = t % 10;\n            int p = 1;\n            for (int j = 0; j < k; ++j)\n                p *= d;\n            sum += p;\n        }\n\n        if (sum == x) {\n            std::cout << x << '\\n';\n            found = true;\n        }\n    }\n\n    if (!found)\n        std::cout << \"none\\n\";\n\n    return 0;\n}",
+        "points": [
+          "对每个数统计位数并逐位求幂累加",
+          "用整数连乘求幂，避免 std::pow 的浮点误差",
+          "输出所有自幂数，没有结果时输出 none"
+        ],
+        "analysis": "思路：枚举区间内每个数，先求位数 k，再逐位求 k 次幂之和。C++ 可以把「求位数」和「求幂」都写成小循环，避免 `std::pow` 的浮点误差。\n\n关键步骤：① `std::cin >> m >> n`；② `for (int x = m; x <= n; ++x)`；③ 用 `for (int t = x; t > 0; t /= 10) ++k;` 统计位数；④ 第二个循环 `for (int t = x; t > 0; t /= 10)` 拆位，内层 `for (int j = 0; j < k; ++j) p *= d;` 求幂；⑤ `sum == x` 时输出并置 `found`；⑥ 最后输出 `none`。\n\n注意拆位要用临时变量 `t`，不能直接修改 `x`，否则后面的 `sum == x` 永远不成立。`std::pow` 返回 `double`，对整数幂可能产生 124.999… 这样的结果，`static_cast<int>` 截断后会少 1，所以本题坚持用连乘。\n\n复杂度：区间长度 × 位数²，n ≤ 10⁶、位数 ≤ 7，很快。\n\n易错点：① 用 `pow` 后直接截断；② 位数 k 没有对每个 x 重新计算；③ 拆位时改掉了 x；④ `sum` 没有清零；⑤ 幂次固定为 3；⑥ 忘记 `none` 分支。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    m = int(data[0])\n    n = int(data[1])\n    found = False\n    for x in range(m, n + 1):\n        k = len(str(x))\n        total = sum(int(ch) ** k for ch in str(x))\n        if total == x:\n            print(x)\n            found = True\n\n    if not found:\n        print(\"none\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "用 len(str(x)) 求位数，用逐位幂运算求和",
+          "判断和是否等于自身，并记录是否找到",
+          "输出所有自幂数，没有结果时输出 none"
+        ],
+        "analysis": "思路：Python 用 `str(x)` 求位数和拆位最方便：`k = len(str(x))`，再用生成器 `sum(int(ch) ** k for ch in str(x))` 求各位的 k 次幂之和。整数幂运算在 Python 中是精确的，不存在 C 里 `pow` 的浮点误差。\n\n关键步骤：① 读入 m、n；② `for x in range(m, n + 1)`；③ `k = len(str(x))`；④ `total = sum(int(ch) ** k for ch in str(x))`；⑤ 相等就 `print(x)` 并置 `found = True`；⑥ 最后按 `found` 输出 `none`。\n\n区间长度最大 10⁶，每个数最多 7 位，字符串转换加幂运算在 Python 中大约一两秒，属于可接受范围；若追求更快，可以按位数分段处理，或提前缓存 0~9 的各次幂。\n\n复杂度 O((n − m + 1) · k)，k 为位数。\n\n易错点：① 幂次写成固定 3，只能处理三位数；② `str(x)` 与 `x` 混用导致类型错误；③ 忘记 `found`，没有结果时什么都不输出；④ `range(m, n)` 漏掉 n；⑤ 把 `int(ch) ** k` 写成 `ch ** k`；⑥ 输出顺序不是升序。"
+      }
+    }
+  },
+  {
+    "id": "基-88",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "素数判断",
+      "枚举",
+      "break"
+    ],
+    "stem": "哥德巴赫猜想指出：每个大于 2 的偶数都可以写成两个素数之和。给定一个偶数 n，请找出满足 n = p + q 且 p 最小的那一组（要求 p ≤ q，且 p、q 都是素数），并按指定格式输出。\n\n**输入格式：** 一行一个偶数 n（4 ≤ n ≤ 100 000）。\n\n**输出格式：** 一行，格式为 `n = p + q`，其中 p ≤ q 且 p 是满足条件的最小素数；若不存在这样的分解，输出 `none`。\n\n**输入样例：**\n```text\n100\n```\n**输出样例：**\n```text\n100 = 3 + 97\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int n, p, q, i;\n    int found = 0;\n\n    if (scanf(\"%d\", &n) != 1 || n < 4 || n % 2 != 0)\n        return 0;\n\n    for (p = 2; p <= n / 2; p++) {\n        int p_prime = 1;\n        int q_prime = 1;\n\n        for (i = 2; i * i <= p; i++) {\n            if (p % i == 0) {\n                p_prime = 0;\n                break;\n            }\n        }\n\n        q = n - p;\n        for (i = 2; i * i <= q; i++) {\n            if (q % i == 0) {\n                q_prime = 0;\n                break;\n            }\n        }\n\n        if (p_prime && q_prime) {\n            printf(\"%d = %d + %d\\n\", n, p, q);\n            found = 1;\n            break;\n        }\n    }\n\n    if (!found)\n        printf(\"none\\n\");\n\n    return 0;\n}",
+    "points": [
+      "枚举 p 从 2 到 n/2，保证 p ≤ q 且不重复",
+      "分别用试除法判断 p 与 q = n - p 是否为素数",
+      "找到第一组解就按 n = p + q 的格式输出并 break"
+    ],
+    "analysis": "思路：要保证 p 最小，就从 2 开始从小到大枚举 p，令 q = n − p，只要 p 与 q 同时为素数，这一组就是答案，立即输出并结束；由于 p 递增，第一次找到的必然满足 p 最小。p 只需要枚举到 n/2，因为超过 n/2 之后 p 与 q 的角色互换，重复枚举没有意义。\n\n关键步骤：① 读入偶数 n；② `for (p = 2; p <= n / 2; p++)`；③ 用试除法判断 p 是否为素数：从 2 试到 √p，找到因数就置标志并 `break`；④ 同样判断 q = n − p；⑤ 两个都是素数时按 `n = p + q` 的格式输出，置 `found` 并 `break`；⑥ 循环结束仍未找到则输出 `none`。\n\n判断素数时用 `i * i <= x` 作为循环条件，能把每个数的判断从 O(x) 降到 O(√x)；整体复杂度约 O(n√n)，n = 10⁵ 时大约 2×10⁷ 次运算，可以接受。\n\n易错点：① p 从 2 开始却把 2 当合数；② q 没有重新判断素数，只判断了 p；③ 找到解后不 `break`，继续输出多组；④ 枚举到 n 而不是 n/2；⑤ 输出格式少了空格或等号；⑥ 用 `goto` 跳出多层循环——本题用 `break` 加标志变量即可，不需要 `goto`。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 4 || n % 2 != 0)\n        return 0;\n\n    bool found = false;\n    for (int p = 2; p <= n / 2; ++p) {\n        bool p_prime = true;\n        for (int i = 2; i * i <= p; ++i) {\n            if (p % i == 0) {\n                p_prime = false;\n                break;\n            }\n        }\n        if (!p_prime)\n            continue;\n\n        int q = n - p;\n        bool q_prime = true;\n        for (int i = 2; i * i <= q; ++i) {\n            if (q % i == 0) {\n                q_prime = false;\n                break;\n            }\n        }\n\n        if (q_prime) {\n            std::cout << n << \" = \" << p << \" + \" << q << '\\n';\n            found = true;\n            break;\n        }\n    }\n\n    if (!found)\n        std::cout << \"none\\n\";\n\n    return 0;\n}",
+        "points": [
+          "枚举 p 从 2 到 n/2，q = n - p",
+          "用试除法分别判断 p 与 q 是否为素数",
+          "输出最小的 p 对应的 n = p + q，未找到时输出 none"
+        ],
+        "analysis": "思路：与 C 版一致，p 从 2 递增到 n/2，对每个 p 判断 p 与 n−p 是否都为素数，第一次成功即为 p 最小的解。C++ 用 `bool` 标志和 `break` 控制流程，比 `goto` 清晰。\n\n关键步骤：① `std::cin >> n`；② `for (int p = 2; p <= n / 2; ++p)`；③ 内层试除判断 p 是否为素数，不是就 `continue`；④ `int q = n - p;` 再判断 q；⑤ 两者都是素数就按格式输出并 `break`；⑥ 循环结束仍未找到则输出 `none`。\n\n`i * i <= x` 中的 `i`、`x` 都是 `int`，本题 x ≤ 10⁵，平方不会溢出。若把范围放大到 2×10⁹，就需要 `long long` 或改写成 `i <= x / i`。\n\n复杂度：枚举 n/2 个 p，每个数试除到 √n，整体约 O(n√n)，n = 10⁵ 时约 2×10⁷ 次运算。\n\n易错点：① 只判断 p 不判断 q；② p 从 1 开始；③ 找到解后不 `break`，输出多组；④ 枚举到 n 而不是 n/2；⑤ 判断 q 时把 q = 2 误判为合数；⑥ 输出格式的等号和加号两侧空格不一致。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef is_prime(x: int) -> bool:\n    if x < 2:\n        return False\n    i = 2\n    while i * i <= x:\n        if x % i == 0:\n            return False\n        i += 1\n    return True\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    if n < 4 or n % 2 != 0:\n        return\n\n    for p in range(2, n // 2 + 1):\n        q = n - p\n        if is_prime(p) and is_prime(q):\n            print(f\"{n} = {p} + {q}\")\n            return\n\n    print(\"none\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "把素数判断封装成函数 is_prime",
+          "枚举 p 从 2 到 n//2，判断 p 与 n-p 是否都为素数",
+          "输出第一组解（即 p 最小）或 none"
+        ],
+        "analysis": "思路：把素数判断封装成函数 `is_prime`，主程序从 2 枚举 p，`q = n - p`，第一次满足 `is_prime(p) and is_prime(q)` 就输出并返回，因此一定是最小的 p。\n\n关键步骤：① 读入 n 并检查是偶数且 ≥ 4；② `for p in range(2, n // 2 + 1)`；③ `is_prime` 用 `while i * i <= x` 试除；④ 找到就 `print(f\"{n} = {p} + {q}\")` 然后 `return`；⑤ 循环结束仍没有解则 `print(\"none\")`。\n\n用 `return` 直接结束 `main`，比设置标志变量再判断更简洁；Python 的短路求值 `is_prime(p) and is_prime(q)` 保证 p 不是素数时不会多算 q。\n\n复杂度 O(n√n)，n = 10⁵ 时约 2×10⁷ 次循环，Python 大约一秒以内。\n\n易错点：① 只判断 p；② `range(2, n // 2)` 漏掉 n/2；③ p = 2 被误判为合数；④ 忘记处理 q = 2；⑤ 输出格式少了空格；⑥ 没有 `none` 分支；⑦ 用 `is` 比较数字（应使用 `==`）。"
+      }
+    }
+  }
+]

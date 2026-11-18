@@ -1,0 +1,422 @@
+[
+  {
+    "id": "函-57",
+    "type": "design",
+    "difficulty": 1,
+    "tags": [
+      "递归",
+      "递归出口",
+      "阶乘"
+    ],
+    "stem": "请编写递归函数计算 n 的阶乘 n!。阶乘的定义为：0! = 1，n! = n × (n-1)!（n ≥ 1）。要求必须用递归实现，不能使用循环，也不能调用库函数直接计算。\n\n**输入格式：** 一行一个整数 n（0 ≤ n ≤ 20）。\n\n**输出格式：** 一行一个整数，表示 n! 的值。\n\n**输入样例：**\n```text\n5\n```\n**输出样例：**\n```text\n120\n```",
+    "solution": "#include <stdio.h>\n\nstatic long long factorial(int n)\n{\n    if (n <= 1)\n        return 1;\n    return (long long)n * factorial(n - 1);\n}\n\nint main(void)\n{\n    int n;\n\n    if (scanf(\"%d\", &n) != 1 || n < 0 || n > 20)\n        return 0;\n\n    printf(\"%lld\\n\", factorial(n));\n    return 0;\n}",
+    "points": [
+      "递归出口：n ≤ 1 时返回 1，同时覆盖 0! = 1 与 1! = 1",
+      "递推式：n! = n × (n-1)!，每层参数减 1 保证递归终止",
+      "用 long long 保存结果，20! ≈ 2.43×10¹⁸ 不会溢出",
+      "主函数读入 n 并按格式输出一行结果"
+    ],
+    "analysis": "思路：求 n! 可以把问题拆成「n 乘以 (n-1)!」，规模每层减 1，直到 n 为 0 或 1 时直接得到 1。这正是递归的两个要素：递归出口（最小子问题的答案已知）与递推式（大问题如何由小问题得到）。递归调用会先一路下降到出口，再逐层返回并相乘，最终把结果带回 main。\n\n关键步骤：① 在 factorial 开头判断 n <= 1 就返回 1，一次覆盖 0! 和 1! 两种边界；② 否则返回 n * factorial(n - 1)，让规模严格变小，保证递归一定终止；③ 乘法前把 n 转成 long long，避免 32 位整数相乘时溢出；④ main 读入 n，直接输出 factorial(n)。\n\n复杂度：时间 O(n)，共 n 层调用、每层一次乘法；空间 O(n)，递归调用栈深度为 n。本题 n ≤ 20，栈和结果都不会出问题。\n\n易错点：① 递归出口只写 n == 0，虽然 1! 仍能得到 1，但会多展开一层；② 用 int 保存结果，13! = 6227020800 已经超出 int 上限；③ 递推式误写成 n * factorial(n)，规模不减小，导致无限递归和栈溢出；④ 忘记 return 或把出口写在递归调用之后；⑤ 把 0! 当成 0，输出错误。\n\n补充：若把 n 继续增大，递归深度会线性增长，最终可能栈溢出；工程上求大数阶乘应改用迭代配合高精度整数，而不是递归。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nstatic long long factorial(int n)\n{\n    if (n <= 1)\n        return 1;\n    return static_cast<long long>(n) * factorial(n - 1);\n}\n\nint main()\n{\n    int n;\n\n    if (!(std::cin >> n) || n < 0 || n > 20)\n        return 0;\n\n    std::cout << factorial(n) << '\\n';\n    return 0;\n}",
+        "points": [
+          "递归出口：n ≤ 1 时返回 1，同时覆盖 0! = 1 与 1! = 1",
+          "递推式：n! = n × (n-1)!，每层参数减 1 保证递归终止",
+          "用 long long 保存结果，20! ≈ 2.43×10¹⁸ 不会溢出",
+          "主函数读入 n 并按格式输出一行结果"
+        ],
+        "analysis": "思路：与 C 版本完全一致——出口 n ≤ 1 返回 1，递推式 n × (n-1)!，每层规模减 1。C++ 的差别主要在输入输出和类型转换写法。\n\n关键步骤：① 用 `if (!(std::cin >> n) || n < 0 || n > 20) return 0;` 同时处理输入失败和越界；② 乘法写成 `static_cast<long long>(n) * factorial(n - 1)`，把类型转换写显式，避免有符号整数溢出；③ 输出用 `'\\n'` 而不是 `std::endl`，避免每次都刷新缓冲区；④ 递归函数放在全局作用域并用 `static` 限制为内部链接，符合单文件程序的习惯。\n\n复杂度：时间 O(n)，空间 O(n)（递归栈）。\n\n易错点：① 返回类型写成 `int`，20! 会溢出成负数；② 在 `using namespace std;` 下把变量命名为 `count` 之类容易与标准库名字冲突；③ 用 `std::endl` 刷缓冲在小数据下无感，但养成习惯不好；④ 认为 C++ 的 `long long` 一定能装下任意阶乘——21! 就会溢出。\n\n跨语言对照：C 用 `scanf/printf` 加 `%lld`，C++ 用流，Python 用任意精度整数，三者算法相同、输出相同。\n\n补充：C++ 的 long long 至少 64 位，能装下 20!；如果题目把 n 放宽到 21 以上，就需要 __int128 或高精度库，不能继续依赖内置类型。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef factorial(n: int) -> int:\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    print(factorial(n))\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "递归出口：n ≤ 1 时返回 1，同时覆盖 0! = 1 与 1! = 1",
+          "递推式：n! = n × (n-1)!，每层参数减 1 保证递归终止",
+          "用 long long 保存结果，20! ≈ 2.43×10¹⁸ 不会溢出",
+          "主函数读入 n 并按格式输出一行结果"
+        ],
+        "analysis": "思路：Python 函数天然支持递归，写法和 C 版本一一对应：出口返回 1，否则返回 `n * factorial(n - 1)`。\n\n关键步骤：① 用 `sys.stdin.read().split()` 一次读入全部输入再取第一个 token，比 `input()` 更能容忍多余空格和换行；② 输入为空时直接返回，避免 `IndexError`；③ 递归函数只负责计算，输出放在 `main` 中；④ 用 `if __name__ == \"__main__\":` 保护入口，方便被其他模块导入。\n\n复杂度：时间 O(n)，空间 O(n)（递归栈）。n ≤ 20 时递归深度只有 20 层，远低于默认上限 1000。\n\n易错点：① Python 的 `int` 是任意精度，20! 不需要担心溢出，但若用 `float()` 转换输入就会丢精度；② 递归出口写成 `n == 0` 而递推里用 `n - 1` 也能停，但 `n == 1` 时要多一层；③ 忘记 `return` 会得到 `None`，再参与乘法时报 `TypeError`；④ 用 `input()` 只读一行，遇到多行输入会漏读；⑤ 递归深度过大（例如把题目改成 n = 10000）会触发 `RecursionError`，这时应改迭代或 `sys.setrecursionlimit`。\n\n补充：Python 的递归有默认深度限制，函数调用开销也比循环大；实际工程中求阶乘更常用 math.factorial，本题手写递归是为了练习出口与递推，而不是追求性能。"
+      }
+    }
+  },
+  {
+    "id": "函-58",
+    "type": "design",
+    "difficulty": 1,
+    "tags": [
+      "递归",
+      "欧几里得算法",
+      "最大公约数"
+    ],
+    "stem": "输入两个正整数 a 和 b，用递归的欧几里得算法求它们的最大公约数 g，并输出 g 与最小公倍数 lcm。要求：最大公约数必须用递归实现；最小公倍数按 lcm = a / g × b 计算（先除后乘，避免中间乘积溢出）。\n\n**输入格式：** 一行两个正整数 a、b（1 ≤ a, b ≤ 10⁶），用空格分隔。\n\n**输出格式：** 一行两个整数，依次为最大公约数 g 和最小公倍数 lcm，中间用一个空格分隔。\n\n**输入样例：**\n```text\n12 18\n```\n**输出样例：**\n```text\n6 36\n```",
+    "solution": "#include <stdio.h>\n\nstatic long long gcd(long long a, long long b)\n{\n    if (b == 0)\n        return a;\n    return gcd(b, a % b);\n}\n\nint main(void)\n{\n    long long a, b, g;\n\n    if (scanf(\"%lld %lld\", &a, &b) != 2 || a <= 0 || b <= 0)\n        return 0;\n\n    g = gcd(a, b);\n    printf(\"%lld %lld\\n\", g, a / g * b);\n    return 0;\n}",
+    "points": [
+      "递归出口：b == 0 时返回 a",
+      "递推调用 gcd(b, a % b)，正确实现欧几里得算法且参数顺序不颠倒",
+      "最小公倍数按 a / g * b 先除后乘，避免中间乘积溢出",
+      "输出 g 与 lcm 两个整数，中间一个空格"
+    ],
+    "analysis": "思路：欧几里得算法基于恒等式 gcd(a, b) = gcd(b, a % b)：a 和 b 的公约数集合与 b 和 a % b 的公约数集合完全相同，因此可以不断把问题规模缩小，直到 b 为 0，此时 gcd(a, 0) = a。\n\n关键步骤：① 递归出口 `b == 0` 返回 a；② 递推调用 `gcd(b, a % b)`，参数顺序不能颠倒；③ 求出 g 后，最小公倍数用 `a / g * b`：先除后乘，保证中间结果不超过 a×b，避免溢出；④ 输出 g 和 lcm 两个整数，中间一个空格。\n\n复杂度：时间 O(log min(a, b))，每次取模至少让较小的数减半；空间 O(log min(a, b)) 的递归栈。\n\n易错点：① 出口写成 `a == 0` 或 `b == 1`，前者在 a 不为 0 时永远停不下来，后者结果错误；② 递推写成 `gcd(a % b, b)`，参数顺序反了，会退化成很慢的减法式递推；③ 先算 `a * b / g`，10⁶ × 10⁶ = 10¹² 在 32 位下溢出；④ 把 lcm 存进 int；⑤ 输入为 0 时没有处理（本题保证正整数，但写代码时最好校验）。\n\n补充：欧几里得算法也可以写成迭代形式：只要 b 不为 0，就令 t = a % b、a = b、b = t，循环结束时 a 就是答案。递归版和迭代版的结果完全相同，本题要求递归，是为了练习函数自我调用与出口设计。另外，a % b 的结果一定小于 b，所以递归第二个参数严格变小，程序必然终止；这是判断递归写得对不对的一个简单依据。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nstatic long long gcd(long long a, long long b)\n{\n    if (b == 0)\n        return a;\n    return gcd(b, a % b);\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    long long a, b;\n    if (!(std::cin >> a >> b) || a <= 0 || b <= 0)\n        return 0;\n\n    long long g = gcd(a, b);\n    std::cout << g << ' ' << a / g * b << '\\n';\n    return 0;\n}",
+        "points": [
+          "递归出口：b == 0 时返回 a",
+          "递推调用 gcd(b, a % b)，正确实现欧几里得算法且参数顺序不颠倒",
+          "最小公倍数按 a / g * b 先除后乘，避免中间乘积溢出",
+          "输出 g 与 lcm 两个整数，中间一个空格"
+        ],
+        "analysis": "思路：与 C 版本相同，仍然手写递归的欧几里得算法；C++17 虽然提供了 `std::gcd`，但本题要求展示递归过程，不能直接调用。\n\n关键步骤：① 用 `long long` 接收输入，虽然 a、b 只有 10⁶，但 lcm 会达到 10¹²，必须用 64 位；② 递归函数写成文件内的 `static` 函数；③ `std::cout << g << ' ' << a / g * b` 中运算符优先级是先除后乘，结果正确；④ 关闭流同步，输入输出更快。\n\n复杂度：时间 O(log min(a, b))，空间 O(log min(a, b))。\n\n易错点：① 用 `int` 存 lcm，10¹² 直接溢出；② 写成 `a * b / g`，中间乘积先溢出；③ 用 `std::gcd` 代替递归，虽然结果对但不符合题目要求；④ 在 `using namespace std;` 下自定义的 `gcd` 与 `std::gcd` 冲突（C++17 起尤其要注意），本题没有使用命名空间，函数名也不冲突。\n\n跨语言对照：C++ 的引用与流让代码更短，但递归结构和 C 完全一致；Python 用 `//` 做整除，同样要先除后乘。\n\n补充：C++17 在 <numeric> 中提供了 std::gcd，但它内部是迭代实现；题目要求递归，正好可以对照两种写法的差异，也能避免与 std::gcd 重名。此外，std::gcd 的参数类型必须一致，混用 int 与 long long 时模板推导会失败，需要显式转换。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef gcd(a: int, b: int) -> int:\n    if b == 0:\n        return a\n    return gcd(b, a % b)\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    a, b = int(data[0]), int(data[1])\n    g = gcd(a, b)\n    print(g, a // g * b)\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "递归出口：b == 0 时返回 a",
+          "递推调用 gcd(b, a % b)，正确实现欧几里得算法且参数顺序不颠倒",
+          "最小公倍数按 a / g * b 先除后乘，避免中间乘积溢出",
+          "输出 g 与 lcm 两个整数，中间一个空格"
+        ],
+        "analysis": "思路：Python 用取模运算 `%` 和整数除法 `//` 表达欧几里得算法，递归结构与 C 版本完全相同。\n\n关键步骤：① 出口 `if b == 0: return a`；② 递推 `return gcd(b, a % b)`；③ lcm 写成 `a // g * b`，必须用 `//`，`/` 会得到浮点数；④ `print(g, a // g * b)` 默认用空格分隔两个值并换行，正好符合输出格式。\n\n复杂度：时间 O(log min(a, b))，空间 O(log min(a, b))；递归深度最多约 30 层，远低于默认上限。\n\n易错点：① 用 `/` 做整除，结果变成 `6.0 36.0` 这种浮点形式，输出格式不符；② 先算 `a * b // g`，虽然 Python 不会溢出，但多算了一次大数乘法，题目要求先除后乘；③ 递归参数写成 `gcd(a % b, b)`，算法仍然能停但效率差；④ 直接调用 `math.gcd`，不符合题目要求手写递归；⑤ 把输入按行读时只取到一行，遇到两个数分行的数据会出错，用 `split()` 更稳。\n\n补充：math.gcd 能直接求最大公约数，3.9 起还有 math.lcm；本题手写递归是为了理解算法本身。注意 Python 的 // 与 % 对正整数的结果和 C 一致。如果两个数很大，Python 的大整数取模依然精确，不会像 C 那样受 64 位限制，这是脚本语言的优势。"
+      }
+    }
+  },
+  {
+    "id": "函-59",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "递归",
+      "汉诺塔",
+      "分治"
+    ],
+    "stem": "汉诺塔问题：A 柱上有 n 个大小不同的圆盘，小的在上、大的在下。要求借助 B 柱把它们全部移到 C 柱，每次只能移动一个圆盘，且任何时候大盘都不能压在小盘上面。请用递归实现，输入圆盘数 n（1 ≤ n ≤ 10）。\n\n**移动顺序要求：** 输出时第一行先给出最少移动次数，接下来每行一步移动，格式为 `X->Y`（X、Y 为 A、B、C 之一）。移动顺序必须采用标准递归解法：先把上面 n-1 个盘从 A 借助 C 移到 B，再把最大的盘从 A 移到 C，最后把 n-1 个盘从 B 借助 A 移到 C。\n\n**输入格式：** 一行一个整数 n（1 ≤ n ≤ 10）。\n\n**输出格式：** 第一行一个整数，表示最少移动次数 2ⁿ - 1；随后 2ⁿ - 1 行，每行一步移动，格式为 `X->Y`。\n\n**输入样例：**\n```text\n2\n```\n**输出样例：**\n```text\n3\nA->B\nA->C\nB->C\n```",
+    "solution": "#include <stdio.h>\n\nstatic void hanoi(int n, char from, char via, char to)\n{\n    if (n == 0)\n        return;\n\n    hanoi(n - 1, from, to, via);\n    printf(\"%c->%c\\n\", from, to);\n    hanoi(n - 1, via, from, to);\n}\n\nint main(void)\n{\n    int n;\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > 10)\n        return 0;\n\n    printf(\"%d\\n\", (1 << n) - 1);\n    hanoi(n, 'A', 'B', 'C');\n    return 0;\n}",
+    "points": [
+      "递归出口：n == 0 时直接返回，表示没有圆盘需要移动",
+      "把 n 个盘的移动分解为「n-1 借助终点到辅助柱、最大盘到终点、n-1 借助起点到终点」三步",
+      "递归调用时形参 from、via、to 与实参角色对应正确，输出的每一步都合法",
+      "正确输出最少移动次数 2ⁿ - 1，并保证每步格式为 X->Y"
+    ],
+    "analysis": "思路：汉诺塔是分治递归的经典模型。要把 n 个盘从 A 移到 C：先把上面 n-1 个盘从 A 借助 C 移到 B；再把最大的盘从 A 直接移到 C；最后把 n-1 个盘从 B 借助 A 移到 C。三个步骤中，第一步和第三步与原问题结构相同，只是规模减 1、柱子角色互换，因此可以直接递归。\n\n关键步骤：① 递归出口 `n == 0` 直接返回，表示没有盘要移动；② 函数形参按「起点、辅助柱、终点」排列，调用时要把实参对应正确：`hanoi(n-1, from, to, via)` 表示借助终点把 n-1 个盘移到辅助柱；③ 中间那一步输出 `from->to`；④ 最后一步 `hanoi(n-1, via, from, to)`；⑤ 移动次数公式为 2ⁿ - 1，在 main 中先输出。\n\n复杂度：移动次数恰好 2ⁿ - 1，时间复杂度 O(2ⁿ)，递归栈 O(n)。n ≤ 10 时最多 1023 步移动，规模可控。\n\n易错点：① 三个形参的顺序记混，导致输出的移动步骤不合法；② 忘记先输出移动次数，或把次数算成 2ⁿ；③ 递归出口写成 n == 1 后仍然继续递归，造成无限递归；④ 第二步直接移动最大盘时把方向写反；⑤ 输出的箭头格式与题目要求不一致（如写成 `A -> C`）。\n\n补充：移动步数满足递推 M(n) = 2M(n-1) + 1 且 M(0) = 0，展开后正好是 2ⁿ - 1，这正是递归调用次数的来源；理解这个递推也能解释为什么 n 稍大就无法手工完成。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nstatic void hanoi(int n, char from, char via, char to)\n{\n    if (n == 0)\n        return;\n\n    hanoi(n - 1, from, to, via);\n    std::cout << from << \"->\" << to << '\\n';\n    hanoi(n - 1, via, from, to);\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 10)\n        return 0;\n\n    std::cout << (1 << n) - 1 << '\\n';\n    hanoi(n, 'A', 'B', 'C');\n    return 0;\n}",
+        "points": [
+          "递归出口：n == 0 时直接返回，表示没有圆盘需要移动",
+          "把 n 个盘的移动分解为「n-1 借助终点到辅助柱、最大盘到终点、n-1 借助起点到终点」三步",
+          "递归调用时形参 from、via、to 与实参角色对应正确，输出的每一步都合法",
+          "正确输出最少移动次数 2ⁿ - 1，并保证每步格式为 X->Y"
+        ],
+        "analysis": "思路：与 C 版本相同的三步分治。C++ 用 `std::cout` 分三次输出字符和箭头，避免手写格式串。\n\n关键步骤：① 出口 `if (n == 0) return;`；② 第一段递归 `hanoi(n - 1, from, to, via)`，把 n-1 个盘从起点移到辅助柱，终点此时充当辅助；③ 输出 `from << \"->\" << to`；④ 第二段递归 `hanoi(n - 1, via, from, to)`；⑤ main 中先输出 `(1 << n) - 1`，再启动递归。\n\n复杂度：移动步数 2ⁿ - 1，时间 O(2ⁿ)，空间 O(n)。\n\n易错点：① 用 `std::endl` 每行刷新，1023 行时明显变慢（本题数据小，但应养成用 `'\\n'` 的习惯）；② 递归调用写错实参顺序，例如第二段误写成 `hanoi(n - 1, from, via, to)`；③ `1 << n` 中 n 是 int，本题 n ≤ 10 安全，但若 n ≥ 31 会溢出；④ 忘记处理 n = 0 的输入（题目保证 n ≥ 1，但递归过程中一定会遇到 n = 0）。\n\n跨语言对照：C 用 `%c->%c`，C++ 用流，Python 用 f-string，移动序列必须完全一致。\n\n补充：汉诺塔的递归树是一棵满二叉树，叶子数正好等于移动步数 2ⁿ - 1；画一画 n = 3 的调用树，能直观看到参数 from、via、to 是怎样轮换的。若扩展到四根柱子，问题会复杂得多。注意 n = 10 时输出 1024 行，仍远小于各类评测的行数限制，但写文件或逐行刷新时要留意性能。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef hanoi(n: int, src: str, aux: str, dst: str, out: list) -> None:\n    if n == 0:\n        return\n\n    hanoi(n - 1, src, dst, aux, out)\n    out.append(f\"{src}->{dst}\")\n    hanoi(n - 1, aux, src, dst, out)\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    out = [str((1 << n) - 1)]\n    hanoi(n, \"A\", \"B\", \"C\", out)\n    sys.stdout.write(\"\\n\".join(out) + \"\\n\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "递归出口：n == 0 时直接返回，表示没有圆盘需要移动",
+          "把 n 个盘的移动分解为「n-1 借助终点到辅助柱、最大盘到终点、n-1 借助起点到终点」三步",
+          "递归调用时 src、aux、dst 与实参角色对应正确，输出的每一步都合法",
+          "正确输出最少移动次数 2ⁿ - 1，并保证每步格式为 X->Y"
+        ],
+        "analysis": "思路：同样使用「起点 src、辅助柱 aux、终点 dst」三个参数，递归的三步与 C 版本逐字对应。Python 用列表收集所有输出行，最后一次性写出，避免逐行 `print` 的多次 I/O。\n\n关键步骤：① 出口 `if n == 0: return`；② `hanoi(n - 1, src, dst, aux, out)`；③ `out.append(f\"{src}->{dst}\")`；④ `hanoi(n - 1, aux, src, dst, out)`；⑤ 主函数先把移动次数转成字符串放进结果列表，再递归填充移动步骤。\n\n复杂度：时间 O(2ⁿ)，空间 O(2ⁿ) 用于保存输出（1023 行），递归栈 O(n)。\n\n易错点：① 用 `/n` 或手写 `pow` 计算 2ⁿ，而应当用整数移位 `1 << n`；② 把 `f\"{src}->{dst}\"` 写成带空格的 `f\"{src} -> {dst}\"`，与样例不符；③ 递归函数忘记接收 `out` 参数，导致每层各建一个列表；④ 在递归里直接 `print` 虽然可行，但混用 `sys.stdout.write` 会造成顺序问题；⑤ Python 递归深度对 n ≤ 10 完全安全。\n\n补充：Python 的递归深度对 n ≤ 10 完全够用；如果 n 很大，移动步数会指数爆炸，任何语言都无法真正输出全部步骤，所以汉诺塔题目通常只要求输出步数或前若干步。输出时先用列表收集、再统一写出，还能减少系统调用次数。"
+      }
+    }
+  },
+  {
+    "id": "函-60",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "递归",
+      "二分查找",
+      "有序数组"
+    ],
+    "stem": "给定 n 个按非递减顺序排列的整数和一个目标值 target，请用递归实现二分查找。每层把 target 与当前区间中间元素比较一次，并统计比较总次数。\n\n规则：当前区间为 [lo, hi]，中点按 mid = lo + (hi - lo) / 2 向下取整计算。若 a[mid] == target 立即返回 mid；若 a[mid] < target 到右半区间 [mid+1, hi] 继续查找；否则到左半区间 [lo, mid-1] 继续查找；当 lo > hi 时说明不存在。\n\n**输入格式：** 第一行两个整数 n 和 target（1 ≤ n ≤ 100000，|target| ≤ 10⁹），用空格分隔；第二行 n 个整数，按非递减顺序排列，相邻两数之间用空格分隔（|a[i]| ≤ 10⁹）。\n\n**输出格式：** 第一行输出 target 在数组中的下标（下标从 0 开始）；若不存在，输出 -1。第二行输出 target 与中间元素比较的总次数。\n\n**输入样例：**\n```text\n6 9\n1 3 5 7 9 11\n```\n**输出样例：**\n```text\n4\n2\n```",
+    "solution": "#include <stdio.h>\n\nstatic int bin_search(const int *a, int lo, int hi, int target, int *cnt)\n{\n    int mid;\n\n    if (lo > hi)\n        return -1;\n\n    mid = lo + (hi - lo) / 2;\n    (*cnt)++;\n\n    if (a[mid] == target)\n        return mid;\n    if (a[mid] < target)\n        return bin_search(a, mid + 1, hi, target, cnt);\n    return bin_search(a, lo, mid - 1, target, cnt);\n}\n\nint main(void)\n{\n    static int a[100000];\n    int n, target, i, cnt = 0, idx;\n\n    if (scanf(\"%d %d\", &n, &target) != 2 || n <= 0 || n > 100000)\n        return 0;\n\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    idx = bin_search(a, 0, n - 1, target, &cnt);\n    printf(\"%d\\n%d\\n\", idx, cnt);\n    return 0;\n}",
+    "points": [
+      "递归出口：lo > hi 时返回 -1，表示区间为空、元素不存在",
+      "用 mid = lo + (hi - lo) / 2 计算中点，每比较一次就把计数器加 1",
+      "根据 a[mid] 与 target 的大小关系，把查找区间缩小到右半 [mid+1, hi] 或左半 [lo, mid-1]",
+      "输出找到的下标与比较次数两行；不存在时第一行输出 -1"
+    ],
+    "analysis": "思路：二分查找每轮把待查区间缩小一半。取中间下标 mid，与 target 比较一次：相等就返回 mid；target 更大就到右半区间 [mid+1, hi] 继续找；否则到左半区间 [lo, mid-1] 继续找。区间为空（lo > hi）说明不存在。\n\n关键步骤：① 递归出口 `lo > hi` 返回 -1；② 用 `mid = lo + (hi - lo) / 2` 计算中点，避免 lo + hi 溢出，且与题目规定的向下取整一致；③ 每比较一次就让 `*cnt` 加 1，通过指针出参把次数带回 main；④ 递归调用时区间边界必须写成 mid+1 / mid-1，否则区间不缩小会死循环；⑤ 数组用 static 存储，避免 10⁵ 个 int 放在栈上。\n\n复杂度：时间 O(log n)，最多约 ⌈log₂n⌉ + 1 次比较；空间 O(log n) 的递归栈。\n\n易错点：① mid 用 `(lo + hi) / 2`，lo、hi 都接近 10⁵ 时不会溢出 int，但大范围数据会；② 比较次数忘记统计，或把每次递归调用都算成一次比较（应该只在真正比较 a[mid] 时加一）；③ 区间没缩小导致死循环；④ 找到后继续递归，返回了错误的下标；⑤ 不存在的元素输出 0 而不是 -1。\n\n补充：递归二分和迭代二分的结果完全一致，迭代版用 while 循环把空间降到 O(1)，递归版则更贴合「把问题缩小一半」的分治描述；两种写法都要求区间每一步严格缩小。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nstatic int bin_search(const std::vector<int> &a, int lo, int hi, int target, int &cnt)\n{\n    if (lo > hi)\n        return -1;\n\n    int mid = lo + (hi - lo) / 2;\n    ++cnt;\n\n    if (a[mid] == target)\n        return mid;\n    if (a[mid] < target)\n        return bin_search(a, mid + 1, hi, target, cnt);\n    return bin_search(a, lo, mid - 1, target, cnt);\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n, target;\n    if (!(std::cin >> n >> target) || n <= 0)\n        return 0;\n\n    std::vector<int> a(n);\n    for (int &v : a)\n        std::cin >> v;\n\n    int cnt = 0;\n    int idx = bin_search(a, 0, n - 1, target, cnt);\n    std::cout << idx << '\\n' << cnt << '\\n';\n    return 0;\n}",
+        "points": [
+          "递归出口：lo > hi 时返回 -1，表示区间为空、元素不存在",
+          "用 mid = lo + (hi - lo) / 2 计算中点，每比较一次就把计数器加 1",
+          "根据 a[mid] 与 target 的大小关系，把查找区间缩小到右半 [mid+1, hi] 或左半 [lo, mid-1]",
+          "输出找到的下标与比较次数两行；不存在时第一行输出 -1"
+        ],
+        "analysis": "思路：与 C 版本相同的递归二分；C++ 用 `std::vector` 保存数据，用 `int &cnt` 引用出参带回比较次数，调用处不必写 `&`。\n\n关键步骤：① `const std::vector<int> &a` 按常引用传递，避免每次递归复制整个数组；② 出口 `lo > hi` 返回 -1；③ `int mid = lo + (hi - lo) / 2;` 后立刻 `++cnt`；④ 根据大小关系递归到 `mid + 1` 或 `mid - 1`；⑤ 主函数输出 `idx` 与 `cnt` 两行。\n\n复杂度：时间 O(log n)，空间 O(log n)。\n\n易错点：① 参数写成 `std::vector<int> a` 按值传递，每层复制 10⁵ 个元素，直接超时；② 引用参数写成传值，`cnt` 永远是 0；③ 用 `std::binary_search` 或 `std::lower_bound` 代替手写递归，虽然结果对但不符合题目要求；④ 输出用 `std::endl` 两次刷新；⑤ 输入用 `std::cin` 但没关闭同步，10⁵ 数据量下仍然够用，但养成关闭同步的习惯更好。\n\n跨语言对照：C 用指针出参，C++ 用引用，Python 用单元素列表模拟可变计数器，逻辑完全一致。\n\n补充：C++ 标准库的 std::binary_search 只回答元素是否存在，std::lower_bound 返回第一个不小于目标的位置；本题手写递归，是为了看清每一步区间边界怎样变化。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef bin_search(a: list, lo: int, hi: int, target: int, state: list) -> int:\n    if lo > hi:\n        return -1\n\n    mid = lo + (hi - lo) // 2\n    state[0] += 1\n\n    if a[mid] == target:\n        return mid\n    if a[mid] < target:\n        return bin_search(a, mid + 1, hi, target, state)\n    return bin_search(a, lo, mid - 1, target, state)\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n, target = int(data[0]), int(data[1])\n    a = [int(x) for x in data[2:2 + n]]\n\n    state = [0]\n    idx = bin_search(a, 0, n - 1, target, state)\n    print(idx)\n    print(state[0])\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "递归出口：lo > hi 时返回 -1，表示区间为空、元素不存在",
+          "用 mid = lo + (hi - lo) / 2 计算中点，每比较一次就把计数器加 1",
+          "根据 a[mid] 与 target 的大小关系，把查找区间缩小到右半 [mid+1, hi] 或左半 [lo, mid-1]",
+          "输出找到的下标与比较次数两行；不存在时第一行输出 -1"
+        ],
+        "analysis": "思路：Python 的递归写法与 C 完全对应，因为没有指针，用单元素列表 `state[0]` 充当可变的计数器，把比较次数带出递归。\n\n关键步骤：① 出口 `if lo > hi: return -1`；② `mid = lo + (hi - lo) // 2` 必须用整除，`//` 对非负数等价于向下取整；③ 进入函数后先 `state[0] += 1`，表示发生了一次比较；④ 递归返回下标，主函数分两行打印下标和次数；⑤ 用 `sys.stdin.buffer.read().split()` 处理 10⁵ 级输入。\n\n复杂度：时间 O(log n)，空间 O(log n)。递归深度最多约 17 层，不会触发递归上限。\n\n易错点：① 用 `/` 计算 mid 得到浮点数，`a[2.0]` 会抛 `TypeError`；② 计数器用普通整数 `cnt` 传参，函数内的修改不会影响外层；③ 忘记统计比较次数，或把出口判断也算成一次比较；④ 递归边界写成 `mid` 而不是 `mid + 1` / `mid - 1`，区间不缩小导致死循环；⑤ 输入用 `input().split()` 只能读一行，数组跨行时会少读。\n\n补充：Python 的 bisect 模块用 C 实现，速度比手写递归快，但两者都是 O(log n)；本题用递归是为了展示区间如何一步步收缩，理解后再用 bisect 会更踏实。"
+      }
+    }
+  },
+  {
+    "id": "函-61",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "递归",
+      "数字反转",
+      "回文判断"
+    ],
+    "stem": "输入一个非负整数 n（0 ≤ n ≤ 2147483647）。请用递归函数把 n 的各位数字反转：例如 1200 反转后是 21（前导零自然消失），n = 0 时反转结果仍为 0。然后再判断 n 是否为回文数（正着读和反着读相同）。\n\n**输入格式：** 一行一个非负整数 n（0 ≤ n ≤ 2147483647）。\n\n**输出格式：** 第一行输出反转后的整数；第二行输出 `YES`（n 是回文数）或 `NO`（n 不是回文数）。\n\n**输入样例：**\n```text\n1200\n```\n**输出样例：**\n```text\n21\nNO\n```",
+    "solution": "#include <stdio.h>\n\nstatic long long reverse_num(long long n, long long acc)\n{\n    if (n == 0)\n        return acc;\n    return reverse_num(n / 10, acc * 10 + n % 10);\n}\n\nint main(void)\n{\n    long long n, r;\n\n    if (scanf(\"%lld\", &n) != 1 || n < 0)\n        return 0;\n\n    r = reverse_num(n, 0);\n    printf(\"%lld\\n\", r);\n    printf(\"%s\\n\", r == n ? \"YES\" : \"NO\");\n    return 0;\n}",
+    "points": [
+      "递归出口：n == 0 时返回累计值 acc，n = 0 的输入也能得到 0",
+      "每层执行 acc = acc * 10 + n % 10、n = n / 10，把最低位接到结果末尾",
+      "用 long long 保存反转结果，避免 2147483647 反转后超出 int 范围",
+      "反转结果与原数比较，相等输出 YES，否则输出 NO"
+    ],
+    "analysis": "思路：反转整数可以看成「把最低位摘下来，接到结果末尾」：reverse(n) = reverse(n / 10) 的结果再乘 10 加上 n % 10。为了让递归返回时能带回已经累积的部分，增加一个累加参数 acc，写成 `reverse_num(n, acc)`：当 n 为 0 时 acc 就是答案；否则递归 `reverse_num(n / 10, acc * 10 + n % 10)`。\n\n关键步骤：① 出口 `n == 0` 返回 acc；② 每层用 `acc * 10 + n % 10` 把当前最低位接到末尾；③ main 用 `reverse_num(n, 0)` 启动，n = 0 时直接得到 0；④ 反转结果与原数比较，相等输出 YES，否则输出 NO。\n\n复杂度：时间 O(d)，d 为十进制位数，最多 10 层；空间 O(d) 的递归栈。\n\n易错点：① 把反转结果存进 int：n 最大 2147483647，反转后可能是 7463847412，超出 int 范围，必须用 long long；② 用字符串反转或 `%` 循环，不符合题目「递归」的要求；③ 忘记处理 n = 0；④ 前导零处理错误，例如把 1200 反转成 0021 再输出 21——本题用数值累积天然正确；⑤ 回文判断用反转结果与原数比较时类型不一致导致比较出错。\n\n补充：回文判断也可以只反转后一半数字，再与前一半比较，这样能避免反转结果超出整数范围；本题因为要输出完整反转值，所以保留了全部反转，复杂度仍然是 O(位数)。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nstatic long long reverse_num(long long n, long long acc)\n{\n    if (n == 0)\n        return acc;\n    return reverse_num(n / 10, acc * 10 + n % 10);\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    long long n, r;\n    if (!(std::cin >> n) || n < 0)\n        return 0;\n\n    r = reverse_num(n, 0);\n    std::cout << r << '\\n';\n    std::cout << (r == n ? \"YES\" : \"NO\") << '\\n';\n    return 0;\n}",
+        "points": [
+          "递归出口：n == 0 时返回累计值 acc，n = 0 的输入也能得到 0",
+          "每层执行 acc = acc * 10 + n % 10、n = n / 10，把最低位接到结果末尾",
+          "用 long long 保存反转结果，避免 2147483647 反转后超出 int 范围",
+          "反转结果与原数比较，相等输出 YES，否则输出 NO"
+        ],
+        "analysis": "思路：与 C 版本一致的尾递归累积：`reverse_num(n, acc)` 每层把 n 的个位挂到 acc 后面，n 为 0 时返回 acc。C++ 只是把类型和输出方式换掉。\n\n关键步骤：① 两个参数都用 `long long`，因为 2147483647 反转后是 7463847412；② 出口 `if (n == 0) return acc;`；③ 递推 `reverse_num(n / 10, acc * 10 + n % 10)`，整数除法自动去掉个位；④ 输出反转结果后，用三目运算符输出 `\"YES\"` 或 `\"NO\"`。\n\n复杂度：时间 O(d)，空间 O(d)，d ≤ 10。\n\n易错点：① 参数用 `int`，7463847412 溢出成别的数；② 用 `std::reverse` 操作字符串虽然简单，但不符合题目要求手写递归；③ 把 `r == n` 写成 `r = n`，编译警告且结果永远为真；④ 输出 `YES`/`NO` 时大小写与样例不一致；⑤ 对 n = 0 特殊返回 0 而忘记走递归，逻辑上可以但破坏了统一的递推结构。\n\n跨语言对照：C、C++ 的整数除法都向零取整，Python 用 `//`，三者对非负数的结果完全一致。\n\n补充：C++ 可以用 std::to_string 配合 std::reverse 完成字符串反转，但本题要求数值递归，这样能同时练习取模、整除和递归出口的设置。另外，若输入允许负数，反转后符号位要单独处理，本题限定非负整数，省去了这一分支。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef reverse_num(n: int, acc: int = 0) -> int:\n    if n == 0:\n        return acc\n    return reverse_num(n // 10, acc * 10 + n % 10)\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    r = reverse_num(n)\n    print(r)\n    print(\"YES\" if r == n else \"NO\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "递归出口：n == 0 时返回累计值 acc，n = 0 的输入也能得到 0",
+          "每层执行 acc = acc * 10 + n % 10、n = n // 10，把最低位接到结果末尾",
+          "用 long long 保存反转结果，避免 2147483647 反转后超出 int 范围",
+          "反转结果与原数比较，相等输出 YES，否则输出 NO"
+        ],
+        "analysis": "思路：Python 用默认参数 `acc=0` 提供初始累计值，递归体与 C 版本相同：n 为 0 时返回 acc，否则把个位接到 acc 末尾再递归。\n\n关键步骤：① 出口 `if n == 0: return acc`；② `reverse_num(n // 10, acc * 10 + n % 10)`，必须用 `//`，否则 n 会变成浮点数、永远到不了 0；③ 主函数调用 `reverse_num(n)`，默认参数自动补 0；④ 用条件表达式输出 `YES` 或 `NO`。\n\n复杂度：时间 O(d)，空间 O(d)；Python 整数任意精度，反转 2147483647 得到 7463847412 完全没有问题。\n\n易错点：① 用 `/` 做整数除法，`reverse_num(120.0, 0)` 会无限递归直到 `RecursionError`；② 把 `acc` 写成必填参数却调用时只传一个参数，抛 `TypeError`；③ 用字符串 `str(n)[::-1]` 实现，虽简单但不符合题目要求递归；④ 回文判断写成 `str(n) == str(n)[::-1]` 也能得到正确答案，但没有用上递归求出的反转值；⑤ `n` 为 0 时忘记返回 acc，得到 `None`。\n\n补充：Python 的字符串切片 s[::-1] 能一行完成反转，但那只适用于字符串；本题用数值递归，顺便复习 % 与 // 的配合，也避免把整数转成字符串。另外，n 为 0 时切片写法会得到空串，而本题的数值递归直接返回 0，边界处理更自然。"
+      }
+    }
+  },
+  {
+    "id": "函-62",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "嵌套递归",
+      "递归求幂",
+      "数位"
+    ],
+    "stem": "输入两个整数 a 和 n（1 ≤ a ≤ 9，1 ≤ n ≤ 10）。定义 S = a¹ + a² + … + aⁿ。本题要求使用嵌套递归：一个递归函数内部调用另一个递归函数。\n\n具体要求：写递归函数 `power(a, k)` 求 aᵏ；写递归函数 `sum_power(a, n)`，返回 aⁿ 与 S(n-1) 之和，并且每一层都必须调用 `power` 取得当前项；最后写递归函数 `digits(x)` 求十进制位数。输出 S 的值以及 S 的位数。\n\n**输入格式：** 一行两个整数 a 和 n（1 ≤ a ≤ 9，1 ≤ n ≤ 10），用空格分隔。\n\n**输出格式：** 第一行输出 S 的值；第二行输出 S 的十进制位数。\n\n**输入样例：**\n```text\n2 4\n```\n**输出样例：**\n```text\n30\n2\n```",
+    "solution": "#include <stdio.h>\n\nstatic long long power(long long a, int k)\n{\n    if (k == 0)\n        return 1;\n    return a * power(a, k - 1);\n}\n\nstatic long long sum_power(long long a, int n)\n{\n    if (n == 0)\n        return 0;\n    return power(a, n) + sum_power(a, n - 1);\n}\n\nstatic int digits(long long x)\n{\n    if (x < 10)\n        return 1;\n    return 1 + digits(x / 10);\n}\n\nint main(void)\n{\n    long long a, s;\n    int n;\n\n    if (scanf(\"%lld %d\", &a, &n) != 2 || a < 1 || a > 9 || n < 1 || n > 10)\n        return 0;\n\n    s = sum_power(a, n);\n    printf(\"%lld\\n\", s);\n    printf(\"%d\\n\", digits(s));\n    return 0;\n}",
+    "points": [
+      "power 递归出口 k == 0 返回 1，递推式 a * power(a, k-1)",
+      "sum_power 递归出口 n == 0 返回 0，且每层都调用 power 取得 aⁿ，形成嵌套递归",
+      "digits 递归出口 x < 10 返回 1，否则 1 + digits(x / 10)",
+      "用 long long 保存幂与和，输出 S 与位数两行"
+    ],
+    "analysis": "思路：题目要求三层递归协作：`power(a, k)` 求单个幂，`sum_power(a, n)` 求前 n 项和，`digits(x)` 求位数。其中 `sum_power` 的每一层都要调用 `power`，这就是「一个递归函数内部调用另一个递归函数」的嵌套递归。\n\n关键步骤：① `power` 的出口是 k == 0 返回 1，递推是 a * power(a, k-1)；② `sum_power` 的出口是 n == 0 返回 0，递推是 power(a, n) + sum_power(a, n-1)，注意必须先算当前项再递归；③ `digits` 的出口是 x < 10 返回 1，递推是 1 + digits(x / 10)；④ 结果用 long long 保存，a ≤ 9、n ≤ 10 时 S 最大约 3.9×10⁹；⑤ 输出 S 与位数各占一行。\n\n复杂度：`sum_power` 每层调用一次 `power`，而 `power(a, n)` 需要 n 层，因此总时间为 O(1 + 2 + … + n) = O(n²)；空间为 O(n)（递归栈）。n ≤ 10 时非常快。\n\n易错点：① 在 `sum_power` 里重复调用两次 power 造成指数级重复计算；② `power` 的出口写成 k == 0 返回 0，导致所有结果都是 0；③ 用 int 保存 S，3.9×10⁹ 溢出；④ 位数函数忘记处理 x = 0（本题 S ≥ 1，但通用写法要处理）；⑤ 先输出位数再输出 S，顺序与题目不符。\n\n补充：如果把题目改成求 1! + 2! + … + n!，递推式可以写成 sum_fact(n) = sum_fact(n-1) + fact(n)，仍然是嵌套递归，只是增长更快，需要更大的整数类型或高精度运算。阅读这段代码时，可以用 n = 3 手动展开，画出 power(3,1)、power(3,2)、power(3,3) 三棵子树，就能看清嵌套调用的开销来自哪里。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nstatic long long power(long long a, int k)\n{\n    if (k == 0)\n        return 1;\n    return a * power(a, k - 1);\n}\n\nstatic long long sum_power(long long a, int n)\n{\n    if (n == 0)\n        return 0;\n    return power(a, n) + sum_power(a, n - 1);\n}\n\nstatic int digits(long long x)\n{\n    if (x < 10)\n        return 1;\n    return 1 + digits(x / 10);\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    long long a;\n    int n;\n    if (!(std::cin >> a >> n) || a < 1 || a > 9 || n < 1 || n > 10)\n        return 0;\n\n    long long s = sum_power(a, n);\n    std::cout << s << '\\n' << digits(s) << '\\n';\n    return 0;\n}",
+        "points": [
+          "power 递归出口 k == 0 返回 1，递推式 a * power(a, k-1)",
+          "sum_power 递归出口 n == 0 返回 0，且每层都调用 power 取得 aⁿ，形成嵌套递归",
+          "digits 递归出口 x < 10 返回 1，否则 1 + digits(x / 10)",
+          "用 long long 保存幂与和，输出 S 与位数两行"
+        ],
+        "analysis": "思路：三个递归函数的分工与 C 版本相同：`power` 求幂、`sum_power` 求前 n 项和并在每层调用 `power`、`digits` 求位数，构成嵌套递归。\n\n关键步骤：① `power` 以 `k == 0` 为出口；② `sum_power` 以 `n == 0` 为出口，递推项是 `power(a, n) + sum_power(a, n - 1)`；③ `digits` 以 `x < 10` 为出口；④ 主函数调用 `sum_power` 后再调用 `digits`，两次递归是先后关系；⑤ 输出用 `'\\n'` 连接两行。\n\n复杂度：时间 O(n²)，空间 O(n)。\n\n易错点：① `sum_power` 里写成 `power(a, n) + power(a, n)`，既错又重复；② 把 `power` 的出口返回 1 写成 `return a;`，k = 0 时结果错；③ `digits` 的参数用 `int`，3.9×10⁹ 传参时截断；④ 嵌套递归调用关系写反——让 `power` 去调用 `sum_power`，逻辑混乱甚至无限递归；⑤ 用 `std::pow` 返回浮点数，大数时精度不足而且不符合题目要求。\n\n跨语言对照：C++ 的 `static` 函数与 C 的 `static` 函数含义一致（内部链接）；Python 直接定义三个顶层函数即可。\n\n补充：三个递归函数的调用关系可以用调用树表示：sum_power 的每个结点都挂着一棵 power 子树，所以总代价是各层 power 代价之和。这类嵌套递归在表达式求值和树形结构处理中很常见。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef power(a: int, k: int) -> int:\n    if k == 0:\n        return 1\n    return a * power(a, k - 1)\n\n\ndef sum_power(a: int, n: int) -> int:\n    if n == 0:\n        return 0\n    return power(a, n) + sum_power(a, n - 1)\n\n\ndef digits(x: int) -> int:\n    if x < 10:\n        return 1\n    return 1 + digits(x // 10)\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    a, n = int(data[0]), int(data[1])\n    s = sum_power(a, n)\n    print(s)\n    print(digits(s))\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "power 递归出口 k == 0 返回 1，递推式 a * power(a, k-1)",
+          "sum_power 递归出口 n == 0 返回 0，且每层都调用 power 取得 aⁿ，形成嵌套递归",
+          "digits 递归出口 x < 10 返回 1，否则 1 + digits(x // 10)",
+          "用 long long 保存幂与和，输出 S 与位数两行"
+        ],
+        "analysis": "思路：Python 同样用三个递归函数：`power` 求幂、`sum_power` 在每层调用 `power` 求当前项、`digits` 求位数，形成嵌套递归关系。\n\n关键步骤：① `power` 的出口是 `k == 0` 返回 1；② `sum_power` 的出口是 `n == 0` 返回 0，递推 `power(a, n) + sum_power(a, n - 1)`；③ `digits` 用 `x // 10` 去掉最低位，出口 `x < 10` 返回 1；④ 主函数先求和再求位数，分两行打印。\n\n复杂度：时间 O(n²)，空间 O(n)。Python 的整数任意精度，a = 9、n = 10 时 S = 3922632450 也能精确表示。\n\n易错点：① 用 `x / 10` 而不是 `x // 10`，得到浮点数后 `x < 10` 的判断会出错并无限递归；② 在 `sum_power` 里把 `power(a, n)` 写成 `a ** n`，虽然结果对但绕过了题目要求的嵌套递归；③ 递归函数名与内置名冲突（例如把 `power` 写成 `pow` 再覆盖它）；④ 输出顺序颠倒；⑤ 用 `int` 思维的溢出担心并不适用于 Python，但算法结构仍必须保持 O(n²)。\n\n跨语言对照：三种语言的输出完全一致，Python 只是无需考虑整数溢出。\n\n补充：Python 的 ** 运算符可以直接求幂，但本题要求手写递归，目的是理解嵌套调用的代价；sum_power 对每个 n 都重新计算一次幂，所以总复杂度是 O(n²)。"
+      }
+    }
+  },
+  {
+    "id": "函-63",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "static变量",
+      "递归",
+      "调用计数"
+    ],
+    "stem": "输入 n（1 ≤ n ≤ 25），用递归求斐波那契数列第 n 项：F(1) = F(2) = 1，F(n) = F(n-1) + F(n-2)（n ≥ 3）。同时统计递归函数 fib 被调用的总次数。\n\n统计方式：写一个计数器函数 `call_count(add)`，在它内部保存一个只在第一次调用时初始化、之后在程序运行期间一直保持的局部计数（C/C++ 使用 static 局部变量；Python 可用函数属性模拟 static 局部变量）。add 为 1 时先把计数加 1 再返回当前计数，add 为 0 时只返回当前计数、不再增加。fib 每次进入时先调用 `call_count(1)`，最后在 main 中用 `call_count(0)` 读出总次数。\n\n**输入格式：** 一行一个整数 n（1 ≤ n ≤ 25）。\n\n**输出格式：** 第一行输出 F(n)；第二行输出 fib 被调用的总次数。\n\n**输入样例：**\n```text\n10\n```\n**输出样例：**\n```text\n55\n109\n```",
+    "solution": "#include <stdio.h>\n\n/* static 局部变量：只初始化一次，跨调用保持累计值 */\nstatic long long call_count(int add)\n{\n    static long long calls = 0;\n\n    if (add)\n        ++calls;\n    return calls;\n}\n\nstatic long long fib(int n)\n{\n    call_count(1);\n    if (n <= 2)\n        return 1;\n    return fib(n - 1) + fib(n - 2);\n}\n\nint main(void)\n{\n    int n;\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > 25)\n        return 0;\n\n    printf(\"%lld\\n\", fib(n));\n    printf(\"%lld\\n\", call_count(0));\n    return 0;\n}",
+    "points": [
+      "call_count 内使用 static 局部变量，只初始化一次且跨调用保持累计值",
+      "add 为 1 时先自增再返回，add 为 0 时只读当前计数，两种情况返回值正确",
+      "fib 在判断递归出口之前调用 call_count(1)，基础情况的调用也被统计",
+      "fib 的递归出口与递推式正确，输出 F(n) 与调用次数两行"
+    ],
+    "analysis": "思路：斐波那契的递归定义是 F(1) = F(2) = 1，F(n) = F(n-1) + F(n-2)。为了统计 fib 被调用的次数，题目要求用一个带 static 局部变量的计数器函数：每次进入 fib 先调用 `call_count(1)`，最后在 main 里调用 `call_count(0)` 读出总次数。\n\n关键步骤：① `call_count` 内部定义 `static long long calls = 0;`——static 局部变量只初始化一次，之后跨调用一直保留，生命周期贯穿整个程序，但作用域仍限于函数内部；② add 为真时先自增再返回，add 为 0 时只返回当前值；③ fib 的计数必须放在递归出口判断之前，这样包括基础情况在内的每次调用都会被统计；④ 输出 F(n) 和调用次数两行。\n\n复杂度：朴素递归的时间与调用次数同阶，T(n) = O(2ⁿ)（更准确是 O(φⁿ)），调用次数恰为 2F(n) - 1；空间 O(n)。n ≤ 25 时调用次数 150049，完全可接受。\n\n易错点：① 把 static 写成普通局部变量，每次调用都重置为 0，永远得到 1；② 把计数器定义成全局变量——两者生命周期相近，但 static 局部变量的作用域被限制在函数内，更安全；③ 在 fib 的出口之后才调用 call_count(1)，基础情况没被统计；④ 先调用 call_count(0) 再计算 fib，输出 0；⑤ 用 int 保存调用次数虽然本题够用，但 n 增大后会溢出。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nstatic long long call_count(int add)\n{\n    static long long calls = 0;\n\n    if (add)\n        ++calls;\n    return calls;\n}\n\nstatic long long fib(int n)\n{\n    call_count(1);\n    if (n <= 2)\n        return 1;\n    return fib(n - 1) + fib(n - 2);\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 25)\n        return 0;\n\n    std::cout << fib(n) << '\\n';\n    std::cout << call_count(0) << '\\n';\n    return 0;\n}",
+        "points": [
+          "call_count 内使用 static 局部变量，只初始化一次且跨调用保持累计值",
+          "add 为 1 时先自增再返回，add 为 0 时只读当前计数，两种情况返回值正确",
+          "fib 在判断递归出口之前调用 call_count(1)，基础情况的调用也被统计",
+          "fib 的递归出口与递推式正确，输出 F(n) 与调用次数两行"
+        ],
+        "analysis": "思路：与 C 版本相同，`call_count` 内部使用 `static long long calls = 0;`。C++ 的 static 局部变量语义与 C 一致：首次执行到声明处初始化一次，程序结束时销毁，作用域仍在函数内。\n\n关键步骤：① `if (add) ++calls;` 然后再 `return calls;`；② fib 第一行调用 `call_count(1)`，再判断 `n <= 2`；③ main 先算 `fib(n)`，再读 `call_count(0)`，顺序不能反；④ 输出用 `'\\n'`。\n\n复杂度：时间 O(2ⁿ)，空间 O(n)。\n\n易错点：① 把 static 变量写成类成员或全局变量，虽然可行但偏离题目；② 误以为 static 局部变量的初值每次调用都会重置，于是写出 `static long long calls = 0;` 又在函数开头手动清零；③ C++11 起 static 局部变量的初始化是线程安全的，但多线程同时调用时自增不是原子操作，需要 `std::atomic`——本题单线程不涉及；④ 忘记输出调用次数，只输出 F(n)。\n\n跨语言对照：C 与 C++ 都用 static 局部变量；Python 没有这个语法，必须用函数属性或闭包变量模拟，这是三种语言里唯一需要变通的地方。\n\n补充：C++11 起 static 局部变量的初始化是线程安全的，但 ++calls 本身不是原子操作；多线程环境下应改用 std::atomic<long long>，否则统计结果可能丢失。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef call_count(add: int) -> int:\n    if not hasattr(call_count, \"calls\"):\n        call_count.calls = 0\n    if add:\n        call_count.calls += 1\n    return call_count.calls\n\n\ndef fib(n: int) -> int:\n    call_count(1)\n    if n <= 2:\n        return 1\n    return fib(n - 1) + fib(n - 2)\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    print(fib(n))\n    print(call_count(0))\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "用函数属性 call_count.calls 模拟 static 局部变量，只在首次调用时初始化为 0",
+          "add 为 1 时先自增再返回，add 为 0 时只读当前计数，两种情况返回值正确",
+          "fib 在判断递归出口之前调用 call_count(1)，基础情况的调用也被统计",
+          "fib 的递归出口与递推式正确，输出 F(n) 与调用次数两行"
+        ],
+        "analysis": "思路：Python 没有 static 局部变量，最贴近的模拟方式是给函数对象本身挂一个属性：`call_count.calls` 在第一次调用时创建，之后一直存在，效果等价于 C 的 static 局部变量——只初始化一次、跨调用保持、外部只能通过函数访问。\n\n关键步骤：① 用 `hasattr(call_count, \"calls\")` 判断是否首次调用，首次则置 0；② `if add:` 时自增；③ 返回当前计数；④ fib 第一行调用 `call_count(1)`，再判断出口；⑤ main 先打印 `fib(n)`，再打印 `call_count(0)`。\n\n复杂度：时间 O(2ⁿ)，空间 O(n)。n = 25 时调用 150049 次，Python 运行时间在毫秒量级，可以接受。\n\n易错点：① 用模块级变量 `calls = 0` 并在函数里 `global calls` 也能实现，但它是全局变量而不是「局部计数器」，且更容易被其他代码误改；② 用默认参数 `def call_count(add, calls=[0])` 也能模拟，但可变默认参数是常见陷阱；③ 把 `call_count.calls` 写成局部变量 `calls`，每次调用都重置；④ 先打印 `call_count(0)` 再算 fib；⑤ 把 `hasattr` 判断写在自增之后，导致首次调用时自增的是类属性而报错。\n\n补充：函数属性是可写的，外部代码也能修改 call_count.calls，所以这种模拟方式适合单文件小程序；如果多人协作，更推荐把状态封装进类或使用闭包。"
+      }
+    }
+  },
+  {
+    "id": "函-64",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "值传递",
+      "地址传递",
+      "作用域"
+    ],
+    "stem": "输入两个整数 a 和 b（-1000 ≤ a, b ≤ 1000）。请写两个交换函数，体会值传递与地址传递的区别：\n\n- 第一个函数用值传递：形参只是实参的副本，函数内部交换形参，调用者的变量不受影响（C/C++ 直接按值传参；Python 按对象引用传参，但函数内重新绑定局部名字同样不影响调用者）；\n- 第二个函数用地址传递：C 用指针、C++ 用引用、Python 用列表等可变对象，真正交换调用者的数据。\n\n在 main 中先调用值传递版本，输出 a 和 b；再调用地址传递版本，输出 a 和 b。两次输出各占一行，两个整数之间用一个空格分隔。\n\n**输入格式：** 一行两个整数 a、b（-1000 ≤ a, b ≤ 1000），用空格分隔。\n\n**输出格式：** 共两行。第一行输出调用值传递交换函数后的 a 和 b；第二行输出再调用地址传递交换函数后的 a 和 b。\n\n**输入样例：**\n```text\n3 8\n```\n**输出样例：**\n```text\n3 8\n8 3\n```",
+    "solution": "#include <stdio.h>\n\n/* 值传递：形参是实参的副本，交换形参不影响调用者 */\nstatic void swap_value(int x, int y)\n{\n    int t = x;\n    x = y;\n    y = t;\n}\n\n/* 地址传递：通过指针修改调用者的存储单元 */\nstatic void swap_addr(int *x, int *y)\n{\n    int t = *x;\n    *x = *y;\n    *y = t;\n}\n\nint main(void)\n{\n    int a, b;\n\n    if (scanf(\"%d %d\", &a, &b) != 2)\n        return 0;\n\n    swap_value(a, b);\n    printf(\"%d %d\\n\", a, b);\n\n    swap_addr(&a, &b);\n    printf(\"%d %d\\n\", a, b);\n    return 0;\n}",
+    "points": [
+      "值传递函数只交换形参副本，调用后 a、b 保持原值",
+      "地址传递函数通过指针解引用真正交换调用者的变量",
+      "main 中按「先值传递、再地址传递」的顺序调用并输出两行结果",
+      "两次输出格式一致，整数之间用一个空格分隔"
+    ],
+    "analysis": "思路：C 的函数参数默认是值传递：调用时把实参的值复制一份给形参，形参和实参是两个独立的变量，函数内怎么改形参都不会影响调用者。因此 `swap_value(a, b)` 交换的只是副本，main 里的 a、b 不变。要真正交换，必须把变量的地址传进去，函数内通过 `*x`、`*y` 间接访问调用者的存储单元。\n\n关键步骤：① `swap_value(int x, int y)` 内用临时变量交换 x、y；② `swap_addr(int *x, int *y)` 内用 `*x`、`*y` 交换，注意不要交换指针本身；③ main 第一次调用后输出原值，第二次传 `&a`、`&b` 后再输出；④ 两次输出各占一行，格式一致。\n\n复杂度：时间 O(1)，空间 O(1)。\n\n易错点：① 以为值传递也能交换，输出两行相同；② 调用时忘记写 `&`，把整数当指针传给 `swap_addr`，编译警告或运行时崩溃；③ 在 `swap_addr` 里写 `int *t = x; x = y; y = t;`，只交换了形参指针；④ 输出顺序反了，先输出交换后的结果；⑤ 用 `printf` 输出时两个数之间缺少空格。\n\n补充：C 语言中数组名作函数参数时传递的是首地址，函数内修改数组元素会影响调用者，这与普通变量的值传递不同；结构体默认按值传递，要修改原结构体同样需要传指针。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nstatic void swap_value(int x, int y)\n{\n    int t = x;\n    x = y;\n    y = t;\n}\n\nstatic void swap_addr(int &x, int &y)\n{\n    int t = x;\n    x = y;\n    y = t;\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int a, b;\n    if (!(std::cin >> a >> b))\n        return 0;\n\n    swap_value(a, b);\n    std::cout << a << ' ' << b << '\\n';\n\n    swap_addr(a, b);\n    std::cout << a << ' ' << b << '\\n';\n    return 0;\n}",
+        "points": [
+          "值传递函数只交换形参副本，调用后 a、b 保持原值",
+          "地址传递函数通过引用真正交换调用者的变量",
+          "main 中按「先值传递、再地址传递」的顺序调用并输出两行结果",
+          "两次输出格式一致，整数之间用一个空格分隔"
+        ],
+        "analysis": "思路：C++ 保留了 C 的值传递语义，同时提供了引用参数：`int &x` 是实参的别名，函数内对 x 的操作就是直接操作调用者的变量，不需要写 `*`。因此本题的第二个函数用引用实现，效果与 C 的指针版本完全相同。\n\n关键步骤：① `swap_value(int x, int y)` 交换局部副本；② `swap_addr(int &x, int &y)` 交换引用绑定的变量；③ main 第一次调用 `swap_value(a, b)` 后输出 `3 8`；④ 第二次调用 `swap_addr(a, b)` 后输出 `8 3`；⑤ 引用参数调用处不加 `&`，加了反而错。\n\n复杂度：时间 O(1)，空间 O(1)。\n\n易错点：① 第二个函数也写成按值传递，两行输出相同；② 调用 `swap_addr(a, b)` 时误写成 `swap_addr(&a, &b)`，类型不匹配；③ 把引用参数写成 `const int &`，函数内无法修改；④ 用 `std::swap(a, b)` 直接交换，虽然结果对但不符合题目「写两个函数对比」的要求；⑤ 输出顺序与样例相反。\n\n跨语言对照：C 用指针、C++ 用引用，二者都真正修改调用者；Python 没有指针和引用，必须借助列表等可变对象。还有一点：引用参数在函数签名上更简洁，但调用处无法看出实参会被修改，团队编码规范里常要求用 const 引用表达只读意图。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef swap_value(x: int, y: int) -> None:\n    x, y = y, x\n\n\ndef swap_addr(pair: list) -> None:\n    pair[0], pair[1] = pair[1], pair[0]\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    a, b = int(data[0]), int(data[1])\n\n    swap_value(a, b)\n    print(a, b)\n\n    box = [a, b]\n    swap_addr(box)\n    print(box[0], box[1])\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "值传递函数只重新绑定局部名字，调用后 a、b 仍保持原值",
+          "地址传递函数通过修改列表元素真正改变调用者的数据",
+          "main 中按「先值传递、再地址传递」的顺序调用并输出两行结果",
+          "两次输出格式一致，整数之间用一个空格分隔"
+        ],
+        "analysis": "思路：Python 的参数传递是「对象引用的传递」：函数收到的是实参对象的引用副本，函数内给形参重新赋值只是让局部名字指向新对象，不会改变调用者的变量，所以 `swap_value(a, b)` 对整数 a、b 没有任何影响。要真正交换，需要把数据放进可变容器（列表），函数内修改容器元素，所有持有该容器引用的地方都能看到变化。\n\n关键步骤：① `swap_value(x, y)` 用元组解包交换局部名字；② `swap_addr(pair)` 用 `pair[0], pair[1] = pair[1], pair[0]` 原地修改列表；③ main 先调用值传递版本并打印，仍为原值；④ 构造 `box = [a, b]`，调用 `swap_addr(box)` 后打印 `box[0]`、`box[1]`，得到交换后的值。\n\n复杂度：时间 O(1)，空间 O(1)。\n\n易错点：① 试图在 `swap_value` 里用 `global a, b` 修改全局变量，但 main 里的 a、b 是局部变量，无法这样访问；② 把整数 a、b 直接传给 `swap_addr`，函数内 `pair[0]` 会抛 `TypeError`；③ 认为 Python「传引用所以能交换」，混淆了「引用传递」与「可变对象」；④ 第二次输出的是交换前的 a、b，而不是 `box` 中的元素；⑤ 用 `print(a, b)` 默认分隔符是空格，注意不要额外拼接。"
+      }
+    }
+  },
+  {
+    "id": "函-65",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "递归回溯",
+      "全排列",
+      "字典序"
+    ],
+    "stem": "输入 n 个互不相同的整数（1 ≤ n ≤ 8），按字典序从小到大输出它们的全部排列，每个排列占一行，同一排列的整数之间用一个空格分隔。要求用递归回溯实现，不能调用库函数直接生成排列。\n\n字典序规则：先把输入的 n 个数从小到大排序，递归时每次从剩余未使用的数中按从小到大的顺序选取，这样得到的输出顺序就是字典序。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 8）；第二行 n 个互不相同的整数，用空格分隔（|a[i]| ≤ 1000）。\n\n**输出格式：** 共 n! 行，每行一个排列，整数之间用一个空格分隔，行末换行。\n\n**输入样例：**\n```text\n3\n3 1 2\n```\n**输出样例：**\n```text\n1 2 3\n1 3 2\n2 1 3\n2 3 1\n3 1 2\n3 2 1\n```",
+    "solution": "#include <stdio.h>\n\nstatic int n;\nstatic int a[8], used[8], path[8];\n\nstatic void dfs(int depth)\n{\n    int i;\n\n    if (depth == n) {\n        for (i = 0; i < n; i++)\n            printf(\"%d%c\", path[i], i + 1 < n ? ' ' : '\\n');\n        return;\n    }\n\n    for (i = 0; i < n; i++) {\n        if (!used[i]) {\n            used[i] = 1;\n            path[depth] = a[i];\n            dfs(depth + 1);\n            used[i] = 0;\n        }\n    }\n}\n\nint main(void)\n{\n    int i, j, t;\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > 8)\n        return 0;\n\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    /* 插入排序，保证按字典序输出 */\n    for (i = 1; i < n; i++) {\n        t = a[i];\n        for (j = i - 1; j >= 0 && a[j] > t; j--)\n            a[j + 1] = a[j];\n        a[j + 1] = t;\n    }\n\n    dfs(0);\n    return 0;\n}",
+    "points": [
+      "先对输入数组排序，保证递归选取时天然按字典序输出",
+      "递归出口 depth == n 时输出完整排列，数字间空格、行末换行",
+      "用 used 数组标记已选元素，递归返回后必须复位现场",
+      "n ≤ 8 时共输出 n! 个排列，顺序与样例一致"
+    ],
+    "analysis": "思路：全排列用回溯法：从左到右逐个位置填数，每次从还没用过的数字里挑一个，填满 n 个位置就输出一个排列，然后退回上一层换下一个数字。为了保证按字典序输出，先把输入的正整数从小到大排序，并让循环总是从下标 0 开始挑最小的可用数字。\n\n关键步骤：① 读入 n 个数后做插入排序；② `dfs(depth)` 表示正在填第 depth 个位置；③ 出口 `depth == n` 时按格式输出 path；④ 循环中若 `used[i]` 为假，就标记、写入 path、递归下一层，返回后必须把 `used[i]` 复位（path 会被后续覆盖，不必清除）；⑤ 输出时数字之间空格、行末换行。\n\n复杂度：共 n! 个排列，每个排列输出 O(n)，时间 O(n!·n)；递归栈 O(n)，额外空间 O(n)。n ≤ 8 时 40320 个排列，输出量可控。\n\n易错点：① 忘记把 `used[i]` 复位，后续分支缺少数字；② 不排序，输出顺序不是字典序；③ 在出口处多输出一个空格；④ n = 1 时输出仍然正确，但要注意循环与出口的配合；⑤ 用 next_permutation 之类的库函数直接生成，违反题目要求。\n\n补充：回溯法的通用模板是「做选择、递归、撤销选择」，本题的 used 数组负责记录选择、path 负责保存现场；如果要按输入顺序而不是字典序输出，去掉排序即可，其余代码不变。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nstatic int n;\nstatic std::vector<int> a, path;\nstatic std::vector<bool> used;\n\nstatic void dfs(int depth)\n{\n    if (depth == n) {\n        for (int i = 0; i < n; ++i)\n            std::cout << path[i] << (i + 1 < n ? ' ' : '\\n');\n        return;\n    }\n\n    for (int i = 0; i < n; ++i) {\n        if (!used[i]) {\n            used[i] = true;\n            path[depth] = a[i];\n            dfs(depth + 1);\n            used[i] = false;\n        }\n    }\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    if (!(std::cin >> n) || n < 1 || n > 8)\n        return 0;\n\n    a.resize(n);\n    path.resize(n);\n    used.assign(n, false);\n    for (int &v : a)\n        std::cin >> v;\n\n    std::sort(a.begin(), a.end());\n    dfs(0);\n    return 0;\n}",
+        "points": [
+          "先对输入数组排序，保证递归选取时天然按字典序输出",
+          "递归出口 depth == n 时输出完整排列，数字间空格、行末换行",
+          "用 used 数组标记已选元素，递归返回后必须复位现场",
+          "n ≤ 8 时共输出 n! 个排列，顺序与样例一致"
+        ],
+        "analysis": "思路：与 C 版本相同的回溯框架，只是把定长数组换成 `std::vector`，用 `std::sort` 完成升序排序。\n\n关键步骤：① `a.resize(n)`、`path.resize(n)`、`used.assign(n, false)` 完成初始化；② `std::sort(a.begin(), a.end())` 排序；③ `dfs(depth)` 出口输出 path；④ 循环里标记 `used[i] = true`、递归、再复位 `used[i] = false`；⑤ 输出时用三目运算符控制空格与换行。\n\n复杂度：时间 O(n!·n)，空间 O(n)。\n\n易错点：① 忘记复位 `used[i]`，导致后续排列缺数或重复；② 用 `std::next_permutation` 循环生成，虽然结果正确但不符合题目要求手写回溯；③ `std::vector<bool>` 是特化容器，用 `used[i] = true` 没问题，但取地址等操作会受限；④ 输出时对每个元素都加空格，行末多一个空格；⑤ 排序后仍按输入顺序输出，字典序不成立。\n\n跨语言对照：C 用定长数组 + 插入排序，C++ 用 vector + sort，Python 用 sorted；回溯三要素（选择、递归、撤销）完全一致。\n\n补充：回溯法的通用模板是「做选择、递归、撤销选择」，本题的 used 与 path 分别承担选择和现场的角色。理解这个模板后，可以迁移到组合、子集、棋盘类等问题。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    a = sorted(int(x) for x in data[1:1 + n])\n\n    used = [False] * n\n    path = []\n    out = []\n\n    def dfs(depth: int) -> None:\n        if depth == n:\n            out.append(\" \".join(map(str, path)))\n            return\n\n        for i in range(n):\n            if not used[i]:\n                used[i] = True\n                path.append(a[i])\n                dfs(depth + 1)\n                path.pop()\n                used[i] = False\n\n    dfs(0)\n    sys.stdout.write(\"\\n\".join(out) + \"\\n\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "先对输入数组排序，保证递归选取时天然按字典序输出",
+          "递归出口 depth == n 时输出完整排列，数字间空格、行末换行",
+          "用 used 数组标记已选元素，递归返回后必须撤销选择（path.pop）",
+          "n ≤ 8 时共输出 n! 个排列，顺序与样例一致"
+        ],
+        "analysis": "思路：Python 用 `sorted()` 先排序，再用闭包里的 `dfs` 完成回溯：`used` 标记已选下标，`path` 保存当前排列，`out` 收集所有结果行。\n\n关键步骤：① `a = sorted(int(x) for x in data[1:1 + n])`；② 出口 `if depth == n:` 把 `path` 拼成一行加入 `out`；③ 循环里 `used[i] = True`、`path.append(a[i])`、递归、然后 `path.pop()` 与 `used[i] = False`；④ 最后一次性 `sys.stdout.write` 输出所有行。\n\n复杂度：时间 O(n!·n)，空间 O(n!·n)（结果列表保存全部输出），递归栈 O(n)。n ≤ 8 时 40320 行，内存约几 MB，可以接受。\n\n易错点：① 只写 `path.pop()` 而忘记 `used[i] = False`，后面的分支会漏掉数字；② 用 `itertools.permutations` 直接生成，违反题目要求；③ 忘记 `sorted`，输出顺序不是字典序；④ 出口条件写成 `depth == n - 1`，最后一个数字没被放入；⑤ 用 `print` 逐行输出 40320 次，I/O 较慢，应收集后一次写出。\n\n补充：itertools.permutations 可以直接生成全排列，但题目要求手写回溯；手写版本还能方便地加入剪枝，例如去重或按条件提前停止，这是库函数做不到的。如果输入里有重复数字，当前写法会输出重复排列；要得到不重复的全排列，需要在排序后跳过相邻的相等元素，这是回溯中常见的去重技巧。"
+      }
+    }
+  },
+  {
+    "id": "函-66",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "递归回溯",
+      "括号匹配",
+      "剪枝"
+    ],
+    "stem": "输入 n（1 ≤ n ≤ 8），输出所有由 n 对圆括号组成的合法括号序列，每行一个，按字典序输出。合法括号序列指：任意前缀中右括号的个数都不超过左括号的个数，并且最终左右括号各 n 个。要求用递归回溯实现，不能调用库函数直接生成。\n\n字典序规则：字符 `(` 的 ASCII 码小于 `)`，所以递归时先尝试放 `(`、再尝试放 `)`，得到的输出顺序就是字典序。\n\n**输入格式：** 一行一个整数 n（1 ≤ n ≤ 8）。\n\n**输出格式：** 每行一个合法括号序列，共 C(2n, n)/(n+1) 行，按字典序排列。\n\n**输入样例：**\n```text\n3\n```\n**输出样例：**\n```text\n((()))\n(()())\n(())()\n()(())\n()()()\n```",
+    "solution": "#include <stdio.h>\n\nstatic int n;\nstatic char buf[17];   /* 最多 2 * 8 个字符，再加结束符 */\n\nstatic void dfs(int pos, int open_cnt, int close_cnt)\n{\n    if (pos == 2 * n) {\n        buf[pos] = '\\0';\n        printf(\"%s\\n\", buf);\n        return;\n    }\n\n    if (open_cnt < n) {\n        buf[pos] = '(';\n        dfs(pos + 1, open_cnt + 1, close_cnt);\n    }\n\n    if (close_cnt < open_cnt) {\n        buf[pos] = ')';\n        dfs(pos + 1, open_cnt, close_cnt + 1);\n    }\n}\n\nint main(void)\n{\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > 8)\n        return 0;\n\n    dfs(0, 0, 0);\n    return 0;\n}",
+    "points": [
+      "递归出口 pos == 2n 时输出一个完整合法序列",
+      "放左括号的条件是 open < n，放右括号的条件是 close < open",
+      "先尝试左括号再尝试右括号，保证输出为字典序",
+      "缓冲区在出口处补结束符，序列长度与分支条件均正确"
+    ],
+    "analysis": "思路：生成合法括号序列可以用回溯 + 剪枝：从左到右逐位决定放 `(` 还是 `)`，同时记录已放左括号数 open 和右括号数 close。任何时候都不能让右括号多于左括号，否则这个前缀已经不可能补成合法序列，直接剪掉；左括号数量不能超过 n。\n\n关键步骤：① 递归出口 `pos == 2 * n`，此时恰好放了 n 个左括号和 n 个右括号，输出缓冲区；② 先尝试放 `(`，条件是 `open < n`；③ 再尝试放 `)`，条件是 `close < open`；④ 每个分支返回后要恢复缓冲区（C 用覆盖 + 结尾写 `\\0`）；⑤ 因为总是先试 `(` 再试 `)`，而 `(` 的 ASCII 码更小，输出天然是字典序。\n\n复杂度：输出的是第 n 个卡特兰数 C(2n, n)/(n+1) 个序列，时间与输出量同阶；递归栈深度 2n。n ≤ 8 时 1430 个序列。\n\n易错点：① 右括号条件写成 `close < n`，会生成 `)(` 这样的非法序列；② 忘记在递归返回后恢复缓冲区，导致序列串位；③ 出口条件写成 `pos == n`，长度不对；④ 先试右括号，输出顺序不是字典序；⑤ 缓冲区长度按 n 而不是 2n 分配，越界写。\n\n补充：合法括号序列的数量是卡特兰数，它同时出现在二叉树计数、出栈序列计数等问题中；剪枝条件 close < open 正是卡特兰结构的体现，写反了就会生成大量非法序列。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n\nstatic int n;\nstatic std::string buf;\n\nstatic void dfs(int pos, int open_cnt, int close_cnt)\n{\n    if (pos == 2 * n) {\n        std::cout << buf << '\\n';\n        return;\n    }\n\n    if (open_cnt < n) {\n        buf.push_back('(');\n        dfs(pos + 1, open_cnt + 1, close_cnt);\n        buf.pop_back();\n    }\n\n    if (close_cnt < open_cnt) {\n        buf.push_back(')');\n        dfs(pos + 1, open_cnt, close_cnt + 1);\n        buf.pop_back();\n    }\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    if (!(std::cin >> n) || n < 1 || n > 8)\n        return 0;\n\n    dfs(0, 0, 0);\n    return 0;\n}",
+        "points": [
+          "递归出口 pos == 2n 时输出一个完整合法序列",
+          "放左括号的条件是 open < n，放右括号的条件是 close < open",
+          "先尝试左括号再尝试右括号，保证输出为字典序",
+          "用 push_back / pop_back 维护缓冲区，回溯时正确恢复"
+        ],
+        "analysis": "思路：与 C 版本相同的回溯剪枝，用 `std::string` 充当缓冲区，`push_back` 放字符、`pop_back` 撤销，正好对应回溯的「做选择 / 撤销选择」。\n\n关键步骤：① 出口 `pos == 2 * n` 输出 `buf`；② `open_cnt < n` 时 `buf.push_back('(')`，递归后 `pop_back()`；③ `close_cnt < open_cnt` 时同理压入 `)`；④ 先左后右保证字典序；⑤ main 从 `dfs(0, 0, 0)` 启动。\n\n复杂度：输出量是第 n 个卡特兰数，时间与输出量同阶，空间 O(n)。n ≤ 8 时 1430 行。\n\n易错点：① 用 `std::endl` 输出 1430 行会频繁刷新，改用 `'\\n'`；② 递归后忘记 `pop_back()`，字符串越来越长；③ 右括号条件写成 `close_cnt < n`，序列非法；④ 出口 `pos == n` 时会输出长度为 n 的串，长度只有一半；⑤ 用 `buf[pos] = '('` 直接下标赋值而字符串长度为 0，属于越界写。\n\n跨语言对照：C 用字符数组 + 下标，C++ 用 string 的 push/pop，Python 用 list 的 append/pop，三者输出顺序完全一致。\n\n补充：合法括号序列的计数就是卡特兰数，它同时出现在二叉树计数和出栈序列计数中；剪枝条件 close_cnt < open_cnt 正是卡特兰结构的直接体现，记住它可以避免大量无效搜索。输出量随卡特兰数增长，n = 8 时已有 1430 行，用换行符而不是 std::endl 能明显减少刷新次数。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    buf = []\n    out = []\n\n    def dfs(open_cnt: int, close_cnt: int) -> None:\n        if len(buf) == 2 * n:\n            out.append(\"\".join(buf))\n            return\n\n        if open_cnt < n:\n            buf.append(\"(\")\n            dfs(open_cnt + 1, close_cnt)\n            buf.pop()\n\n        if close_cnt < open_cnt:\n            buf.append(\")\")\n            dfs(open_cnt, close_cnt + 1)\n            buf.pop()\n\n    dfs(0, 0)\n    sys.stdout.write(\"\\n\".join(out) + \"\\n\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "递归出口 len(buf) == 2n 时输出一个完整合法序列",
+          "放左括号的条件是 open_cnt < n，放右括号的条件是 close_cnt < open_cnt",
+          "先尝试左括号再尝试右括号，保证输出为字典序",
+          "用 append / pop 维护缓冲区，回溯时正确恢复"
+        ],
+        "analysis": "思路：Python 用闭包 `dfs(open_cnt, close_cnt)` 逐位生成序列，`buf` 是当前前缀，`out` 收集结果。剪枝条件与 C 版本完全相同。\n\n关键步骤：① 出口 `if len(buf) == 2 * n:` 时把 `buf` 拼成字符串加入 `out`；② `if open_cnt < n:` 放入 `(`，递归后 `buf.pop()`；③ `if close_cnt < open_cnt:` 放入 `)`，递归后 `buf.pop()`；④ 先左后右保证字典序；⑤ 最后一次性写出所有行。\n\n复杂度：输出量为第 n 个卡特兰数，时间与输出量同阶，空间 O(n)（不计结果列表）。n ≤ 8 时 1430 行。\n\n易错点：① 用 `buf += \"(\"` 生成新字符串而不 pop，回溯失效；② 右括号条件写成 `close_cnt < n`，会输出非法序列；③ 出口用 `open_cnt == n and close_cnt == n` 也可以，但要保证长度达到 2n；④ 用 `print` 逐行输出较慢，应收集后一次写出；⑤ 忘记定义 `n` 的闭包捕获，或在外层重复定义同名变量。\n\n跨语言对照：三种语言的搜索树、剪枝条件和输出顺序完全一致，只是缓冲区操作方式不同。\n\n补充：用生成器 yield 可以让函数逐个产出结果，而不是一次性存入列表，内存更省；本题为了输出顺序简单仍用列表收集，规模小时两种写法差别不大。"
+      }
+    }
+  }
+]

@@ -32,8 +32,8 @@ def main() -> None:
     data_js = (ROOT / "assets/js/data.js").read_text(encoding="utf-8")
     m = re.search(r'"total":(\d+)', data_js)
     total = int(m.group(1)) if m else 0
-    if total != 400:
-        print(f"题库总数为 {total}，预期 400。请先运行 python tools/build_data.py。")
+    if total != 440:
+        print(f"题库总数为 {total}，预期 440。请先运行 python tools/build_data.py。")
         sys.exit(1)
 
     if DIST.exists():
