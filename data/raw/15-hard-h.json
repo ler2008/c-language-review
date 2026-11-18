@@ -1,0 +1,296 @@
+[
+  {
+    "id": "函-78",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "递归",
+      "组合数",
+      "递归树"
+    ],
+    "stem": "从 n 个不同元素中选出 m 个，选法总数记作 C(n, m)。组合数满足递推关系 C(n, m) = C(n-1, m-1) + C(n-1, m)，含义是「考虑第 n 个元素选或不选」；边界为 m = 0 或 m = n 时 C(n, m) = 1。要求写一个递归函数按这条递推式求解，并统计递归函数被调用的总次数（边界调用也算一次）。\n\n**输入格式：** 一行两个整数 n、m（0 ≤ m ≤ n ≤ 20），用一个空格分隔。\n\n**输出格式：** 两行：第一行一个整数，为 C(n, m) 的值；第二行一个整数，为递归函数被调用的总次数。\n\n**输入样例：**\n```text\n5 2\n```\n**输出样例：**\n```text\n10\n19\n```",
+    "solution": "#include <stdio.h>\n\nstatic long long comb(int n, int m, long long *calls)\n{\n    ++(*calls);\n    if (m == 0 || m == n)\n        return 1;\n    return comb(n - 1, m - 1, calls) + comb(n - 1, m, calls);\n}\n\nint main(void)\n{\n    int n, m;\n    long long calls = 0;\n\n    if (scanf(\"%d %d\", &n, &m) != 2 || n < 0 || m < 0 || m > n || n > 20)\n        return 0;\n\n    printf(\"%lld\\n\", comb(n, m, &calls));\n    printf(\"%lld\\n\", calls);\n    return 0;\n}",
+    "points": [
+      "递归出口：m == 0 或 m == n 时返回 1，覆盖「一个都不选」和「全部选中」两种边界",
+      "把 C(n, m) 分解为「选第 n 个元素」与「不选第 n 个元素」两项之和，形参随分解正确收缩",
+      "用指针出参 long long *calls 统计调用次数，自增写在出口判断之前，两条递归分支共用同一个计数器",
+      "输出组合数与调用次数两行，结果用 long long 保存并保证样例 10 与 19 完全一致"
+    ],
+    "analysis": "思路：组合数的递推关系 C(n, m) = C(n-1, m-1) + C(n-1, m) 有一个很直观的解释——盯住第 n 个元素：选它，就还要从剩下 n-1 个里再选 m-1 个；不选它，就要从剩下 n-1 个里选 m 个。两种情况的选法数相加就是答案。边界有两处：m == 0 表示一个都不选，只有一种选法；m == n 表示全部选中，也只有一种选法。把这件递推式原样写成递归函数即可，不需要阶乘，也不用担心除法取整。\n\n关键步骤：① 进入函数第一件事就是 ++(*calls)，计数必须放在出口判断之前，否则边界调用会被漏掉，第二行结果偏小；② 判出口 m == 0 || m == n 后返回 1；③ 否则返回 comb(n-1, m-1, calls) + comb(n-1, m, calls)，两次调用都传同一个指针，保证计数累加在同一个变量上；④ main 里定义 long long calls = 0，传 &calls，先输出组合数再输出调用次数。\n\n复杂度：数值本身很小（C(20,10) = 184756），但调用次数是递归树的结点数，随 n 指数增长：本题 n ≤ 20，最坏 n = 20、m = 10 时约 3.7×10^5 次调用，完全可以接受；n 再大就必须换成记忆化或自底向上的递推，下一题的记忆化斐波那契正是同一思想的另一种用法。\n\n易错点：① 忘记把计数放在出口判断之前，边界调用被漏计，第二行偏小；② 出口写成 m == 0 && m == n，两个条件同时成立才返回，造成无限递归；③ 两条递归分支各建一个局部计数器，最后只输出其中一个；④ 用 int 保存结果虽然本题不会溢出，但换到 n = 30 附近就会逼近上限，统一用 long long 更稳妥；⑤ 把递归改写成循环或直接套用阶乘公式，数值虽然正确，却不符合题目对递归结构的要求。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nstatic long long comb(int n, int m, long long &calls)\n{\n    ++calls;\n    if (m == 0 || m == n)\n        return 1;\n    return comb(n - 1, m - 1, calls) + comb(n - 1, m, calls);\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n, m;\n    if (!(std::cin >> n >> m) || n < 0 || m < 0 || m > n || n > 20)\n        return 0;\n\n    long long calls = 0;\n    long long value = comb(n, m, calls);\n    std::cout << value << '\\n';\n    std::cout << calls << '\\n';\n    return 0;\n}",
+        "points": [
+          "递归出口 m == 0 或 m == n 返回 1",
+          "把 C(n, m) 分解为选第 n 个与不选第 n 个两项之和",
+          "用 long long &calls 引用出参计数，自增在出口判断之前，两次递归共用同一引用",
+          "先把组合数存进局部变量再输出，避免与计数输出混在一条语句里"
+        ],
+        "analysis": "思路：与 C 版本完全一致的分治递归。C++ 用引用 `long long &calls` 代替指针出参，调用处不必写 `&`，函数体里也不用每次解引用，读起来比 `++(*calls)` 更干净。\n\n关键步骤：① 形参写成 `long long &calls`，进入函数立刻 `++calls`；② 出口 `if (m == 0 || m == n) return 1;`；③ 递推 `comb(n - 1, m - 1, calls) + comb(n - 1, m, calls)`；④ main 中 `long long calls = 0;` 后直接传变量名；⑤ 先用 `long long value` 接住返回值再输出，避免把「求值」和「输出计数」塞进同一条链式表达式，掩盖求值顺序问题。\n\n复杂度：数值 O(1)，调用次数等于递归树的结点数；n = 20、m = 10 时约 3.7×10^5 次调用，C++ 下瞬间完成。\n\n易错点：① 引用参数写成传值 `long long calls`，结果永远是 0；② 用 `std::endl` 两次刷新，虽然数据量小但没必要；③ 把 `m > n` 的非法输入直接送进递归，导致下标为负、无限递归；④ 输出顺序颠倒，先打次数后打组合数，与样例不符；⑤ 用 `int` 保存组合数，在 n = 30 附近会溢出。\n\n跨语言对照：C 用指针出参、C++ 用引用、Python 用单元素列表或返回值元组，三者带回「附加统计量」的手段不同，但递归结构与输出必须完全一致。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef comb(n: int, m: int, state: list) -> int:\n    state[0] += 1\n    if m == 0 or m == n:\n        return 1\n    return comb(n - 1, m - 1, state) + comb(n - 1, m, state)\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n, m = int(data[0]), int(data[1])\n    if n < 0 or m < 0 or m > n or n > 20:\n        return\n\n    state = [0]\n    value = comb(n, m, state)\n    print(value)\n    print(state[0])\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "递归出口 m == 0 或 m == n 返回 1",
+          "把 C(n, m) 分解为选第 n 个与不选第 n 个两项之和",
+          "用单元素列表 state[0] 模拟可变的调用计数器，因为函数内的整数赋值不会传回外层",
+          "先算组合数再打印，两行顺序与样例一致"
+        ],
+        "analysis": "思路：递归结构与 C 版本逐句对应，只是把「带回计数」的手段换成单元素列表。Python 的整数不可变，函数内执行 calls += 1 只是给局部名字重新绑定，外层看不到变化，所以用 state[0] 这种可变的容器绕开这个限制。\n\n关键步骤：① `state[0] += 1` 放在函数体最前面，保证边界调用也被计入；② 出口 `if m == 0 or m == n: return 1`；③ 递推 `comb(n - 1, m - 1, state) + comb(n - 1, m, state)`；④ 主函数用 `data = sys.stdin.read().split()` 一次读入两个整数；⑤ 打印组合数，再打印 `state[0]`。\n\n复杂度：数值计算 O(1)，调用次数约 3.7×10^5（n = 20、m = 10），Python 下约零点几秒即可完成。递归深度最多 20 层，远低于默认的 1000 层上限。\n\n易错点：① 直接写 `calls += 1` 当计数器，函数外读到的仍是 0；② 把计数写在出口之后，n == 0 之类的情况被漏计；③ 用 `input()` 分两次读，遇到两个整数在一行时第二次读不到；④ 忘记判非法输入，m > n 时递归无法收敛；⑤ 用 `math.comb` 一行得到答案，虽然数值正确但没有体现题目要求的递归过程，也拿不到调用次数。\n\n补充：如果不想引入列表，也可以让递归函数返回元组 `(值, 调用次数)`，再在上一层把两个子调用的次数相加；两种写法都能把统计量带回外层，本题选择列表是为了和 C 的指针出参一一对应。"
+      }
+    }
+  },
+  {
+    "id": "函-79",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "记忆化",
+      "斐波那契",
+      "递归优化"
+    ],
+    "stem": "斐波那契数列定义为 F(0) = 0、F(1) = 1、F(n) = F(n-1) + F(n-2)（n ≥ 2）。直接用递归计算会把同一个子问题反复展开，n 稍大就慢到无法接受，因此要用「记忆化递归」：把已经算过的 F(k) 存进缓存，再次遇到同一个 k 时直接返回缓存值，不再展开子树。请实现记忆化递归，并统计递归函数被调用的总次数（命中缓存也算一次调用）。\n\n**输入格式：** 一行一个整数 n（0 ≤ n ≤ 90）。\n\n**输出格式：** 两行：第一行 F(n) 的值；第二行递归函数被调用的总次数。\n\n**输入样例：**\n```text\n10\n```\n**输出样例：**\n```text\n55\n19\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 90\n\nstatic long long memo[MAXN + 1];\nstatic int ready[MAXN + 1];\n\nstatic long long fib(int n, long long *calls)\n{\n    ++(*calls);\n    if (n < 2)\n        return n;\n    if (ready[n])\n        return memo[n];\n    memo[n] = fib(n - 1, calls) + fib(n - 2, calls);\n    ready[n] = 1;\n    return memo[n];\n}\n\nint main(void)\n{\n    int n;\n    long long calls = 0;\n\n    if (scanf(\"%d\", &n) != 1 || n < 0 || n > MAXN)\n        return 0;\n\n    printf(\"%lld\\n\", fib(n, &calls));\n    printf(\"%lld\\n\", calls);\n    return 0;\n}",
+    "points": [
+      "递归出口 n < 2 时直接返回 n，F(0) = 0、F(1) = 1",
+      "命中缓存时立即返回 memo[n]，不再展开子问题",
+      "只在缓存为空时递归求值，并把结果写回 memo[n]、把 ready[n] 置 1",
+      "用 long long 保存 F(n)，n = 90 时结果为 2880067194370816120，不溢出"
+    ],
+    "analysis": "思路：朴素递归求斐波那契会把同一个子问题反复展开，f(n) 的调用次数约为 2×F(n+1)-1，n = 40 时就超过两亿次。记忆化的做法是把算过的结果存起来：memo[k] 保存 F(k)，辅助数组 ready[k] 标记它是否已经算过。函数每次进入先计数，再看 n < 2 的出口，然后查缓存——命中就直接返回，未命中才递归两个子问题并把结果写回缓存。\n\n关键步骤：① ++(*calls) 放在函数体最前面，这样命中缓存的调用也会被统计，最终次数稳定为 2n-1（n ≥ 1）；② 出口 n < 2 直接返回 n，不用查表；③ if (ready[n]) return memo[n]; 命中缓存立即返回，绝不展开子树；④ memo[n] = fib(n-1) + fib(n-2)，两个子调用返回后再把 ready[n] 置 1；⑤ main 用 long long 接收并输出两行。\n\n为什么需要 ready 数组：F(0) = 0 本身是一个合法答案，如果用「memo[n] == 0 表示未计算」，n = 0 或某些中间值会被误判成「还没算」，重复计算虽然不影响正确性，但会破坏「每个 k 只算一次」的语义，统计次数也对不上。用独立的标记数组最清楚。\n\n复杂度：每个 k 只被真正计算一次，加法 O(n) 次；调用总次数为 2n-1（n ≥ 1），n = 90 也只有 179 次，与朴素递归的指数级形成鲜明对比。空间 O(n) 用于缓存与递归栈，递归深度仅 n 层。\n\n易错点：① 忘记查缓存，写成普通递归，n = 90 时递归树大到整台机器都跑不完；② 用 memo[n] == 0 判断未计算，边界值 0 被误判；③ 用 int 保存 F(90)，2880067194370816120 直接溢出，必须 long long；④ 计数写在出口判断之后，n < 2 的调用被漏计；⑤ 直接把 memo[n-1] + memo[n-2] 相加，而右子树还没算，读到 0。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nstatic const int MAXN = 90;\nstatic long long memo[MAXN + 1];\nstatic bool ready[MAXN + 1];\n\nstatic long long fib(int n, long long &calls)\n{\n    ++calls;\n    if (n < 2)\n        return n;\n    if (ready[n])\n        return memo[n];\n    memo[n] = fib(n - 1, calls) + fib(n - 2, calls);\n    ready[n] = true;\n    return memo[n];\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n;\n    if (!(std::cin >> n) || n < 0 || n > MAXN)\n        return 0;\n\n    long long calls = 0;\n    long long value = fib(n, calls);\n    std::cout << value << '\\n';\n    std::cout << calls << '\\n';\n    return 0;\n}",
+        "points": [
+          "递归出口 n < 2 时返回 n",
+          "用 ready 数组显式标记缓存是否有效，避免用 0 充当「未计算」",
+          "命中缓存立即返回，未命中才递归并写回 memo[n]",
+          "用 long long 接收结果，引用参数带回调用次数"
+        ],
+        "analysis": "思路：与 C 版一致的查表式记忆化。C++ 用 `bool ready[]` 表示缓存有效，用 `long long &calls` 引用出参带回计数，两个静态数组放在文件作用域，生命周期覆盖整个程序。\n\n关键步骤：① 进入函数 `++calls`；② 出口 `if (n < 2) return n;`；③ `if (ready[n]) return memo[n];` 命中即返回；④ 写回 `memo[n] = fib(n - 1, calls) + fib(n - 2, calls);` 后立刻 `ready[n] = true;`，顺序不能颠倒——必须在两个子调用都返回之后再标记，否则递归中会读到未初始化的 0；⑤ 主函数先取回 value 再输出两行。\n\n复杂度：时间 O(n)，空间 O(n)；n = 90 时只有 179 次调用，栈深 90 层。\n\n易错点：① `ready[n] = true` 写在递归之前，子调用会读到脏数据；② 用 `std::vector<long long> memo(n + 1, 0)` 却仍然用 0 判断「未计算」，F(0) 与未计算混淆；③ 输出用 `std::endl` 两次刷新，虽不影响正确性但没有必要；④ 把 `MAXN` 定成 90 却开数组 `memo[MAXN]`，访问 memo[90] 越界；⑤ 用 `int` 存结果，溢出成负数。\n\n跨语言对照：C 的 `int ready[]`、C++ 的 `bool ready[]`、Python 的字典成员判断（`k in memo`）解决的是同一个问题——把「已算出的 0」和「还没算」区分开。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef fib(n: int, memo: dict, calls: list) -> int:\n    calls[0] += 1\n    if n < 2:\n        return n\n    if n in memo:\n        return memo[n]\n    memo[n] = fib(n - 1, memo, calls) + fib(n - 2, memo, calls)\n    return memo[n]\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    if n < 0 or n > 90:\n        return\n\n    memo: dict = {}\n    calls = [0]\n    value = fib(n, memo, calls)\n    print(value)\n    print(calls[0])\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "递归出口 n < 2 时返回 n",
+          "用字典充当缓存，用 `n in memo` 区分「未计算」与「已算出 0」",
+          "命中缓存立即返回，未命中才递归并写入 memo[n]",
+          "用列表 calls 统计调用次数，每次进入函数先加一"
+        ],
+        "analysis": "思路：Python 的字典天然适合做缓存，`n in memo` 正好能区分「键不存在」与「键存在且值为 0」，这恰好替代了 C 版本里的 ready 数组，不需要额外维护标记。调用计数仍然用单元素列表，因为函数内的整数自增不会传回外层。\n\n关键步骤：① `calls[0] += 1` 放在函数最前面；② 出口 `if n < 2: return n`；③ `if n in memo: return memo[n]`；④ 写缓存 `memo[n] = fib(n - 1, memo, calls) + fib(n - 2, memo, calls)`，写完直接返回；⑤ 主函数创建空的 memo 字典和 calls 列表，输出值与次数。\n\n复杂度：时间 O(n)，空间 O(n)；n = 90 时 179 次调用，递归深度 90 层，远低于默认上限。Python 的大整数天然支持任意精度，F(90) 不需要考虑溢出。\n\n易错点：① 用 `memo.get(n, 0)` 判断，F(0) = 0 与「未计算」混淆；② 忘记把 memo 传进递归，每层各建一个字典，退化成朴素递归；③ 用 `calls += 1` 计数，外层读到的永远是 0；④ 递归深度设得太小（如 50）时 n = 90 会抛 `RecursionError`；⑤ 把 `functools.lru_cache` 直接套上，虽然结果正确，但拿不到题目要求的调用次数统计。\n\n补充：也可以用 `sys.setrecursionlimit` 提前放宽递归上限，但本题深度只有 90 层，默认限制足够；如果要算更大的 n，就应该改成自底向上的循环递推，既不占栈也能顺带做滚动数组优化。"
+      }
+    }
+  },
+  {
+    "id": "函-80",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "二分",
+      "递归",
+      "整数平方根"
+    ],
+    "stem": "给定非负整数 n（0 ≤ n ≤ 2147483647），用「递归二分」求 ⌊√n⌋，即最大的整数 x 满足 x² ≤ n。搜索区间取 [0, min(n, 46340)]，mid = lo + (hi - lo) / 2：若 mid² ≤ n，说明 mid 可行，答案在右半区间 [mid+1, hi]；否则答案在左半区间 [lo, mid-1]。区间为空时返回右端点 hi。每执行一次 mid² ≤ n 的比较，比较次数加 1。\n\n**输入格式：** 一行一个整数 n（0 ≤ n ≤ 2147483647）。\n\n**输出格式：** 三行：第一行 ⌊√n⌋；第二行 `YES`（n 是完全平方数）或 `NO`（n 不是完全平方数）；第三行比较次数。\n\n**输入样例：**\n```text\n2000000000\n```\n**输出样例：**\n```text\n44721\nNO\n16\n```",
+    "solution": "#include <stdio.h>\n\nstatic long long isqrt_rec(long long n, long long lo, long long hi, int *cmp)\n{\n    long long mid;\n\n    if (lo > hi)\n        return hi;\n    mid = lo + (hi - lo) / 2;\n    ++(*cmp);\n    if (mid * mid <= n)\n        return isqrt_rec(n, mid + 1, hi, cmp);\n    return isqrt_rec(n, lo, mid - 1, cmp);\n}\n\nint main(void)\n{\n    long long n, hi, r;\n    int cmp = 0;\n\n    if (scanf(\"%lld\", &n) != 1 || n < 0 || n > 2147483647LL)\n        return 0;\n\n    hi = (n < 46340) ? n : 46340;\n    r = isqrt_rec(n, 0, hi, &cmp);\n    printf(\"%lld\\n\", r);\n    printf(\"%s\\n\", r * r == n ? \"YES\" : \"NO\");\n    printf(\"%d\\n\", cmp);\n    return 0;\n}",
+    "points": [
+      "递归出口 lo > hi 时返回 hi，因为 hi 始终是最接近答案的可行端点",
+      "mid 用 lo + (hi - lo) / 2 计算，避免 lo + hi 相加溢出",
+      "mid * mid 用 long long 计算，防止 46341² = 2147488281 超出 32 位 int",
+      "每执行一次比较就让 *cmp 自增，输出 ⌊√n⌋、YES/NO 与比较次数三行"
+    ],
+    "analysis": "思路：求 ⌊√n⌋ 就是求最大的整数 x 使 x² ≤ n。这个判定对 x 单调——x 越小越容易满足，所以可以用二分。递归版本把「在区间 [lo, hi] 里找答案」作为函数语义：取 mid，若 mid² ≤ n，说明 mid 本身可行，答案至少是 mid，于是去右半 [mid+1, hi] 继续找；否则 mid 太大，答案在左半 [lo, mid-1]。当区间为空时 lo = hi + 1，此时 hi 恰好是最后一个被确认可行的位置，返回它即可。\n\n关键步骤：① 出口 if (lo > hi) return hi; 返回右端点而不是 -1，因为题目要找的是「最大可行值」，hi 就是边界；② mid = lo + (hi - lo) / 2，避免 (lo + hi) 直接相加时的溢出；③ 比较 mid * mid <= n 时把 mid 声明成 long long：46341² = 2147488281 已经超过 int 上限，用 int 相乘会溢出成负数，判定结果完全失效；④ 上界取 min(n, 46340)，既让搜索区间有效，又保证 mid 不会大到让平方超出预期；⑤ 每次比较让 *cmp 自增，最后按三行输出结果、完全平方标记与比较次数。\n\n复杂度：区间长度每层减半，时间 O(log n)，本题最多约 16 次比较；空间 O(log n) 的递归栈，n 再大也不会栈溢出。\n\n易错点：① 出口返回 -1 或返回 mid，边界语义混乱，偶数和奇数长度的区间会给出不同答案；② 用 int 做 mid * mid，n 接近 2^31 时判定翻转成 true；③ mid 写成 (lo + hi) / 2，当 lo、hi 都接近 2×10^9 时相加溢出；④ 更新区间时写 lo = mid 而不是 mid + 1，区间不缩小导致死循环；⑤ 直接调用 sqrt() 取整，double 只有 53 位有效位，n 接近 2^31 时舍入可能把答案算成 44722。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nstatic long long isqrt_rec(long long n, long long lo, long long hi, int &cmp)\n{\n    if (lo > hi)\n        return hi;\n\n    long long mid = lo + (hi - lo) / 2;\n    ++cmp;\n    if (mid * mid <= n)\n        return isqrt_rec(n, mid + 1, hi, cmp);\n    return isqrt_rec(n, lo, mid - 1, cmp);\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    long long n;\n    if (!(std::cin >> n) || n < 0 || n > 2147483647LL)\n        return 0;\n\n    long long hi = (n < 46340) ? n : 46340;\n    int cmp = 0;\n    long long r = isqrt_rec(n, 0, hi, cmp);\n\n    std::cout << r << '\\n';\n    std::cout << (r * r == n ? \"YES\" : \"NO\") << '\\n';\n    std::cout << cmp << '\\n';\n    return 0;\n}",
+        "points": [
+          "递归出口 lo > hi 时返回 hi",
+          "mid 用 lo + (hi - lo) / 2 计算，避免相加溢出",
+          "mid * mid 用 long long 计算，避免 32 位溢出",
+          "用 int &cmp 引用出参统计比较次数，输出三行结果"
+        ],
+        "analysis": "思路：与 C 版本相同的二分递归，只是把指针出参换成引用 `int &cmp`，并统一使用 `long long` 作为区间与中点的类型。\n\n关键步骤：① 出口 `if (lo > hi) return hi;`；② `long long mid = lo + (hi - lo) / 2;` 之后立刻 `++cmp`；③ 判定 `mid * mid <= n` 时 mid 已经是 long long，乘积不会溢出；④ 递归到 `[mid + 1, hi]` 或 `[lo, mid - 1]`；⑤ 主函数先算上界 `(n < 46340) ? n : 46340`，再调用并输出三行。\n\n复杂度：时间 O(log n)，最多约 16 层递归，空间 O(log n)。\n\n易错点：① 区间参数用 `int`，n = 2147483647 时上界没问题，但 mid 的平方会溢出；② 用 `std::sqrt` 取整后输出，浮点舍入在边界处出错；③ 忘记统计比较次数，或把出口判断也算成一次；④ 更新区间写成 `lo = mid`，区间不收缩导致无限递归、栈溢出；⑤ 输出 YES/NO 时大小写与样例不一致。\n\n跨语言对照：三种语言都要注意整数类型的选择——C 用 long long、C++ 用 long long（或用 `std::int64_t`）、Python 的 int 本身没有溢出问题，但 `//` 与 `/` 的选择仍然决定 mid 是不是整数。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef isqrt_rec(n: int, lo: int, hi: int, state: list) -> int:\n    if lo > hi:\n        return hi\n\n    mid = lo + (hi - lo) // 2\n    state[0] += 1\n    if mid * mid <= n:\n        return isqrt_rec(n, mid + 1, hi, state)\n    return isqrt_rec(n, lo, mid - 1, state)\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    if n < 0 or n > 2147483647:\n        return\n\n    hi = n if n < 46340 else 46340\n    state = [0]\n    r = isqrt_rec(n, 0, hi, state)\n    print(r)\n    print(\"YES\" if r * r == n else \"NO\")\n    print(state[0])\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "递归出口 lo > hi 时返回 hi",
+          "mid 用 lo + (hi - lo) // 2 计算，必须用整除",
+          "每比较一次就让 state[0] 加一，最后输出比较次数",
+          "用 r * r == n 判断完全平方数，三行输出与样例一致"
+        ],
+        "analysis": "思路：Python 的整数是任意精度，mid * mid 不会溢出，但 `//` 与 `/` 的区别仍然关键：`/` 会得到浮点数，mid 一旦变成 2.0 这样的值，`mid * mid` 与下标运算都会出问题，递归也永远无法收敛。\n\n关键步骤：① 出口 `if lo > hi: return hi`；② `mid = lo + (hi - lo) // 2`；③ `state[0] += 1` 统计比较次数；④ 判定 `mid * mid <= n` 后递归右半或左半；⑤ 主函数算上界 `min(n, 46340)`，用 `r * r == n` 输出 YES/NO，最后输出比较次数。\n\n复杂度：时间 O(log n)，约 16 次比较；空间 O(log n) 的递归栈，深度很小。\n\n易错点：① 用 `/` 求 mid，得到浮点数后递归永不收敛；② 上界直接取 n，n = 2×10^9 时虽然 Python 不会溢出，但区间过大、比较次数与样例不匹配；③ 用 `int(n ** 0.5)` 代替二分，浮点误差在 2^31 附近可能算错；④ 忘记在出口之外统计比较次数，第三行偏小；⑤ 完全平方判断用 `math.isqrt` 以外的浮点写法，边界值出错。\n\n补充：Python 3.8 起标准库提供了 `math.isqrt`，它用整数算法直接给出精确结果，实际工程中应当优先使用；本题手写递归二分，是为了看清「可行就向右、不可行就向左」这一判定结构。"
+      }
+    }
+  },
+  {
+    "id": "函-81",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "分治",
+      "最值",
+      "比较次数"
+    ],
+    "stem": "给定 n 个整数（可能为负），用分治递归同时求出最大值和最小值，并按下面的规则统计「比较次数」：\n- 区间长度为 1：不比较，最大值与最小值都是该元素；\n- 区间长度为 2：比较 1 次，同时得到最大值和最小值；\n- 区间长度 ≥ 3：取 mid = (left + right) / 2，先递归求出左右两半的最大值与最小值，再用 2 次比较合并（一次决定最大值，一次决定最小值）。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100000）；第二行 n 个整数 a[i]（-10^9 ≤ a[i] ≤ 10^9），相邻两个数用一个空格分隔。\n\n**输出格式：** 三行：第一行最大值；第二行最小值；第三行比较次数。\n\n**输入样例：**\n```text\n8\n7 2 9 4 1 8 6 3\n```\n**输出样例：**\n```text\n9\n1\n10\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 100000\n\nstatic long long a[MAXN];\n\nstatic void solve(int left, int right, long long *mx, long long *mn, long long *cmp)\n{\n    int mid;\n    long long mx1, mn1, mx2, mn2;\n\n    if (left == right) {\n        *mx = a[left];\n        *mn = a[left];\n        return;\n    }\n    if (right == left + 1) {\n        ++(*cmp);\n        if (a[left] > a[right]) {\n            *mx = a[left];\n            *mn = a[right];\n        } else {\n            *mx = a[right];\n            *mn = a[left];\n        }\n        return;\n    }\n\n    mid = left + (right - left) / 2;\n    solve(left, mid, &mx1, &mn1, cmp);\n    solve(mid + 1, right, &mx2, &mn2, cmp);\n\n    ++(*cmp);\n    *mx = (mx1 > mx2) ? mx1 : mx2;\n    ++(*cmp);\n    *mn = (mn1 < mn2) ? mn1 : mn2;\n}\n\nint main(void)\n{\n    int n, i;\n    long long mx = 0, mn = 0, cmp = 0;\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%lld\", &a[i]) != 1)\n            return 0;\n    }\n\n    solve(0, n - 1, &mx, &mn, &cmp);\n    printf(\"%lld\\n\", mx);\n    printf(\"%lld\\n\", mn);\n    printf(\"%lld\\n\", cmp);\n    return 0;\n}",
+    "points": [
+      "递归出口分两种：长度 1 直接返回，长度 2 比较 1 次同时定出最大与最小",
+      "长度 ≥ 3 时取 mid = (left + right) / 2，递归求左右两半的 (最大值, 最小值)",
+      "合并时用 2 次比较分别决定最大值与最小值，每比较一次让 *cmp 自增",
+      "用三个指针出参带回最大值、最小值与比较次数，输出三行"
+    ],
+    "analysis": "思路：求最大值或最小值都可以用一遍循环 O(n) 完成，但「同时求两者」用分治能把比较次数从 2n 降到约 3n/2：把区间一分为二，左右两半各自返回 (最大值, 最小值)，合并时只需要 2 次比较——一次比较两个最大值，一次比较两个最小值。朴素做法对每个元素先和当前最大值比、再和当前最小值比，最坏要 2n 次比较，可见分治在「同时求两个极值」时确实更省。\n\n关键步骤：① 定义 solve(left, right, &mx, &mn, &cmp)，用三个指针出参带回最大值、最小值与比较次数；② 长度为 1 时直接赋值，不计比较；③ 长度为 2 时比较一次，同时定出大小，只计 1 次；④ 长度 ≥ 3 时 mid = left + (right - left) / 2，先递归左右两半，再用两次比较合并；⑤ main 读入 n 与数组后调用 solve(0, n-1, ...)，按最大值、最小值、比较次数三行输出。\n\n为什么长度为 2 要单独处理：如果只写「长度为 1 就返回」的分支，长度 2 的区间会被继续拆成两个长度 1 的区间，合并时仍需 2 次比较才能同时得到最大值和最小值，于是每个相邻对都花 2 次而不是 1 次，第三行结果与题目规定的计数规则不一致。\n\n复杂度：T(n) = 2T(n/2) + 2，T(1) = 0，T(2) = 1；当 n 是 2 的幂时解得 T(n) = 3n/2 - 2，本题 n = 8 时正好是 10 次比较。递归深度 O(log n)，空间 O(log n)，不需要额外数组。\n\n易错点：① 长度为 2 的分支忘记写，比较次数与样例不符；② 合并时用三重 if 嵌套，写成 3 次比较；③ 指针出参的顺序传反，最大值与最小值互换；④ 长度为 2 的分支里只赋值最大值、忘记赋值最小值，读到未初始化值；⑤ cmp 用 int 保存，虽然 10^5 量级不会溢出，但统一用 long long 更稳。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nstatic void solve(const std::vector<long long> &a, int left, int right,\n                  long long &mx, long long &mn, long long &cmp)\n{\n    if (left == right) {\n        mx = a[static_cast<std::size_t>(left)];\n        mn = a[static_cast<std::size_t>(left)];\n        return;\n    }\n    if (right == left + 1) {\n        ++cmp;\n        if (a[static_cast<std::size_t>(left)] > a[static_cast<std::size_t>(right)]) {\n            mx = a[static_cast<std::size_t>(left)];\n            mn = a[static_cast<std::size_t>(right)];\n        } else {\n            mx = a[static_cast<std::size_t>(right)];\n            mn = a[static_cast<std::size_t>(left)];\n        }\n        return;\n    }\n\n    int mid = left + (right - left) / 2;\n    long long mx1, mn1, mx2, mn2;\n    solve(a, left, mid, mx1, mn1, cmp);\n    solve(a, mid + 1, right, mx2, mn2, cmp);\n\n    ++cmp;\n    mx = (mx1 > mx2) ? mx1 : mx2;\n    ++cmp;\n    mn = (mn1 < mn2) ? mn1 : mn2;\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 100000)\n        return 0;\n\n    std::vector<long long> a(static_cast<std::size_t>(n));\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[static_cast<std::size_t>(i)];\n\n    long long mx = 0, mn = 0, cmp = 0;\n    solve(a, 0, n - 1, mx, mn, cmp);\n\n    std::cout << mx << '\\n';\n    std::cout << mn << '\\n';\n    std::cout << cmp << '\\n';\n    return 0;\n}",
+        "points": [
+          "长度为 1 与长度为 2 的出口分别处理，长度 2 只比较 1 次",
+          "区间长度为 3 以上时二分左右，递归求两半的极值",
+          "合并时用 2 次比较定出最终最大值与最小值，引用出参带回结果",
+          "数组按常引用传递，避免每层递归复制 10^5 个元素"
+        ],
+        "analysis": "思路：与 C 版一致的分治结构，改进点在函数接口：数组用 `const std::vector<long long> &` 常引用传入，避免每层递归复制整个数组；最大值、最小值、比较次数都用引用出参带回，调用处不必写取地址符。\n\n关键步骤：① `solve(a, left, right, mx, mn, cmp)`，其中 mx、mn、cmp 都是 `long long &`；② 长度 1 直接赋值返回；③ 长度 2 比较一次并交换式赋值；④ 长度 ≥ 3 时取 mid、递归左右、两次比较合并；⑤ 主函数用 vector 存数据，输出三行。\n\n复杂度：T(n) = 2T(n/2) + 2，n = 8 时为 10 次比较；时间 O(n)，空间 O(log n) 递归栈（数据本身占 O(n)）。\n\n易错点：① 数组按值传递 `std::vector<long long> a`，每层复制，10^5 数据会明显变慢；② 下标使用 `std::size_t` 时忘记转换，出现有符号与无符号比较警告；③ 引用出参写成传值，mx、mn 永远是 0；④ 长度为 2 的分支只写一个 if 而没有 else，等于情况漏赋值；⑤ 用 `std::max`/`std::min` 会额外引入比较，计数与题目规则不再对应。\n\n跨语言对照：C 传指针、C++ 传引用、Python 返回元组，三种方式带回多返回值的手段不同，但合并逻辑与比较次数必须完全一致。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef solve(a: list, left: int, right: int, state: list):\n    if left == right:\n        return a[left], a[left]\n\n    if right == left + 1:\n        state[0] += 1\n        if a[left] > a[right]:\n            return a[left], a[right]\n        return a[right], a[left]\n\n    mid = left + (right - left) // 2\n    mx1, mn1 = solve(a, left, mid, state)\n    mx2, mn2 = solve(a, mid + 1, right, state)\n\n    state[0] += 1\n    mx = mx1 if mx1 > mx2 else mx2\n    state[0] += 1\n    mn = mn1 if mn1 < mn2 else mn2\n    return mx, mn\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    if n < 1 or n > 100000:\n        return\n    a = [int(x) for x in data[1:1 + n]]\n\n    state = [0]\n    mx, mn = solve(a, 0, n - 1, state)\n    print(mx)\n    print(mn)\n    print(state[0])\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "长度为 1 与长度为 2 的出口分别处理，长度 2 只比较 1 次",
+          "长度 ≥ 3 时二分左右，递归返回两半的 (最大值, 最小值) 元组",
+          "合并时两次比较分别定出最大值与最小值，用 state[0] 统计比较次数",
+          "n = 1 时直接返回该元素，比较次数为 0"
+        ],
+        "analysis": "思路：Python 可以直接用元组返回 (最大值, 最小值)，比 C 的指针出参和 C++ 的引用出参都轻。比较次数用一个单元素列表 state[0] 累计，因为函数内的整数自增不会传回外层。\n\n关键步骤：① 出口一：`if left == right: return a[left], a[left]`，不计比较；② 出口二：长度 2 时 `state[0] += 1`，用一次比较同时返回两个极值；③ 长度 ≥ 3 时 `mid = left + (right - left) // 2`，递归拿回两个元组；④ 合并：先 `state[0] += 1` 后取较大者作为最大值，再 `state[0] += 1` 后取较小者作为最小值；⑤ 主函数用 `data[1:1 + n]` 切片取数组，输出三行。\n\n复杂度：T(n) = 2T(n/2) + 2，n = 8 时为 10 次比较；时间 O(n)，空间 O(log n)（不含输入数组）。\n\n易错点：① 忘记长度 2 的出口，把它拆成两个长度 1 的区间，比较次数变成 2 次；② 合并时用内置 `max()`/`min()`，虽然结果对，但比较次数无法与题目规则对应；③ 用 `/` 计算 mid，得到浮点数后切片报错；④ 元组解包写错顺序，最大值与最小值互换；⑤ n = 1 时仍然进入长度 2 的分支，下标越界。\n\n补充：Python 的递归深度默认 1000，本题递归深度只有 log2(10^5) ≈ 17 层，非常安全；如果换成「逐元素两两配对」的循环写法，也能达到 3n/2 次比较，但那就不是分治了。"
+      }
+    }
+  },
+  {
+    "id": "函-82",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "分治",
+      "归并排序",
+      "逆序对"
+    ],
+    "stem": "给定 n 个整数，统计逆序对的数量：满足 i < j 且 a[i] > a[j] 的数对 (i, j) 的个数。要求用「归并分治」实现：把区间一分为二，逆序对数 = 左半内部的逆序对 + 右半内部的逆序对 + 跨区间的逆序对；合并时左右两半各自有序，若右半当前元素 a[j] 小于左半当前元素 a[i]，则 a[j] 与左半剩余的 mid - i + 1 个元素都构成逆序对，可以一次性累加。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 200000）；第二行 n 个整数 a[i]（-10^9 ≤ a[i] ≤ 10^9），相邻两个数用一个空格分隔。\n\n**输出格式：** 一行一个整数，为逆序对的数量。\n\n**输入样例：**\n```text\n5\n2 3 8 6 1\n```\n**输出样例：**\n```text\n5\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 200000\n\nstatic long long a[MAXN];\nstatic long long tmp[MAXN];\n\nstatic long long merge_sort(int lo, int hi)\n{\n    int mid, i, j, k;\n    long long cnt = 0;\n\n    if (lo >= hi)\n        return 0;\n\n    mid = lo + (hi - lo) / 2;\n    cnt += merge_sort(lo, mid);\n    cnt += merge_sort(mid + 1, hi);\n\n    i = lo;\n    j = mid + 1;\n    k = lo;\n    while (i <= mid && j <= hi) {\n        if (a[i] <= a[j]) {\n            tmp[k++] = a[i++];\n        } else {\n            tmp[k++] = a[j++];\n            cnt += (long long)(mid - i + 1);\n        }\n    }\n    while (i <= mid)\n        tmp[k++] = a[i++];\n    while (j <= hi)\n        tmp[k++] = a[j++];\n\n    for (k = lo; k <= hi; k++)\n        a[k] = tmp[k];\n    return cnt;\n}\n\nint main(void)\n{\n    int n, i;\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%lld\", &a[i]) != 1)\n            return 0;\n    }\n\n    printf(\"%lld\\n\", merge_sort(0, n - 1));\n    return 0;\n}",
+    "points": [
+      "递归出口 lo >= hi 时返回 0，单个元素没有逆序对",
+      "先递归左右两半并把两部分的逆序对数累加",
+      "合并时若 a[i] > a[j]，一次性累加 mid - i + 1，而不是只加 1",
+      "用 long long 保存答案与数组元素，n = 200000 时结果可达 2×10^10"
+    ],
+    "analysis": "思路：逆序对的数量可以用分治统计。把区间 [lo, hi] 分成左右两半，整个区间的逆序对等于三部分之和：完全在左半内部的、完全在右半内部的、以及一个在左一个在右的「跨区间」逆序对。前两部分递归求解，结构与原问题相同，只是规模减半；第三部分在归并排序的合并过程中顺手统计——合并时左右两半各自已经有序，若右半当前元素 a[j] 小于左半当前元素 a[i]，那么 a[j] 比左半剩下的 (mid - i + 1) 个元素都小，这 (mid - i + 1) 个元素每一个都与 a[j] 构成逆序对，可以一次性累加，而不必逐个去数。\n\n关键步骤：① 递归出口 lo >= hi 返回 0；② 先递归左半与右半，把两个返回值累加进 cnt；③ 合并时用 i 扫左半、j 扫右半，若 a[i] <= a[j] 就取左半元素（等号保证归并稳定），否则取 a[j] 并累加 mid - i + 1；④ 把剩余元素依次放进临时数组，再把 tmp[lo..hi] 写回 a，保证上一层看到的左右两半已经有序；⑤ 用 long long 保存答案，n = 200000 时最多约 2×10^10 个逆序对，远超 int 范围。\n\n复杂度：归并的每一层合并 O(n)，共 O(log n) 层，时间 O(n log n)；空间 O(n) 的临时数组加 O(log n) 的递归栈。相比双重循环的 O(n²)（n = 2×10^5 时约 2×10^10 次比较），这是能过题的关键。\n\n易错点：① 累加时写成 cnt++ 而不是 cnt += mid - i + 1，只统计了当前这一对，结果偏小；② 判断条件写成 a[i] < a[j] 才取左半，遇到相等元素时会把相等对误判成逆序对；③ 用 int 保存答案，n 较大时溢出成负数；④ 忘记把 tmp 写回 a，导致上一层合并时左右两半并不有序，后面全部算错；⑤ 用冒泡或双重循环统计逆序对，n = 2×10^5 时必然超时。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nstatic long long merge_sort(std::vector<long long> &a, std::vector<long long> &tmp,\n                            int lo, int hi)\n{\n    if (lo >= hi)\n        return 0;\n\n    int mid = lo + (hi - lo) / 2;\n    long long cnt = merge_sort(a, tmp, lo, mid) + merge_sort(a, tmp, mid + 1, hi);\n\n    int i = lo, j = mid + 1, k = lo;\n    while (i <= mid && j <= hi) {\n        if (a[static_cast<std::size_t>(i)] <= a[static_cast<std::size_t>(j)]) {\n            tmp[static_cast<std::size_t>(k++)] = a[static_cast<std::size_t>(i++)];\n        } else {\n            tmp[static_cast<std::size_t>(k++)] = a[static_cast<std::size_t>(j++)];\n            cnt += static_cast<long long>(mid - i + 1);\n        }\n    }\n    while (i <= mid)\n        tmp[static_cast<std::size_t>(k++)] = a[static_cast<std::size_t>(i++)];\n    while (j <= hi)\n        tmp[static_cast<std::size_t>(k++)] = a[static_cast<std::size_t>(j++)];\n\n    for (k = lo; k <= hi; ++k)\n        a[static_cast<std::size_t>(k)] = tmp[static_cast<std::size_t>(k)];\n    return cnt;\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 200000)\n        return 0;\n\n    std::vector<long long> a(static_cast<std::size_t>(n));\n    std::vector<long long> tmp(static_cast<std::size_t>(n));\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[static_cast<std::size_t>(i)];\n\n    std::cout << merge_sort(a, tmp, 0, n - 1) << '\\n';\n    return 0;\n}",
+        "points": [
+          "递归出口 lo >= hi 时返回 0",
+          "把左右两半的逆序对数递归累加后再做跨区间统计",
+          "合并时 a[i] > a[j] 就累加 mid - i + 1，等号时必须取左半以保持稳定",
+          "临时数组在 main 中一次性开好按引用传入，避免每层重新分配"
+        ],
+        "analysis": "思路：与 C 版相同的归并统计。C++ 版本用两个 `std::vector<long long>` 分别存放数据与临时空间，都在 main 里一次性分配好，再按引用传给递归函数——这样既不依赖文件作用域的静态数组，也不会在每层递归里重复分配。\n\n关键步骤：① `merge_sort(a, tmp, lo, hi)` 返回该区间的逆序对数；② 出口 `lo >= hi` 返回 0；③ `cnt = merge_sort(左) + merge_sort(右)`；④ 合并时用 `<=` 判断，保证相等元素不产生逆序对；⑤ 交换块只用到 `tmp`，合并结束再整体写回 `a`。\n\n复杂度：时间 O(n log n)，空间 O(n)（两个 vector）加 O(log n) 递归栈；n = 2×10^5 时约 3.6×10^6 次合并操作。\n\n易错点：① `cnt += mid - i + 1` 里的 i 已经在自增，若先执行 `++i` 再累加，结果会差一个；② 数组下标用 `std::size_t` 转换时写错括号，出现编译错误或警告；③ vector 按值传参，每层复制 2×10^5 个元素，直接超时；④ 用 `std::stable_sort` 之类的库函数代替手写归并，无法统计逆序对；⑤ 用 `std::endl` 输出，虽只一行但没必要。\n\n跨语言对照：C 用全局静态数组、C++ 用 vector、Python 用切片返回新列表，三者都把「合并后保持有序」作为下一层统计的前提。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef merge_count(a: list):\n    if len(a) <= 1:\n        return a, 0\n\n    mid = len(a) // 2\n    left, c1 = merge_count(a[:mid])\n    right, c2 = merge_count(a[mid:])\n\n    merged = []\n    i = j = 0\n    inv = c1 + c2\n    while i < len(left) and j < len(right):\n        if left[i] <= right[j]:\n            merged.append(left[i])\n            i += 1\n        else:\n            merged.append(right[j])\n            j += 1\n            inv += len(left) - i\n\n    merged.extend(left[i:])\n    merged.extend(right[j:])\n    return merged, inv\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    if n < 1 or n > 200000:\n        return\n    a = [int(x) for x in data[1:1 + n]]\n\n    _, total = merge_count(a)\n    print(total)\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "递归出口 len(a) <= 1 时返回 (原列表, 0)",
+          "先递归左右两半并累加两部分的逆序对数",
+          "跨区间统计用 len(left) - i 一次性累加，而不是逐个计数",
+          "合并结果用新列表返回，保证上一层拿到的左右两半有序"
+        ],
+        "analysis": "思路：Python 用「返回 (有序列表, 逆序对数)」的方式把 C 版本里「原地合并 + 全局数组」的写法改成更自然的函数式风格：每次递归返回排好序的新列表和该区间的逆序对数，上一层再合并。\n\n关键步骤：① 出口 `if len(a) <= 1: return a, 0`；② `mid = len(a) // 2`，切片得到左右两半；③ 递归拿回 `(left, c1)` 与 `(right, c2)`；④ 合并时若 `left[i] <= right[j]` 取左半，否则取右半并累加 `len(left) - i`——它对应 C 版本的 `mid - i + 1`；⑤ 用 `extend` 收尾，返回合并后的列表与总数。\n\n复杂度：时间 O(n log n)，空间 O(n log n)（每层切片都产生新列表，虽比原地合并费内存，但对 2×10^5 规模仍然够用）。递归深度 log2(2×10^5) ≈ 18 层，安全。\n\n易错点：① 累加时写成 `inv += 1`，只统计当前一对；② 判断用 `<` 而不是 `<=`，相等元素被误算成逆序对；③ 忘记把左右剩余部分接上，返回的列表不完整；④ 把 `len(a) <= 1` 写成 `== 0`，长度 1 的区间继续递归、无限循环；⑤ 用双重循环统计，n = 2×10^5 时时间不可接受。\n\n补充：递归返回新列表的写法可读性好，但切片和 append 都有额外开销；如果数据量再大，可以改成传下标、用一块预分配的临时数组做原地归并，思路与 C 版完全一致。"
+      }
+    }
+  },
+  {
+    "id": "枚-21",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "枚举",
+      "状态机",
+      "字符扫描"
+    ],
+    "stem": "用枚举表示扫描状态，对一行文本做「记号切分」并统计。文本只含数字、英文字母、空格、'+' 和 '-'，规则如下：\n- 连续的十进制数字组成一个整数记号；\n- 连续的英文字母（大小写都算）组成一个单词记号；\n- 每个 '+' 或 '-' 单独构成一个符号记号；\n- 空格只起分隔作用，不产生记号。\n\n请声明枚举类型表示当前状态（例如 ST_NONE 表示当前不在任何记号中、ST_NUM 表示正在读数字、ST_WORD 表示正在读字母），逐字符更新状态，并在「进入一个新记号」时给对应计数器加 1；同时记录最长的整数记号有多少位。\n\n**输入格式：** 一行文本，长度 1~200，只含数字、英文字母、空格、'+'、'-'，且至少有一个非空格字符。\n\n**输出格式：** 四行，依次为：\n- `num: ` 整数记号个数\n- `word: ` 单词记号个数\n- `sym: ` 符号记号个数\n- `maxlen: ` 最长整数记号的位数（没有整数记号时输出 0）\n\n**输入样例：**\n```text\nabc 12 + x9\n```\n**输出样例：**\n```text\nnum: 2\nword: 2\nsym: 1\nmaxlen: 2\n```",
+    "solution": "#include <stdio.h>\n#include <ctype.h>\n\ntypedef enum { ST_NONE, ST_NUM, ST_WORD } State;\n\nint main(void)\n{\n    char line[256];\n    State state = ST_NONE;\n    int num_cnt = 0, word_cnt = 0, sym_cnt = 0;\n    int cur_len = 0, max_len = 0;\n    const char *p;\n\n    if (fgets(line, (int)sizeof line, stdin) == NULL)\n        return 0;\n\n    for (p = line; *p != '\\0'; p++) {\n        unsigned char ch = (unsigned char)*p;\n\n        if (ch == '\\n' || ch == '\\r')\n            break;\n        if (ch == ' ') {\n            state = ST_NONE;\n            cur_len = 0;\n        } else if (isdigit(ch)) {\n            if (state != ST_NUM) {\n                ++num_cnt;\n                cur_len = 1;\n                state = ST_NUM;\n            } else {\n                ++cur_len;\n            }\n            if (cur_len > max_len)\n                max_len = cur_len;\n        } else if (isalpha(ch)) {\n            if (state != ST_WORD) {\n                ++word_cnt;\n                state = ST_WORD;\n            }\n        } else {\n            ++sym_cnt;\n            state = ST_NONE;\n            cur_len = 0;\n        }\n    }\n\n    printf(\"num: %d\\n\", num_cnt);\n    printf(\"word: %d\\n\", word_cnt);\n    printf(\"sym: %d\\n\", sym_cnt);\n    printf(\"maxlen: %d\\n\", max_len);\n    return 0;\n}",
+    "points": [
+      "用 enum 声明 ST_NONE、ST_NUM、ST_WORD 三个状态，并用 State 变量保存当前状态",
+      "在状态切换的瞬间（从非数字进入数字、从非字母进入字母）给对应计数器加 1",
+      "空格与符号都把状态复位成 ST_NONE，符号自身另加一次计数",
+      "进入整数记号时把当前长度置 1、继续读数字时长度加 1，并随时更新最长位数"
+    ],
+    "analysis": "思路：这类「逐个字符扫描、按当前处在什么记号里决定行为」的题目，最自然的写法就是有限状态机：用枚举列出所有状态，循环里根据字符类别算出下一状态，再在状态切换的瞬间做计数。本题只有三种记号，状态取 ST_NONE（不在任何记号里）、ST_NUM（正在读整数）、ST_WORD（正在读单词）即可；符号记号不进状态，因为每个符号本身就独立构成一个记号，读完立刻复位。\n\n关键步骤：① 声明 enum { ST_NONE, ST_NUM, ST_WORD } 并用 State state = ST_NONE 初始化；② 用 fgets 读入整行，逐字符扫描，遇到 '\\n' 或 '\\r' 就结束（后者兼容 Windows 换行）；③ 空格：状态复位成 ST_NONE，当前长度清零；④ 数字：若当前不在 ST_NUM，说明进入了一个新的整数记号，num 加 1、长度置 1，否则长度加 1，随后更新 max_len；⑤ 字母：若当前不在 ST_WORD，word 加 1 并进入 ST_WORD；⑥ 其余字符（'+'、'-'）：sym 加 1，并立刻把状态复位成 ST_NONE——这样连续的加号、减号会被算成两个符号而不是一个；⑦ 最后按要求输出四行。\n\n为什么用枚举而不是 0/1/2：状态的名字本身就是文档，ST_NUM 比 1 更能说明「此刻正在读数字」；同时汇编层面它就是整数，比较和赋值没有额外开销，正是枚举最典型的用法。\n\n复杂度：O(L)，L 为行长度，只扫描一遍，空间 O(1)（不含输入缓冲区）。\n\n易错点：① 用 scanf(\"%s\") 读入，遇到空格就截断，整行的统计全错；② 在数字与字母交界处忘记切换状态，把 \"x9\" 整体算成一个记号；③ 直接给 isdigit 传 char，遇到负值属于未定义行为，应先转 unsigned char；④ 符号处理后不复位状态，\"+-\" 被算成一个符号；⑤ max_len 只在整数记号结束时更新一次，漏掉行末的整数；⑥ 忘记处理 '\\r'，Windows 换行被当成符号多计一次。",
+    "module": "枚举",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n#include <cctype>\n\nenum class State { None, Num, Word };\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    std::string line;\n    if (!std::getline(std::cin, line))\n        return 0;\n\n    State state = State::None;\n    int num_cnt = 0, word_cnt = 0, sym_cnt = 0;\n    int cur_len = 0, max_len = 0;\n\n    for (char raw : line) {\n        unsigned char ch = static_cast<unsigned char>(raw);\n        if (ch == '\\r')\n            break;\n        if (ch == ' ') {\n            state = State::None;\n            cur_len = 0;\n        } else if (ch >= '0' && ch <= '9') {\n            if (state != State::Num) {\n                ++num_cnt;\n                cur_len = 1;\n                state = State::Num;\n            } else {\n                ++cur_len;\n            }\n            if (cur_len > max_len)\n                max_len = cur_len;\n        } else if (std::isalpha(ch)) {\n            if (state != State::Word) {\n                ++word_cnt;\n                state = State::Word;\n            }\n        } else {\n            ++sym_cnt;\n            state = State::None;\n            cur_len = 0;\n        }\n    }\n\n    std::cout << \"num: \" << num_cnt << '\\n';\n    std::cout << \"word: \" << word_cnt << '\\n';\n    std::cout << \"sym: \" << sym_cnt << '\\n';\n    std::cout << \"maxlen: \" << max_len << '\\n';\n    return 0;\n}",
+        "points": [
+          "用 enum class 声明三个状态，取值时写 State::Num 这样的限定名",
+          "状态切换的瞬间给对应计数器加 1，而不是每个字符都加",
+          "空格与符号都把状态复位成 State::None",
+          "读整行用 getline，逐字符扫描并统计最长整数记号位数"
+        ],
+        "analysis": "思路：与 C 版相同的状态机，改用 `enum class` —— 它有作用域、不会隐式转换成 int，状态比较写成 `state != State::Num`，可读性和类型安全都更好。读入用 `std::getline`，能完整保留空格。\n\n关键步骤：① `enum class State { None, Num, Word };` 与 `State state = State::None;`；② `std::getline(std::cin, line)` 读整行；③ 遍历 `for (char raw : line)`，先转 `unsigned char` 再交给 `std::isalpha`；④ 数字分支里用 `ch >= '0' && ch <= '9'` 显式判类，避免字符集差异；⑤ 输出四行统计。\n\n复杂度：O(L)，单趟扫描，空间 O(L) 保存整行字符串。\n\n易错点：① 用 `std::cin >> line` 读入，空格被当作分隔符，只能读到第一个记号；② `enum class` 不能直接与整数比较，写成 `state == 1` 会编译失败；③ `std::isalpha` 传入负的 char 是未定义行为，必须先转 unsigned char；④ 忘记处理 '\\r'，回车被当成符号；⑤ 最长位数在数字分支外更新，读到末尾时漏记。\n\n跨语言对照：C 的 `typedef enum`、C++ 的 `enum class`、Python 的 `Enum` 类，三者都把「状态」写成了有名字的常量集合；区别只是 C++ 的作用域更严格、Python 的枚举成员是单例对象。"
+      },
+      "python": {
+        "solution": "import sys\nfrom enum import Enum, auto\n\n\nclass State(Enum):\n    NONE = auto()\n    NUM = auto()\n    WORD = auto()\n\n\ndef is_alpha(ch: str) -> bool:\n    return \"a\" <= ch <= \"z\" or \"A\" <= ch <= \"Z\"\n\n\ndef main() -> None:\n    line = sys.stdin.readline()\n    if line == \"\":\n        return\n\n    state = State.NONE\n    num_cnt = word_cnt = sym_cnt = 0\n    cur_len = max_len = 0\n\n    for ch in line:\n        if ch == \"\\n\" or ch == \"\\r\":\n            break\n        if ch == \" \":\n            state = State.NONE\n            cur_len = 0\n        elif \"0\" <= ch <= \"9\":\n            if state is not State.NUM:\n                num_cnt += 1\n                cur_len = 1\n                state = State.NUM\n            else:\n                cur_len += 1\n            if cur_len > max_len:\n                max_len = cur_len\n        elif is_alpha(ch):\n            if state is not State.WORD:\n                word_cnt += 1\n                state = State.WORD\n        else:\n            sym_cnt += 1\n            state = State.NONE\n            cur_len = 0\n\n    print(f\"num: {num_cnt}\")\n    print(f\"word: {word_cnt}\")\n    print(f\"sym: {sym_cnt}\")\n    print(f\"maxlen: {max_len}\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "用 Enum 类声明三个状态成员，用 auto() 自动取值",
+          "状态切换的瞬间给对应计数器加 1；枚举成员用 is 比较更明确",
+          "空格与符号都把状态复位成 State.NONE",
+          "用 f-string 输出四行，格式与样例一致"
+        ],
+        "analysis": "思路：Python 用 `enum.Enum` 来表达状态集合，成员用 `auto()` 自动编号——这里并不关心具体数值，只关心「当前是哪个状态」，这正是枚举比裸整数好的地方。\n\n关键步骤：① `class State(Enum)` 定义 NONE、NUM、WORD 三个成员；② `state = State.NONE` 初始化；③ 用 `sys.stdin.readline()` 读整行，逐字符遍历，遇到换行或回车即停；④ 字符分类用显式 ASCII 区间（`\"0\" <= ch <= \"9\"`、自定义 is_alpha），避免 `str.isalpha()` 把非 ASCII 字母也当作单词；⑤ 状态切换时计数，最后用 f-string 输出四行。\n\n复杂度：O(L)，单趟扫描，空间 O(L) 保存整行。\n\n易错点：① 用 `input()` 之外的方式读入却忘记去掉末尾换行，换行被当成符号计数；② 把 `state is not State.NUM` 写成 `state != \"NUM\"`，枚举成员与字符串比较永远成立；③ 用 `str.isdigit()` 判数字，全角数字等字符也会被算进去；④ 符号处理后忘记复位状态，连续的符号被合并成一个；⑤ 只在整数结束时更新 max_len，行末整数漏记。\n\n补充：如果不想引入 Enum，也可以用模块级常量 `ST_NONE, ST_NUM, ST_WORD = range(3)`，运行时行为等价；用 Enum 的价值在于状态集合有名字、可遍历、不会与普通整数混淆。"
+      }
+    }
+  },
+  {
+    "id": "枚-22",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "枚举",
+      "位标志",
+      "权限统计"
+    ],
+    "stem": "系统的权限用「位标志」表示，每一位代表一种能力：READ = 1<<0、WRITE = 1<<1、EXEC = 1<<2、DELETE = 1<<3、ADMIN = 1<<4。请用枚举把这些常量定义出来。一个用户的权限用一个 0~31 的整数 mask 表示，某位为 1 表示拥有该权限。\n\n给定 n 个用户的权限掩码和一个「要求掩码」q，统计：\n- 拥有 q 中全部权限的用户数（(mask & q) == q）；\n- 至少拥有一项 q 中权限的用户数（(mask & q) != 0）；\n- 一项都不拥有的用户数（(mask & q) == 0）；\n- 所有用户权限位中置 1 的总位数（即全部 mask 的二进制 1 的个数之和）。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数 mask，用空格分隔（0 ≤ mask ≤ 31）；第三行一个整数 q（1 ≤ q ≤ 31）。\n\n**输出格式：** 四行，依次为：\n- `all: ` 拥有全部 q 权限的用户数\n- `any: ` 至少拥有一项 q 权限的用户数\n- `none: ` 一项 q 权限都没有的用户数\n- `popcount: ` 全部用户权限位中 1 的总个数\n\n**输入样例：**\n```text\n5\n5 3 6 24 31\n3\n```\n**输出样例：**\n```text\nall: 2\nany: 4\nnone: 1\npopcount: 13\n```",
+    "solution": "#include <stdio.h>\n\ntypedef enum {\n    PERM_READ   = 1 << 0,\n    PERM_WRITE  = 1 << 1,\n    PERM_EXEC   = 1 << 2,\n    PERM_DELETE = 1 << 3,\n    PERM_ADMIN  = 1 << 4\n} Perm;\n\n#define PERM_ALL (PERM_READ | PERM_WRITE | PERM_EXEC | PERM_DELETE | PERM_ADMIN)\n\n#define MAXN 1000\n\nstatic int popcount(unsigned int v)\n{\n    int c = 0;\n\n    while (v != 0u) {\n        v &= v - 1u;\n        ++c;\n    }\n    return c;\n}\n\nint main(void)\n{\n    int n, q, i;\n    int masks[MAXN];\n    int cnt_all = 0, cnt_any = 0, cnt_none = 0, bits = 0;\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &masks[i]) != 1)\n            return 0;\n    }\n    if (scanf(\"%d\", &q) != 1 || q < 1 || q > PERM_ALL)\n        return 0;\n\n    for (i = 0; i < n; i++) {\n        unsigned int mask = (unsigned int)masks[i];\n        unsigned int want = (unsigned int)q;\n        unsigned int hit = mask & want;\n\n        if (hit == want)\n            ++cnt_all;\n        if (hit != 0u)\n            ++cnt_any;\n        else\n            ++cnt_none;\n        bits += popcount(mask);\n    }\n\n    printf(\"all: %d\\n\", cnt_all);\n    printf(\"any: %d\\n\", cnt_any);\n    printf(\"none: %d\\n\", cnt_none);\n    printf(\"popcount: %d\\n\", bits);\n    return 0;\n}",
+    "points": [
+      "用枚举把 READ=1<<0 到 ADMIN=1<<4 五个位标志定义成命名常量，并用它们组合出 PERM_ALL",
+      "「拥有全部权限」判 (mask & q) == q，不能只判按位与结果非 0",
+      "因为 q 在输入的最后一行，必须先把 n 个 mask 存进数组，读完 q 后再统一统计",
+      "用 v &= v - 1 统计二进制 1 的个数，并输出 all / any / none / popcount 四行"
+    ],
+    "analysis": "思路：权限天然适合用「位标志」表示——每一种能力占一个二进制位，一个整数就能同时表示多种权限，判断「是否拥有某种权限」只需按位与。题目要求把这组常量用枚举定义出来，这样代码里出现的是 PERM_READ 这样的名字而不是魔法数字 1、2、4，可读性和可维护性都更好；枚举常量之间还能直接用 | 组合出「全部权限」这个上界。\n\n关键步骤：① 定义 enum { PERM_READ = 1 << 0, ..., PERM_ADMIN = 1 << 4 }，再用宏 PERM_ALL 把五个位或起来得到 31；② 因为要求掩码 q 在输入的最后一行，必须先把 n 个 mask 存进数组，读完 q 之后再统一统计，否则输入顺序就对不上；③ 「拥有全部」判 (mask & q) == q —— 只判 mask & q 非 0 只能说明「至少有一项」；④ 「至少一项」判 (mask & q) != 0；⑤ 「一项都没有」判 (mask & q) == 0，q ≥ 1 时它等价于 n 减去「至少一项」的人数；⑥ 统计二进制 1 的个数用 v &= v - 1 的经典技巧：每执行一次就消掉最低位的 1，循环次数正好是 1 的个数；⑦ 最后四行依次输出。\n\n为什么用位运算而不是数组：5 种权限用数组要 5 个元素、要循环比较；用位标志只占一个整数，判断是 O(1) 的按位与，这正是枚举 + 位运算在权限系统里的标准用法。\n\n复杂度：O(n) 次按位运算，popcount 每次最多 5 位，整体 O(n)；空间 O(n) 保存掩码。n ≤ 1000 时瞬间完成。\n\n易错点：① 把 (mask & q) 直接当布尔值，导致「部分拥有」也被算成「全部拥有」；② 先读 q 再读 mask，输入顺序错位，统计结果完全不对；③ 用 == 1 判断「至少一项」，掩码为 6 时结果错误；④ popcount 写成除以 2 的循环却没更新 v，变成死循环；⑤ 把 31 当成 3 位来数，popcount 算成 4 而不是 5；⑥ 用 int 保存 all 之类的计数没问题，但把 mask 当有符号数右移会带来符号扩展问题，统一用 unsigned 更稳。",
+    "module": "枚举",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nenum Perm {\n    PERM_READ   = 1 << 0,\n    PERM_WRITE  = 1 << 1,\n    PERM_EXEC   = 1 << 2,\n    PERM_DELETE = 1 << 3,\n    PERM_ADMIN  = 1 << 4\n};\n\nstatic const int kPermAll = PERM_READ | PERM_WRITE | PERM_EXEC | PERM_DELETE | PERM_ADMIN;\n\nstatic int popcount(unsigned int v)\n{\n    int c = 0;\n    while (v != 0u) {\n        v &= v - 1u;\n        ++c;\n    }\n    return c;\n}\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 1000)\n        return 0;\n\n    std::vector<int> masks(static_cast<std::size_t>(n));\n    for (int i = 0; i < n; ++i)\n        std::cin >> masks[static_cast<std::size_t>(i)];\n\n    int q;\n    if (!(std::cin >> q) || q < 1 || q > kPermAll)\n        return 0;\n\n    int cnt_all = 0, cnt_any = 0, cnt_none = 0, bits = 0;\n    for (int i = 0; i < n; ++i) {\n        unsigned int mask = static_cast<unsigned int>(masks[static_cast<std::size_t>(i)]);\n        unsigned int want = static_cast<unsigned int>(q);\n        unsigned int hit = mask & want;\n\n        if (hit == want)\n            ++cnt_all;\n        if (hit != 0u)\n            ++cnt_any;\n        else\n            ++cnt_none;\n        bits += popcount(mask);\n    }\n\n    std::cout << \"all: \" << cnt_all << '\\n';\n    std::cout << \"any: \" << cnt_any << '\\n';\n    std::cout << \"none: \" << cnt_none << '\\n';\n    std::cout << \"popcount: \" << bits << '\\n';\n    return 0;\n}",
+        "points": [
+          "用普通 enum 定义五个位标志，用命名常量代替魔法数字",
+          "用 kPermAll 作为 q 的合法上界，也顺带验证了五个常量确实互不重叠",
+          "先把 n 个 mask 读进 vector，再读 q，最后统一统计",
+          "popcount 用 v &= v - 1 实现，输出 all / any / none / popcount 四行"
+        ],
+        "analysis": "思路：与 C 版相同的位标志统计。C++ 这里用传统 `enum` 而不是 `enum class`，因为要把枚举常量直接当作整数参与位运算——`enum class` 不提供隐式转换，用起来得不停 `static_cast`。\n\n关键步骤：① `enum Perm { PERM_READ = 1 << 0, ... };`；② `static const int kPermAll = PERM_READ | ...`，既是 q 的上界，也能说明五个位互不重叠；③ 用 `std::vector<int>` 存掩码，读完 q 后再遍历统计；④ `hit = mask & want`，分别判 `hit == want`、`hit != 0`、`hit == 0`；⑤ `popcount` 用消去最低位 1 的循环实现。\n\n复杂度：O(n) 次按位运算与 O(1) 的 popcount，空间 O(n)。\n\n易错点：① 用 `enum class` 后直接写 `mask & Perm::READ` 编译失败，需要 `static_cast`；② 把 `hit == want` 写成 `mask & want`，部分拥有被算成全部拥有；③ vector 大小写成 n 却从 1 开始循环，越界；④ popcount 传入有符号 int 时负数右移实现相关，统一用 unsigned；⑤ 输出标签与样例不一致（如写成 `total:`）。\n\n跨语言对照：C 用宏、C++ 用 `static const int`、Python 用 IntEnum 组合常量，三种方式都在表达「权限位的全集」，选哪种取决于语言是否允许枚举常量参与位运算。"
+      },
+      "python": {
+        "solution": "import sys\nfrom enum import IntEnum\n\n\nclass Perm(IntEnum):\n    READ = 1 << 0\n    WRITE = 1 << 1\n    EXEC = 1 << 2\n    DELETE = 1 << 3\n    ADMIN = 1 << 4\n\n\nPERM_ALL = Perm.READ | Perm.WRITE | Perm.EXEC | Perm.DELETE | Perm.ADMIN\n\n\ndef popcount(v: int) -> int:\n    c = 0\n    while v:\n        v &= v - 1\n        c += 1\n    return c\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    if n < 1 or n > 1000:\n        return\n\n    masks = [int(x) for x in data[1:1 + n]]\n    q = int(data[1 + n])\n    if q < 1 or q > PERM_ALL:\n        return\n\n    cnt_all = cnt_any = cnt_none = bits = 0\n    for mask in masks:\n        hit = mask & q\n        if hit == q:\n            cnt_all += 1\n        if hit != 0:\n            cnt_any += 1\n        else:\n            cnt_none += 1\n        bits += popcount(mask)\n\n    print(f\"all: {cnt_all}\")\n    print(f\"any: {cnt_any}\")\n    print(f\"none: {cnt_none}\")\n    print(f\"popcount: {bits}\")\n\n\nif __name__ == \"__main__\":\n    main()",
+        "points": [
+          "用 IntEnum 定义五个位标志，位运算结果仍是整数",
+          "用 Perm.READ | Perm.WRITE | ... 组合出全集 PERM_ALL 作为校验上界",
+          "「拥有全部」判 hit == q，「至少一项」判 hit != 0，两者不能混用",
+          "popcount 用 v &= v - 1 消去最低位 1，输出四行统计"
+        ],
+        "analysis": "思路：Python 的 `IntEnum` 成员本身就是整数，可以直接参与 `&`、`|` 运算，所以既是「有名字的常量集合」，又不用像 `enum.Enum` 那样到处 `int()` 转换。\n\n关键步骤：① `class Perm(IntEnum)` 定义五个位标志；② `PERM_ALL = Perm.READ | Perm.WRITE | Perm.EXEC | Perm.DELETE | Perm.ADMIN`，结果是普通 int 31；③ 用 `data[1:1 + n]` 取出 n 个掩码，`data[1 + n]` 是 q；④ 循环里依次判 `hit == q`、`hit != 0`、`hit == 0`；⑤ `popcount` 用消去最低位的经典循环，`print` 输出四行。\n\n复杂度：O(n) 次按位运算，popcount 每次最多 5 次循环，整体 O(n)，空间 O(n)。\n\n易错点：① 用 `enum.Enum` 而不是 `IntEnum`，`mask & Perm.READ` 抛 `TypeError`；② 把 `hit == q` 写成 `hit`，部分拥有被算成全部拥有；③ 先取 q 再切片取掩码，输入错位；④ `popcount` 循环里忘记 `v &= v - 1`，变成死循环；⑤ 变量名用 `all` 覆盖内置函数，后面再想用 `all()` 就报错。\n\n补充：Python 3.8+ 的 `int.bit_count()` 可以直接得到 1 的个数，比手写循环更快；本题保留手写版本，是为了看清「清掉最低位 1」这一位运算技巧与它在其他语言里的通用性。"
+      }
+    }
+  }
+]

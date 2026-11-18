@@ -33,10 +33,10 @@ MODULES = [
 BY_NAME = {m["name"]: m for m in MODULES}
 TYPES = {"choice", "fill", "design"}
 EXPECTED_MODULE_COUNTS = {
-    "C语言基础": 88, "数组": 90, "指针": 98,
-    "结构体": 78, "枚举": 20, "函数": 66,
+    "C语言基础": 97, "数组": 95, "指针": 101,
+    "结构体": 60, "枚举": 17, "函数": 70,
 }
-EXPECTED_TYPE_COUNTS = {"choice": 260, "fill": 70, "design": 110}
+EXPECTED_TYPE_COUNTS = {"choice": 170, "fill": 70, "design": 200}
 TOTAL_EXPECTED = 440
 
 
@@ -171,7 +171,7 @@ def main() -> None:
             if module not in BY_NAME:
                 errors.append(f"{where}: module 非法：{module!r}")
                 continue
-            if not re.fullmatch(rf"{BY_NAME[module]['prefix']}-\d{{2}}", str(qid)):
+            if not re.fullmatch(rf"{BY_NAME[module]['prefix']}-\d{{2,3}}", str(qid)):
                 errors.append(f"{where}: id 应形如 {BY_NAME[module]['prefix']}-01，实际 {qid!r}")
             if qid in by_id:
                 errors.append(f"{where}: id 重复：{qid}")
@@ -290,7 +290,13 @@ def main() -> None:
         return
 
     order = {m["name"]: i for i, m in enumerate(MODULES)}
-    questions.sort(key=lambda q: (order[q["module"]], q["id"]))
+    def id_num(q: dict) -> int:
+        try:
+            return int(str(q["id"]).split("-")[-1])
+        except (ValueError, IndexError):
+            return 0
+
+    questions.sort(key=lambda q: (order[q["module"]], id_num(q)))
     for seq, q in enumerate(questions, 1):
         q["seq"] = seq
 

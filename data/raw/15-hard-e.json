@@ -1,0 +1,506 @@
+[
+  {
+    "id": "数-106",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "双指针",
+      "原地去重",
+      "有序数组"
+    ],
+    "stem": "给定一个长度为 n 的整数数组，数组已按非降序排列。请使用双指针原地删除重复元素，使每个不同的值只保留一个，并返回去重后的长度 k，随后输出前 k 个元素。要求不得申请与原数组等长的额外数组，额外空间为 O(1)。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数，按非降序排列，相邻两个数之间用一个空格分隔，每个整数的绝对值不超过 10^9。\n\n**输出格式：** 第一行一个整数 k，表示去重后的元素个数；第二行 k 个互不相同的整数，按非降序排列，相邻两个整数之间用一个空格分隔，行末不能有多余空格。\n\n**输入样例：**\n```text\n8\n1 1 2 2 3 3 3 4\n```\n**输出样例：**\n```text\n4\n1 2 3 4\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 1000\n\nint main(void)\n{\n    int n, i, k = 1;\n    int a[MAXN];\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    /* i 是读指针，k 是写指针，a[0..k-1] 为已去重区间 */\n    for (i = 1; i < n; i++) {\n        if (a[i] != a[k - 1]) {\n            a[k] = a[i];\n            k++;\n        }\n    }\n\n    printf(\"%d\\n\", k);\n    for (i = 0; i < k; i++) {\n        if (i > 0)\n            putchar(' ');\n        printf(\"%d\", a[i]);\n    }\n    putchar('\\n');\n    return 0;\n}\n",
+    "points": [
+      "用读指针 i 与写指针 k 实现 O(1) 额外空间的原地去重",
+      "比较 a[i] 与已去重区间最后一个元素 a[k-1]，相同则跳过",
+      "新值写入 a[k] 后让 k 后移，保证前缀始终是去重结果",
+      "输出新长度 k 与前 k 个元素，空格分隔且行末无多余空格"
+    ],
+    "analysis": "思路：数组已经按非降序排列，因此重复元素一定相邻。用两个下标充当「读指针」与「写指针」：i 从左到右扫描每个元素，k 指向下一个可写入的位置，同时 k-1 是已去重区间的最后一个元素。只要 a[i] 与 a[k-1] 不同，就说明遇到了新的值，把它写到 a[k] 并让 k 后移。整个过程只改写原数组的前缀，不申请额外数组。\n\n关键步骤：① 读入 n 与 n 个非降序整数；② 令 k = 1，把 a[0] 视为第一个去重结果；③ i 从 1 循环到 n-1，若 a[i] != a[k-1] 则执行 a[k] = a[i]、k++；④ 先输出 k，再输出前 k 个元素，元素之间用空格分隔、行末不加空格。\n\n复杂度：时间 O(n)，每个元素只被读一次；空间 O(1)，除原数组外只用了 i、k 两个整型变量。\n\n易错点：① 把判断条件写成 a[i] != a[i-1]，在 k 与 i 不同步时虽然多数情况仍对，但一旦先改写 a[i-1] 就会比较到被覆盖的值，稳妥做法始终与 a[k-1] 比较；② 输出时遍历整个数组而不是前 k 个，把残留的旧值也打了出来；③ k 初始化为 0 后直接用 a[k-1] 造成下标 -1 越界；④ 先输出 k 再输出数组时忘记换行，两行粘在一起；⑤ 用 set 或额外数组去重虽然能过样例，但没有体现「原地」要求，空间复杂度也不再是 O(1)。",
+    "module": "数组",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 1000)\n        return 0;\n\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    int k = 1;\n    for (int i = 1; i < n; ++i)\n        if (a[i] != a[k - 1])\n            a[k++] = a[i];\n\n    std::cout << k << '\\n';\n    for (int i = 0; i < k; ++i) {\n        if (i > 0)\n            std::cout << ' ';\n        std::cout << a[i];\n    }\n    std::cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用读指针 i 与写指针 k 在 vector 上原地去重",
+          "始终与已写入区间末尾的 a[k-1] 比较，判断是否出现新值",
+          "输出长度 k 与前 k 个元素，行末没有多余空格",
+          "不借助 set 或第二个数组，保持 O(1) 额外空间"
+        ],
+        "analysis": "思路：与 C 版完全相同，仍用读指针 i 与写指针 k 在原 vector 上原地去重，区别只在于用 std::vector 承载数组、用 std::cin 与 std::cout 完成输入输出。vector 支持下标访问，因此双指针写法可以逐行对照 C 版。\n\n关键步骤：① 读入 n 后构造大小为 n 的 vector，并逐个读入元素；② k = 1，i 从 1 遍历到 n-1，当 a[i] 与 a[k-1] 不同时执行 a[k++] = a[i]；③ 输出 k 与前 k 个元素，元素间用单个空格分隔，行末用换行符结束。\n\n复杂度：时间 O(n)，空间 O(1)（不计输入容器本身占用的空间）。\n\n易错点：① vector 未分配大小就直接下标赋值，造成越界写入；② 判断时写成 a[i] != a[i-1] 并同时修改 a[i-1]，覆盖后比较对象改变；③ 输出用范围 for 打印整个容器，长度与去重结果不符；④ 元素之间用 cout << a[i] << ' ' 导致行末多一个空格；⑤ 忘记 n = 1 的边界，循环不执行时 k 仍应为 1。\n\n补充说明：vector 的大小在去重过程中保持不变，被覆盖的只是 k 之后的旧值，因此输出必须显式使用 k，不能遍历整个容器。若确实想缩短容器，可以调用 a.resize(k)，但那只是把尾部的无效元素丢弃，对本题而言没有必要；直接输出前缀既直观，又不会产生额外搬移。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    a = [int(x) for x in data[1:1 + n]]\n\n    k = 1\n    for i in range(1, n):\n        if a[i] != a[k - 1]:\n            a[k] = a[i]\n            k += 1\n\n    print(k)\n    print(\" \".join(str(x) for x in a[:k]))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "读入 n 与数组后用写指针 k 原地去重",
+          "与 a[k-1] 比较，不同才写入并后移 k",
+          "print(k) 后只输出前 k 个元素",
+          "join 拼接保证行末没有多余空格"
+        ],
+        "analysis": "思路：Python 的 list 支持下标赋值，因此可以逐行复刻 C 版的双指针原地去重：i 是读指针，k 是写指针，已去重区间是 a[0..k-1]。当 a[i] 与 a[k-1] 不同时，把 a[i] 写到 a[k] 并让 k 加一，最后只输出前 k 个元素。\n\n关键步骤：① 用 sys.stdin.buffer.read().split() 一次读入全部记号；② 取第一个记号作为 n，后面 n 个转成 int 组成列表；③ k = 1，for i in range(1, n) 中比较 a[i] 与 a[k-1]；④ print(k) 后再用 \" \".join(map(str, a[:k])) 输出，join 天然不会产生行末空格。\n\n复杂度：时间 O(n)，空间 O(1)（原地改写列表前缀，切片只用于输出）。\n\n易错点：① 用 set 去重后直接输出，虽然集合内容相同但丢失了原顺序且不符合原地要求；② 用 a.pop() 边遍历边删除导致下标错位；③ 切片写成 a[:k+1]，多输出一个元素；④ 用 print(*a[:k]) 时默认分隔符是空格、结果虽然正确，但一次性展开大数组不如 join 直观；⑤ 读入用 input() 只能读一行，数组跨行时数据缺失。\n\n补充说明：列表切片 a[:k] 会复制前 k 个引用，复制规模正好等于答案长度；若追求严格 O(1) 额外空间，可以改用循环逐个打印。还要注意 data 是 bytes 列表，int() 可以直接解析字节串，无需先 decode；join 之前必须把整数转成字符串，否则会抛出类型错误。"
+      }
+    }
+  },
+  {
+    "id": "数-107",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "前缀和",
+      "区间查询",
+      "整数溢出"
+    ],
+    "stem": "给定一个长度为 n 的整数序列和 q 次区间和查询。请先预处理前缀和数组，使得每次查询都能在 O(1) 时间内回答，而不是对每个区间重新累加。\n\n**输入格式：** 第一行两个整数 n 和 q（1 ≤ n, q ≤ 100000）；第二行 n 个整数 a_i（|a_i| ≤ 10000），相邻两个数之间用一个空格分隔；接下来 q 行，每行两个整数 l 和 r（1 ≤ l ≤ r ≤ n），表示要查询的区间。\n\n**输出格式：** 共 q 行，每行一个整数，表示 a_l 到 a_r 所有元素之和。\n\n**输入样例：**\n```text\n5 3\n2 -1 4 3 -5\n1 3\n2 5\n4 4\n```\n**输出样例：**\n```text\n5\n1\n3\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 100000\n\nstatic long long pre[MAXN + 1];\n\nint main(void)\n{\n    int n, q, i;\n\n    if (scanf(\"%d %d\", &n, &q) != 2 || n < 1 || n > MAXN || q < 1)\n        return 0;\n\n    /* pre[i] 表示前 i 个元素之和，pre[0] = 0 */\n    for (i = 1; i <= n; i++) {\n        long long x;\n        if (scanf(\"%lld\", &x) != 1)\n            return 0;\n        pre[i] = pre[i - 1] + x;\n    }\n\n    for (i = 0; i < q; i++) {\n        int l, r;\n        if (scanf(\"%d %d\", &l, &r) != 2)\n            return 0;\n        printf(\"%lld\\n\", pre[r] - pre[l - 1]);\n    }\n    return 0;\n}\n",
+    "points": [
+      "边读入边构造前缀和 pre[i] = pre[i-1] + a[i]",
+      "区间和转化为 pre[r] - pre[l-1]，每次查询 O(1)",
+      "前缀和用 long long 保存，并用 %lld 输出",
+      "不需要额外保存原数组，空间只用于前缀和"
+    ],
+    "analysis": "思路：如果对每次查询都从 l 加到 r，最坏需要 O(nq)，在 n、q 都到 10^5 时无法接受。前缀和把「区间和」转成「两个前缀和之差」：令 pre[0] = 0、pre[i] = a[1] + … + a[i]，则 a[l..r] 的和等于 pre[r] - pre[l-1]。预处理 O(n)，每次查询 O(1)，总复杂度 O(n + q)。\n\n关键步骤：① 读入 n、q；② 循环 i = 1..n，边读入边累加 pre[i] = pre[i-1] + x，这样不需要单独保存原数组；③ 对每个查询读入 l、r，输出 pre[r] - pre[l-1]；④ pre 用 long long，因为 n 个 10^4 量级的数相加可能接近 10^9，虽然 32 位 int 勉强够用，但用 long long 更稳妥，输出格式符用 %lld。\n\n复杂度：预处理 O(n)，查询 O(1)，总时间 O(n+q)，空间 O(n)。\n\n易错点：① 前缀和下标从 1 开始却把 pre[0] 初始化为 a[0]，导致区间整体偏移；② 查询写成 pre[r] - pre[l]，把 a[l] 也减掉了；③ 用 int 保存前缀和，数据范围放大后溢出；④ 输出用 %d 打印 long long，格式与实参类型不匹配；⑤ 每次查询重新循环累加，复杂度退化为 O(nq)；⑥ 忘记每行输出换行，或把 q 行结果挤在同一行。\n\n补充说明：pre 数组多开一位并从 1 开始，是为了让 l = 1 时 l-1 = 0 仍然合法，从而不必特判左边界。前缀和的递推只依赖前一项，因此可以边读边算，读入结束后原数组已经不再需要；这种「用预处理换查询速度」的思路在多次区间统计中非常常见。若查询次数很少，直接累加反而更省空间，选择哪种方案要看 n 与 q 的相对大小。",
+    "module": "数组",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nint main()\n{\n    std::ios::sync_with_stdio(false);\n    std::cin.tie(nullptr);\n\n    int n, q;\n    if (!(std::cin >> n >> q))\n        return 0;\n\n    std::vector<long long> pre(n + 1, 0);\n    for (int i = 1; i <= n; ++i) {\n        long long x;\n        std::cin >> x;\n        pre[i] = pre[i - 1] + x;\n    }\n\n    for (int i = 0; i < q; ++i) {\n        int l, r;\n        std::cin >> l >> r;\n        std::cout << pre[r] - pre[l - 1] << '\\n';\n    }\n    return 0;\n}\n",
+        "points": [
+          "用 vector<long long> 保存 n+1 个前缀和，pre[0] = 0",
+          "循环读入 x 并累加，不保存原数组",
+          "查询直接输出 pre[r] - pre[l-1]",
+          "关闭同步并用换行符输出，保证大量查询时的效率"
+        ],
+        "analysis": "思路：与 C 版一致：先构造前缀和数组 pre，其中 pre[0] = 0，pre[i] = pre[i-1] + a[i]。查询 [l, r] 时答案为 pre[r] - pre[l-1]。C++ 用 vector<long long> 保存前缀和，用 cin 与 cout 完成输入输出。\n\n关键步骤：① 读入 n、q；② 构造大小为 n+1 的 vector<long long> pre 并初始化为 0，循环读入 x、累加到 pre[i]，因此不需要再存原数组；③ 每个查询读入 l、r，输出 pre[r] - pre[l-1]；④ 用换行符而不是 endl，避免频繁刷新。\n\n复杂度：预处理 O(n)，查询 O(1)，总时间 O(n+q)，空间 O(n)。\n\n易错点：① pre 只开 n 个大小，访问 pre[r] 时越界；② 下标体系混用（0 基数组配 1 基查询）导致整体错位；③ 用 int 累加导致较大数据溢出；④ 把 q 次查询的结果打在同一行；⑤ 每次查询用 accumulate 重新求和，复杂度退化。\n\n补充说明：pre 的大小是 n+1 而不是 n，因为要容纳 pre[0] = 0；若只开 n 个元素，查询 r = n 时就会越界。读入阶段直接把 x 累加进 pre[i]，省去了保存原数组的一步，空间从 2n 降到 n+1。输出量最大可达 10^5 行，使用换行符而不是 endl 能明显减少刷新次数；如果输入规模更大，还可以考虑一次性拼接字符串再输出。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    q = int(data[1])\n    values = data[2:2 + n]\n\n    pre = [0] * (n + 1)\n    for i in range(1, n + 1):\n        pre[i] = pre[i - 1] + int(values[i - 1])\n\n    pos = 2 + n\n    out = []\n    for _ in range(q):\n        l = int(data[pos])\n        r = int(data[pos + 1])\n        pos += 2\n        out.append(str(pre[r] - pre[l - 1]))\n\n    sys.stdout.write(\"\\n\".join(out) + \"\\n\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "构造 pre = [0]*(n+1)，按 1 基下标累加",
+          "查询使用 pre[r] - pre[l-1]，每次 O(1)",
+          "用游标 pos 依次读取 q 组 l、r",
+          "join 一次性输出 q 行，行末换行"
+        ],
+        "analysis": "思路：Python 同样用前缀和把每次查询降到 O(1)。由于整数是任意精度，不存在溢出问题；读入全部记号后先取 n、q，再取 n 个数构造前缀和列表，最后按 q 组读取 l、r 并输出差值。\n\n关键步骤：① data = sys.stdin.buffer.read().split() 一次读完；② 用切片 data[2:2+n] 取数组部分，构造 pre 并逐个累加；③ 游标 pos 指向查询区，循环 q 次，每次读两个 int，输出 pre[r] - pre[l-1]；④ 用 \"\\n\".join 一次性输出，减少 print 调用。\n\n复杂度：O(n+q) 时间，O(n) 空间。\n\n易错点：① pre 只分配 n 个元素却按 1..n 下标写入，pre[n] 越界；② 查询下标没有减 1，pre[r] 实际是前 r+1 项；③ 用 sum(a[l-1:r]) 逐次切片求和，复杂度退化到 O(nq)；④ 游标 pos 忘记随查询前进，重复输出同一组答案；⑤ 输出时逐行 print 混入多余空行。\n\n补充说明：用 bytes 记号直接 int() 转换可以避免额外的解码步骤；values 切片只保存引用，不会复制整数对象，内存开销很小。out 列表收集 q 个字符串后一次性写出，比循环 print 少很多系统调用；若 q 特别大，也可以边算边写，但要权衡字符串拼接与写入次数。前缀和本身只占 O(n) 空间，是典型的空间换时间。"
+      }
+    }
+  },
+  {
+    "id": "指-99",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "指针遍历",
+      "选择排序",
+      "指针交换"
+    ],
+    "stem": "请用指针完成选择排序：编写函数 `sort_asc(int *begin, int *end)`，其中 begin 指向数组首元素、end 是尾后指针。函数每一轮用指针扫描未排序区间，找到最小元素的地址，再通过指针交换把它放到区间首部。主程序读入 n 个整数，调用该函数后按升序输出。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数，相邻两个数之间用一个空格分隔，每个整数的绝对值不超过 10^9。\n\n**输出格式：** 一行 n 个整数，按升序排列，相邻两个整数之间用一个空格分隔，行末不能有多余空格。\n\n**输入样例：**\n```text\n6\n5 2 9 1 5 6\n```\n**输出样例：**\n```text\n1 2 5 5 6 9\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 1000\n\nvoid swap(int *p, int *q);\nvoid sort_asc(int *begin, int *end);\n\nint main(void)\n{\n    int n, i, a[MAXN];\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    sort_asc(a, a + n);\n\n    for (i = 0; i < n; i++) {\n        if (i > 0)\n            putchar(' ');\n        printf(\"%d\", a[i]);\n    }\n    putchar('\\n');\n    return 0;\n}\n\n/* 通过指针交换调用方的两个变量 */\nvoid swap(int *p, int *q)\n{\n    int t = *p;\n    *p = *q;\n    *q = t;\n}\n\n/* 选择排序：用指针扫描未排序区间，找最小元素的地址并交换 */\nvoid sort_asc(int *begin, int *end)\n{\n    int *i, *j, *minp;\n\n    for (i = begin; i < end - 1; i++) {\n        minp = i;\n        for (j = i + 1; j < end; j++)\n            if (*j < *minp)\n                minp = j;\n        if (minp != i)\n            swap(i, minp);\n    }\n}\n",
+    "points": [
+      "swap 用 int * 形参并通过 *p、*q 修改调用方变量",
+      "sort_asc 以尾后指针 end 界定区间，外层指针控制轮次",
+      "内层指针扫描未排序区间，minp 记录最小元素地址",
+      "只有 minp != i 时才交换，输出行末无多余空格"
+    ],
+    "analysis": "思路：选择排序把数组分成「已排序前缀」和「未排序后缀」，每轮在未排序区间里找最小元素，与区间首元素交换。本题要求全部用指针完成：sort_asc 接收首指针 begin 与尾后指针 end，外层指针 i 指向当前区间首元素，内层指针 j 从 i+1 扫到 end-1，用 minp 记录最小元素地址，最后通过 swap(i, minp) 交换两个位置上的值。\n\n关键步骤：① 定义 swap(int *p, int *q)，用临时变量交换 *p 与 *q；② sort_asc 中 for (i = begin; i < end - 1; i++)，内层 for (j = i + 1; j < end; j++) 比较 *j < *minp；③ 若 minp != i 才调用 swap，避免无意义交换；④ main 读入数组后调用 sort_asc(a, a + n)，再用指针遍历输出。\n\n复杂度：比较次数 n(n-1)/2，时间 O(n^2)；空间 O(1)。\n\n易错点：① swap 形参写成 int 而不是 int *，函数内交换的是副本，调用方数组不变；② 调用时漏写 & 或直接传值；③ 内层循环边界写成 j <= end，解引用越界；④ 每轮忘记把 minp 重置为 i；⑤ 外层写成 i < end，最后一轮访问 end-1 之后越界；⑥ 输出用 printf(\"%d \", ...) 造成行末多空格。\n\n补充说明：选择排序的交换次数最多 n-1 次，明显少于冒泡排序，这是它的优点；但比较次数固定为 n(n-1)/2，与数据初始顺序无关。用指针实现时，end 是尾后指针，所有区间判断都遵循左闭右开，因此 i < end - 1 表示还剩至少两个元素，j < end 表示扫描到最后一个元素为止，统一约定能减少边界错误。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nvoid swap_ptr(int *p, int *q);\nvoid sort_asc(int *begin, int *end);\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 1000)\n        return 0;\n\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    sort_asc(a.data(), a.data() + n);\n\n    for (int i = 0; i < n; ++i) {\n        if (i > 0)\n            std::cout << ' ';\n        std::cout << a[i];\n    }\n    std::cout << '\\n';\n    return 0;\n}\n\nvoid swap_ptr(int *p, int *q)\n{\n    int t = *p;\n    *p = *q;\n    *q = t;\n}\n\nvoid sort_asc(int *begin, int *end)\n{\n    for (int *i = begin; i < end - 1; ++i) {\n        int *minp = i;\n        for (int *j = i + 1; j < end; ++j)\n            if (*j < *minp)\n                minp = j;\n        if (minp != i)\n            swap_ptr(i, minp);\n    }\n}\n",
+        "points": [
+          "用 a.data() 取首地址、a.data()+n 作尾后指针传入函数",
+          "swap_ptr 用 int * 形参完成真正的交换",
+          "sort_asc 全部用指针扫描与比较，不使用下标",
+          "输出用换行符结束，行末无多余空格"
+        ],
+        "analysis": "思路：C++ 版保留指针写法：swap_ptr(int *p, int *q) 交换地址所指的值，sort_asc(int *begin, int *end) 用指针扫描未排序区间。数组用 std::vector<int> 保存，通过 a.data() 取得首元素地址，a.data() + n 作为尾后指针传入，指针算术与 C 完全一致。\n\n关键步骤：① 读入 n 并构造 vector；② 调用 sort_asc(a.data(), a.data() + n)；③ 内层用 minp 记录最小元素地址；④ 输出时用下标或指针遍历，行末不加空格。\n\n复杂度：O(n^2) 时间，O(1) 额外空间。\n\n易错点：① 对空 vector 调用 data() 后再解引用；② 尾后指针写成 a.data() + n - 1 后仍按 end 语义使用，少排一个元素；③ 直接用 std::sort 排序，虽结果正确但不符合「指针选择排序」的要求；④ swap 里改用引用却仍传地址导致类型不匹配；⑤ 越界访问 a[n]。\n\n补充说明：a.data() 在 C++11 之后对非空 vector 保证返回连续存储的首地址，因此可以安全地做指针算术；若 vector 为空，data() 可能返回空指针，不能参与解引用。std::sort 虽然更快，但本题的核心考点是用指针扫描并交换，保留手写循环更能体现选择排序每一轮在做什么。另外，自定义函数与 std::swap 同名时容易被重载解析干扰，这里刻意改名以避免歧义。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef swap(a: list[int], i: int, j: int) -> None:\n    a[i], a[j] = a[j], a[i]\n\n\ndef sort_asc(a: list[int]) -> None:\n    n = len(a)\n    for i in range(n - 1):\n        min_index = i\n        for j in range(i + 1, n):\n            if a[j] < a[min_index]:\n                min_index = j\n        if min_index != i:\n            swap(a, i, min_index)\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    a = [int(x) for x in data[1:1 + n]]\n\n    sort_asc(a)\n    print(\" \".join(map(str, a)))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "swap 通过列表下标原地交换两个元素",
+          "sort_asc 每轮扫描未排序区间找最小元素下标",
+          "只有 min_index 与 i 不同时才调用 swap",
+          "join 输出，行末无多余空格"
+        ],
+        "analysis": "思路：Python 没有指针，用「列表 + 下标」模拟指针遍历：swap(a, i, j) 直接交换两个位置，sort_asc 的外层 i 指向未排序区间首元素，内层 j 从 i+1 扫描并用 min_index 记录最小元素下标。函数通过列表引用原地修改，调用方看到的就是排好序的同一个列表，相当于 C 中传数组首地址。\n\n关键步骤：① 读入 n 与 n 个整数；② 外层 for i in range(n-1)，内层 for j in range(i+1, n) 找最小下标；③ 若 min_index != i 调用 swap(a, i, min_index)；④ 用 \" \".join 输出，避免行末空格。\n\n复杂度：O(n^2) 时间，O(1) 额外空间。\n\n易错点：① swap 写成只交换两个局部变量，列表不变；② 内层 range 写成 range(i, n) 多比较一次自己，结果仍对；③ 每轮忘记重置 min_index；④ 直接调用 list.sort()，不符合手写选择排序的要求；⑤ 输出用 print(a) 打印出方括号和逗号。\n\n补充说明：Python 内置排序使用 Timsort，时间复杂度 O(n log n)，但本题要求手写选择排序，目的是练习「扫描区间、记录最小下标、交换」这一套过程。由于列表元素是 int 对象，交换下标只是交换引用，代价很低；排序函数直接修改传入的列表，不需要返回新列表，这一点与 C 传数组首地址的效果一致。"
+      }
+    }
+  },
+  {
+    "id": "指-100",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "首尾指针",
+      "原地反转",
+      "指针交换"
+    ],
+    "stem": "请编写函数 `reverse(int *left, int *right)`，left 指向数组第一个元素，right 指向最后一个元素。函数用两个指针从两端向中间遍历，交换所指元素，直到两指针相遇，从而原地反转数组。主程序读入 n 个整数，调用该函数后输出反转结果。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数，相邻两个数之间用一个空格分隔，每个整数的绝对值不超过 10^9。\n\n**输出格式：** 一行 n 个整数，为反转后的数组，相邻两个整数之间用一个空格分隔，行末不能有多余空格。\n\n**输入样例：**\n```text\n5\n1 2 3 4 5\n```\n**输出样例：**\n```text\n5 4 3 2 1\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 1000\n\nvoid reverse(int *left, int *right);\n\nint main(void)\n{\n    int n, i, a[MAXN];\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    reverse(a, a + n - 1);\n\n    for (i = 0; i < n; i++) {\n        if (i > 0)\n            putchar(' ');\n        printf(\"%d\", a[i]);\n    }\n    putchar('\\n');\n    return 0;\n}\n\n/* left、right 分别指向首元素与末元素，交换后向中间靠拢 */\nvoid reverse(int *left, int *right)\n{\n    while (left < right) {\n        int t = *left;\n        *left = *right;\n        *right = t;\n        left++;\n        right--;\n    }\n}\n",
+    "points": [
+      "reverse 用 left、right 两个指针从两端向中间遍历",
+      "循环内交换 *left 与 *right 后同时移动两个指针",
+      "main 传入 a 与 a + n - 1，首尾边界正确",
+      "输出反转后的数组，空格分隔且行末无多余空格"
+    ],
+    "analysis": "思路：反转数组最自然的写法是首尾双指针：left 指向第一个元素，right 指向最后一个元素，交换二者后 left 右移、right 左移，直到 left >= right 相遇。整个过程只用一个临时变量，原地完成，额外空间 O(1)。题目要求把该过程封装成 reverse(int *left, int *right)，实参分别是 a 与 a + n - 1。\n\n关键步骤：① 读入 n 与 n 个整数；② 调用 reverse(a, a + n - 1)；③ 函数内 while (left < right) 循环，交换 *left 与 *right，再 left++、right--；④ 用指针或下标遍历输出反转后的数组，元素间空格分隔、行末无空格。\n\n复杂度：交换 n/2 次，时间 O(n)，空间 O(1)。\n\n易错点：① 循环条件写成 left <= right，n 为奇数时中间元素被自己和自己交换，结果仍正确但多做一次；② right 初始化为 a + n 而不是 a + n - 1，第一次就解引用越界；③ 交换后忘记同时移动两个指针，造成死循环；④ 只反转前一半却输出整个数组；⑤ 输出时多打一个空格；⑥ 用额外数组倒序复制，虽然结果对但不符合原地要求。\n\n补充说明：交换次数是 floor(n/2)，当 n 为奇数时中间元素不需要动，这也是循环条件用 left < right 而不是 left <= right 的原因。原地反转的空间是 O(1)，且不依赖额外缓冲区；如果数组元素是结构体等大对象，交换成本会变高，此时可以考虑只交换指向元素的指针。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nvoid reverse_range(int *left, int *right);\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 1000)\n        return 0;\n\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    reverse_range(a.data(), a.data() + n - 1);\n\n    for (int i = 0; i < n; ++i) {\n        if (i > 0)\n            std::cout << ' ';\n        std::cout << a[i];\n    }\n    std::cout << '\\n';\n    return 0;\n}\n\nvoid reverse_range(int *left, int *right)\n{\n    while (left < right) {\n        int t = *left;\n        *left = *right;\n        *right = t;\n        ++left;\n        --right;\n    }\n}\n",
+        "points": [
+          "用 data() 取得首尾地址并传入 reverse_range",
+          "while (left < right) 内交换后双指针同时内移",
+          "交换只用临时变量，额外空间 O(1)",
+          "输出与 C 版完全一致，行末无多余空格"
+        ],
+        "analysis": "思路：C++ 版同样用首尾指针原地交换，函数签名改为 reverse_range(int *left, int *right)，在 main 中传入 a.data() 与 a.data() + n - 1。交换可以直接用临时变量，也可以调用 std::swap(*left, *right)，后者对 int 而言就是三次赋值，语义与手写版本一致。\n\n关键步骤：① vector 读入 n 个元素；② reverse_range(a.data(), a.data() + n - 1)；③ while (left < right) 中交换并移动指针；④ 输出反转结果。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① 对空 vector 取 data() 后做指针运算；② 循环条件写成 left != right，n 为偶数时两指针交错后永远不相等，造成越界；③ 用 std::reverse 直接完成，虽正确但不符合「用指针交换」的要求；④ 尾指针多减一导致最后一个元素没参与反转；⑤ 输出用 endl 频繁刷新。\n\n补充说明：std::reverse 的区间也是左闭右开，直接调用 std::reverse(a.begin(), a.end()) 一行就能完成，但题目要求自己写交换过程，因此保留 reverse_range。注意 a.data() + n - 1 在 n ≥ 1 时一定有效；若函数允许空数组，应先判断 n == 0 再计算尾指针。用指针而不是下标，也便于把这个函数复用到数组的任意子区间上。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef reverse_range(a: list[int], left: int, right: int) -> None:\n    while left < right:\n        a[left], a[right] = a[right], a[left]\n        left += 1\n        right -= 1\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    a = [int(x) for x in data[1:1 + n]]\n\n    reverse_range(a, 0, n - 1)\n    print(\" \".join(map(str, a)))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "reverse_range 用 left、right 两个下标模拟首尾指针",
+          "交换 a[left]、a[right] 后向中间收缩",
+          "循环条件 left < right，中间元素不会自交换",
+          "join 输出，行末无多余空格"
+        ],
+        "analysis": "思路：Python 用下标模拟首尾指针：left = 0、right = len(a) - 1，循环交换 a[left] 与 a[right] 并向中间靠拢。也可以用 a.reverse() 或切片 a[::-1]，但题目强调指针遍历与交换，因此显式写出双指针过程，与 C 版一一对应；列表是可变对象，函数内交换会直接反映到调用方。\n\n关键步骤：① 读入 n 与数组；② left、right 初始化；③ while left < right: a[left], a[right] = a[right], a[left]; left += 1; right -= 1；④ 用 join 输出。\n\n复杂度：O(n) 时间，O(1) 额外空间。\n\n易错点：① 循环条件写成 left <= right，中间元素自交换；② 只交换不移动指针导致死循环；③ 用 a[::-1] 生成新列表但没有赋回，原列表未变；④ 把 reverse 函数写成返回新列表却不使用返回值；⑤ 输出时用 print(a) 带出方括号。\n\n补充说明：Python 的元组赋值 a[left], a[right] = a[right], a[left] 在字节码层面先取两个值再写回，等价于用临时变量交换，不需要手动引入 temp。函数接收列表引用后原地修改，调用方看到的是同一个对象；若函数内写 a = a[::-1]，只是让局部名字指向新列表，原列表保持不变。切片赋值 a[:] = a[::-1] 才能改写原列表，但会额外复制一份，不如双指针交换节省空间。"
+      }
+    }
+  },
+  {
+    "id": "指-101",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "二分查找",
+      "指针区间",
+      "首次出现"
+    ],
+    "stem": "给定一个按非降序排列的数组和一个目标值 target，请用指针维护查找区间 [lo, hi] 实现二分查找，返回 target 第一次出现的下标（下标从 1 开始）；若不存在则返回 -1。注意数组中可能有多个等于 target 的元素，命中后要继续在左半区间查找。\n\n**输入格式：** 第一行两个整数 n 和 target（1 ≤ n ≤ 100000，|target| ≤ 10^9）；第二行 n 个非降序整数，相邻两个数之间用一个空格分隔，每个整数的绝对值不超过 10^9。\n\n**输出格式：** 一行一个整数：target 第一次出现的 1 基下标；不存在时输出 -1。\n\n**输入样例：**\n```text\n7 3\n1 3 3 3 5 7 9\n```\n**输出样例：**\n```text\n2\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 100000\n\nstatic int a[MAXN];\n\nint main(void)\n{\n    int n, target, i;\n    int *lo, *hi, *pos = NULL;\n\n    if (scanf(\"%d %d\", &n, &target) != 2 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    lo = a;\n    hi = a + n - 1;\n    while (lo <= hi) {\n        int *mid = lo + (hi - lo) / 2;\n\n        if (*mid >= target) {\n            if (*mid == target)\n                pos = mid;      /* 记录命中位置，继续向左收缩 */\n            hi = mid - 1;\n        } else {\n            lo = mid + 1;\n        }\n    }\n\n    if (pos == NULL)\n        printf(\"-1\\n\");\n    else\n        printf(\"%d\\n\", (int)(pos - a) + 1);\n    return 0;\n}\n",
+    "points": [
+      "用 lo、hi 两个指针维护闭区间 [lo, hi]",
+      "mid 用 lo + (hi - lo) / 2 计算，避免指针相加",
+      "命中后记录 pos 并令 hi = mid - 1，继续找更左的位置",
+      "输出 1 基下标，不存在时输出 -1"
+    ],
+    "analysis": "思路：数组非降序且可能有重复值，要求返回 target 第一次出现的下标。用两个指针 lo、hi 表示当前查找区间 [lo, hi]，mid = lo + (hi - lo) / 2 避免 lo + hi 溢出。当 *mid >= target 时，答案只可能在 mid 及其左侧，于是先记录命中位置再把 hi 收缩到 mid - 1；当 *mid < target 时，lo 移到 mid + 1。循环结束时 pos 指向最后一次命中的最左位置。\n\n关键步骤：① 读入 n、target 与 n 个非降序整数；② lo = a、hi = a + n - 1、pos = NULL；③ while (lo <= hi) 中计算 mid 并按上述规则收缩；④ 输出 pos 存在时 (int)(pos - a) + 1，否则输出 -1。\n\n复杂度：每次区间减半，时间 O(log n)，空间 O(1)。\n\n易错点：① 找到 target 就立刻返回，返回的是中间某个重复值而不是第一次出现的位置；② mid 写成 (lo + hi) / 2，两个指针不能相加，编译报错；③ 循环条件写成 lo < hi，漏掉区间只剩一个元素的情况；④ hi = mid 而不是 mid - 1，区间不缩小造成死循环；⑤ 输出下标忘记加 1（题目要求 1 基）；⑥ 数组未排序时二分失效，题目保证非降序。\n\n补充说明：为什么命中后还要继续向左？普通二分在 a[mid] == target 时立即返回，返回的下标取决于 mid 的落点，可能是任意一个重复元素；把 hi 收缩到 mid-1，相当于在「值等于 target」的区间里继续二分左边界，循环结束时 pos 就是最左命中。若数组中没有 target，pos 始终保持 NULL，输出 -1。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nint main()\n{\n    int n, target;\n    if (!(std::cin >> n >> target) || n < 1 || n > 100000)\n        return 0;\n\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    const int *base = a.data();\n    const int *lo = base;\n    const int *hi = base + n - 1;\n    const int *pos = nullptr;\n\n    while (lo <= hi) {\n        const int *mid = lo + (hi - lo) / 2;\n        if (*mid >= target) {\n            if (*mid == target)\n                pos = mid;\n            hi = mid - 1;\n        } else {\n            lo = mid + 1;\n        }\n    }\n\n    if (pos == nullptr)\n        std::cout << -1 << '\\n';\n    else\n        std::cout << (pos - base + 1) << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 const int * 维护 lo、hi 闭区间",
+          "mid 由 lo + (hi - lo) / 2 得到，指针运算安全",
+          "命中后记录 pos 并继续收缩 hi，保证取首个位置",
+          "下标用指针相减计算，输出 1 基或 -1"
+        ],
+        "analysis": "思路：C++ 版用 const int *lo、*hi 维护闭区间，mid 取 lo + (hi - lo) / 2。命中后不立即返回，而是记录 pos 并把 hi 移到 mid - 1，继续在左半区间寻找更早的出现位置。这样即使数组里有多个 target，也能得到第一次出现的下标。\n\n关键步骤：① vector 读入数据；② lo = a.data()、hi = a.data() + n - 1、pos = nullptr；③ 循环中比较 *mid 与 target；④ 输出 pos == nullptr ? -1 : pos - base + 1。\n\n复杂度：O(log n) 时间，O(1) 空间。\n\n易错点：① 用 std::lower_bound 一行解决，虽结果正确但不符合「用指针维护区间」的要求；② 命中后直接 break，返回的不是首个位置；③ 指针相减得到 ptrdiff_t，与 int 混用时的格式或类型问题；④ hi = mid 造成死循环；⑤ 数组为空时计算 hi 越界。\n\n补充说明：用 const int * 而不是 int *，可以在类型层面保证查找过程不修改数组；pos 记录的是地址，最后用 pos - base 得到元素偏移，再加 1 变成题目要求的 1 基下标。指针相减的结果类型是 ptrdiff_t，转换前应确认数组长度不会超过 int 范围。循环条件 lo <= hi 对应闭区间，若改成 lo < hi 则区间只剩一个元素时会漏查，这是二分最常见的边界错误之一。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    target = int(data[1])\n    a = [int(x) for x in data[2:2 + n]]\n\n    lo = 0\n    hi = n - 1\n    ans = -1\n\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if a[mid] >= target:\n            if a[mid] == target:\n                ans = mid\n            hi = mid - 1\n        else:\n            lo = mid + 1\n\n    print(-1 if ans == -1 else ans + 1)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 lo、hi 两个下标模拟指针区间",
+          "命中后记录 ans 并继续在左半区间查找",
+          "循环结束输出 ans+1 或 -1",
+          "不直接调用 bisect，保留手写二分过程"
+        ],
+        "analysis": "思路：Python 用两个整数下标 lo、hi 模拟指针区间，mid = (lo + hi) // 2。命中 target 时先记录 ans = mid，再令 hi = mid - 1 继续向左找，保证得到第一次出现的下标；未命中时根据 a[mid] 与 target 的大小关系收缩区间。逻辑与 C 版完全一致。\n\n关键步骤：① 读入 n、target 与数组；② lo = 0、hi = n - 1、ans = -1；③ while lo <= hi 中计算 mid 并收缩；④ 输出 ans + 1（若 ans 不为 -1），否则输出 -1。\n\n复杂度：O(log n) 时间，O(1) 空间。\n\n易错点：① 直接用 bisect_left 而不写循环，虽然结果相同但不符合题目对二分过程的要求；② 命中就 return mid，返回的不是首个位置；③ ans 初值设为 0，未命中时错误输出 1；④ hi = mid 导致死循环；⑤ 输出用 0 基下标，与题目要求的 1 基不符。\n\n补充说明：区间收缩可以统一理解为「答案在左半或右半」：a[mid] >= target 时，包括 mid 在内的右半部分不可能存在更左的答案，所以 hi = mid - 1；a[mid] < target 时 mid 及其左侧都太小，所以 lo = mid + 1。这种写法也叫二分找左边界，与 bisect_left 的内部逻辑一致。手写循环的好处是能清楚看到每次区间如何缩小，也便于迁移到「找最后一个小于等于 target 的位置」等变体。"
+      }
+    }
+  },
+  {
+    "id": "指-102",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "函数指针",
+      "回调排序",
+      "比较器"
+    ],
+    "stem": "给定 n 个整数，请按「绝对值从大到小排序，绝对值相同的按数值从小到大排序」的规则排序。要求把比较规则写成一个独立的比较函数，并通过函数指针把它传给排序函数（C 使用 qsort，C++ 使用 std::sort，Python 把可调用对象作为 key 传入）。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数，相邻两个数之间用一个空格分隔，每个整数的绝对值不超过 10000。\n\n**输出格式：** 一行 n 个整数，按上述规则排列，相邻两个整数之间用一个空格分隔，行末不能有多余空格。\n\n**输入样例：**\n```text\n6\n12 -7 5 -3 9 0\n```\n**输出样例：**\n```text\n12 9 -7 5 -3 0\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\n#define MAXN 1000\n\n/* 比较器：绝对值从大到小，绝对值相同则数值从小到大 */\nstatic int cmp_abs_desc(const void *pa, const void *pb)\n{\n    int a = *(const int *)pa;\n    int b = *(const int *)pb;\n    int aa = a < 0 ? -a : a;\n    int ab = b < 0 ? -b : b;\n\n    if (aa != ab)\n        return ab - aa;     /* 绝对值大的排前面 */\n    if (a < b)\n        return -1;\n    if (a > b)\n        return 1;\n    return 0;\n}\n\nint main(void)\n{\n    int n, i;\n    int a[MAXN];\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    qsort(a, (size_t)n, sizeof(a[0]), cmp_abs_desc);\n\n    for (i = 0; i < n; i++) {\n        if (i > 0)\n            putchar(' ');\n        printf(\"%d\", a[i]);\n    }\n    putchar('\\n');\n    return 0;\n}\n",
+    "points": [
+      "把比较规则写成独立函数 cmp_abs_desc",
+      "比较器形参为 const void *，内部强转为 const int * 后解引用",
+      "绝对值不同时返回 ab - aa 实现降序，相同时按原值升序",
+      "qsort 的第四个参数传函数名，自动转换为函数指针"
+    ],
+    "analysis": "思路：qsort 是 C 标准库的通用排序函数，最后一个参数是函数指针 int (*)(const void *, const void *)。排序规则完全由比较器决定：比较器返回负数表示第一个元素应排在前面，返回正数表示应排在后面，返回 0 表示相等。本题要求「绝对值从大到小，绝对值相同则数值从小到大」，因此在比较器里先取两个元素的绝对值，绝对值不同时用 ab - aa 让绝对值大的排前面；绝对值相同时用 a - b 让数值小的排前面。\n\n关键步骤：① 写 cmp_abs_desc，形参为 const void *，先强转成 const int * 再解引用取值；② 用条件表达式求绝对值，避免依赖 abs 的声明；③ 绝对值不同返回 ab - aa，相同则比较原值并返回 -1、0 或 1；④ main 中 qsort(a, (size_t)n, sizeof(a[0]), cmp_abs_desc)，函数名自动转换为函数指针；⑤ 输出一行结果。\n\n复杂度：qsort 平均 O(n log n) 时间，递归栈 O(log n) 空间。\n\n易错点：① 比较器直接 return *pa - *pb，忘记处理绝对值规则；② 强转写成 (const int) 而不是 (const int *)，编译错误；③ 比较器返回布尔值，只有 0 与 1，qsort 会把「小于」和「相等」混为一谈；④ 绝对值用 int 相减时溢出，本题数据范围较小但仍建议用条件表达式；⑤ 把比较器写成普通函数却加括号调用 cmp(a, b)，传入的是 int 而不是函数指针。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <algorithm>\n#include <vector>\n\nbool cmp_abs_desc(int a, int b)\n{\n    int aa = a < 0 ? -a : a;\n    int ab = b < 0 ? -b : b;\n\n    if (aa != ab)\n        return aa > ab;\n    return a < b;\n}\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 1000)\n        return 0;\n\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    std::sort(a.begin(), a.end(), cmp_abs_desc);\n\n    for (int i = 0; i < n; ++i) {\n        if (i > 0)\n            std::cout << ' ';\n        std::cout << a[i];\n    }\n    std::cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "比较函数返回 bool，表示第一个参数是否应排在前面",
+          "绝对值不同时返回 aa > ab，相同时返回 a < b",
+          "std::sort 第三个参数传函数名，退化为函数指针",
+          "输出一行，行末没有多余空格"
+        ],
+        "analysis": "思路：C++ 的 std::sort 接受可调用对象，这里传入普通函数名 cmp_abs_desc，它会自动退化为函数指针，效果与 C 的 qsort 比较器相同。比较函数返回 bool，表示第一个参数是否应排在第二个参数之前：绝对值不同时返回 aa > ab，绝对值相同时返回 a < b。\n\n关键步骤：① 定义 bool cmp_abs_desc(int a, int b)；② 求绝对值并比较；③ std::sort(a.begin(), a.end(), cmp_abs_desc)；④ 输出一行。\n\n复杂度：O(n log n) 时间，O(log n) 栈空间。\n\n易错点：① 比较函数写成三态返回 int，std::sort 会把非零都当成 true，排序结果错误；② 比较函数不满足严格弱序（例如写成 a <= b），可能触发越界；③ 用带捕获的 lambda 导致无法转换为函数指针（本题不需要捕获）；④ 直接调用 cmp_abs_desc 而没有传函数名；⑤ 使用 std::abs 却忘记包含对应头文件。\n\n补充说明：std::sort 要求比较函数满足严格弱序：cmp(x, x) 必须为 false，且比较关系要传递。本题两个键都是确定的，因此不会出现矛盾。传入函数名时它退化为 bool (*)(int, int) 类型的函数指针；如果写成带捕获的 lambda，类型无法转换为函数指针，编译会失败，这一点与 C 的 qsort 比较器相似但更严格。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef sort_key(value: int) -> tuple[int, int]:\n    return (-abs(value), value)\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    a = [int(x) for x in data[1:1 + n]]\n\n    a.sort(key=sort_key)\n    print(\" \".join(map(str, a)))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "把排序规则写成可调用对象 sort_key",
+          "key 返回 (-abs(v), v)，实现绝对值降序、同值升序",
+          "list.sort 原地排序并复用同一个回调",
+          "join 输出，行末无多余空格"
+        ],
+        "analysis": "思路：Python 没有函数指针，但函数、lambda 都是一等对象，可以作为参数传递，list.sort 的 key 参数正是这种「回调」：对每个元素调用 key 函数，按返回的元组排序。本题返回 (-abs(v), v)，表示先按绝对值降序、再按原值升序。这与 C 比较器的语义等价，只是表达方式不同。\n\n关键步骤：① 定义 sort_key(v) 返回 (-abs(v), v)；② a.sort(key=sort_key) 原地排序；③ 输出 \" \".join(map(str, a))。\n\n复杂度：O(n log n) 时间，O(n) 空间（key 结果缓存）。\n\n易错点：① key 写成 abs(v)，只按绝对值升序，方向错误；② 用 cmp_to_key 却把比较器写成返回布尔值；③ 元组顺序写反成 (v, -abs(v))，主次颠倒；④ 用 a.sort(key=...) 后误以为返回新列表；⑤ 输出用 print(a) 带出方括号。\n\n补充说明：key 函数返回元组，Python 按元组字典序比较：先比第一个分量，相等再比第二个，正好对应题目要求的两级排序。排序是稳定的，但本题的键已经能区分所有不同元素，稳定性不影响结果。key 只对每个元素调用一次，结果被缓存，因此比 cmp_to_key 的多次比较更高效，也更贴近 Python 的排序习惯。"
+      }
+    }
+  },
+  {
+    "id": "指-103",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "动态内存",
+      "按需扩容",
+      "变长数组"
+    ],
+    "stem": "读入若干个整数，直到读入 0 为止（0 不计入数据）。由于数据个数事先未知，请用动态内存实现变长数组：C 使用 malloc 与 realloc 按需扩容（初始容量 4，容量不足时翻倍），C++ 使用 std::vector，Python 使用 list。最后输出数据个数、总和与最大值。保证至少读入 1 个非零整数。\n\n**输入格式：** 一行若干个整数，以 0 结尾；每个非零整数的绝对值不超过 10^6，非零整数个数不超过 100000。\n\n**输出格式：** 三行，依次为 `count=数据个数`、`sum=总和`、`max=最大值`。\n\n**输入样例：**\n```text\n3 1 4 1 5 9 0\n```\n**输出样例：**\n```text\ncount=6\nsum=23\nmax=9\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void)\n{\n    int cap = 4;\n    int cnt = 0;\n    int x, i, maxv;\n    long long sum = 0;\n    int *a = malloc((size_t)cap * sizeof(int));\n\n    if (a == NULL)\n        return 0;\n\n    while (scanf(\"%d\", &x) == 1 && x != 0) {\n        if (cnt == cap) {\n            int *tmp;\n            cap *= 2;\n            tmp = realloc(a, (size_t)cap * sizeof(int));\n            if (tmp == NULL) {\n                free(a);\n                return 0;\n            }\n            a = tmp;\n        }\n        a[cnt++] = x;\n    }\n\n    if (cnt == 0) {\n        free(a);\n        return 0;\n    }\n\n    maxv = a[0];\n    for (i = 0; i < cnt; i++) {\n        sum += a[i];\n        if (a[i] > maxv)\n            maxv = a[i];\n    }\n\n    printf(\"count=%d\\n\", cnt);\n    printf(\"sum=%lld\\n\", sum);\n    printf(\"max=%d\\n\", maxv);\n    free(a);\n    return 0;\n}\n",
+    "points": [
+      "用 malloc 分配初始容量为 4 的动态数组并检查返回值",
+      "容量不足时用 realloc 翻倍，并用临时指针接收返回值",
+      "读到 0 停止，0 不计入数据",
+      "输出 count、sum、max 三行后 free 释放内存"
+    ],
+    "analysis": "思路：输入个数事先未知，不能用固定长度数组。程序维护指针 a、当前长度 cnt、当前容量 cap：初始用 malloc 分配 4 个 int；每读入一个非零数，若 cnt == cap 就用 realloc 把容量翻倍，再把新元素写到 a[cnt++]；读到 0 停止。最后遍历动态数组求总和与最大值，并 free 释放内存。\n\n关键步骤：① int *a = malloc(cap * sizeof(int))，检查是否为 NULL；② while (scanf(\"%d\", &x) == 1 && x != 0) 循环读入；③ 满容量时先用临时指针接 realloc 的返回值，成功后再赋给 a，避免原指针丢失；④ 统计 count、sum（long long）、max；⑤ 输出三行后 free(a)。\n\n复杂度：扩容按几何级数增长，总复制次数 O(n)，时间 O(n)，空间 O(n)。\n\n易错点：① 直接写 a = realloc(a, ...)，失败时原内存泄漏；② 容量翻倍写成 cap++，每次只多一个元素，效率退化；③ 忘记把 0 排除在统计之外；④ 用 int 累加总和导致较大数据溢出；⑤ 忘记 free，虽然程序结束系统会回收，但这是动态内存题的基本要求；⑥ 读取失败时仍使用未初始化的 x。\n\n补充说明：初始容量取 4 只是经验值，真正的关键是按几何级数扩容，使 n 次插入的总复制次数保持在 O(n)。realloc 可能原地扩展，也可能搬到新地址，因此扩容后旧指针不能再使用，必须用返回值更新。容量与长度是两个独立变量：cap 表示已分配多少格，cnt 表示实际用了多少格，混用会导致越界或浪费。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nint main()\n{\n    std::vector<int> a;\n    a.reserve(4);\n\n    int x;\n    while (std::cin >> x && x != 0)\n        a.push_back(x);\n\n    if (a.empty())\n        return 0;\n\n    long long sum = 0;\n    int maxv = a[0];\n    for (int v : a) {\n        sum += v;\n        if (v > maxv)\n            maxv = v;\n    }\n\n    std::cout << \"count=\" << a.size() << '\\n';\n    std::cout << \"sum=\" << sum << '\\n';\n    std::cout << \"max=\" << maxv << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 vector 自动管理变长数组，reserve(4) 预分配初始容量",
+          "读到 0 停止，push_back 完成按需扩容",
+          "遍历容器用 long long 累加并更新最大值",
+          "按 count、sum、max 三行输出"
+        ],
+        "analysis": "思路：C++ 用 std::vector<int> 承担动态数组的扩容细节，push_back 在容量不足时自动按几何级数重新分配，等价于 C 版手写的 malloc 与 realloc 逻辑。读到 0 停止，随后遍历 vector 求 count、sum、max。\n\n关键步骤：① 声明 vector<int> a，可选 reserve(4)；② while (cin >> x && x != 0) a.push_back(x)；③ 用 long long sum 累加，max 初始化为 a[0]；④ 输出 count=、sum=、max= 三行。\n\n复杂度：均摊 O(n) 时间，O(n) 空间。\n\n易错点：① 用固定大小数组并假设 n 不超过某个值；② 空 vector 时访问 a[0]；③ 把 0 也 push 进去；④ sum 用 int 导致溢出；⑤ 输出格式少了等号或换行。\n\n补充说明：vector 的 push_back 在容量不足时会按通常两倍左右的做法重新分配，并把旧元素搬过去，因此单次 push_back 最坏 O(n)，但均摊是 O(1)。reserve(4) 只是预分配，不会改变 size()，所以遍历时必须用范围 for 或下标小于 size()，不能假设有 4 个元素。读取循环写成 while (cin >> x && x != 0)，先判断读入是否成功，再判断值是否为 0，避免把读取失败误当成结束。另外，如果输入的第一个数就是 0，vector 为空，提前返回可以避免后续访问 a[0]；内存由 vector 析构自动释放，不需要显式 free，这是 RAII 带来的便利。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    numbers: list[int] = []\n    for token in data:\n        value = int(token)\n        if value == 0:\n            break\n        numbers.append(value)\n\n    print(f\"count={len(numbers)}\")\n    print(f\"sum={sum(numbers)}\")\n    print(f\"max={max(numbers)}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 list 作为动态数组，append 自动扩容",
+          "遍历记号，遇到 0 立即停止且不计入",
+          "用 len、sum、max 统计个数、总和与最大值",
+          "三行 f-string 输出与样例格式一致"
+        ],
+        "analysis": "思路：Python 的 list 本身就是动态数组，append 时解释器自动扩容，正好对应 C 版的 realloc 过程。读到 0 停止，最后用 len、sum、max 统计；由于 Python 整数是任意精度，总和不存在溢出问题，这一点与 C 版需要 long long 形成对照。\n\n关键步骤：① 用 sys.stdin.buffer.read().split() 读入全部记号；② 遍历记号转 int，遇到 0 立即 break，否则 append；③ count = len(a)、total = sum(a)、maximum = max(a)；④ 按 count=、sum=、max= 三行输出。\n\n复杂度：append 均摊 O(1)，总时间 O(n)，空间 O(n)。\n\n易错点：① 用 input() 只读一行，数据跨行时提前结束；② 忘记 break，把 0 之后的数字也读进来；③ 直接 max(a) 而不处理空列表，题目保证至少一个数但边界仍应想清楚；④ 输出用逗号分隔或缺少换行；⑤ 用固定长度列表并假设 n 不超过某个上限。\n\n补充说明：list 的扩容同样采用超额分配方式，append 的均摊复杂度是 O(1)，因此不需要手动预估容量。遍历 data 时一旦遇到 0 就 break，后面的记号全部丢弃；由于题目保证至少有一个非零数，max(numbers) 不会对空列表调用。Python 的 sum 与 max 都是 C 层实现，比手写循环更快，也更不容易写错边界。"
+      }
+    }
+  },
+  {
+    "id": "指-104",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "字符指针",
+      "原地反转",
+      "字符串处理"
+    ],
+    "stem": "给定一行由小写字母和单个空格组成的句子（没有前导、尾随空格，长度不超过 200），请反转单词的顺序，但单词内部的字符顺序保持不变。要求原地完成：先把整个字符串反转，再用字符指针逐个定位单词并反转回来，不申请与原串等长的额外数组。\n\n**输入格式：** 一行字符串，只包含小写字母和单个空格，单词之间用一个空格分隔，没有前导空格和尾随空格。\n\n**输出格式：** 一行字符串，单词顺序反转，输出末尾换行。\n\n**输入样例：**\n```text\nthe sky is blue\n```\n**输出样例：**\n```text\nblue is sky the\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\n#define MAXLEN 210\n\nstatic void reverse_range(char *left, char *right)\n{\n    while (left < right) {\n        char t = *left;\n        *left = *right;\n        *right = t;\n        left++;\n        right--;\n    }\n}\n\nint main(void)\n{\n    char s[MAXLEN];\n    size_t len;\n    char *p, *q;\n\n    if (fgets(s, sizeof(s), stdin) == NULL)\n        return 0;\n\n    len = strlen(s);\n    while (len > 0 && (s[len - 1] == '\\n' || s[len - 1] == '\\r'))\n        s[--len] = '\\0';\n    if (len == 0)\n        return 0;\n\n    /* 第一次反转：整个字符串倒序 */\n    reverse_range(s, s + len - 1);\n\n    /* 第二次反转：每个单词内部再倒序回来 */\n    p = s;\n    while (*p != '\\0') {\n        while (*p == ' ')\n            p++;\n        if (*p == '\\0')\n            break;\n        q = p;\n        while (*q != '\\0' && *q != ' ')\n            q++;\n        reverse_range(p, q - 1);\n        p = q;\n    }\n\n    printf(\"%s\\n\", s);\n    return 0;\n}\n",
+    "points": [
+      "fgets 读入整行并去掉行尾的换行符与回车符",
+      "reverse_range 用字符指针首尾交换，完成整串反转",
+      "p 跳过空格定位单词首，q 找到单词末尾后反转 [p, q-1]",
+      "输出结果并换行，全程原地修改字符数组"
+    ],
+    "analysis": "思路：要把单词顺序反转而单词内部不变，经典做法是「两次反转」：先把整个字符串反转，此时单词顺序反了但每个单词内部也反了；再逐个单词把内部字符反转回来。整个过程原地进行，只用几个字符指针。先反转整串用 reverse_range(s, s + len - 1)；然后 p 扫描字符串，跳过空格，q 从 p 出发找到单词末尾，对 [p, q-1] 再反转一次，p 移到 q 继续。\n\n关键步骤：① fgets 读入整行，去掉末尾的换行与回车；② reverse_range 用左右指针交换字符；③ 反转整串；④ 外层 while (*p) 中先跳过空格，再确定单词区间并反转；⑤ 输出处理后的字符串。\n\n复杂度：每个字符被交换常数次，时间 O(n)，空间 O(1)（原地修改字符数组）。\n\n易错点：① 只用一次整串反转，输出时每个单词也是反的；② 单词边界判断写成 *q != ' ' 却忘记检查 '\\0'，越界；③ 反转单词时把 q 也包含进去，把空格换到词首；④ fgets 保留换行符，输出时多一个空行；⑤ 用 scanf(\"%s\") 读入，遇到空格就截断，只能读到第一个单词；⑥ 字符串长度按 sizeof(s) 而不是 strlen(s)，把缓冲区垃圾也反转。\n\n补充说明：fgets 会把行尾的换行符一并读入，若不剥离，反转后换行会跑到句首，输出就多出一个空行；同时判断 '\\r' 是为了兼容 Windows 换行。字符串长度以 strlen(s) 为准，不能用 sizeof(s)，否则缓冲区中未使用的位置也会被当成内容参与反转。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n#include <algorithm>\n\nint main()\n{\n    std::string s;\n    if (!std::getline(std::cin, s))\n        return 0;\n\n    std::reverse(s.begin(), s.end());\n\n    std::size_t i = 0;\n    const std::size_t n = s.size();\n    while (i < n) {\n        while (i < n && s[i] == ' ')\n            ++i;\n        std::size_t j = i;\n        while (j < n && s[j] != ' ')\n            ++j;\n        std::reverse(s.begin() + i, s.begin() + j);\n        i = j;\n    }\n\n    std::cout << s << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "getline 读入整行，避免 cin >> 在空格处截断",
+          "std::reverse 先反转整串字符",
+          "用下标扫描单词边界，再逐个反转单词内部",
+          "整串只占一个 string，额外空间 O(1)"
+        ],
+        "analysis": "思路：C++ 用 std::string 保存整行，std::reverse 完成区间反转。先 reverse(s.begin(), s.end()) 反转整串，再用下标 i、j 扫描：i 跳过空格，j 找到单词末尾，reverse(s.begin()+i, s.begin()+j) 把单词内部反转回来，最后输出 s。\n\n关键步骤：① getline(cin, line) 读入整行（不含换行）；② std::reverse 反转整串；③ while 循环扫描单词边界并逐个反转；④ 输出 s 并换行。\n\n复杂度：O(n) 时间，O(1) 额外空间（原地修改 string）。\n\n易错点：① 用 cin >> s 读入，空格处截断；② 反转区间写成左闭右闭，多反转一个字符；③ 单词末尾判断只写 s[j] != ' ' 而漏掉 j < n；④ 忘记整串反转后单词之间仍是单个空格，导致边界处理复杂化；⑤ 用 std::reverse 后误以为返回新字符串。\n\n补充说明：getline 读入的 string 不含换行符，省去了 C 版手动剥离换行的步骤；std::reverse 的区间是左闭右开，因此反转单词时右端传 j 而不是 j-1。扫描时 i 与 j 都单调前进，总移动次数不超过 2n，时间复杂度仍是线性的。若句子中有连续多个空格，这段代码会把它们保留在反转后的对应位置，本题保证只有一个空格，因此不影响结果。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef reverse_range(chars: list[str], left: int, right: int) -> None:\n    while left < right:\n        chars[left], chars[right] = chars[right], chars[left]\n        left += 1\n        right -= 1\n\n\ndef main() -> None:\n    line = sys.stdin.readline()\n    if not line:\n        return\n\n    line = line.rstrip(\"\\r\\n\")\n    if not line:\n        return\n\n    chars = list(line)\n    n = len(chars)\n    reverse_range(chars, 0, n - 1)\n\n    i = 0\n    while i < n:\n        while i < n and chars[i] == \" \":\n            i += 1\n        j = i\n        while j < n and chars[j] != \" \":\n            j += 1\n        reverse_range(chars, i, j - 1)\n        i = j\n\n    print(\"\".join(chars))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "把字符串转成字符列表，便于原地交换",
+          "先反转整个列表，再扫描单词区间逐个反转",
+          "单词边界用 i、j 两个下标维护，跳过空格",
+          "join 还原字符串并输出"
+        ],
+        "analysis": "思路：Python 字符串不可变，但可以转成字符列表做原地交换，从而与 C 版算法逐行对应：先把整个字符列表反转，再扫描单词区间逐个反转，最后 \"\".join 还原成字符串。这样既体现了双指针原地反转的思想，又避免了 split 与 join 这种「一步到位」但看不出过程的写法。\n\n关键步骤：① sys.stdin.readline() 读入一行并去掉行尾换行；② chars = list(line)；③ 定义 reverse_range(chars, left, right) 做双指针交换；④ 反转整串；⑤ 扫描单词并反转每个单词；⑥ 输出 \"\".join(chars)。\n\n复杂度：O(n) 时间，O(n) 空间（字符列表本身）。\n\n易错点：① 直接 s[::-1] 得到新字符串却没有赋回；② 用 split 后 reversed 输出，虽然结果正确但没有体现原地反转；③ 单词边界扫描时越界；④ 忘记去掉行尾换行，输出多一个空行；⑤ 把空格也当成单词的一部分反转。\n\n补充说明：Python 字符串不可变，转成 list 后才能原地交换；rstrip 只去掉行尾的换行与回车，不会误删句首字符。扫描单词时 i、j 单调前进，总操作 O(n)。如果直接打印 line.split()[::-1]，得到的是列表的字符串形式，需要 join 才能还原成句子。"
+      }
+    }
+  },
+  {
+    "id": "指-105",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "滑动窗口",
+      "双指针",
+      "最短子数组"
+    ],
+    "stem": "给定 n 个正整数和目标值 target，请用滑动窗口（左右两个指针）求所有元素之和大于等于 target 的连续子数组中最短的长度；若不存在这样的子数组，输出 0。要求每个元素最多进出窗口各一次，总时间复杂度为 O(n)。\n\n**输入格式：** 第一行两个整数 n 和 target（1 ≤ n ≤ 100000，1 ≤ target ≤ 10^9）；第二行 n 个正整数 a_i（1 ≤ a_i ≤ 10000），相邻两个数之间用一个空格分隔。\n\n**输出格式：** 一行一个整数，表示满足条件的最短连续子数组长度；不存在时输出 0。\n\n**输入样例：**\n```text\n8 11\n1 2 3 4 5 6 7 8\n```\n**输出样例：**\n```text\n2\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 100000\n\nstatic int a[MAXN];\n\nint main(void)\n{\n    int n, i, left = 0, best;\n    long long target, sum = 0;\n\n    if (scanf(\"%d %lld\", &n, &target) != 2 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    best = n + 1;\n    for (i = 0; i < n; i++) {\n        sum += a[i];                /* 右指针扩张窗口 */\n        while (sum >= target) {     /* 满足条件则尝试收缩左端 */\n            int len = i - left + 1;\n            if (len < best)\n                best = len;\n            sum -= a[left];\n            left++;\n        }\n    }\n\n    printf(\"%d\\n\", best == n + 1 ? 0 : best);\n    return 0;\n}\n",
+    "points": [
+      "用 left 与循环变量 i 分别充当窗口的左右指针",
+      "右指针每步把 a[i] 加入窗口和 sum",
+      "sum >= target 时用 while 收缩左端并更新最短长度",
+      "每个元素最多进出窗口一次，无解输出 0"
+    ],
+    "analysis": "思路：数组元素全为正数，区间和随右端点扩张单调不减、随左端点右移单调递减，因此可以用滑动窗口。右指针 i 逐个把 a[i] 加入窗口和 sum；只要 sum >= target，就说明当前窗口是一个可行解，用 i - left + 1 更新最短长度，然后把左端点元素移出窗口并让 left 右移，继续尝试更短的窗口。整个过程每个元素最多被加入、移出各一次。\n\n关键步骤：① 读入 n、target 与 n 个正整数；② 初始化 sum = 0、left = 0、best = n + 1；③ for i 从 0 到 n-1：sum += a[i]，while (sum >= target) 更新 best、sum -= a[left]、left++；④ 若 best 仍为 n+1 输出 0，否则输出 best。\n\n复杂度：时间 O(n)，指针只前进不后退；空间 O(n)（保存数组）。\n\n易错点：① 用双重循环枚举所有区间，最坏 O(n^2) 超时；② 更新 best 后忘记从 sum 中减去 a[left] 就移动 left，窗口与实际不符；③ 循环条件写成 sum > target，漏掉恰好等于 target 的最优解；④ best 初值设成 0，导致永远输出 0；⑤ target 与 sum 用 int 保存，累加可能超过 2^31；⑥ 数组含负数时窗口单调性不成立，本题保证为正整数。\n\n补充说明：滑动窗口的正确性依赖「元素为正」这一条件：右端扩张时窗口和只增不减，左端收缩时只减不增，因此可以放心地移动指针而不回退。best 初值取 n+1 是一个比任何合法长度都大的哨兵，最后用三目运算把「没找到」映射成 0，避免再用一个布尔标记。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nint main()\n{\n    int n;\n    long long target;\n    if (!(std::cin >> n >> target) || n < 1 || n > 100000)\n        return 0;\n\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    int left = 0;\n    int best = n + 1;\n    long long sum = 0;\n\n    for (int right = 0; right < n; ++right) {\n        sum += a[right];\n        while (sum >= target) {\n            int len = right - left + 1;\n            if (len < best)\n                best = len;\n            sum -= a[left];\n            ++left;\n        }\n    }\n\n    std::cout << (best == n + 1 ? 0 : best) << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "target 与窗口和都用 long long，避免累加溢出",
+          "右指针扩张、内层 while 收缩左指针",
+          "每次窗口满足条件时更新最短长度",
+          "无解时输出 0，与 C 版一致"
+        ],
+        "analysis": "思路：C++ 版与 C 版算法一致，用 vector 保存数组，用 long long 保存 target 与窗口和。右指针扩张窗口，内层 while 收缩左指针并更新答案。由于每个元素最多进出窗口一次，总操作次数是线性的。\n\n关键步骤：① 读入 n、target 与数组；② best = n + 1、left = 0、sum = 0；③ 外层 for 扩张，内层 while 收缩；④ 输出 best == n + 1 ? 0 : best。\n\n复杂度：O(n) 时间，O(n) 空间。\n\n易错点：① 用 int 读取 target，超过 2^31 时出错（本题上限 10^9 仍安全，但习惯用 long long）；② 收缩时先 left++ 再减 sum，减错元素；③ 内层写成 if 而不是 while，一次只收缩一步，可能错过更短窗口；④ best 初值设得过大导致溢出，或设得过小导致永远不更新；⑤ 没有处理无解情况。\n\n补充说明：内层 while 而不是 if 是关键：一次右端扩张可能允许连续收缩多次，每次收缩后都可能得到更短的合法窗口；若只收缩一次，就会漏掉最优解。由于 left 只增不减，内层总执行次数不超过 n，外层也是 n 次，因此总复杂度 O(n)。窗口和用 long long，可以容纳 10^5 个 10^4 相加的结果。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    target = int(data[1])\n    a = [int(x) for x in data[2:2 + n]]\n\n    left = 0\n    window = 0\n    best = n + 1\n\n    for right in range(n):\n        window += a[right]\n        while window >= target:\n            length = right - left + 1\n            if length < best:\n                best = length\n            window -= a[left]\n            left += 1\n\n    print(0 if best == n + 1 else best)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 left、right 两个下标维护窗口，window 保存窗口和",
+          "右端扩张后 while 收缩左端并更新最短长度",
+          "循环条件为 window >= target，覆盖恰好相等的情况",
+          "best 超过 n 时输出 0"
+        ],
+        "analysis": "思路：Python 同样用左右两个下标维护窗口，window 为窗口内元素之和。右端点扩张、左端点收缩的规则与 C 版完全一致，答案取所有满足 window >= target 的窗口长度的最小值，无解输出 0。由于 Python 整数任意精度，求和不存在溢出。\n\n关键步骤：① 读入 n、target 与数组；② left = 0、window = 0、best = n + 1；③ for right in range(n): window += a[right]；while window >= target: best = min(best, right - left + 1); window -= a[left]; left += 1；④ 输出 0 if best == n + 1 else best。\n\n复杂度：O(n) 时间，O(n) 空间。\n\n易错点：① 用 sum(a[left:right+1]) 每次重新求和，复杂度退化；② while 条件写成 window > target，漏掉等于的情况；③ 更新 best 后忘记移动 left，死循环；④ best 初值设为 0，min 永远得到 0；⑤ 题目保证正整数，若数组含负值，窗口和的单调性被破坏，该算法不再成立。\n\n补充说明：内层 while 每次只移出一个元素，因此 left 不会超过 right；当 target 大于整个数组之和时，while 一次也不会执行，best 保持 n+1，最后输出 0。用 min 更新 best 与手写 if 等价，但要注意参数顺序，写成 min(best, right-left+1) 更符合习惯。窗口和只在加入与移出时变化，不会重复计算区间和。另外，若 best 始终保持 n+1，说明所有元素之和都小于 target，此时按题意输出 0。"
+      }
+    }
+  },
+  {
+    "id": "指-106",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "指针区间",
+      "三次反转",
+      "数组旋转"
+    ],
+    "stem": "给定一个长度为 n 的数组，请把它循环左移 k 位（k 可能大于 n）。要求只使用一个额外的整型变量，通过指针在数组区间内做三次原地反转完成，不允许使用额外的同长数组。\n\n**输入格式：** 第一行两个整数 n 和 k（1 ≤ n ≤ 1000，0 ≤ k ≤ 10^9）；第二行 n 个整数，相邻两个数之间用一个空格分隔，每个整数的绝对值不超过 10^9。\n\n**输出格式：** 一行 n 个整数，为循环左移 k 位后的结果，相邻两个整数之间用一个空格分隔，行末不能有多余空格。\n\n**输入样例：**\n```text\n7 2\n1 2 3 4 5 6 7\n```\n**输出样例：**\n```text\n3 4 5 6 7 1 2\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 1000\n\n/* 反转 [begin, end) 区间，end 为尾后指针 */\nstatic void reverse_range(int *begin, int *end)\n{\n    int *left = begin;\n    int *right;\n\n    if (begin == end)\n        return;\n    right = end - 1;\n\n    while (left < right) {\n        int t = *left;\n        *left = *right;\n        *right = t;\n        left++;\n        right--;\n    }\n}\n\nint main(void)\n{\n    int n, k, i;\n    int a[MAXN];\n\n    if (scanf(\"%d %d\", &n, &k) != 2 || n < 1 || n > MAXN || k < 0)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    k %= n;\n    reverse_range(a, a + k);        /* 反转前 k 个 */\n    reverse_range(a + k, a + n);    /* 反转后 n-k 个 */\n    reverse_range(a, a + n);        /* 整体反转 */\n\n    for (i = 0; i < n; i++) {\n        if (i > 0)\n            putchar(' ');\n        printf(\"%d\", a[i]);\n    }\n    putchar('\\n');\n    return 0;\n}\n",
+    "points": [
+      "k 先对 n 取模，处理 k 大于等于 n 的情况",
+      "reverse_range 以尾后指针界定区间，空区间直接返回",
+      "依次反转前 k 个、后 n-k 个、整个数组",
+      "只用一个临时变量交换，额外空间 O(1)"
+    ],
+    "analysis": "思路：循环左移 k 位可以拆成三段反转：先反转前 k 个元素，再反转剩下的 n-k 个元素，最后把整个数组反转一次，结果恰好是左移 k 位。例如 1 2 3 4 5 6 7 左移 2 位：反转前 2 个得 2 1 3 4 5 6 7，反转后 5 个得 2 1 7 6 5 4 3，整体反转得 3 4 5 6 7 1 2。所有反转都通过指针区间完成，只用一个临时整型变量交换。\n\n关键步骤：① 读入 n、k，k %= n 处理 k 大于 n 的情况；② 写 reverse_range(int *begin, int *end)，end 为尾后指针，先判断 begin == end 直接返回，再用首尾指针交换；③ 依次调用 reverse_range(a, a+k)、reverse_range(a+k, a+n)、reverse_range(a, a+n)；④ 输出数组。k = 0 时前两段为空区间，三次反转等价于两次整串反转，数组保持不变。\n\n复杂度：每个元素被交换 O(1) 次，时间 O(n)，空间 O(1)。\n\n易错点：① k 没有对 n 取模，k > n 时指针越界；② 三次反转的顺序写错，例如先整体反转再分段，结果不是左移；③ 把 k 当成右移位数，方向相反；④ reverse_range 的区间写成左闭右闭却在调用时传尾后指针，边界混乱；⑤ 空区间仍计算 end-1，产生非法指针；⑥ 输出用 printf(\"%d \") 造成行末空格。\n\n补充说明：三次反转的正确性可以用「块交换」来理解：原数组是 A B 两段，目标是 B A；反转前段得 A^R B，反转后段得 A^R B^R，整体反转得 B A。整个过程不申请新数组，交换只在原区间内进行，因此额外空间只有一个临时变量。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\n/* 反转 [begin, end) 区间，end 为尾后指针 */\nvoid reverse_range(int *begin, int *end)\n{\n    if (begin == end)\n        return;\n\n    int *left = begin;\n    int *right = end - 1;\n    while (left < right) {\n        int t = *left;\n        *left = *right;\n        *right = t;\n        ++left;\n        --right;\n    }\n}\n\nint main()\n{\n    int n, k;\n    if (!(std::cin >> n >> k) || n < 1 || n > 1000 || k < 0)\n        return 0;\n\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    k %= n;\n    reverse_range(a.data(), a.data() + k);\n    reverse_range(a.data() + k, a.data() + n);\n    reverse_range(a.data(), a.data() + n);\n\n    for (int i = 0; i < n; ++i) {\n        if (i > 0)\n            std::cout << ' ';\n        std::cout << a[i];\n    }\n    std::cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "k %= n 归一化移位数，避免指针越界",
+          "reverse_range 先判空区间，再取 end-1 右指针",
+          "三次调用顺序为前段、后段、整段",
+          "输出一行，行末无多余空格"
+        ],
+        "analysis": "思路：C++ 版沿用三次反转，用指针版本的 reverse_range(int *begin, int *end)（尾后区间），在 main 中把 vector 的 data() 与 data()+n 传进去。k 先对 n 取模，k 为 0 时前两段是空区间，reverse_range 首部判空后直接返回，三次调用仍然成立，数组保持不变。\n\n关键步骤：① 读入 n、k 与数组；② k %= n；③ 依次反转前段、后段、整段；④ 输出。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① 对 k = 0 调用 reverse_range 时在判空前就计算 end-1，产生非法指针；② 用 std::rotate 一行完成，虽结果正确但不符合「三次反转」的要求；③ 反转区间右端多传一个位置；④ k 未取模导致越界；⑤ 输出行末多空格。\n\n补充说明：reverse_range 的首部判空非常关键：当 k = 0 时 begin 与 end 都指向 a，若先计算 end-1 就会得到数组前面的非法地址，即使不解引用也属于未定义行为。三次调用中前两次在 k = 0 时都是空区间，第三次正常反转，整体效果是反转两次、数组复原。若 k 等于 n，取模后同样变成 0，逻辑仍然成立。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef reverse_range(a: list[int], left: int, right: int) -> None:\n    while left < right:\n        a[left], a[right] = a[right], a[left]\n        left += 1\n        right -= 1\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    k = int(data[1])\n    a = [int(x) for x in data[2:2 + n]]\n\n    k %= n\n    reverse_range(a, 0, k - 1)\n    reverse_range(a, k, n - 1)\n    reverse_range(a, 0, n - 1)\n\n    print(\" \".join(map(str, a)))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "k %= n 后按前段、后段、整段三次反转",
+          "reverse_range 用闭区间双指针交换",
+          "k 为 0 时前两段区间为空，循环不执行",
+          "join 输出，行末无多余空格"
+        ],
+        "analysis": "思路：Python 用列表和下标模拟指针区间，写 reverse_range(a, left, right) 对闭区间做双指针交换。k 先对 n 取模，然后依次反转 [0, k-1]、[k, n-1]、[0, n-1]，三次反转后数组正好左移 k 位。也可以切片拼接，但那样体现不出指针交换的过程。\n\n关键步骤：① 读入 n、k 与数组；② k %= n；③ 依次调用三次 reverse_range；④ 输出。k = 0 时前两段区间为空，函数内 while 不执行，三次反转退化为两次整串反转，数组保持不变。\n\n复杂度：O(n) 时间，O(1) 额外空间（原地交换）。\n\n易错点：① 切片 a[k:] + a[:k] 虽简单，但不符合题目要求的原地反转；② k 未取模导致切片错位；③ reverse_range 的 right 传成开区间导致多交换一个元素；④ 三次反转顺序错误；⑤ 输出用 print(a) 带出方括号。\n\n补充说明：Python 的 while left < right 在空区间时自然不执行，因此不需要额外的判空；这一点比 C 版省事，但理解 C 版为什么必须判空仍然重要。三次反转都在原列表上进行，切片只用于最终输出。k 可能大于 n，取模后范围落在 [0, n-1]，保证下标合法。"
+      }
+    }
+  },
+  {
+    "id": "指-107",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "双指针划分",
+      "快速排序",
+      "原地交换"
+    ],
+    "stem": "请用双指针挖坑法实现快速排序的划分：以第一个元素为基准 pivot，右指针从右向左找小于 pivot 的元素填入左坑，左指针从左向右找大于等于 pivot 的元素填入右坑，两指针相遇后把 pivot 放到相遇位置。输出基准最终下标（从 0 开始）与划分后的数组。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数，相邻两个数之间用一个空格分隔，每个整数的绝对值不超过 10^9。\n\n**输出格式：** 第一行 `pivot_index=p`，p 为基准最终下标（0 基）；第二行划分后的 n 个整数，相邻两个整数之间用一个空格分隔，行末不能有多余空格。\n\n**输入样例：**\n```text\n8\n5 3 8 1 9 2 7 4\n```\n**输出样例：**\n```text\npivot_index=4\n4 3 2 1 5 9 7 8\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 1000\n\n/* 挖坑法划分：返回基准的最终下标 */\nstatic int partition(int *a, int n)\n{\n    int pivot = a[0];\n    int i = 0;\n    int j = n - 1;\n\n    while (i < j) {\n        while (i < j && a[j] >= pivot)\n            j--;\n        a[i] = a[j];                /* 右端小于 pivot 的元素填左坑 */\n        while (i < j && a[i] < pivot)\n            i++;\n        a[j] = a[i];                /* 左端大于等于 pivot 的元素填右坑 */\n    }\n    a[i] = pivot;\n    return i;\n}\n\nint main(void)\n{\n    int n, i, idx;\n    int a[MAXN];\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    idx = partition(a, n);\n    printf(\"pivot_index=%d\\n\", idx);\n    for (i = 0; i < n; i++) {\n        if (i > 0)\n            putchar(' ');\n        printf(\"%d\", a[i]);\n    }\n    putchar('\\n');\n    return 0;\n}\n",
+    "points": [
+      "备份 a[0] 作为 pivot，i 指向左坑、j 指向右端",
+      "右指针跳过大于等于 pivot 的元素，把小值填入左坑",
+      "左指针跳过小于 pivot 的元素，把大值填入右坑",
+      "两指针相遇后写回 pivot，输出 0 基下标与数组"
+    ],
+    "analysis": "思路：快速排序的划分用「挖坑法」：取 a[0] 作为基准 pivot，i 指向左坑、j 指向右端。先从右向左找第一个小于 pivot 的元素，把它填到 a[i]；再从左向右找第一个大于等于 pivot 的元素，把它填到 a[j]；重复直到 i == j，最后把 pivot 放回 a[i]。此时 i 左侧全部小于 pivot，右侧全部大于等于 pivot，i 就是基准的最终下标。\n\n关键步骤：① 备份 pivot = a[0]；② while (i < j) 中先从右往左跳过 a[j] >= pivot，执行 a[i] = a[j]；再从左往右跳过 a[i] < pivot，执行 a[j] = a[i]；③ 循环结束 a[i] = pivot，返回 i；④ main 输出 pivot_index 与划分后的数组。\n\n复杂度：一次划分扫描 O(n)，时间 O(n)，空间 O(1)。\n\n易错点：① 内层两个 while 忘记加 i < j 保护，指针交错后继续越界；② 右指针条件写成 a[j] > pivot，把等于基准的元素留在右侧又搬到左侧，破坏分区不变量；③ 没有备份 pivot，最后 a[i] 已被覆盖；④ 先从左往右再填坑时顺序颠倒，导致元素丢失；⑤ 输出基准下标用 1 基而样例是 0 基；⑥ 数组只有一个元素时循环不执行，仍应正确返回 0。\n\n补充说明：挖坑法的本质是「用一个坑位暂存待移动的元素」，pivot 一开始被备份，所以 a[0] 可以安全地被覆盖；之后每次把一个元素搬到对面的坑，原来的位置就变成新坑。循环结束时 i 与 j 重合，这个位置就是 pivot 的最终归宿，左侧全部小于 pivot，右侧全部大于等于 pivot。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nint partition(int *a, int n)\n{\n    int pivot = a[0];\n    int *p = a;\n    int *q = a + n - 1;\n\n    while (p < q) {\n        while (p < q && *q >= pivot)\n            --q;\n        *p = *q;\n        while (p < q && *p < pivot)\n            ++p;\n        *q = *p;\n    }\n    *p = pivot;\n    return static_cast<int>(p - a);\n}\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 1000)\n        return 0;\n\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    int idx = partition(a.data(), n);\n    std::cout << \"pivot_index=\" << idx << '\\n';\n    for (int i = 0; i < n; ++i) {\n        if (i > 0)\n            std::cout << ' ';\n        std::cout << a[i];\n    }\n    std::cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用指针 p、q 分别指向左坑与右端，pivot 取 *a",
+          "右指针左移找小值填左坑，左指针右移找大值填右坑",
+          "内层循环均带 p < q 保护，相遇后写回 pivot",
+          "用 p - a 计算 0 基下标并输出"
+        ],
+        "analysis": "思路：C++ 版用指针实现同一套挖坑划分：partition(int *a, int n) 中 pivot 取 *a，左指针 p = a，右指针 q = a + n - 1。右指针左移找小于 pivot 的元素填左坑，左指针右移找大于等于 pivot 的元素填右坑，相遇后写回 pivot，返回 p - a。\n\n关键步骤：① 备份 pivot；② while (p < q) 中双向扫描与填坑；③ *p = pivot；④ 返回下标；⑤ 输出 pivot_index= 与数组。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① 指针相减得到下标时没有转成 int；② 内层 while 条件漏掉 p < q；③ 把 partition 写成返回 void，调用方拿不到基准位置；④ 用 std::partition 直接完成，虽然分区正确但基准下标与挖坑法不一定相同，且不符合手写要求；⑤ 输出行末多空格。\n\n补充说明：指针版本的 p、q 与 C 的下标版本一一对应，p - a 就是下标 i。内层两个 while 都必须带 p < q，否则在遇到全大于或全小于 pivot 的区间时，指针会越过对方继续移动，造成越界读写。返回类型用 int 而不是指针，是为了让调用方直接拿到下标；若返回指针，main 里还要再做一次相减。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef partition(a: list[int]) -> int:\n    pivot = a[0]\n    i = 0\n    j = len(a) - 1\n\n    while i < j:\n        while i < j and a[j] >= pivot:\n            j -= 1\n        a[i] = a[j]\n        while i < j and a[i] < pivot:\n            i += 1\n        a[j] = a[i]\n\n    a[i] = pivot\n    return i\n\n\ndef main() -> None:\n    data = sys.stdin.buffer.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    a = [int(x) for x in data[1:1 + n]]\n\n    idx = partition(a)\n    print(f\"pivot_index={idx}\")\n    print(\" \".join(map(str, a)))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "备份 pivot 后用 i、j 两个下标做挖坑划分",
+          "右找小值填左坑、左找大值填右坑，均带 i < j 保护",
+          "相遇后 a[i] = pivot 并返回 i",
+          "输出 0 基 pivot_index 与数组"
+        ],
+        "analysis": "思路：Python 用下标 i、j 复刻挖坑法：pivot = a[0]，i = 0，j = len(a)-1。j 从右向左找小于 pivot 的值填入 a[i]，i 从左向右找大于等于 pivot 的值填入 a[j]，直到 i == j，最后 a[i] = pivot 并返回 i。\n\n关键步骤：① 备份 pivot；② while i < j 中双向扫描与填坑；③ a[i] = pivot；④ 输出 pivot_index 与数组。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① 用列表切片或 sorted 代替划分，结果分区不唯一；② 内层 while 缺少 i < j 保护；③ 条件写成 a[j] > pivot；④ 返回 1 基下标；⑤ 输出 join 时混入多余空格。\n\n补充说明：挖坑法的关键在于「备份 pivot」与「先填坑、后找新坑」的顺序：a[0] 的值已经保存在 pivot 中，所以可以放心用 a[j] 覆盖它；随后 a[j] 成为空位，再从左边找大于等于 pivot 的元素填进去，如此交替，直到 i 与 j 相遇。若先把 pivot 写回再继续扫描，就会破坏尚未处理的元素。循环结束后 a[i] 左侧都小于 pivot、右侧都大于等于 pivot，这正是快速排序递归所需的划分性质。与 C 版不同，Python 不需要释放任何资源，列表本身就是划分结果；但下标的边界处理必须同样严谨，尤其是 i、j 相遇时不能再访问 a[j]。若把函数改成返回下标与数组的元组，调用方也能同时拿到两者，但本题只需原地修改并返回下标，接口更简洁。"
+      }
+    }
+  },
+  {
+    "id": "指-108",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "指针数组",
+      "字符串排序",
+      "字典序"
+    ],
+    "stem": "给定 n 个仅由小写字母组成的单词，请建立指针数组，让每个指针指向一个单词，排序时只交换指针而不是字符串内容。排序完成后按字典序升序逐行输出。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 50）；接下来 n 行，每行一个仅由小写字母组成的单词，长度不超过 19。\n\n**输出格式：** 共 n 行，按字典序升序输出所有单词，每行一个。\n\n**输入样例：**\n```text\n4\npear\napple\nzoo\nbanana\n```\n**输出样例：**\n```text\napple\nbanana\npear\nzoo\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n#include <stdlib.h>\n\n#define MAXN 50\n#define MAXLEN 20\n\n/* qsort 比较器：pa、pb 指向 char * 元素，解引用后得到字符串首地址 */\nstatic int cmp_str(const void *pa, const void *pb)\n{\n    const char *const *x = (const char *const *)pa;\n    const char *const *y = (const char *const *)pb;\n\n    return strcmp(*x, *y);\n}\n\nint main(void)\n{\n    int n, i;\n    char buf[MAXN][MAXLEN];\n    char *p[MAXN];\n\n    if (scanf(\"%d\", &n) != 1 || n < 1 || n > MAXN)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%19s\", buf[i]) != 1)\n            return 0;\n        p[i] = buf[i];              /* 指针指向对应的字符串 */\n    }\n\n    qsort(p, (size_t)n, sizeof(p[0]), cmp_str);\n\n    for (i = 0; i < n; i++)\n        printf(\"%s\\n\", p[i]);\n    return 0;\n}\n",
+    "points": [
+      "建立 char *p[MAXN] 指针数组，p[i] 指向 buf[i]",
+      "比较器把 const void * 转成 const char *const * 再解引用",
+      "用 strcmp 比较字符串，qsort 交换的只是指针的值",
+      "逐行输出排序后的单词，每行一个"
+    ],
+    "analysis": "思路：要排序若干个字符串，若直接交换字符串内容，需要整块复制、代价高；更自然的做法是建立指针数组 char *p[MAXN]，让每个指针指向二维缓冲区中的一行，排序时只交换指针的值。qsort 对指针数组排序，比较器收到的是「指向数组元素的指针」，也就是 char **，先把它转成 const char *const *，再解引用得到字符串首地址，交给 strcmp 比较。\n\n关键步骤：① 读入 n；② 循环读入每个单词到 buf[i]（用 %19s 限制宽度防止溢出），并令 p[i] = buf[i]；③ qsort(p, n, sizeof(p[0]), cmp_str)；④ 按 p[0..n-1] 逐行输出。\n\n复杂度：每次比较 O(L)，排序 O(n log n) 次比较，总时间 O(n log n · L)；空间 O(n · L) 用于存放字符，指针数组额外 O(n)。\n\n易错点：① 比较器把形参直接当成 char *，强转层级错误导致乱码或崩溃；② 用 strcmp 的返回值取反，排序方向反了；③ 读入用 scanf(\"%s\", buf[i]) 不限制宽度，长单词溢出缓冲区；④ 排序时写 strcpy 交换内容，虽然结果对但不符合「交换指针」的要求；⑤ qsort 的元素大小写成 sizeof(char *) 之外的值；⑥ 输出用 printf(\"%s \") 造成行末空格或单词粘连。\n\n补充说明：指针数组排序的好处是字符串本身完全不动，只改变 p[0..n-1] 的指向，因此不需要 strcpy，也不会因为单词长度不同而搬移大量字节。buf 用二维数组连续存放，保证每个 p[i] 都指向稳定的内存；如果改用局部字符指针指向临时缓冲区，必须确保缓冲区在排序和输出期间一直有效。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n#include <vector>\n#include <algorithm>\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n) || n < 1 || n > 50)\n        return 0;\n\n    std::vector<std::string> words(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> words[i];\n\n    std::sort(words.begin(), words.end());\n\n    for (const std::string &w : words)\n        std::cout << w << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 vector<string> 保存单词，避免手工管理字符缓冲区",
+          "string 的比较运算符与 strcmp 的字典序语义一致",
+          "std::sort 默认升序，逐行输出",
+          "输出每行一个单词，行末恰好一个换行"
+        ],
+        "analysis": "思路：C++ 用 std::vector<std::string> 保存单词，std::sort 默认按字典序升序排序。string 自带比较运算符，语义与 strcmp 一致；虽然排序时交换的是 string 对象而不是裸指针，但对固定长度短字符串来说代价很小，且不需要手动管理缓冲区，体现了 C++ 对字符串处理的封装。\n\n关键步骤：① 读入 n；② vector<string> words(n)，逐个 cin >> words[i]；③ std::sort(words.begin(), words.end())；④ 逐行输出。\n\n复杂度：O(n log n · L) 时间，O(n · L) 空间。\n\n易错点：① 用 cin >> 读入时单词内的空格会截断（本题单词不含空格，无影响）；② 排序方向写成 std::greater<string>() 变成降序；③ 输出用 cout << words[i] << ' ' 造成行末空格；④ 忘记处理 n = 1 的边界；⑤ 用 char 数组却不管理长度导致溢出。\n\n补充说明：std::string 的比较按字符编码逐位进行，对纯小写字母就是字典序，与 strcmp 的语义一致。vector 排序会搬移 string 对象，但短字符串通常采用小对象优化，实际开销很小。若坚持「只交换指针」，可以改用 vector<const char *> 并传入自定义比较器，但生命周期管理会更复杂，本题用 string 更稳妥。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main() -> None:\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    words = data[1:1 + n]\n    words.sort()\n\n    sys.stdout.write(\"\\n\".join(words) + \"\\n\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "读入全部记号后取前 n 个单词",
+          "list.sort 默认按字典序升序，交换的是元素引用",
+          "与 C 中交换指针数组元素的思路一致",
+          "join 逐行输出，末尾换行"
+        ],
+        "analysis": "思路：Python 的字符串比较就是字典序，list.sort() 默认升序，正好等价于 C 中用 strcmp 作为比较器。读入 n 个单词后直接排序并逐行输出即可；列表排序交换的是引用，与 C 中交换指针数组元素的思路一致。\n\n关键步骤：① 用 sys.stdin.read().split() 读入全部记号；② 第一个是 n，随后 n 个是单词；③ words.sort()；④ 用换行拼接输出。\n\n复杂度：O(n log n · L) 时间，O(n · L) 空间。\n\n易错点：① 用 sorted(words) 却没有接收返回值，原列表未排序；② 把 n 也当成单词参与排序；③ 输出用 print(words) 打印出方括号和引号；④ 用 key=len 按长度排序而不是字典序；⑤ 读入时用 input() 逐行读取，遇到空行出错。\n\n补充说明：Python 的字符串比较同样是逐字符比较 Unicode 码点，纯小写字母下与字典序一致。list.sort 是原地排序，返回 None，因此不能写 words = words.sort()。读入使用 read().split() 可以容忍任意空白分隔，包括每行一个单词的情况；若改用 input() 逐行读取，遇到末尾空行还需要额外判断。"
+      }
+    }
+  }
+]

@@ -685,55 +685,6 @@
     }
   },
   {
-    "id": "结-65",
-    "module": "结构体",
-    "type": "choice",
-    "difficulty": 1,
-    "tags": [
-      "访问控制",
-      "封装",
-      "语言对比"
-    ],
-    "stem": "在 C 语言中，关于结构体成员的访问控制，下列说法正确的是（ ）。",
-    "analysis": "C 正确。C 的结构体只是一个「把多个数据成员聚合在一起」的类型，没有访问说明符，也没有成员函数；只要代码能看到结构体定义，就能直接读写它的任何成员。所谓「封装」在 C 里靠的是约定与组织方式：把实现细节放在 .c 文件、头文件只给出不透明指针（如 `typedef struct Buffer Buffer;` 加上创建/销毁函数），调用者拿不到完整定义，自然无法直接访问成员。\n\nA、D 把 C++ 的 private/protected 概念套到了 C 上；B 更是把「指针/变量」当成了访问级别的分界，二者与访问控制无关。\n\n对照其他语言：C++ 的 `class` 默认 private、`struct` 默认 public，但都提供真正的访问控制；Python 没有强制访问控制，靠 `_name` 约定和 `__name` 名字改写提示「内部使用」。理解「C 没有访问控制」这一点，才能明白为什么 C 的库常用不透明指针来隐藏实现。",
-    "langs": [
-      "c",
-      "cpp",
-      "python"
-    ],
-    "options": [
-      "结构体成员默认是 private，必须显式声明为 public 才能被外部代码访问",
-      "只有通过指针访问的成员才是公开的，通过变量名访问的成员是私有的",
-      "C 的结构体没有 public/private 等访问控制，所有成员对所有能看到该类型定义的代码都是可访问的",
-      "结构体成员默认是 protected，同一源文件中的函数可以访问，其他文件不能"
-    ],
-    "answer": 2,
-    "variants": {
-      "cpp": {
-        "stem": "在 C++ 中，关于 `class` 与 `struct` 的默认访问权限，下列说法正确的是（ ）。",
-        "options": [
-          "`class` 默认 public，`struct` 默认 private",
-          "两者默认都是 public",
-          "两者默认都是 private",
-          "`class` 默认 private，`struct` 默认 public；默认继承方式也分别是 private 和 public"
-        ],
-        "answer": 3,
-        "analysis": "D 正确。C++ 中 `class` 与 `struct` 几乎完全相同，**唯一的区别**就是默认访问权限和默认继承方式：`class` 的成员与继承默认 private，`struct` 默认 public。两者都可以有成员函数、构造/析构、运算符重载、继承和多态。\n\nA 把两者说反了；B、C 忽略了这个默认差异。\n\n实际编码中，`struct` 常用于「只有数据、没有不变量」的聚合类型（如 `Point`、配置项），`class` 常用于需要封装不变量的类型。但这不是语法强制，把 `struct` 写成带 private 成员的类也完全合法——只是会让读者意外，所以团队通常会约定一致的风格。\n\n补充：无论 class 还是 struct，显式写 `public:`/`private:` 都能覆盖默认值；默认继承方式同理，`class D : B` 是 private 继承，`struct D : B` 是 public 继承。"
-      },
-      "python": {
-        "stem": "在 Python 中，关于类属性的访问控制，下列说法正确的是（ ）。",
-        "options": [
-          "属性默认是 private，外部不能访问",
-          "Python 没有强制访问控制：`_name` 只是「内部使用」的约定，`__name` 会触发名字改写（name mangling），但仍可从外部访问",
-          "必须写 `public` 关键字，否则属性不可见",
-          "以 `__` 开头的属性在类外完全无法访问"
-        ],
-        "answer": 1,
-        "analysis": "B 正确。Python 的设计哲学是「大家都是成年人」：没有 private/protected 关键字，所有属性在运行时都可访问。单下划线 `_name` 表示「内部使用，请勿依赖」，是给读者和静态检查工具的约定；双下划线 `__name` 会被改写为 `_ClassName__name`（name mangling），目的是避免子类意外覆盖，但它并不是加密，仍然可以用改写后的名字访问。\n\n- A、C 把 C++/Java 的机制套到 Python 上；Python 没有 `public` 关键字。\n- D 错：`obj._Class__name` 依然可访问，name mangling 只改名字不改可见性。\n\n需要受控访问时，用 `@property` 提供 getter/setter，在 setter 里做校验；需要真正隐藏实现时，靠模块边界（不在 `__all__` 中导出）和文档约定。对照 C 的「结构体没有访问控制」：两者都依赖约定，但 Python 还多了 name mangling 与 property 这两样工具。"
-      }
-    }
-  },
-  {
     "id": "结-66",
     "module": "结构体",
     "type": "choice",

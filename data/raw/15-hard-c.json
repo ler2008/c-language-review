@@ -1,0 +1,442 @@
+[
+  {
+    "id": "基-111",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "约瑟夫环",
+      "循环模拟",
+      "取模"
+    ],
+    "stem": "n 个人围成一圈，编号从 1 到 n。从编号 1 的人开始报数，报到 m 的人离开圈子，然后从他的下一个人重新从 1 开始报数，报到 m 的人再离开，如此继续，直到所有人都离开。请按离开的先后顺序输出每个人的编号。\n\n可以用一个标记数组记录每个人是否还在圈内：每次报数都让下标在圈内循环前进，遇到还在圈内的人就把报数加一，累计到 m 时这个人的编号就是本轮离开的人。\n\n**输入格式：** 一行两个整数 n 和 m（1 ≤ n ≤ 200，1 ≤ m ≤ 50），用一个空格分隔。\n\n**输出格式：** 一行 n 个整数，为离开圈子的先后顺序，相邻两个编号之间用一个空格分隔，行末换行。\n\n**输入样例：**\n```text\n5 3\n```\n**输出样例：**\n```text\n3 1 5 2 4\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int n, m, i;\n    int alive[205];\n    int pos = -1;                    /* 上一轮出圈者的位置，从 -1 起便于统一前进 */\n\n    if (scanf(\"%d %d\", &n, &m) != 2)\n        return 0;\n    for (i = 0; i < n; i++)\n        alive[i] = 1;                /* 1 表示还在圈内 */\n\n    for (i = 0; i < n; i++) {\n        int cnt = 0;\n\n        while (cnt < m) {\n            pos = (pos + 1) % n;     /* 下标在圈内循环前进 */\n            if (alive[pos])\n                cnt++;               /* 已出圈的人不再报数 */\n        }\n        alive[pos] = 0;\n        if (i > 0)\n            printf(\" \");\n        printf(\"%d\", pos + 1);\n    }\n    printf(\"\\n\");\n    return 0;\n}\n",
+    "points": [
+      "用标记数组 alive[] 记录每个人是否还在圈内",
+      "用 (pos + 1) % n 让下标在圈内循环前进，并跳过已离开的人",
+      "报数累计到 m 时把该人置为离开，输出其编号（下标加 1）",
+      "按出圈顺序在一行内输出，相邻编号用空格分隔"
+    ],
+    "analysis": "思路：这是约瑟夫环的经典模拟。n 不超过 200，完全可以按题目描述「一圈一圈报数」直接模拟，不必推导递推公式：用 alive 数组标记谁还在圈里，用下标 pos 指向上一轮离开的位置，每轮从它的下一个人开始，在圈内循环前进，遇到 alive 为真的人就把计数器加一，计数器达到 m 的人出圈。\n\n关键步骤：① 读入 n、m，把 alive[0..n-1] 全部置 1；② 令 pos = -1，这样第一次前进 (pos + 1) % n 恰好落在 1 号；③ 外层循环 n 轮，内层 while 累计报数：pos = (pos + 1) % n 让下标在圈内循环并自然回绕，if (alive[pos]) cnt++ 保证只有还在圈内的人才被报到；④ 内层结束时 alive[pos] 置 0，输出 pos + 1；⑤ 出圈后 pos 正好停在出圈者的位置，下一轮从它的下一个人继续，不需要再调整。\n\n复杂度：时间 O(n×m)，最坏每轮要走 m 步以上，n ≤ 200、m ≤ 50 时最多约一万次判断；空间 O(n)。\n\n易错点：① 把 pos 直接加 1 而不取模，走到 n 之后数组越界；② 报数时没有跳过 alive 为 0 的人，已经出圈的人被重复计数；③ 每轮结束又让 pos 前移一位，等于跳过一个人；④ 输出打印 pos 而不是 pos + 1，整体编号错一位；⑤ 认为 n = 1 时要特判，实际上循环一轮就会输出 1；⑥ 只在最后输出，没有按出圈顺序边算边输出。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    int n, m;\n    if (!(cin >> n >> m))\n        return 0;\n\n    vector<char> alive(n, 1);\n    int pos = -1;\n\n    for (int i = 0; i < n; ++i) {\n        int cnt = 0;\n        while (cnt < m) {\n            pos = (pos + 1) % n;\n            if (alive[pos])\n                ++cnt;\n        }\n        alive[pos] = 0;\n        if (i > 0)\n            cout << ' ';\n        cout << pos + 1;\n    }\n    cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 vector<char> 作为标记数组",
+          "用 (pos + 1) % n 在圈内循环前进",
+          "报满 m 人后出圈，边算边输出编号"
+        ],
+        "analysis": "思路：与 C 版完全一致 —— 用 vector<char> 充当标记数组，下标 pos 在 [0, n) 内循环，报到 m 的人出圈并输出 pos + 1。C++ 的 % 对正数结果非负，而这里的下标恒非负，可以直接用 (pos + 1) % n。\n\n关键步骤：① cin >> n >> m 读入两个整数；② vector<char> alive(n, 1) 表示全部在圈内；③ 外层 n 轮，内层 while (cnt < m) 中执行 pos = (pos + 1) % n，只有 alive[pos] 为真才 ++cnt；④ 出圈时 alive[pos] = 0，第一项之前不输出空格，其余各项前置一个空格；⑤ 循环结束后输出换行。\n\n复杂度：时间 O(n×m)，空间 O(n)。\n\n易错点：① 用 vector<bool> 存标记，它的元素是代理引用，不能取地址、传参也容易出错，本题用 vector<char> 更稳；② 忘记取模导致下标越界；③ 输出编号忘记加 1；④ 每轮结束重复前移 pos，造成跳人；⑤ 用 while (cnt <= m) 判断，实际会多报一个人。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    n = int(data[0])\n    m = int(data[1])\n\n    alive = [True] * n\n    pos = -1\n    order = []\n\n    for _ in range(n):\n        cnt = 0\n        while cnt < m:\n            pos = (pos + 1) % n\n            if alive[pos]:\n                cnt += 1\n        alive[pos] = False\n        order.append(str(pos + 1))\n\n    print(\" \".join(order))\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 True/False 列表记录每个人是否在圈内",
+          "用 (pos + 1) % n 手动实现圈内循环",
+          "把编号转成字符串后用 join 输出一行"
+        ],
+        "analysis": "思路：用列表 alive 记录每个人是否还在圈内，pos 表示上一次出圈的位置，每轮在圈内循环前进并统计还在圈内的人，报到 m 的人出圈。Python 的下标回绕必须显式写成 (pos + 1) % n，不能指望负下标自动完成这件事。\n\n关键步骤：① 用 sys.stdin.read().split() 取出 n 和 m；② alive = [True] * n 初始化全部在圈内；③ 循环 n 轮，内层 while cnt < m 中先 pos = (pos + 1) % n，若 alive[pos] 为真则 cnt += 1；④ alive[pos] = False，并把 str(pos + 1) 追加到结果列表；⑤ 用 \" \".join(order) 输出一行。\n\n复杂度：时间 O(n×m)，空间 O(n)。\n\n易错点：① 内层 while 忘记重置 cnt，一轮就结束；② 用 del 把出圈的人从列表里删掉，导致下标整体前移而漏人；③ 用 list.pop(0) 模拟队列，复杂度退化到 O(n²)；④ 结果拼接用逗号而不是空格，与样例不符；⑤ 输出末尾多一个空格；⑥ 把 pos 初始化为 0，第一次就会从 2 号开始报数。"
+      }
+    }
+  },
+  {
+    "id": "基-112",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "枚举",
+      "数位拆解",
+      "整除判断"
+    ],
+    "stem": "给定闭区间 [L, R] 和一个数字 d，统计区间中「十进制表示里含数字 d」且「能被 3 整除」的整数个数，并输出其中最小的一个。\n\n判断一个数 x 是否含数字 d 的方法是反复取它的末位：while (t > 0) 每次看 t % 10 是否等于 d，然后执行 t /= 10 把末位去掉；只要有一次相等就说明含 d。区间长度不超过十万，逐个枚举即可。\n\n**输入格式：** 一行三个整数 L、R、d（1 ≤ L ≤ R ≤ 100000，0 ≤ d ≤ 9），相邻两个数之间用一个空格分隔。\n\n**输出格式：** 两行，第一行为满足条件的整数个数，第二行为其中最小的整数；若一个都没有，第二行输出 -1。\n\n**输入样例：**\n```text\n1 30 3\n```\n**输出样例：**\n```text\n2\n3\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int l, r, d, x;\n    int cnt = 0, first = -1;\n\n    if (scanf(\"%d %d %d\", &l, &r, &d) != 3)\n        return 0;\n\n    for (x = l; x <= r; x++) {\n        int t = x, has = 0;          /* 复制一份 t，避免破坏枚举变量 x */\n\n        while (t > 0) {\n            if (t % 10 == d) {       /* 末位命中 */\n                has = 1;\n                break;\n            }\n            t /= 10;                 /* 去掉末位 */\n        }\n        if (has && x % 3 == 0) {\n            cnt++;\n            if (first < 0)\n                first = x;\n        }\n    }\n\n    printf(\"%d\\n\", cnt);\n    printf(\"%d\\n\", first);\n    return 0;\n}\n",
+    "points": [
+      "用 for 循环逐个枚举区间 [L, R] 中的整数",
+      "用 while (t > 0) 取末位 t % 10、用 t /= 10 拆位，判断是否含 d",
+      "用 x % 3 == 0 判断整除，两个条件同时成立才计数",
+      "用 first 记录第一个（也是最小的）满足条件的数，没有时输出 -1"
+    ],
+    "analysis": "思路：区间长度最多 10 万，每个数最多 6 位，逐个枚举再逐位检查的代价约为 6×10^5 次操作，完全在时限内，所以不需要任何数位 DP。题目考的是「枚举 + 数位拆解」这一最朴素的套路：外层枚举候选值，内层把一个数一位一位拆开做判断。\n\n关键步骤：① 读入 L、R、d；② 让 x 从 L 枚举到 R；③ 对每个 x 复制一份 t = x，用 while (t > 0) 反复取末位 t % 10 与 d 比较，一旦相等就把标记 has 置 1 并 break，否则 t /= 10 去掉末位；④ 判断 has 与 x % 3 == 0 是否同时成立，成立则计数加一；⑤ 因为 x 是升序枚举的，第一次成立时把它记入 first 就得到最小值，最后输出 cnt 与 first。\n\n关于边界：d 取 0 时，像 10、30、100 这些数含 0 才能被统计，while (t > 0) 恰好能逐位看到中间的 0；x 本身从 1 开始，不会出现「0 有几位」的歧义。若答案不存在，first 保持初值 -1。\n\n复杂度：时间 O((R-L+1) × 位数)，约 6×10^5 次循环；空间 O(1)。\n\n易错点：① 忘记把 x 复制成 t，直接在 x 上做除法，导致外层循环步长被破坏而陷入死循环；② 用 while (t) 但没在命中后 break，虽然结果正确却多做无用功；③ 只判断含 d 或只判断被 3 整除，漏掉一个条件；④ 想用字符串 sprintf 再 strchr 查找，虽然可行但多了一次格式化的开销，也容易忘记边界；⑤ 最小值初始化为 0，导致无解时输出 0 而不是 -1；⑥ 用 x % 3 == 0 之前先做了 x /= 10，判断对象被改错。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    int l, r, d;\n    if (!(cin >> l >> r >> d))\n        return 0;\n\n    int cnt = 0, first = -1;\n\n    for (int x = l; x <= r; ++x) {\n        int t = x;\n        bool has = false;\n        while (t > 0) {\n            if (t % 10 == d) {\n                has = true;\n                break;\n            }\n            t /= 10;\n        }\n        if (has && x % 3 == 0) {\n            ++cnt;\n            if (first < 0)\n                first = x;\n        }\n    }\n\n    cout << cnt << '\\n' << first << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 for 枚举区间内的每个整数",
+          "用 while 与 % 10、/ 10 拆位判断是否含 d",
+          "用 bool 标记命中，再用 x % 3 判断整除"
+        ],
+        "analysis": "思路：与 C 版一致，外层 for 枚举 L 到 R，内层 while 拆位查是否含 d，命中后再检查能否被 3 整除，最后输出计数与最小值。\n\n关键步骤：① cin >> l >> r >> d；② for (int x = l; x <= r; ++x)；③ int t = x，bool has = false，while (t > 0) 中比较 t % 10 == d，命中就 has = true 并 break，否则 t /= 10；④ has && x % 3 == 0 时 ++cnt，并在 first < 0 时把 first 置为 x；⑤ 用 cout 输出两行。\n\n复杂度：时间 O((R-L+1) × 6)，空间 O(1)。\n\n易错点：① 把 t 声明在循环外，忘记每轮重新赋值为 x；② 用 char 保存 d 后与 int 比较，得到的是字符编码而不是数值；③ 忘记 break 虽然不影响正确性，但多做拆位；④ 用 if (has || x % 3 == 0) 把「且」写成「或」；⑤ 输出顺序颠倒，先输出最小值再输出个数；⑥ 用 endl 两次虽然正确，但 '\n' 更省。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef has_digit(x, d):\n    while x > 0:\n        if x % 10 == d:\n            return True\n        x //= 10\n    return False\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 3:\n        return\n\n    l = int(data[0])\n    r = int(data[1])\n    d = int(data[2])\n\n    cnt = 0\n    first = -1\n\n    for x in range(l, r + 1):\n        if has_digit(x, d) and x % 3 == 0:\n            cnt += 1\n            if first < 0:\n                first = x\n\n    print(cnt)\n    print(first)\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "把「是否含数字 d」封装成函数，用 // 与 % 拆位",
+          "用 range(l, r + 1) 枚举闭区间",
+          "用 first 记录满足条件的最小值，无解时为 -1"
+        ],
+        "analysis": "思路：把「含数字 d」抽成 has_digit 函数，主流程用 range(l, r + 1) 枚举闭区间，两个条件用 and 连接，命中就累加并记录第一个满足的数。函数拆开后逻辑更短，也方便单独验证拆位是否正确。\n\n关键步骤：① 读入三个记号并转 int；② has_digit 里用 while x > 0 循环，if x % 10 == d 返回 True，否则 x //= 10；③ 主循环里 if has_digit(x, d) and x % 3 == 0 时 cnt += 1，并在 first < 0 时记录 x；④ 分两行 print 输出。\n\n复杂度：时间 O((R-L+1) × 位数)，空间 O(1)。\n\n易错点：① 用 str(x) 配合 in 判断虽然简洁，但本题意在练习拆位，两种写法都要能说清；② 写成 range(l, r) 少枚举一个右端点；③ 在 has_digit 里改了外层变量 x，导致后续判断用错值；④ 把 and 写成 or；⑤ 无解时输出 0 而不是 -1；⑥ 用 x //= 10 之前先判断了整除，判断对象已被截断。"
+      }
+    }
+  },
+  {
+    "id": "基-113",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "简单贪心",
+      "找零",
+      "整数除法"
+    ],
+    "stem": "收银台有面值为 100、50、20、10、5、2、1 元的纸币与硬币，每种面值的数量都足够多。给定应付金额 amt，要求用尽可能少的张（枚）数凑出这个金额，输出最少的数量，并列出每种面值实际用了多少张。\n\n策略是从大面值开始贪心：面值降序排列，对每个面值都尽量多地使用它，再拿余额去处理更小的面值。例如 188 元先用 1 张 100 元，余 88 元；再用 1 张 50 元，余 38 元；依此类推，直到余额为 0。\n\n**输入格式：** 一行一个整数 amt（0 ≤ amt ≤ 10000000），表示应付金额。\n\n**输出格式：** 两行。第一行为最少的总张（枚）数。第二行按面值从大到小输出每一种实际使用的面值，格式为「面值:张数」，相邻两项用一个空格分隔；若金额为 0，第二行输出 `none`。\n\n**输入样例：**\n```text\n188\n```\n**输出样例：**\n```text\n7\n100:1 50:1 20:1 10:1 5:1 2:1 1:1\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    static const int coin[7] = {100, 50, 20, 10, 5, 2, 1};\n    int amt, i;\n    int used[7];\n    int total = 0;\n\n    if (scanf(\"%d\", &amt) != 1)\n        return 0;\n\n    for (i = 0; i < 7; i++) {\n        used[i] = amt / coin[i];             /* 这一档最多能用几张 */\n        amt -= used[i] * coin[i];            /* 余额一定小于当前面值 */\n        total += used[i];\n    }\n\n    printf(\"%d\\n\", total);\n    if (total == 0) {\n        printf(\"none\\n\");\n        return 0;\n    }\n    {\n        int first = 1;\n\n        for (i = 0; i < 7; i++) {\n            if (used[i] > 0) {\n                if (!first)\n                    printf(\" \");\n                printf(\"%d:%d\", coin[i], used[i]);\n                first = 0;\n            }\n        }\n        printf(\"\\n\");\n    }\n    return 0;\n}\n",
+    "points": [
+      "把面值放在降序数组里，从大到小依次处理",
+      "用 amt / coin[i] 求该面值的张数，用取余（或相减）更新余额",
+      "累加各面值张数得到最少总张数",
+      "按顺序输出非零面值，金额为 0 时输出 none"
+    ],
+    "analysis": "思路：这是最典型的「简单贪心」——每一步都尽量使用当前最大的面值。直觉上，用大面值能更快把余额降下来，所以面值降序、能塞多少塞多少。对 100、50、20、10、5、2、1 这套面值，贪心确实是正确的：任意面值都不小于比它小的所有面值之和的两倍以上，不会出现「为了凑零头而放弃大面值更划算」的情况，例如 6 元用 5 + 1 是 2 张，不会比 2 + 2 + 2 的 3 张更差。\n\n关键步骤：① 把面值放进降序数组 coin[7]；② 对每个面值计算 used[i] = amt / coin[i]，即这一档最多能用几张；③ 用 amt -= used[i] * coin[i] 更新余额（也可以用 amt %= coin[i]，两者等价），保证余额始终小于当前面值；④ 每档用张数累加到 total；⑤ 输出 total，再按原顺序输出 used[i] > 0 的档位，第一项前不加空格；⑥ 金额为 0 时 total 为 0，按约定第二行输出 none。\n\n为什么不能用「先用大面值但允许跳过」的搜索：本题面值体系是标准的人民币面值，贪心选择性质成立，不需要回溯或动态规划；如果面值换成任意集合（例如 1、3、4 求 6），贪心就会出错，那时才需要 DP。\n\n复杂度：时间 O(7)，与金额大小无关；空间 O(1)。\n\n易错点：① 面值数组写成升序，贪心方向反了，188 会用一堆 1 元；② 忘记更新余额，每档都用原始金额去除，张数总和爆炸；③ 用 amt -= used[i] 而不是 used[i] * coin[i]，余额只减去张数；④ 金额为 0 时输出空行而不是 none；⑤ 输出时把张数为 0 的档位也打印出来，与样例不符；⑥ 用 double 参与除法，大金额时出现精度问题；⑦ 把 total 声明成 int 却在金额接近 10^7 时仍然安全（最多几十张），但用 long long 更保险。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    int amt;\n    if (!(cin >> amt))\n        return 0;\n\n    const int coin[7] = {100, 50, 20, 10, 5, 2, 1};\n    int used[7];\n    int total = 0;\n\n    for (int i = 0; i < 7; ++i) {\n        used[i] = amt / coin[i];\n        amt -= used[i] * coin[i];\n        total += used[i];\n    }\n\n    cout << total << '\\n';\n    if (total == 0) {\n        cout << \"none\\n\";\n        return 0;\n    }\n\n    vector<int> idx;\n    for (int i = 0; i < 7; ++i)\n        if (used[i] > 0)\n            idx.push_back(i);\n\n    for (size_t i = 0; i < idx.size(); ++i) {\n        if (i > 0)\n            cout << ' ';\n        cout << coin[idx[i]] << ':' << used[idx[i]];\n    }\n    cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用降序面值数组，从大到小依次贪心",
+          "用 / 求张数、用减法更新余额",
+          "只输出张数大于 0 的档位，金额为 0 输出 none"
+        ],
+        "analysis": "思路：与 C 版一致，用 const int 数组保存降序面值，逐档求商、更新余额、累加张数，最后只输出非零档位。\n\n关键步骤：① cin >> amt；② for 循环 7 个面值，used[i] = amt / coin[i]，amt -= used[i] * coin[i]，total += used[i]；③ 先输出 total；④ total 为 0 时输出 none 并结束；⑤ 把 used[i] > 0 的下标记进 vector，再按顺序输出「面值:张数」，项间一个空格。\n\n为什么这里可以用贪心：面值集合是 100、50、20、10、5、2、1，任意一种面值都能用更小的面值凑出来，而且大面值始终比「比它小的所有面值之和」更有优势，因此「尽量先用大面值」不会错失最优解。反过来，如果面值是任意给定的（例如 1、3、4 求 6），先用 4 会得到 4 + 1 + 1 共 3 张，而最优是 3 + 3 共 2 张，贪心就失效了，那时必须用动态规划。\n\n复杂度：时间 O(7)，空间 O(1)。\n\n易错点：① 把面值数组写成升序导致贪心失败；② 用 while (amt >= coin[i]) 逐张减，虽然正确但循环次数等于张数，金额大时效率差；③ 忘记 total 为 0 的特殊输出；④ 输出时用逗号分隔；⑤ 把 coin 数组声明在循环内，每次都重新初始化虽然无害但没必要；⑥ 用 int 保存 total 时考虑的是张数而不是金额，本题不会溢出。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    amt = int(data[0])\n    coins = [100, 50, 20, 10, 5, 2, 1]\n\n    used = []\n    total = 0\n    for c in coins:\n        k = amt // c\n        used.append((c, k))\n        amt -= k * c\n        total += k\n\n    print(total)\n    if total == 0:\n        print(\"none\")\n        return\n\n    parts = [f\"{c}:{k}\" for c, k in used if k > 0]\n    print(\" \".join(parts))\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用降序面值列表逐个贪心",
+          "用 // 求张数、用减法更新余额",
+          "用列表推导过滤零张数，再用 join 输出一行"
+        ],
+        "analysis": "思路：用降序列表 coins 依次贪心，每一档用 // 求出张数，把 (面值, 张数) 记进列表，再用减法更新余额；最后过滤掉张数为 0 的档位拼接输出。\n\n关键步骤：① 读入金额；② for c in coins 中 k = amt // c，used.append((c, k))，amt -= k * c，total += k；③ print(total)；④ total 为 0 时 print(\"none\") 并 return；⑤ 用列表推导 [f\"{c}:{k}\" for c, k in used if k > 0] 生成片段，再 \" \".join(...) 输出。\n\n复杂度：时间 O(1)（固定 7 个面值），空间 O(1)。\n\n易错点：① 用 / 得到浮点张数，后续 // 与减法都会出错；② 用 amt = amt % c 之后又减了一次，余额被扣两遍；③ 忘记把 used 与 coins 一一对应，输出面值时错位；④ 金额为 0 时输出空行而不是 none；⑤ 用 join 之前没有把数字转成字符串，抛 TypeError；⑥ 面值列表顺序写反，贪心结果不是最少张数。"
+      }
+    }
+  },
+  {
+    "id": "数-91",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "冒泡排序",
+      "交换计数",
+      "提前退出"
+    ],
+    "stem": "读入 n 个整数，用冒泡排序把它们排成升序，输出排序后的数组，并报告排序过程中一共执行了多少次「交换相邻两个元素」的操作。\n\n冒泡排序的做法是：第 i 轮（i 从 0 开始）从左往右比较相邻的 a[j] 与 a[j+1]，只要前者大于后者就交换它们，每轮结束后末尾 i+1 个元素已经就位，所以内层只比较到 n-1-i；如果某一轮一次交换都没有发生，说明已经有序，可以提前结束。每执行一次 swap 就让计数器加一。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数（-10000 ≤ 每个数 ≤ 10000），相邻两个数之间用一个空格分隔。\n\n**输出格式：** 第一行 n 个整数，为升序排列后的数组，相邻两个数之间用一个空格分隔；第二行形如 `swaps: k`，其中 k 为交换次数。\n\n**输入样例：**\n```text\n5\n5 1 4 2 8\n```\n**输出样例：**\n```text\n1 2 4 5 8\nswaps: 4\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int n, i, j;\n    int a[1005];\n    long long swaps = 0;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    for (i = 0; i < n - 1; i++) {\n        int swapped = 0;\n\n        for (j = 0; j < n - 1 - i; j++) {      /* 末尾 i+1 个已经就位 */\n            if (a[j] > a[j + 1]) {\n                int t = a[j];\n\n                a[j] = a[j + 1];\n                a[j + 1] = t;\n                swaps++;                       /* 每交换一次计一次 */\n                swapped = 1;\n            }\n        }\n        if (!swapped)\n            break;                             /* 本轮无交换说明已经有序 */\n    }\n\n    for (i = 0; i < n; i++) {\n        if (i > 0)\n            printf(\" \");\n        printf(\"%d\", a[i]);\n    }\n    printf(\"\\nswaps: %lld\\n\", swaps);\n    return 0;\n}\n",
+    "points": [
+      "用双重循环实现冒泡排序，内层上界为 n-1-i",
+      "交换必须借助临时变量，不能写成 a[j] = a[j+1]; a[j+1] = a[j]",
+      "每执行一次交换就让计数器加一，并用 swapped 标记本轮是否交换过",
+      "本轮无交换时 break 提前结束，最后输出数组与交换次数"
+    ],
+    "analysis": "思路：冒泡排序通过反复比较相邻元素并交换逆序对，把较大的元素一步步「冒」到末尾。题目额外要求统计交换次数，这个数字在排序算法里很有意义：冒泡排序的交换次数恰好等于数组的逆序对个数，而比较次数取决于数据分布，因此计数只能加在真正执行交换的地方。\n\n关键步骤：① 读入 n 与数组；② 外层 i 从 0 到 n-2，表示已经有多少个元素被排到末尾；③ 内层 j 从 0 到 n-2-i，比较 a[j] 与 a[j+1]，若 a[j] > a[j+1] 就交换并把 swaps 加一、把 swapped 置 1；④ 内层结束后若 swapped 仍为 0，说明本轮没有任何逆序对，数组已经有序，直接 break，这就是提前退出优化；⑤ 输出数组，再输出 swaps。\n\n复杂度：最好情况（已经有序）比较 n-1 次、交换 0 次，O(n)；最坏与平均 O(n²)，n = 1000 时约 5×10^5 次比较，完全够用；空间 O(1)。\n\n关于正确性：内层上界必须是 n-1-i 而不是 n-1，否则每轮都会把已经就位的最大元素再比较一遍，虽然结果仍然正确，但比较次数和交换计数都会被多做无用功；严格来说交换次数不变，但会白跑循环。另外必须用临时变量完成交换，直接写 a[j] = a[j+1]; a[j+1] = a[j]; 会让两个元素变成同一个值。\n\n易错点：① 内层写 j <= n-1-i 造成越界访问 a[n]；② 循环条件写成 j < n-i 同样越界；③ 交换写错导致数据被覆盖；④ 把计数写在比较语句里，统计的是比较次数而不是交换次数；⑤ 提前退出时忘了先把这一轮的结果输出；⑥ 用 %d 打印 long long 类型的 swaps，格式不匹配。",
+    "module": "数组",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    int n;\n    if (!(cin >> n))\n        return 0;\n\n    vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        cin >> a[i];\n\n    long long swaps = 0;\n    for (int i = 0; i + 1 < n; ++i) {\n        bool swapped = false;\n        for (int j = 0; j + 1 < n - i; ++j) {\n            if (a[j] > a[j + 1]) {\n                swap(a[j], a[j + 1]);\n                ++swaps;\n                swapped = true;\n            }\n        }\n        if (!swapped)\n            break;\n    }\n\n    for (int i = 0; i < n; ++i) {\n        if (i > 0)\n            cout << ' ';\n        cout << a[i];\n    }\n    cout << \"\\nswaps: \" << swaps << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 vector 存数组，双重循环完成冒泡排序",
+          "用 std::swap 交换相邻元素并计数",
+          "用 bool 标记本轮是否交换，实现提前退出"
+        ],
+        "analysis": "思路：与 C 版相同，只是把数组换成 vector、把手工三步交换换成 std::swap。冒泡的轮数与内层上界保持一致：第 i 轮之后末尾 i+1 个元素就位。\n\n关键步骤：① cin >> n，vector<int> a(n) 后逐个读入；② 外层 i 从 0 开始，条件写成 i + 1 < n 避免 n = 1 时出现负数上界；③ 内层 j 遍历 0 到 n-2-i，a[j] > a[j+1] 时调用 swap 并 ++swaps；④ 本轮一次没换就 break；⑤ 输出数组与 \"swaps: k\"。\n\n复杂度：最坏 O(n²)，最好 O(n)（已有序且提前退出），空间 O(n)。\n\n易错点：① std::swap 需要 <utility>（iostream 通常已间接包含，但规范写法应显式包含）；② 内层上界写成 n - 1 - i 之外的形式导致越界；③ 用 vector<int> a; 而没有先 resize 就 a[i] 读入，越界写入；④ 提前退出条件写成 if (swapped) break，逻辑正好相反；⑤ 输出时数组与 \"swaps\" 挤在同一行；⑥ 用 int 存交换次数虽然本题够用，但养成 long long 的习惯更安全。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    a = [int(v) for v in data[1:1 + n]]\n\n    swaps = 0\n    for i in range(n - 1):\n        swapped = False\n        for j in range(n - 1 - i):\n            if a[j] > a[j + 1]:\n                a[j], a[j + 1] = a[j + 1], a[j]\n                swaps += 1\n                swapped = True\n        if not swapped:\n            break\n\n    print(\" \".join(map(str, a)))\n    print(f\"swaps: {swaps}\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 range(n - 1 - i) 控制每轮的比较范围",
+          "用同时赋值 a[j], a[j+1] = a[j+1], a[j] 完成交换",
+          "用 swapped 标记实现提前退出，输出数组与交换次数"
+        ],
+        "analysis": "思路：与 C 版一致，用嵌套 for 完成冒泡，Python 的元组同时赋值天然避免了「临时变量」的坑，交换一行就能写完。\n\n关键步骤：① 读入 n 与前 n 个整数；② 外层 for i in range(n - 1)，内层 for j in range(n - 1 - i)；③ if a[j] > a[j + 1] 时执行 a[j], a[j + 1] = a[j + 1], a[j] 并 swaps += 1、swapped = True；④ 本轮没交换就 break；⑤ 用 join 输出数组，再输出 f\"swaps: {swaps}\"。\n\n复杂度：最坏 O(n²)，最好 O(n)，空间 O(n)。\n\n易错点：① 写成 a[j] = a[j + 1]; a[j + 1] = a[j] 把两个元素变成同一个值；② 内层范围写成 range(n - 1) 不随 i 收缩，多做比较；③ 忘记 range 上界是开区间，写成 range(n - i) 越界访问 a[n]；④ 提前退出的条件写成 if swapped: break，逻辑反了；⑤ 输出数组时忘了 map(str, ...) 而直接 join 整数列表，抛 TypeError；⑥ 用 for x in data 遍历时把 n 也算进了数组，长度错位。"
+      }
+    }
+  },
+  {
+    "id": "数-92",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "二分查找",
+      "重复元素",
+      "下界"
+    ],
+    "stem": "给定一个按非递减顺序排列的整数数组 a[1..n] 和 q 次查询，每次查询给出一个整数 x，要求用二分查找回答：x 在数组中第一次出现的位置（下标从 1 开始）；如果 x 不存在，输出 -1。\n\n普通的二分在找到等于 x 的位置就立刻返回，遇到重复元素时可能返回中间那一个，未必是第一次出现。正确做法是求「下界」：让查找区间保持左闭右开 [lo, hi)，当 a[mid] >= x 时把 hi 收缩到 mid（而不是 mid - 1），当 a[mid] < x 时把 lo 移到 mid + 1；循环结束时 lo 就是第一个不小于 x 的位置，再检查 a[lo] 是否等于 x。每次查询必须 O(log n)，不能线性扫描。\n\n**输入格式：** 第一行两个整数 n 和 q（1 ≤ n ≤ 100000，1 ≤ q ≤ 100000）；第二行 n 个非递减排列的整数（-10^9 ≤ 每个数 ≤ 10^9）；第三行 q 个整数，为依次要查询的 x，相邻两个数之间用一个空格分隔。\n\n**输出格式：** q 行，每行一个整数：x 第一次出现的下标（1 开始），不存在时输出 -1。\n\n**输入样例：**\n```text\n6 3\n1 2 2 2 5 9\n2 3 9\n```\n**输出样例：**\n```text\n2\n-1\n6\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    static int a[100005];\n    int n, q, i;\n\n    if (scanf(\"%d %d\", &n, &q) != 2)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    for (i = 0; i < q; i++) {\n        int x, lo = 0, hi = n;   /* 查找区间 [lo, hi) */\n\n        if (scanf(\"%d\", &x) != 1)\n            return 0;\n        while (lo < hi) {\n            int mid = lo + (hi - lo) / 2;\n\n            if (a[mid] < x)\n                lo = mid + 1;    /* 答案一定在 mid 右边 */\n            else\n                hi = mid;        /* a[mid] >= x，mid 也可能是答案 */\n        }\n        if (lo < n && a[lo] == x)\n            printf(\"%d\\n\", lo + 1);\n        else\n            printf(\"-1\\n\");\n    }\n    return 0;\n}\n",
+    "points": [
+      "用左闭右开区间 [lo, hi) 作为二分查找的循环不变量",
+      "a[mid] < x 时 lo = mid + 1，否则 hi = mid（保留 mid 作为候选）",
+      "循环结束后检查 lo < n 且 a[lo] == x，据此输出 lo + 1 或 -1",
+      "每次查询 O(log n)，没有退化成线性扫描"
+    ],
+    "analysis": "思路：本题是标准二分查找的「求下界」版本。因为数组可能含重复元素，一旦在中间命中就返回，返回的只是某一个 x 的位置，而题目要的是第一次出现。把比较条件从「等于」改成「不小于」，就能把查找变成一个单调判定问题：位置 p 满足 a[p] >= x 具有单调性（左边全不满足、右边全满足），二分找出第一个满足的位置即为下界。\n\n关键步骤：① 读入 n、q 与整个数组；② 每次查询设 lo = 0、hi = n，区间为左闭右开，保证初始时区间覆盖全部候选；③ 循环条件 lo < hi，mid 取 lo + (hi - lo) / 2 防止 (lo + hi) 溢出；④ 若 a[mid] < x，说明 mid 及其左边都不可能等于 x，lo = mid + 1；否则 a[mid] >= x，mid 本身可能是第一个等于 x 的位置，因此只能 hi = mid，不能写 mid - 1；⑤ 循环结束时 lo == hi，它是第一个不小于 x 的下标，最后必须验证 lo < n 且 a[lo] == x，否则说明 x 比所有元素都大或根本没出现。\n\n为什么不能提前返回：若在 a[mid] == x 时直接输出 mid + 1，样例中查询 2 时 mid 可能落在下标 3 或 4（0 基 2 或 3），输出 3 或 4，而正确答案是 2。收缩到 hi = mid 才能一路把答案压到最左端。\n\n复杂度：单次查询 O(log n)，q 次共 O(q log n)，n、q 均为 10^5 时约 1.7×10^6 次比较；空间 O(n)。\n\n易错点：① a[mid] >= x 时写成 hi = mid - 1，把可能的答案排除掉；② 循环条件写成 lo <= hi 却在内部用半开区间的更新方式，造成死循环或越界；③ 忘记最后的相等校验，查询一个不存在的值时会输出「插入位置」而不是 -1；④ mid 用 (lo + hi) / 2 在 lo、hi 接近 2^31 时溢出（本题规模安全，但习惯要改）；⑤ lo 从 1 开始却仍用 0 基数组访问，整体错一位；⑥ 用线性扫描虽然能过小数据，但不符合题目对复杂度的要求。",
+    "module": "数组",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, q;\n    if (!(cin >> n >> q))\n        return 0;\n\n    vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        cin >> a[i];\n\n    for (int k = 0; k < q; ++k) {\n        int x;\n        cin >> x;\n\n        int lo = 0, hi = n;          /* [lo, hi) */\n        while (lo < hi) {\n            int mid = lo + (hi - lo) / 2;\n            if (a[mid] < x)\n                lo = mid + 1;\n            else\n                hi = mid;\n        }\n\n        if (lo < n && a[lo] == x)\n            cout << lo + 1 << '\\n';\n        else\n            cout << -1 << '\\n';\n    }\n    return 0;\n}\n",
+        "points": [
+          "用 vector 保存非递减数组，并按 10 万级输入开启同步优化",
+          "维护左闭右开区间求下界，a[mid] >= x 时 hi = mid",
+          "查找结束后校验相等性再输出下标或 -1"
+        ],
+        "analysis": "思路：与 C 版完全一致，用 vector<int> 存数组，查询时维护左闭右开区间求下界；另外加上 ios::sync_with_stdio(false) 与 cin.tie(nullptr) 来应对 10 万级输入。\n\n关键步骤：① 关闭同步加速输入；② 读入 n、q 与数组；③ 每次查询 lo = 0、hi = n，while (lo < hi) 中 mid = lo + (hi - lo) / 2，a[mid] < x 时 lo = mid + 1，否则 hi = mid；④ 循环结束检查 lo < n && a[lo] == x；⑤ 输出 lo + 1 或 -1。\n\n复杂度：单次 O(log n)，总计 O(q log n)；空间 O(n)。\n\n易错点：① 只用 cin 不开同步优化，10 万次查询可能偏慢；② 把 hi = mid 写成 hi = mid - 1；③ 用 std::lower_bound 当然可以，但要记得返回的是迭代器，需要减去 a.begin() 再判断是否等于 a.end()；④ 忘记校验 a[lo] == x，输出插入位置；⑤ 在循环里用 endl 刷新缓冲区，输出量大时明显变慢。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef lower_bound(a, x):\n    lo, hi = 0, len(a)\n    while lo < hi:\n        mid = (lo + hi) // 2\n        if a[mid] < x:\n            lo = mid + 1\n        else:\n            hi = mid\n    return lo\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    q = int(data[1])\n    a = [int(v) for v in data[2:2 + n]]\n    queries = data[2 + n:2 + n + q]\n\n    out = []\n    for token in queries:\n        x = int(token)\n        pos = lower_bound(a, x)\n        if pos < n and a[pos] == x:\n            out.append(str(pos + 1))\n        else:\n            out.append(\"-1\")\n\n    sys.stdout.write(\"\\n\".join(out) + \"\\n\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "自己实现 lower_bound，用左闭右开区间收缩",
+          "返回下界后再校验 a[pos] == x",
+          "把 q 行结果攒进列表一次性输出，避免多次 IO"
+        ],
+        "analysis": "思路：把下界查找封装成 lower_bound 函数，每次查询调用后校验 a[pos] == x 再决定输出下标还是 -1；结果先攒进列表最后一次性写出，避免 10 万次 print 的开销。\n\n关键步骤：① 一次性读入全部记号，按位置切出 n、数组和 q 个查询；② lower_bound 用 lo = 0、hi = len(a)，while lo < hi，mid = (lo + hi) // 2，a[mid] < x 时 lo = mid + 1，否则 hi = mid；③ 返回 lo 后判断 pos < n and a[pos] == x；④ 用 \"\n\".join(out) 一次输出。\n\n复杂度：单次查询 O(log n)，总 O(q log n)；空间 O(n + q)。\n\n易错点：① 用 a.index(x) 虽然能拿到第一次出现的下标，但复杂度是 O(n)，不符合要求；② 用 bisect_left 也可以，但要记得它返回的是插入位置，仍需校验相等；③ mid 写成 (lo + hi + 1) // 2 会破坏下界收缩的收敛性，可能死循环；④ 把 hi 初值写成 n - 1 而更新方式仍按半开区间，最后一个元素查不到；⑤ 输出用 print 逐行，10 万次时明显变慢；⑥ 忘记 int(token) 直接比较字符串和整数，抛 TypeError。"
+      }
+    }
+  },
+  {
+    "id": "数-93",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "双指针",
+      "有序数组",
+      "两数之和"
+    ],
+    "stem": "给定一个严格递增的整数数组 a[1..n] 和一个目标值 t，判断能否找到两个不同的下标 i、j（i < j）使得 a[i] + a[j] = t。若能找到，输出其中 i 最小的那一组；若找不到，输出 `0 0`。\n\n数组已经有序，可以用双指针：左指针指向第一个元素，右指针指向最后一个元素，比较两者之和与 t——和偏小就把左指针右移一位（让和变大），和偏大就把右指针左移一位（让和变小），相等即找到答案。每次移动都排除掉一个不可能的候选，因此只需 O(n) 时间。\n\n**输入格式：** 第一行两个整数 n 和 t（1 ≤ n ≤ 100000，-2×10^9 ≤ t ≤ 2×10^9）；第二行 n 个严格递增的整数（-10^9 ≤ 每个数 ≤ 10^9），相邻两个数之间用一个空格分隔。\n\n**输出格式：** 一行两个整数 i 和 j（1 ≤ i < j ≤ n），为满足条件且 i 最小的下标对，中间用一个空格分隔；不存在时输出 `0 0`。\n\n**输入样例：**\n```text\n6 9\n1 2 4 5 7 11\n```\n**输出样例：**\n```text\n2 5\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    static int a[100005];\n    int n, i;\n    long long t;\n\n    if (scanf(\"%d %lld\", &n, &t) != 2)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    {\n        int left = 0, right = n - 1;\n        int found = 0;\n\n        while (left < right) {\n            long long s = (long long)a[left] + a[right];\n\n            if (s == t) {\n                printf(\"%d %d\\n\", left + 1, right + 1);\n                found = 1;\n                break;\n            } else if (s < t) {\n                left++;          /* 和太小，左指针右移让和变大 */\n            } else {\n                right--;         /* 和太大，右指针左移让和变小 */\n            }\n        }\n        if (!found)\n            printf(\"0 0\\n\");\n    }\n    return 0;\n}\n",
+    "points": [
+      "用 left、right 两个指针分别从数组两端向中间逼近",
+      "用 long long 保存 a[left] + a[right]，避免两数相加溢出",
+      "和小于 t 时左指针右移、大于 t 时右指针左移、相等即输出 1 基下标",
+      "循环结束后仍未找到时输出 0 0"
+    ],
+    "analysis": "思路：数组有序是本题的关键。设当前考察 a[left] 与 a[right]（left < right）。若两者之和小于 t，由于 a[right] 已经是剩余区间里最大的元素，a[left] 与区间内任何元素相加都不会超过它，所以 a[left] 不可能再和谁配成 t，可以安全地把 left 右移；反之若和大于 t，a[right] 与区间内任何元素相加都不小于它，right 可以左移。每一步都排除一个元素，最多移动 n 次，因此是 O(n)。\n\n关键步骤：① 读入 n、t 与数组；② left = 0、right = n - 1；③ 循环条件 left < right，保证两个下标不同；④ 用 long long 求和（两个 10^9 相加会超过 int 的 2.1×10^9 上限）；⑤ 和等于 t 时输出 left + 1 与 right + 1 并结束；⑥ 全部走完没有命中就输出 0 0。\n\n为什么结果一定是 i 最小的那一组：双指针只会「左指针增大」或「右指针减小」，它不会跳过任何可能的解。设真正的最优解为 (i0, j0) 且 i0 最小，当 left 走到 i0 时，right 一定还停在 j0（若 right 已经小于 j0，说明之前出现过 a[left] + a[j0] > t，但 a[left] ≤ a[i0]，与 a[i0] + a[j0] = t 矛盾），于是这一对会被恰好命中。\n\n复杂度：时间 O(n)，两个指针总共移动不超过 n 次；空间 O(n)。\n\n易错点：① 用 int 求和，两个 10^9 相加溢出成负数，判断结果全错；② 循环写成 left <= right，导致同一个元素被用两次，t 为偶数时会输出 i 等于 j 的假答案；③ 和偏小时移动了 right，方向反了，正确答案被跳过；④ 输出 0 基下标，与题目要求的 1 基不一致；⑤ 找到后没有 break，继续移动指针又输出了别的答案；⑥ 先排序再找下标，破坏了原始下标顺序（本题数组已有序，不需要排序）。",
+    "module": "数组",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    long long t;\n    if (!(cin >> n >> t))\n        return 0;\n\n    vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        cin >> a[i];\n\n    int left = 0, right = n - 1;\n    while (left < right) {\n        long long s = static_cast<long long>(a[left]) + a[right];\n        if (s == t) {\n            cout << left + 1 << ' ' << right + 1 << '\\n';\n            return 0;\n        }\n        if (s < t)\n            ++left;\n        else\n            --right;\n    }\n\n    cout << 0 << ' ' << 0 << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 long long 接收 t，并在求和时把至少一个操作数转成 long long",
+          "双指针从两端逼近，和偏小右移左指针、偏大左移右指针",
+          "找到即输出并提前返回，循环结束仍无解输出 0 0"
+        ],
+        "analysis": "思路：与 C 版一致，用两个指针从两端向中间夹逼；关键是用 static_cast<long long> 保证求和不会溢出。C++ 中 n 最大 10 万，加同步优化后读入很快。\n\n关键步骤：① 关闭同步加速输入，读入 n 与 long long 类型的 t；② vector<int> a(n) 读入数组；③ left = 0、right = n - 1，while (left < right)；④ 用 long long s 求和后与 t 比较，相等就输出 left + 1、right + 1 并 return 0；⑤ 偏小 ++left，偏大 --right；⑥ 循环结束输出 0 0。\n\n复杂度：时间 O(n)，空间 O(n)。\n\n易错点：① 用 int 求和溢出；② 循环条件写成 left <= right；③ 把 vector 长度写成 n - 1 导致最后一个元素缺失；④ 找到后忘记 return，继续循环又输出一组；⑤ 输出用 0 基下标；⑥ 误以为要先排序，实际数组已有序，排序反而会把下标打乱。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    n = int(data[0])\n    t = int(data[1])\n    a = [int(v) for v in data[2:2 + n]]\n\n    left, right = 0, n - 1\n    while left < right:\n        s = a[left] + a[right]\n        if s == t:\n            print(left + 1, right + 1)\n            return\n        if s < t:\n            left += 1\n        else:\n            right -= 1\n\n    print(0, 0)\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 left、right 从两端向中间逼近",
+          "和偏小 left += 1，和偏大 right -= 1",
+          "命中就输出并 return，否则最后输出 0 0"
+        ],
+        "analysis": "思路：与 C 版一致，Python 的整数是任意精度，不存在溢出问题，因此比 C/C++ 少一个坑；但指针移动的方向、循环条件、1 基下标的换算仍然要写对。\n\n关键步骤：① 一次性读入全部记号，取 n、t 与前 n 个数；② left = 0、right = n - 1；③ while left < right 中计算 s = a[left] + a[right]，相等时 print(left + 1, right + 1) 并 return；④ s < t 时 left += 1，否则 right -= 1；⑤ 循环正常结束说明无解，print(0, 0)。\n\n复杂度：时间 O(n)，空间 O(n)。\n\n易错点：① 用 for 循环嵌套检查所有组合，O(n²) 超时；② 循环写成 while left <= right，同一元素被用两次；③ 和偏小时把 right 减一，方向反了；④ 输出忘记加 1，得到 0 基下标；⑤ 找到后没有 return，处理继续往下走输出了 0 0；⑥ 用 sys.stdin.readline() 只读一行，数组跨行时读不全。"
+      }
+    }
+  },
+  {
+    "id": "数-94",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "前缀和",
+      "区间查询",
+      "长整型"
+    ],
+    "stem": "给定一个长度为 n 的整数序列 a[1..n] 和 q 次查询，每次查询给出两个下标 l、r（1 ≤ l ≤ r ≤ n），要求输出 a[l] + a[l+1] + … + a[r] 的和。\n\n如果每次都从 l 循环加到 r，最坏要做 q×n 次加法，10 万级数据会超时。正确做法是预处理前缀和：定义 S[0] = 0，S[i] = a[1] + … + a[i]，于是区间和可以直接写成 S[r] - S[l-1]，每次查询 O(1)。注意单个元素可达 10^9、个数可达 10^5，总和会超过 32 位 int 的范围，S 必须用 64 位整型。\n\n**输入格式：** 第一行两个整数 n 和 q（1 ≤ n ≤ 100000，1 ≤ q ≤ 100000）；第二行 n 个整数（-10^9 ≤ 每个数 ≤ 10^9），相邻两个数之间用一个空格分隔；接下来 q 行，每行两个整数 l、r（1 ≤ l ≤ r ≤ n），表示一次查询。\n\n**输出格式：** q 行，每行一个整数，为对应区间的元素之和。\n\n**输入样例：**\n```text\n5 3\n3 -1 4 1 -5\n1 3\n2 5\n3 3\n```\n**输出样例：**\n```text\n6\n-1\n4\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    static long long pre[100005];\n    int n, q, i;\n\n    if (scanf(\"%d %d\", &n, &q) != 2)\n        return 0;\n\n    pre[0] = 0;\n    for (i = 1; i <= n; i++) {\n        long long x;\n\n        if (scanf(\"%lld\", &x) != 1)\n            return 0;\n        pre[i] = pre[i - 1] + x;\n    }\n\n    for (i = 0; i < q; i++) {\n        int l, r;\n        if (scanf(\"%d %d\", &l, &r) != 2)\n            return 0;\n        printf(\"%lld\\n\", pre[r] - pre[l - 1]);\n    }\n    return 0;\n}\n",
+    "points": [
+      "定义 pre[0] = 0，用 pre[i] = pre[i-1] + a[i] 预处理前缀和",
+      "用 pre[r] - pre[l-1] 在 O(1) 时间内得到区间和",
+      "前缀和数组用 long long，避免 10^5 个 10^9 相加时溢出",
+      "读入与输出格式正确，q 次查询各占一行"
+    ],
+    "analysis": "思路：区间和的经典预处理。直接按定义每次循环累加，单次查询最坏 O(n)，q 次查询就是 O(nq)=10^10 次加法，必然超时；而前缀和把「区间和」写成「两个前缀和之差」，一次预处理 O(n)、每次查询 O(1)，总计 O(n+q)。\n\n关键步骤：① 把 pre[0] 置 0，作为空区间的和，这样 l = 1 时 pre[l-1] 也合法；② 循环 i 从 1 到 n，读入 a[i] 后执行 pre[i] = pre[i-1] + a[i]，读入即预处理，不必另开数组；③ 每次查询读入 l、r，直接输出 pre[r] - pre[l-1]；④ 三处都用 long long：pre 数组、读入用的临时变量 x、以及输出格式 %lld。\n\n为什么必须用 64 位：单个 |a[i]| 可达 10^9，n 可达 10^5，最坏总和约 10^14，而 32 位 int 上限约 2.1×10^9，完全装不下；更隐蔽的是，即使 pre[i] 用 long long，读入时若用 %d 读进 int 再相加，单个值仍可能被正确读入，但累加过程一旦用 int 就会溢出。题目里存在负数，所以「区间和」可能为负，输出不能加任何额外判断。\n\n边界：l = 1 时用到 pre[0]，必须初始化为 0；l = r 时 pre[r] - pre[r-1] 恰好等于 a[r]；n 为 1 时整个流程依然成立。\n\n复杂度：时间 O(n + q)，空间 O(n)。\n\n易错点：① 用 int 存前缀和，10^14 级的数据直接溢出成随机值；② 忘记 pre[0] = 0，l = 1 时读到未初始化的内存；③ 下标写成 pre[r] - pre[l]，把 a[l] 也减掉了；④ 查询下标本应从 1 开始，却按 0 基处理，导致整体错位；⑤ 每轮查询里重新循环累加，退化成 O(nq)；⑥ 输出用 %d 打印 long long，格式不匹配。",
+    "module": "数组",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n, q;\n    if (!(cin >> n >> q))\n        return 0;\n\n    vector<long long> pre(n + 1, 0);\n    for (int i = 1; i <= n; ++i) {\n        long long x;\n        cin >> x;\n        pre[i] = pre[i - 1] + x;\n    }\n\n    while (q--) {\n        int l, r;\n        cin >> l >> r;\n        cout << pre[r] - pre[l - 1] << '\\n';\n    }\n    return 0;\n}\n",
+        "points": [
+          "用 vector<long long> 存前缀和，长度 n+1 且 pre[0] = 0",
+          "边读入边累加，读入即预处理",
+          "查询时输出 pre[r] - pre[l-1]"
+        ],
+        "analysis": "思路：与 C 版一致，用 vector<long long> 保存前缀和，边读边累加，查询时两个前缀和相减。\n\n关键步骤：① 关闭同步加速；② 读入 n、q，声明 vector<long long> pre(n + 1, 0)，第 0 项自动为 0；③ for i 从 1 到 n 读入 long long 的 x 并执行 pre[i] = pre[i-1] + x；④ while (q--) 读入 l、r 并输出 pre[r] - pre[l-1]；⑤ 用 '\\n' 而不是 endl 避免频繁刷新。\n\n为什么 pre 要开 n + 1 个位置：题目下标从 1 开始，pre[i] 表示前 i 个元素之和，于是 pre[0] 必须存在并等于 0，l = 1 时 pre[l-1] 才合法；如果只开 n 个位置，pre[n] 就会越界，而它恰好是「整个数组的和」这种情况要用的。另一个容易忽略的点是 vector 的初始化：写成 vector<long long> pre(n + 1); 虽然元素会被值初始化为 0，但显式写出 (n + 1, 0) 更清楚，也避免把长度和初值两个参数搞混。\n\n复杂度：时间 O(n + q)，空间 O(n)。\n\n易错点：① 用 vector<int> 存前缀和导致溢出；② pre 只开 n 个位置却用到下标 n，越界；③ 用 endl 输出 10 万行，速度明显变慢；④ 把 pre[l-1] 写成 pre[l]；⑤ 在 while (q--) 里又重算区间和，失去前缀和的意义；⑥ 忘记包含 <vector>。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    q = int(data[1])\n    a = [int(v) for v in data[2:2 + n]]\n\n    pre = [0] * (n + 1)\n    for i in range(n):\n        pre[i + 1] = pre[i] + a[i]\n\n    pos = 2 + n\n    out = []\n    for _ in range(q):\n        l = int(data[pos])\n        r = int(data[pos + 1])\n        pos += 2\n        out.append(str(pre[r] - pre[l - 1]))\n\n    sys.stdout.write(\"\\n\".join(out) + \"\\n\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 pre[i+1] = pre[i] + a[i] 构造长度为 n+1 的前缀和数组",
+          "查询输出 pre[r] - pre[l-1]",
+          "把 q 个结果攒进列表后一次性输出"
+        ],
+        "analysis": "思路：Python 的 int 是任意精度，不存在溢出问题，但下标换算与「pre 的长度为 n+1」这两个细节仍要盯住：pre[i] 表示前 i 个元素之和，所以 pre[0] = 0、pre[n] 是全体之和。\n\n关键步骤：① 读入全部记号，取 n、q 与前 n 个数；② pre = [0] * (n + 1)，循环 i in range(n) 执行 pre[i + 1] = pre[i] + a[i]，也可以用 itertools.accumulate 生成；③ 用游标 pos 从 2 + n 开始，每次取两下标 l、r；④ 追加 str(pre[r] - pre[l - 1])；⑤ 最后一次性写出，避免 10 万次 print。\n\n复杂度：时间 O(n + q)，空间 O(n + q)。\n\n易错点：① pre 只开 n 个位置，pre[n] 越界；② 用 pre[r] - pre[l] 少算一个元素；③ 把 l、r 当 0 基使用，pre[l-1] 变成 pre[-1]（在 Python 里会悄悄取到最后一个元素，错误更隐蔽）；④ 用 sum(a[l-1:r]) 每次切片求和，复杂度退化为 O(nq)；⑤ 逐行 print 输出，10 万行时明显变慢；⑥ 用 itertools.accumulate 时忘了在开头补 0。"
+      }
+    }
+  },
+  {
+    "id": "数-95",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "排序去重",
+      "众数",
+      "扫描统计"
+    ],
+    "stem": "给定 n 个整数，要求先排序，再去掉重复元素，输出三行内容：不同元素的个数、去重后按升序排列的数组、以及出现次数最多的数（众数）和它的出现次数。如果出现次数最多的数不止一个，输出其中最小的那个。\n\n排序后相同的元素一定相邻，因此只要一次线性扫描就能同时完成去重与计数：把当前元素与下一个元素比较，遇到相同就继续计数，遇到不同就结算这一组。因为数组已经升序，最先结算到最大次数的那个值自然是最小的。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100000）；第二行 n 个整数（-10^9 ≤ 每个数 ≤ 10^9），相邻两个数之间用一个空格分隔。\n\n**输出格式：** 三行。第一行为 `distinct: k`，k 为不同元素的个数；第二行为去重后升序排列的 k 个整数，相邻两个数之间用一个空格分隔；第三行为 `mode: v cnt: c`，v 为众数，c 为它的出现次数（并列时 v 取最小值）。\n\n**输入样例：**\n```text\n8\n3 1 3 2 3 1 5 1\n```\n**输出样例：**\n```text\ndistinct: 4\n1 2 3 5\nmode: 1 cnt: 3\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nstatic int cmp_int(const void *p, const void *q)\n{\n    int x = *(const int *)p;\n    int y = *(const int *)q;\n\n    return (x > y) - (x < y);\n}\n\nint main(void)\n{\n    static int a[100005];\n    int n, i, k = 0;\n    int best = 0, bestCnt = 0;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    qsort(a, (size_t)n, sizeof(int), cmp_int);\n\n    i = 0;\n    while (i < n) {\n        int j = i;\n        int v = a[i];\n\n        while (j < n && a[j] == v)\n            j++;\n        a[k++] = v;                 /* 去重结果就地写回数组前部 */\n        if (j - i > bestCnt) {      /* 严格大于，并列时保留较小的 v */\n            bestCnt = j - i;\n            best = v;\n        }\n        i = j;\n    }\n\n    printf(\"distinct: %d\\n\", k);\n    for (i = 0; i < k; i++) {\n        if (i > 0)\n            printf(\" \");\n        printf(\"%d\", a[i]);\n    }\n    printf(\"\\nmode: %d cnt: %d\\n\", best, bestCnt);\n    return 0;\n}\n",
+    "points": [
+      "用 qsort 配合比较函数把数组升序排序",
+      "排序后相同元素相邻，用一趟扫描按「组」结算去重结果",
+      "用 a[k++] = v 就地覆盖，节省一个额外数组",
+      "众数只在出现次数严格大于当前最大值时更新，保证并列取最小值"
+    ],
+    "analysis": "思路：去重与统计众数最省事的做法都是「先排序」。排序后相等的元素紧紧挨在一起，于是一趟线性扫描就能把每个值看成一个「组」：同一组内元素相同，组的长度就是该值的出现次数；把每组的一个代表写回数组前部，就完成了去重；比较各组的长度，最大值对应的值就是众数。\n\n关键步骤：① 读入 n 个整数；② 调用 qsort，比较函数写成 return (x > y) - (x < y)，不要写成 return x - y，因为两个 10^9 级的数据相减会溢出；③ 设 i = 0，循环 while (i < n)：记 v = a[i]，让 j 从 i 出发一路走到第一个不等于 v 的位置；④ 此时 j-i 就是 v 的出现次数，执行 a[k++] = v 完成去重；⑤ 若 j-i 严格大于 bestCnt，更新 best 与 bestCnt；⑥ i = j 进入下一组；⑦ 输出 k、去重数组与众数信息。\n\n为什么用严格大于：数组已经升序，较小的值所在的组先被扫描到。若两个值的出现次数相同，后到的那个只在「严格大于」时才覆盖，因此最终保留的是最小的那个值，正好满足并列取最小的约定。\n\n为什么可以就地写回：k 只在结算一组后加一，而每组至少消耗一个位置，因此 k 始终不超过当前的 i；写 a[k] 时要么写在自己这一组的位置上，要么写在更早已经被读过的位置，不会破坏后续还要读取的元素。\n\n复杂度：时间 O(n log n)（排序占主导），扫描 O(n)；空间 O(1) 额外空间（只用了几个变量）。\n\n易错点：① 比较函数返回 x - y 造成 int 溢出，排序结果错乱；② 用嵌套循环统计每个数的出现次数，退化成 O(n²)；③ 去重时忘记「按组跳过」，把重复元素也写进结果；④ 众数更新用 >=，并列时保留的是较大的值，与题意相反；⑤ 输出格式少了 distinct、mode、cnt 等标签；⑥ 忘记 n = 1 的边界，此时 k = 1、众数就是唯一的元素。",
+    "module": "数组",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nint main()\n{\n    int n;\n    if (!(cin >> n))\n        return 0;\n\n    vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        cin >> a[i];\n\n    sort(a.begin(), a.end());\n\n    vector<int> uniq;\n    int best = a[0], bestCnt = 0;\n\n    int i = 0;\n    while (i < n) {\n        int j = i;\n        while (j < n && a[j] == a[i])\n            ++j;\n        uniq.push_back(a[i]);\n        if (j - i > bestCnt) {\n            bestCnt = j - i;\n            best = a[i];\n        }\n        i = j;\n    }\n\n    cout << \"distinct: \" << uniq.size() << '\\n';\n    for (size_t k = 0; k < uniq.size(); ++k) {\n        if (k > 0)\n            cout << ' ';\n        cout << uniq[k];\n    }\n    cout << \"\\nmode: \" << best << \" cnt: \" << bestCnt << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 std::sort 排序，省去手写比较函数",
+          "用双下标按组扫描，uniq 保存去重结果",
+          "众数在出现次数严格变大时更新"
+        ],
+        "analysis": "思路：与 C 版思路一致，但排序直接交给 std::sort，去重结果放进 vector<int> uniq，按组扫描的循环结构完全相同。\n\n关键步骤：① 读入 n 与数组；② sort(a.begin(), a.end()) 升序排序；③ i 从 0 开始，每轮让 j 走到第一个不等于 a[i] 的位置，把 a[i] 压入 uniq，并比较 j-i 与 bestCnt；④ i = j 继续；⑤ 输出 uniq.size()、uniq 的内容以及 \"mode: v cnt: c\"。\n\n复杂度：时间 O(n log n)，空间 O(n)。\n\n易错点：① 忘记包含 <algorithm>；② best 没有初始化为 a[0]，n ≥ 1 时其实一定会被更新，但初值不写清楚容易埋雷；③ 用 std::unique 去重时必须先排序，且要用 erase 把尾部冗余元素真正删掉，否则 size() 不会变；④ 众数比较用 >=，并列时取到较大的值；⑤ 输出 uniq.size() 时用 %d 风格混用 printf，类型不匹配；⑥ 在 while 里用 a[i] 判断而 i 已经被推进，读到下一组的值。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    a = sorted(int(v) for v in data[1:1 + n])\n\n    uniq = []\n    best = a[0]\n    best_cnt = 0\n\n    i = 0\n    while i < n:\n        j = i\n        while j < n and a[j] == a[i]:\n            j += 1\n        uniq.append(a[i])\n        if j - i > best_cnt:\n            best_cnt = j - i\n            best = a[i]\n        i = j\n\n    print(f\"distinct: {len(uniq)}\")\n    print(\" \".join(map(str, uniq)))\n    print(f\"mode: {best} cnt: {best_cnt}\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 sorted 得到升序数组，重复元素相邻",
+          "用双下标按组扫描，uniq 收集去重结果",
+          "用严格大于比较保证并列时取最小众数"
+        ],
+        "analysis": "思路：与 C 版完全对应。Python 的 sorted 返回新列表，不存在原地排序与比较函数的坑；按组扫描时用 i 与 j 两个游标，j-i 就是当前值的出现次数。\n\n关键步骤：① 读入 n 与前 n 个数；② a = sorted(...) 得到升序列表；③ i = 0，while i < n 时让 j 从 i 出发跳过所有相同的值；④ uniq.append(a[i])，若 j - i 严格大于 best_cnt 就更新 best 与 best_cnt；⑤ i = j；⑥ 分三行输出 distinct、去重数组、众数信息。\n\n复杂度：时间 O(n log n)，空间 O(n)。\n\n易错点：① 用 set 去重后直接输出，虽然能得到去重结果，但众数需要额外统计，题目要求的是「排序 + 扫描」这一条路径；② 用 for 循环取 a[i] 的同时 i 也会被推进，与内层 j 的推进打架；③ 用 Counter 求众数虽然简洁，但 Counter 的 most_common 并列时顺序取决于插入顺序，本题明确要求取最小值，需要额外处理；④ 去重数组用 list(set(a)) 得到的是乱序；⑤ 输出时把 len(uniq) 与数组挤在同一行；⑥ n = 1 时 best 初值 a[0] 是必要的，否则未定义。"
+      }
+    }
+  },
+  {
+    "id": "数-96",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "字符串处理",
+      "单词统计",
+      "去尾标点"
+    ],
+    "stem": "读入一行英文句子，统计单词个数、最长的单词及其长度，以及所有单词的字母总数。\n\n句子中的单词由英文字母组成，单词之间可能有一个或多个空格，句首和句尾也可能有空格；单词末尾可能跟着标点符号 `,` `.` `!` `?`（标点只出现在单词末尾）。比较长度时必须先去掉单词末尾的标点，输出最长单词时也要输出去掉标点后的形式；如果一个单词长度相同，取最先出现的那个。只剩标点、去掉后为空的内容不算单词。\n\n可以用「逐个读词」的方式处理：每读入一个不含空白的记号，先去掉它末尾的标点，再参与统计，这样天然跳过了连续空格与行首行尾空格。\n\n**输入格式：** 一行字符串，长度不超过 500，只包含英文字母、空格和 `,` `.` `!` `?` 四种标点。\n\n**输出格式：** 三行，依次为：\n- `words: n`，单词个数；\n- `longest: w len: L`，最长单词与它的长度（并列取最先出现的）；\n- `letters: m`，所有单词的字母总数（不含空格与标点）。\n\n**输入样例：**\n```text\nHello,   world!  programming is fun.\n```\n**输出样例：**\n```text\nwords: 5\nlongest: programming len: 11\nletters: 26\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nint main(void)\n{\n    char w[505];\n    char best[505];\n    int words = 0, bestLen = 0, letters = 0;\n\n    best[0] = '\\0';\n    while (scanf(\"%504s\", w) == 1) {\n        size_t len = strlen(w);\n\n        while (len > 0 && (w[len - 1] == ',' || w[len - 1] == '.' ||\n                           w[len - 1] == '!' || w[len - 1] == '?')) {\n            w[--len] = '\\0';\n        }\n        if (len == 0)\n            continue;\n\n        words++;\n        letters += (int)len;\n        if ((int)len > bestLen) {     /* 严格大于，并列时保留先出现的 */\n            bestLen = (int)len;\n            strcpy(best, w);\n        }\n    }\n\n    printf(\"words: %d\\n\", words);\n    printf(\"longest: %s len: %d\\n\", best, bestLen);\n    printf(\"letters: %d\\n\", letters);\n    return 0;\n}\n",
+    "points": [
+      "用 scanf(\"%504s\") 逐个读入以空白分隔的记号，自动跳过连续空格与首尾空格",
+      "用 while 从末尾反复删掉 , . ! ? 这四种标点，并同步缩短长度",
+      "去标点后为空串的记号直接跳过，不计数",
+      "长度用严格大于比较，保证并列时保留最先出现的单词"
+    ],
+    "analysis": "思路：题目给了三个统计量，但核心难点只有一个 —— 先把「词」取干净。用 scanf 的 %s 读入时会自动跳过所有空白字符，因此连续空格、行首空格、行尾空格都不需要额外处理；每个记号读进来后，末尾可能粘着标点，必须先把标点剥掉，后面的长度比较和字母总数才不会算错。\n\n关键步骤：① 声明字符数组 w 存放当前词、best 存放目前最长的词，长度上限 500 加 1 个结束符；② while (scanf(\"%504s\", w) == 1) 逐个读词，%504s 限制最多读 504 个字符，避免缓冲区溢出；③ len = strlen(w)，用 while (len > 0 && w[len-1] 是四种标点之一) 反复执行 w[--len] = '\\0' 把末尾标点截掉，注意一个单词末尾可能连着多个标点，例如 `really?!`；④ 若 len 变成 0 说明这个记号只有标点，按约定不算单词，continue 跳过；⑤ 否则 words++、letters += len，并用 len > bestLen 判断是否刷新最长单词；⑥ 最后按三行格式输出。\n\n为什么用严格大于：题目规定长度并列时取最先出现的单词，从头扫描时先遇到的先占据 best，只有严格更长才替换，正好满足要求。\n\n复杂度：设总字符数为 m，每个字符最多被检查常数次，时间 O(m)，m ≤ 500；空间 O(1)。\n\n易错点：① 用 scanf(\"%s\", w) 不限宽度，遇到超长输入会写越界；② 只删一个标点，遇到 `ok?!` 这类结尾会残留 `?!`；③ 删除标点后忘记把 len 同步减一，长度统计偏大；④ 用 > 改成 >= 后，并列时保留的是最后出现的单词，与题意相反；⑤ 用 gets 读整行再手动切分，gets 在 C11 已从标准中移除，而且遇到行首空格要自己处理；⑥ 把 letters 统计成包括标点的字符数；⑦ 输出 longest 时用了带标点的原始单词。",
+    "module": "数组",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n#include <cctype>\nusing namespace std;\n\nstatic bool is_punct(char c)\n{\n    return c == ',' || c == '.' || c == '!' || c == '?';\n}\n\nint main()\n{\n    string w, best;\n    int words = 0, bestLen = 0, letters = 0;\n\n    while (cin >> w) {\n        while (!w.empty() && is_punct(w.back()))\n            w.pop_back();\n        if (w.empty())\n            continue;\n\n        ++words;\n        letters += static_cast<int>(w.size());\n        if (static_cast<int>(w.size()) > bestLen) {\n            bestLen = static_cast<int>(w.size());\n            best = w;\n        }\n    }\n\n    cout << \"words: \" << words << '\\n';\n    cout << \"longest: \" << best << \" len: \" << bestLen << '\\n';\n    cout << \"letters: \" << letters << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 cin >> string 逐个读词，自动跳过空白",
+          "用 w.back() 与 w.pop_back() 从末尾剥掉标点",
+          "用严格大于比较刷新最长单词，size() 得到字母数"
+        ],
+        "analysis": "思路：与 C 版一致，但用 std::string 代替定长字符数组：cin >> w 会自动跳过空白，w.back() 看末尾字符，w.pop_back() 删除末尾字符，长度用 w.size() 直接得到，不必再维护 len 变量。\n\n关键步骤：① 循环 while (cin >> w) 逐个读入词；② 内层 while (!w.empty() && is_punct(w.back())) 反复 pop_back，直到末尾不是标点；③ w.empty() 时 continue，跳过只有标点的记号；④ ++words，letters 累加 w.size()，若 w.size() 大于 bestLen 就更新 best 与 bestLen（赋值时类型转为 int）；⑤ 输出三行统计。\n\n复杂度：时间 O(m)，空间 O(1)（只保存两个词）。\n\n易错点：① 用 w[w.size() - 1] 判断末尾，没有先判空，空串时越界；② 用 find_last_not_of 时传错了字符集合；③ pop_back 之后忘记重新判断是否为空，只有标点的记号被当成单词统计；④ 用 >= 比较导致并列时保留最后一个；⑤ 用 getline 读整行却只用 cin >> 读第一个词；⑥ 输出 best 时用原始带标点的记号。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    text = sys.stdin.read()\n    tokens = text.split()\n\n    words = 0\n    letters = 0\n    best = \"\"\n    best_len = 0\n\n    for raw in tokens:\n        w = raw.rstrip(\",.!?\")\n        if not w:\n            continue\n        words += 1\n        letters += len(w)\n        if len(w) > best_len:\n            best_len = len(w)\n            best = w\n\n    print(f\"words: {words}\")\n    print(f\"longest: {best} len: {best_len}\")\n    print(f\"letters: {letters}\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 split() 按任意空白切分，跳过连续空格与首尾空格",
+          "用 rstrip(\",.!?\") 去掉末尾的四种标点",
+          "去标点后为空串的记号跳过，长度用严格大于比较"
+        ],
+        "analysis": "思路：Python 处理这类题非常短：split() 会按任意空白切分并自动丢弃空串，等价于 C 里 scanf(\"%s\") 的效果；rstrip 正好对应「从末尾反复删掉标点」的循环。\n\n关键步骤：① 用 sys.stdin.read() 读入整行（可能带换行）；② text.split() 得到全部记号；③ 对每个记号执行 w = raw.rstrip(\",.!?\")，rstrip 会反复删除末尾属于该集合的字符，`ok?!` 会变成 `ok`；④ 若 w 为空则跳过；⑤ 计数、累加 len(w)、用 len(w) > best_len 判断刷新最长单词；⑥ 三行输出。\n\n复杂度：时间 O(m)，空间 O(m)（保存全部记号）。\n\n易错点：① 用 strip 而不是 rstrip，把单词开头的字符也删了（本题开头的标点不存在，但语义要清楚）；② 用 w.rstrip(\",\") 只去掉逗号，漏掉其他三种标点；③ 用 split(\" \") 遇到连续空格会切出空串，导致单词数变多；④ 逐行 input() 只读了第一行；⑤ 用 max(tokens, key=len) 求最长单词，既没去掉标点，并列时也不是取最先出现的；⑥ 把 len(raw) 而不是 len(w) 累加进 letters。"
+      }
+    }
+  },
+  {
+    "id": "数-97",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "计数排序",
+      "中位数",
+      "桶统计"
+    ],
+    "stem": "给定 n 个 0 到 100 之间的整数（表示学生成绩），要求用计数排序把它们排成升序输出，并输出这组数据的中位数。\n\n计数排序不使用元素之间的比较：先开一个下标 0~100 的计数数组，统计每个值出现了多少次；然后从 0 到 100 依次扫描计数数组，把每个值按出现次数重复写回结果数组，得到的就是升序序列。中位数按位置取：n 为奇数时是第 (n+1)/2 个元素；n 为偶数时是中间两个元素的平均值，必须保留一位小数。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数（0 ≤ 每个数 ≤ 100），相邻两个数之间用一个空格分隔。\n\n**输出格式：** 两行。第一行为升序排列的 n 个整数，相邻两个数之间用一个空格分隔；第二行为 `median: m`，m 为中位数，保留一位小数。\n\n**输入样例：**\n```text\n6\n90 70 80 100 60 85\n```\n**输出样例：**\n```text\n60 70 80 85 90 100\nmedian: 82.5\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int n, i, v;\n    int cnt[101];\n    int sorted[1005];\n    int total = 0;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 0; i <= 100; i++)\n        cnt[i] = 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &v) != 1)\n            return 0;\n        if (v >= 0 && v <= 100)\n            cnt[v]++;\n    }\n\n    for (v = 0; v <= 100; v++) {\n        int c;\n\n        for (c = 0; c < cnt[v]; c++)\n            sorted[total++] = v;\n    }\n\n    for (i = 0; i < total; i++) {\n        if (i > 0)\n            printf(\" \");\n        printf(\"%d\", sorted[i]);\n    }\n    printf(\"\\n\");\n\n    if (total % 2 == 1) {\n        printf(\"median: %.1f\\n\", (double)sorted[total / 2]);\n    } else {\n        double m = (sorted[total / 2 - 1] + sorted[total / 2]) / 2.0;\n\n        printf(\"median: %.1f\\n\", m);\n    }\n    return 0;\n}\n",
+    "points": [
+      "开 101 个桶的计数数组，读入时统计每个值出现的次数",
+      "按值从小到大扫描计数数组，按次数重复写回得到升序序列",
+      "奇数个元素取 sorted[n/2]，偶数个取中间两项的平均值",
+      "平均值必须除以 2.0 并按 %.1f 输出，避免整数除法丢小数"
+    ],
+    "analysis": "思路：数据范围只有 0~100，是计数排序的典型场景：不比较元素大小，而是用一个计数数组记录每个值出现了几次，再按值从 0 到 100 依次「倒出」桶里的元素，就得到了升序序列。它的时间复杂度只与数据范围和元素个数有关，与元素之间的相对大小无关。\n\n关键步骤：① 读入 n，把 cnt[0..100] 清零；② 循环读入 n 个数，执行 cnt[v]++，同时用 total 记录实际入桶的个数；③ 从 0 到 100 遍历 v，对每个 v 执行 cnt[v] 次 sorted[total++] = v，展开即得升序数组；④ 输出升序数组，项间一个空格；⑤ 求中位数：total 为奇数时取 sorted[total/2]；为偶数时取 (sorted[total/2-1] + sorted[total/2]) / 2.0；⑥ 用 %.1f 输出一位小数。\n\n为什么偶数必须除以 2.0：中位数可能带 .5，例如 80 与 85 的平均是 82.5。如果写成 (a + b) / 2（两个 int 相除），结果会被截断成 82，样例立刻对不上；同时输出格式必须是 %.1f 而不是 %d，否则 82.5 会变成 82。\n\n为什么计数排序适合本题：n 最多 1000，比较排序 O(n log n) 也够用，但计数排序 O(n + 101) 更快，而且实现简单、没有比较函数和递归的风险；如果数据范围扩大到 10^9 就完全不能这么做了。\n\n复杂度：时间 O(n + 101)，空间 O(n + 101)。\n\n易错点：① 计数数组开成 100 个位置，访问 cnt[100] 越界；② 忘记把 cnt 清零，桶里带着随机初值；③ 展开时写 for (c = 0; c <= cnt[v]; c++)，多写一个元素；④ 偶数时用整数除法，82.5 变成 82；⑤ 奇数时取 sorted[n/2 - 1]，整体偏小一个；⑥ 用 %d 输出中位数，82.5 被截断；⑦ 只统计不入桶，total 与 n 不一致时数组长度出错。",
+    "module": "数组",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    int n;\n    if (!(cin >> n))\n        return 0;\n\n    vector<int> cnt(101, 0);\n    for (int i = 0; i < n; ++i) {\n        int v;\n        cin >> v;\n        ++cnt[v];\n    }\n\n    vector<int> sorted;\n    sorted.reserve(n);\n    for (int v = 0; v <= 100; ++v)\n        for (int c = 0; c < cnt[v]; ++c)\n            sorted.push_back(v);\n\n    for (size_t i = 0; i < sorted.size(); ++i) {\n        if (i > 0)\n            cout << ' ';\n        cout << sorted[i];\n    }\n    cout << '\\n';\n\n    int m = static_cast<int>(sorted.size());\n    double median;\n    if (m % 2 == 1)\n        median = static_cast<double>(sorted[m / 2]);\n    else\n        median = (static_cast<double>(sorted[m / 2 - 1]) + sorted[m / 2]) / 2.0;\n\n    cout << \"median: \" << fixed << setprecision(1) << median << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 vector<int> cnt(101, 0) 做桶统计",
+          "按桶的顺序展开到 sorted，得到升序序列",
+          "中位数据位置取值，用 fixed + setprecision(1) 输出"
+        ],
+        "analysis": "思路：与 C 版一致，用 vector 代替定长数组，桶统计后按顺序展开，再用 iomanip 控制中位数的一位小数。\n\n关键步骤：① 读入 n；② vector<int> cnt(101, 0)，读入每个值时 ++cnt[v]；③ 双重循环按 v 升序、按 cnt[v] 次 push_back 到 sorted；④ 输出 sorted，项间一个空格；⑤ 偶数个元素时把两个中间值转成 double 后除以 2.0；⑥ 用 fixed 与 setprecision(1) 输出中位数。\n\n复杂度：时间 O(n + 101)，空间 O(n)。\n\n易错点：① 忘记包含 <iomanip>；② 在循环里重复设置 fixed，虽然无害但冗余；③ sorted.reserve(n) 只预留容量，不能代替 push_back；④ 中位数用 int 计算，82.5 变 82；⑤ 展开时把 for (int c = 0; c < cnt[v]) 写成 <=，多写一个；⑥ 输出用 setprecision 而没有 fixed，82.5 会变成两位有效数字 82。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    scores = [int(v) for v in data[1:1 + n]]\n\n    cnt = [0] * 101\n    for v in scores:\n        if 0 <= v <= 100:\n            cnt[v] += 1\n\n    ordered = []\n    for v in range(101):\n        ordered.extend([v] * cnt[v])\n\n    print(\" \".join(map(str, ordered)))\n\n    m = len(ordered)\n    if m % 2 == 1:\n        median = float(ordered[m // 2])\n    else:\n        median = (ordered[m // 2 - 1] + ordered[m // 2]) / 2\n    print(f\"median: {median:.1f}\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用长度为 101 的计数列表统计每个分数出现的次数",
+          "用 extend 按次数批量展开，得到升序序列",
+          "偶数个时用 / 2 得到浮点平均值，再用 :.1f 输出"
+        ],
+        "analysis": "思路：与 C 版一致。Python 里 [v] * cnt[v] 可以一次性生成 cnt[v] 个 v，再 extend 到结果列表，比内层 for 更短；中位数用普通 / 得到浮点，:.1f 保证输出一位小数。\n\n关键步骤：① 读入 n 与全部分数；② cnt = [0] * 101，逐个 cnt[v] += 1；③ for v in range(101): ordered.extend([v] * cnt[v])；④ 输出升序序列；⑤ m 为元素个数，奇数取 ordered[m // 2]，偶数取中间两个的平均；⑥ f-string 的 :.1f 输出。\n\n复杂度：时间 O(n + 101)，空间 O(n)。\n\n易错点：① 用 sorted(scores) 直接排序，虽然结果正确，但失去了「计数排序」这个考点；② 用 cnt[v] * [v] 写成 [v] * cnt 时变量名写错；③ 偶数时用 // 2 做整数除法，82.5 变成 82；④ 输出用 :.1f 之前忘了 f-string 前缀；⑤ extend 与 append 混用，append([v] * cnt[v]) 会把列表塞进列表；⑥ 把 101 写成 100，分数 100 落桶越界。"
+      }
+    }
+  },
+  {
+    "id": "数-98",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "最大子段和",
+      "动态规划",
+      "边界处理"
+    ],
+    "stem": "给定一个长度为 n 的整数序列 a[1..n]，求它的最大连续子段和，并输出这个子段的起止下标（下标从 1 开始）。子段不能为空，至少包含一个元素；因此当所有数都是负数时，答案是其中最大的那个数本身，而不是 0。\n\n如果直接枚举所有子段，复杂度是 O(n²) 甚至 O(n³)，n 达到 10 万时无法通过。可以用「以当前位置结尾的最大和」这个状态一次扫描求解：设 cur 为以 a[i] 结尾的最大子段和，则 cur = max(a[i], cur + a[i])；当 cur 为负数时，从 a[i] 重新开始一定不亏。全程记录最大值及其起止位置即可。若最大和有多段相同，输出起点最小的那一段；起点也相同则输出终点最小的那一段。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100000）；第二行 n 个整数（-10^9 ≤ 每个数 ≤ 10^9），相邻两个数之间用一个空格分隔。\n\n**输出格式：** 两行。第一行为 `sum: s`，s 为最大子段和；第二行为 `range: l r`，为该子段的起止下标（1 ≤ l ≤ r ≤ n）。\n\n**输入样例：**\n```text\n5\n-2 3 -1 4 -5\n```\n**输出样例：**\n```text\nsum: 6\nrange: 2 4\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    static int a[100005];\n    int n, i;\n    long long cur, best;\n    int curStart = 1, bestL = 1, bestR = 1;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    cur = a[0];\n    best = a[0];\n\n    for (i = 1; i < n; i++) {\n        if (cur < 0) {          /* 前面的部分和为负，丢掉它从 a[i] 重新开始 */\n            cur = a[i];\n            curStart = i + 1;\n        } else {\n            cur += a[i];\n        }\n        if (cur > best) {       /* 严格大于：并列时保留起点更小的旧答案 */\n            best = cur;\n            bestL = curStart;\n            bestR = i + 1;\n        }\n    }\n\n    printf(\"sum: %lld\\n\", best);\n    printf(\"range: %d %d\\n\", bestL, bestR);\n    return 0;\n}\n",
+    "points": [
+      "用 cur 维护「以当前元素结尾的最大子段和」，用 best 记录全局最大值",
+      "cur 为负时丢弃前面的部分，从当前元素重新开始并更新起点",
+      "best 与 cur 都用 long long，避免 10^5 个 10^9 相加溢出",
+      "用严格大于更新 best，配合前缀为负才重开的规则，得到起点最小的最优区间"
+    ],
+    "analysis": "思路：这是最大子段和（Kadane 算法）的标准形态。关键观察是：如果「以 a[i-1] 结尾的最大子段和」cur 已经小于 0，那么把它接到 a[i] 前面只会让结果更小，所以从 a[i] 单独重新开始更好；反之保留前面的部分更划算。于是每一步只需要一个状态 cur，就能在线性时间内求出全局最大值。\n\n关键步骤：① 读入 n 与数组；② cur 与 best 都初始化为 a[0]，起止下标都设为 1，这样 n = 1 时直接得到答案，全负数时也能取到最大的单个元素；③ 从 i = 1 开始循环：若 cur < 0，说明前面的累计没有贡献，令 cur = a[i]、curStart = i + 1；否则 cur += a[i]；④ 若 cur 严格大于 best，更新 best、bestL = curStart、bestR = i + 1；⑤ 输出 sum 与 range。\n\n关于并列时的输出：因为 best 只在严格大于时更新，先被记录下来的最大区间不会被后来的等值区间覆盖；又因为 cur 在等于 0 时仍然选择「接着加」而不是重开，每次记录到的起点都是当前最优区间能达到的最左起点。两者结合，得到的就是起点最小、起点相同时终点最小的那一段。这一点是本题的边界陷阱：如果写成 cur <= 0 就重开，等值情况下会丢掉更靠左的答案；如果写成 cur >= best 就更新，又会丢掉更靠前的答案。\n\n为什么不能用「先把负数全删掉再求和」：那会把子段切成不连续的部分，例如 3 -5 4 的最大子段和是 4，而不是 3 + 4 = 7，连续性是本题的硬约束。\n\n复杂度：时间 O(n)，只扫描一遍；空间 O(n)（存数组），若边读边算可以做到 O(1)。\n\n易错点：① best 初始化成 0，全负数时错误地输出 0 和虚假区间；② 用 cur <= 0 判断重开，等值时丢失更靠左的起点；③ cur 与 best 用 int，10^5 个 10^9 相加溢出成负数；④ 只更新 sum 却忘记同步更新起止下标，区间与和不对应；⑤ 输出把区间写成 0 基下标；⑥ 认为子段可以为空，导致全负数时输出 0。",
+    "module": "数组",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    if (!(cin >> n))\n        return 0;\n\n    vector<long long> a(n);\n    for (int i = 0; i < n; ++i)\n        cin >> a[i];\n\n    long long cur = a[0], best = a[0];\n    int curStart = 0, bestL = 0, bestR = 0;\n\n    for (int i = 1; i < n; ++i) {\n        if (cur < 0) {\n            cur = a[i];\n            curStart = i;\n        } else {\n            cur += a[i];\n        }\n        if (cur > best) {\n            best = cur;\n            bestL = curStart;\n            bestR = i;\n        }\n    }\n\n    cout << \"sum: \" << best << '\\n';\n    cout << \"range: \" << bestL + 1 << ' ' << bestR + 1 << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 long long 保存 cur 与 best，避免累加溢出",
+          "cur 为负时重开并记录新起点",
+          "内部用 0 基下标计算，输出时统一加 1"
+        ],
+        "analysis": "思路：与 C 版一致，唯一的差别是内部统一用 0 基下标，最后输出时再加 1，避免中途反复加减一导致错位。\n\n关键步骤：① 关闭同步加速输入；② 读入 n 与 vector<long long> a；③ cur、best 初始化为 a[0]，curStart、bestL、bestR 初始化为 0；④ 从 i = 1 开始，cur < 0 时 cur = a[i]、curStart = i，否则 cur += a[i]；⑤ cur > best 时更新三个记录；⑥ 输出 best 与 bestL + 1、bestR + 1。\n\n复杂度：时间 O(n)，空间 O(n)。\n\n易错点：① 用 vector<int> 存数组，求和时虽然 cur 是 long long 但 a[i] 转 int 本身没问题，仍应统一用 long long 更清晰；② best 初值写成 0，全负数出错；③ 重开条件写成 cur <= 0；④ 输出时只给 bestL 加 1 而忘了 bestR；⑤ 内部 1 基、输出又加 1，整体错一位；⑥ 用 endl 输出两行虽然正确，但 '\n' 更省。"
+      },
+      "python": {
+        "solution": "import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    a = [int(v) for v in data[1:1 + n]]\n\n    cur = a[0]\n    best = a[0]\n    cur_start = 0\n    best_l = 0\n    best_r = 0\n\n    for i in range(1, n):\n        if cur < 0:\n            cur = a[i]\n            cur_start = i\n        else:\n            cur += a[i]\n        if cur > best:\n            best = cur\n            best_l = cur_start\n            best_r = i\n\n    print(f\"sum: {best}\")\n    print(f\"range: {best_l + 1} {best_r + 1}\")\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 cur 维护以当前位置结尾的最大和，用 best 记录全局最优",
+          "cur 为负时从当前位置重开并更新起点",
+          "内部用 0 基下标，输出时加 1"
+        ],
+        "analysis": "思路：与 C 版完全一致。Python 的整数不会溢出，但「全负数时不能返回 0」与「等值时的起止下标选择」这两个边界仍然要写对。\n\n关键步骤：① 一次性读入 n 与数组；② cur、best 初始化为 a[0]，三个下标初始化为 0；③ for i in range(1, n)：cur < 0 时重置为 a[i] 并更新 cur_start，否则累加 a[i]；④ cur > best 时同步更新 best 与区间；⑤ 输出 sum 与 range（加 1 转成 1 基）。\n\n边界一：所有元素都是负数。此时 cur 每次都会重置为 a[i]，best 取到其中最大的那个负数，区间是一个单元素区间，例如输入 `-5 -2 -8` 应输出 sum: -2 与 range: 2 2。如果把 best 初始化为 0，就会输出 0 和一个长度为零的区间，与「子段不能为空」矛盾。边界二：数组中存在多个和相同的最大子段，例如 `1 -1 1`，按题目规定应输出起点最小的 (1, 1)，代码里用严格大于比较即可保证先到者不被覆盖。\n\n复杂度：时间 O(n)，空间 O(n)。\n\n易错点：① 用 max(a) 或把负数过滤掉再求和，忽略了连续性；② best 初值设为 0，全负数时输出 0；③ 重开条件写成 cur <= 0；④ 更新 best 时只改 sum 不改区间；⑤ 内层再用两层循环枚举所有子段，复杂度 O(n²) 超时；⑥ 输出区间忘记加 1，或只给起点加 1。"
+      }
+    }
+  }
+]

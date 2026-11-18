@@ -1,19 +1,4 @@
 {
-  "基-01": {
-    "analysis": "答案不变：C++ 同样把 `unsigned int` 定义为至少 16 位的无符号整型，4 字节环境下上限仍是 2^32−1 = 4294967295。C++ 的观点是别背数字：`#include <limits>` 后取 `std::numeric_limits<unsigned int>::max()`，C++11 起它是 `constexpr`，可以写 `static_assert(std::numeric_limits<unsigned int>::max() == 4294967295u);` 让编译器替你验证平台假设。若要“恰好 32 位”，C++ 应写固定宽度类型 `std::uint32_t`（`<cstdint>`），它保证 32 位，而 `unsigned int` 只保证至少 16 位。补充：`1u << 31` 的类型是无符号，左移不会像有符号那样溢出，这是 C++ 里常用的写法。"
-  },
-  "基-02": {
-    "stem": "已知字符 `'A'` 的 ASCII 码为 65，则下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    char c = 'A';\n\n    std::cout << c + 2 << '\\n';\n    return 0;\n}\n```",
-    "analysis": "C++ 版本输出仍是 67。关键是 `c + 2` 先做整型提升：`char` 被提升为 `int`，表达式类型是 `int`，所以 `std::cout << c + 2` 选中 `operator<<(int)`、打印数值 67；而 `std::cout << c` 会选中 `operator<<(char)`、打印字符 A。C++ 的流插入运算符按静态类型重载，比 `printf` 的格式串更安全，但前提是你清楚表达式的类型。想强制按字符输出可写 `std::cout << static_cast<char>(c + 2)`；若写 `printf(\"%d\", c + 2)` 结果同样是 67，说明这一题在 C 与 C++ 中写法相同、结果相同。"
-  },
-  "基-04": {
-    "stem": "已知 `int x = 5;`，则下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int x = 5;\n\n    std::cout << (x > 3 + 2) << '\\n';\n    return 0;\n}\n```",
-    "analysis": "输出仍是 0：先算 `3 + 2` 得 7，`x > 7` 为假得 0，`bool` 经 `operator<<` 输出 0/1。C++ 特有的陷阱是 `<<` 的优先级低于 `>`：如果写 `std::cout << x > 3 + 2`，会被解析成 `(std::cout << x) > 7`，拿流对象和 7 比较，直接编译失败，所以括号不能省，这一点在 `printf` 里不存在。另外 C++ 的关系运算结果类型是 `bool`（`sizeof(bool)` 为 1），C 里是 `int`；若写 `std::cout << std::boolalpha << (x > 7)` 会打印 false，这是 C 没有的输出能力。"
-  },
-  "基-06": {
-    "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <iomanip>\n\nint main()\n{\n    int a = 7, b = 2;\n\n    std::cout << a / b << ' '\n              << std::fixed << std::setprecision(2)\n              << static_cast<double>(a) / b << '\\n';\n    return 0;\n}\n```",
-    "analysis": "输出仍是 `3 3.50`。`a / b` 在 C++ 中与 C 完全相同：两个 `int` 相除做截断除法得 3；要得 3.50 必须让至少一个操作数为浮点，C++ 推荐 `static_cast<double>(a) / b` 而不是 C 风格 `(double)a / b`，因为前者编译期可检查、也便于搜索。输出端的差异更明显：`std::fixed` 和 `std::setprecision(2)` 是粘性的流状态，一旦设置就影响后续所有浮点输出，而 `printf(\"%.2f\")` 是每条独立指定；并且 `setprecision` 在 fixed 模式下表示小数位数、在默认模式下表示有效数字位数，容易混淆。注意 `std::cout << a / b` 里的除法仍是整型除法，不会因为后面用了 double 而改变。"
-  },
   "基-08": {
     "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int i = 3, j, k;\n\n    j = i++;\n    k = ++i;\n    std::cout << i << ' ' << j << ' ' << k << '\\n';\n    return 0;\n}\n```",
     "analysis": "结果与 C 相同：`i++` 取旧值 3 给 j，i 变 4；`++i` 先自增到 5 再赋给 k，输出 `5 3 5`。C++ 视角的差别在返回类型：前置 `++i` 返回左值引用 `int&`，后置 `i++` 返回旧值的副本（prvalue），所以 `++(++i)` 在 C++ 合法，`(i++)++` 在两种语言都非法；也正因为前置版本不产生临时对象，遍历容器时写 `++it` 比 `it++` 更高效，这是 C++ 的通用规范。C++17 起同一全表达式内的求值顺序规则更明确，但 `i = i++` 这类写法在 C++17 前是未定义行为、之后仍有未指定之处，考试作答仍应判为错误写法。"
@@ -21,13 +6,6 @@
   "基-09": {
     "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <iomanip>\n\nint main()\n{\n    double d = 3.9;\n    int n = static_cast<int>(d);\n\n    std::cout << std::fixed << std::setprecision(1) << d << ' ' << n << '\\n';\n    return 0;\n}\n```",
     "analysis": "输出 `3.9 3`。C++ 的 `static_cast<int>(d)` 与 C 的 `(int)d` 语义相同：向零截断，3.9 → 3，-3.9 → -3（不是向下取整的 -4）；要向下取整应显式调用 `std::floor`，四舍五入用 `std::round`，C++ 还提供 `std::trunc` 表达截断意图。C++ 的收益是把转换写成可搜索、可审查的 `static_cast`，它不会像 C 风格转换那样悄悄把指针转成不相干类型。输出端 `std::fixed << std::setprecision(1)` 等价于 `printf(\"%.1f\")`，但 `d` 本身没有被转换成 int，仍是 3.9。"
-  },
-  "基-11": {
-    "stem": "执行下面语句时，用户从键盘输入 `3,5` 再回车，则（ ）。\n\n```cpp\n#include <cstdio>\n\nint a, b;\nstd::scanf(\"%d%d\", &a, &b);\n```",
-    "analysis": "在 C++ 中这条语句写法与 C 相同（`scanf` 放在 `<cstdio>` 里），行为也相同：第一个 `%d` 读走 3，第二个 `%d` 遇到逗号无法转换，b 不被赋值、其值不确定，转换失败还会返回 1 而不是 2，所以本题仍选“b 的值不确定”。但 C++ 更常用 `std::cin >> a >> b;`，它从 C++11 起在提取失败时会把 b 置 0（值初始化）并置 failbit，之后所有输入都被跳过，必须 `std::cin.clear()` 才能恢复；结果是“b 的值不确定”变成“b 为 0 且流进入失败状态”。这正是 C 与 C++ 输入模型的差异：格式串是把控制权交给运行库，流是用状态位报告失败。"
-  },
-  "基-12": {
-    "analysis": "循环体执行 6 次（i = 0、2、4、6、8、10），与语言无关。C++ 的循环头写法相同，但有两个值得说的点：一，C++ 允许在 for 的初始化语句里声明变量 `for (int i = 0; i <= 10; i += 2)`，i 的作用域被限制在循环内，循环结束后不可见，这从 C++ 第一版就成立，而 C 要到 C99 才允许；二，边界 `i <= 10` 与 `i < 10` 差一次迭代，是本题唯一的考点。现代 C++ 想表达“0 到 10 的偶数”还可以写 `for (int i : std::views::iota(0, 11)) if (i % 2 == 0) ...`（C++20），但计次仍是 6，答案不变。"
   },
   "基-14": {
     "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int x = 2;\n\n    switch (x) {\n    case 1: std::cout << 'a';\n    case 2: std::cout << 'b';\n    case 3: std::cout << 'c'; break;\n    default: std::cout << 'd';\n    }\n    std::cout << '\\n';\n    return 0;\n}\n```",
@@ -44,10 +22,6 @@
   "基-19": {
     "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int a = 1, b = 2, c;\n\n    c = (a = 3, b = a + 1, a + b);\n    std::cout << c << '\\n';\n    return 0;\n}\n```",
     "analysis": "输出 7：逗号表达式从左到右依次求值，整个表达式的值是最后一个子表达式的值，所以先 a = 3、再 b = a + 1 = 4、最后取 a + b = 7 赋给 c。C++ 的逗号运算符规则与 C 相同，但有两处 C++ 独有的说明：一，逗号可以被重载（`operator,`），一旦某个类重载了逗号，`a, b` 的求值顺序与结果就由重载函数决定，不再保证从左到右，这也是 C++ 社区不鼓励重载逗号的原因；二，函数实参之间的逗号、模板实参里的逗号都不是逗号运算符，`f(a, b)` 的参数求值顺序在 C++17 前也未指定。本题括号内是真正的逗号运算符，结果确定。"
-  },
-  "基-21": {
-    "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int a = 3, b = 5;\n    int m = a > b ? a : b;\n\n    std::cout << (m > 4 ? m * 2 : m) << '\\n';\n    return 0;\n}\n```",
-    "analysis": "输出 10：m 取较大值 5，5 > 4 成立，输出 5 * 2 = 10。条件运算符 `?:` 的优先级与结合性在 C、C++ 中相同（右结合），但 C++ 有一个重要增强：当两个分支都是同类型的左值时，条件表达式的结果是左值，可以放到赋值号左边——`(a > b ? a : b) = 7;` 在 C++ 合法（给较大的变量赋值），在 C 里不是左值、编译不过。C++ 还允许分支涉及类类型时做用户定义转换，并保证只求值被选中的那个分支。本题先把结果存进 `int m` 再判断，两语言结果一致。"
   },
   "基-23": {
     "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#define MAX 3 + 2\n\nint main()\n{\n    std::cout << MAX * 2 << '\\n';\n    return 0;\n}\n```",
@@ -77,39 +51,6 @@
     "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int i, j, s = 0;\n\n    for (i = 1; i <= 3; i++) {\n        for (j = 1; j <= 3; j++) {\n            if (i == j)\n                continue;\n            s += i * j;\n        }\n    }\n    std::cout << s << '\\n';\n    return 0;\n}\n```",
     "analysis": "输出 22：9 对 (i, j) 里去掉 i == j 的 3 对 (1,1)(2,2)(3,3)，剩下 1*2+1*3+2*1+2*3+3*1+3*2 = 5+8+9 = 22。`continue` 只影响最内层循环，外层照常推进，C 与 C++ 一致。C++ 视角的现代写法是用 range-for 配初始化列表 `for (int i : {1, 2, 3})`，或把条件直接写成 `if (i != j) s += i * j;`，可读性比 continue 更好；遍历容器迭代器时 `continue` 语义不变。注意 C++ 习惯写前置 `++i`，语义与 `i++` 相同但少一次临时对象。"
   },
-  "函-01": {
-    "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint max(int a, int b)\n{\n    if (a > b)\n        return a;\n    return b;\n}\n\nint main()\n{\n    std::cout << max(max(3, 8), 5) << '\\n';\n    return 0;\n}\n```",
-    "analysis": "输出 8：内层 `max(3, 8)` 返回 8，外层 `max(8, 5)` 返回 8；函数调用的实参先求值再传入，所以嵌套调用是从内向外。C++ 版本有个真实陷阱：标准库已有 `std::max`，如果本题函数也叫 `max` 且写了 `using namespace std;`，调用会变得有歧义（自定义函数与 `std::max` 模板同时可见），正确做法是不写 `using namespace std` 或改名为 `my_max`。另外 `std::max` 是模板 `template<class T> const T& max(const T&, const T&)`，要求两个实参类型一致，`std::max(3, 8.0)` 会因 T 推导冲突而编译失败，需写 `std::max<double>(3, 8.0)`。"
-  },
-  "函-02": {
-    "analysis": "C++ 的声明规则与 C 同源但更严格：一个函数可以声明多次、定义一次（ODR，单一定义规则）；声明只需返回类型、函数名和参数类型，形参名可以省略，所以“名字不能省”是错的。C++ 独有之处在于：函数可以重载（同名不同参数是不同的函数、各自声明）、可以带默认实参（默认值只能在一个声明里给一次）、可以加 `constexpr` / `noexcept` / `[[nodiscard]]`，而 `extern \"C\"` 会关掉名字修饰、按 C 的链接规则查找；返回类型不参与重载决议，仅返回类型不同的两个声明在 C++ 里是同一函数、会重复定义，这正说明声明必须与定义一致。"
-  },
-  "函-04": {
-    "analysis": "C++ 里形参同样是函数的局部变量，进入函数时创建、返回时销毁，所以正确选项不变。要补充的是 C++ 的关键差异：形参可以声明为引用 `int&`，此时它与实参是同一个对象的两个名字，但引用通常用地址实现、并不“占用同一块存储单元”，且引用必须绑定左值、不能重新绑定；C++ 还有默认实参，可以让实参个数少于形参个数成为合法（缺省值由声明提供，不是自动补 0），所以“缺少的形参自动取 0”在 C++ 里同样错。C++11 起还多了右值引用与移动语义，函数可以按值、按 `const&`、按 `&&` 三种方式接收同一个实参。"
-  },
-  "函-05": {
-    "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nvoid addOne(int a[], int n)\n{\n    for (int i = 0; i < n; i++)\n        a[i]++;\n}\n\nint main()\n{\n    int v[4] = {1, 2, 3, 4};\n\n    addOne(v, 2);\n    for (int i = 0; i < 4; i++)\n        std::cout << v[i];\n    std::cout << '\\n';\n    return 0;\n}\n```",
-    "analysis": "输出 2334：`addOne(v, 2)` 中数组名 `v` 退化为指向首元素的指针，形参 `int a[]` 实际类型是 `int *`，函数改的是调用者的数组本身，所以前两个元素各加 1。C++ 与 C 的退化规则相同，但 C++ 提供了不丢长度的写法：`void addOne(int (&a)[4])` 用数组引用保留维度、`void addOne(std::array<int, 4>& a)`、或 C++20 的 `std::span<int>`，配合 `const int (&a)[4]` 还能让“只读”由编译器保证。也可以直接传 `std::vector<int>&`，`size()` 自带长度，不必再传 n，这正解释了 C 接口总要成对传“指针 + 长度”。"
-  },
-  "函-07": {
-    "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint f(int n)\n{\n    if (n == 0)\n        return 1;\n    return n * f(n - 1);\n}\n\nint main()\n{\n    std::cout << f(4) / f(2) << '\\n';\n    return 0;\n}\n```",
-    "analysis": "输出 12：f(4) = 24，f(2) = 2，24 / 2 = 12，两次调用互不影响。C++ 里递归写法与 C 相同，但有两点值得说明：一，C++11 起可以把这种递归写成 `constexpr int f(int n) { return n == 0 ? 1 : n * f(n - 1); }`，让编译器在编译期算出结果（C 没有 constexpr）；二，`int` 乘法在 n ≥ 13 时会溢出，有符号溢出在 C 与 C++ 中都是未定义行为，需要更大结果时应换 `long long` 或 `std::int64_t`，而不是依赖回绕。"
-  },
-  "函-09": {
-    "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint x = 1;\n\nint main()\n{\n    int x = 2;\n\n    {\n        int x = 3;\n        std::cout << x << ' ';\n    }\n    std::cout << x << '\\n';\n    return 0;\n}\n```",
-    "analysis": "输出 `3 2`：内层块里声明的 x = 3 遮蔽（shadow）了外层 main 的 x = 2，离开块后外层 x 重新可见，全局的 x = 1 全程被遮蔽。C++ 的块作用域规则与 C 相同，但 C++ 多了一个 C 没有的工具：作用域解析运算符 `::`。即使局部 x 遮蔽了全局 x，C++ 里仍可以写 `std::cout << ::x` 取到全局的 1；C 语言没有任何语法能在局部遮蔽后访问全局同名变量。同理，类的成员被局部变量遮蔽时用 `this->x` 或 `类名::x` 取回，这让 C++ 的“命名遮蔽”问题可控。"
-  },
-  "函-10": {
-    "analysis": "C++ 中两个 `void` 的含义与 C 相同：左边表示函数不返回值（只能写 `return;`），右边表示不需要参数。但 C++ 与 C 有一个著名差异：C 里 `void show()` 表示“参数个数和类型都不确定”，而 C++ 里空括号就是“无参数”，与 `void show(void)` 完全等价，所以 C++ 代码通常直接写 `void show()`，`(void)` 只是从 C 沿用下来的、无害但多余的写法。另外要区分 `void` 与 `void *`：前者是“无类型”的返回类型，后者是无类型指针，C++ 里 `void *` 不能隐式转成其他指针类型，必须 `static_cast`。"
-  },
-  "函-12": {
-    "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nvoid swap(int a, int b)\n{\n    int t = a;\n\n    a = b;\n    b = t;\n}\n\nint main()\n{\n    int x = 1, y = 2;\n\n    swap(x, y);\n    std::cout << x << ' ' << y << '\\n';\n    return 0;\n}\n```",
-    "analysis": "输出 `1 2`：`swap(x, y)` 把实参的值复制给形参，函数里交换的只是两份副本，调用者的 x、y 没有变化。C++ 的正解有两种：把形参改成引用 `void swap(int &a, int &b)`，此时 a、b 是 x、y 的别名，交换立即生效；或者直接调用标准库的 `std::swap(x, y)`（在 `<utility>`，C++11 起对容器等类型还能走移动语义）。要注意 C++ 里若写了 `using namespace std;` 又自定义了同名 `swap`，重载决议可能与 `std::swap` 冲突，实践中应避免污染命名空间或在自定义类型上用 ADL 的 swap 惯用法。"
-  },
-  "函-14": {
-    "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint find(int a[], int n, int x)\n{\n    for (int i = 0; i < n; i++)\n        if (a[i] == x)\n            return i;\n    return -1;\n}\n\nint main()\n{\n    int v[6] = {4, 8, 15, 16, 23, 42};\n\n    std::cout << find(v, 6, 15) << ' ' << find(v, 6, 7) << '\\n';\n    return 0;\n}\n```",
-    "analysis": "输出 `2 -1`：15 在下标 2，7 不存在返回 -1。C++ 的等价写法是用迭代器：`std::find(v, v + 6, 15)` 返回指向命中元素的迭代器，找不到返回 `v + 6`（尾后迭代器）而不是 -1，转下标要写 `std::distance(v, it)` 或 `it - v`，这就是 C++ 与 C“用下标表达失败”的接口差异。另外这里把两个 `find` 调用写在同一条输出语句里：C++17 之前函数实参的求值顺序是未指定的，虽然本例两个调用互不影响，但若带副作用就会出问题；C++17 起规定 `<<` 链从左到右求值。"
-  },
   "函-15": {
     "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint next()\n{\n    static int n = 0;\n\n    n++;\n    return n;\n}\n\nint main()\n{\n    int a = next();\n    int b = next();\n    int c = next();\n\n    std::cout << a << ' ' << b << ' ' << c << '\\n';\n    return 0;\n}\n```",
     "analysis": "输出 `1 2 3`：函数内的 `static` 局部变量只在第一次进入时初始化，之后一直存活到程序结束，所以三次调用共享同一个 n。C++ 与 C 的存储期规则相同，但 C++ 多了两个保证：一，C++11 起局部静态变量的初始化是线程安全的（所谓 magic statics），多个线程同时首次调用只会初始化一次，C 没有这个保证；二，C++ 可以用 `constexpr` 或类内 `static` 成员表达同类需求，`static` 成员属于类而不是对象，需要在类外定义（C++17 起可用 `inline static` 就地定义）。"
@@ -121,34 +62,9 @@
     "stem": "下面程序中，函数 `f` 一共被调用（ ）次（包含 main 中的第一次调用）。\n\n```cpp\n#include <iostream>\n\nint f(int n)\n{\n    if (n <= 1)\n        return 1;\n    return f(n - 1) + f(n - 2);\n}\n\nint main()\n{\n    std::cout << f(5) << '\\n';\n    return 0;\n}\n```",
     "analysis": "共 15 次：调用次数满足 C(n) = 1 + C(n-1) + C(n-2)，C(0) = C(1) = 1，于是 C(2)=3、C(3)=5、C(4)=9、C(5)=15。C++ 与 C 的递归语义相同，但 C++ 提供了更好的工程手段：用 `std::unordered_map<int,int>` 记忆化、用 `constexpr` 让编译器在编译期算出结果、或改成迭代；也可以传 `std::function` 做通用递归。要纠正一个常见误解：C++ 标准并不保证尾调用优化，这里也不是尾递归（两次递归调用后还要相加），所以不能指望编译器把栈帧省掉。"
   },
-  "函-21": {
-    "analysis": "C++ 中 void 函数同样“没有值”，不能赋值、不能参与算术、不能作为需要值的实参，正确选项不变。C++ 的补充：一，C++ 允许在函数体内定义 lambda（`auto f = [](int x) { return x + 1; };`），这是最接近“局部函数”的合法写法，而嵌套定义普通函数在 C 与标准 C++ 中都非法（GCC 的嵌套函数是扩展）；二，不能返回数组类型本身，C++ 的正确做法是返回 `std::array<int, 10>`、`std::vector<int>` 或数组的引用；三，void 还能作为模板参数（如 `std::void_t`）参与 SFINAE，这是 C 完全没有的用法。"
-  },
   "函-22": {
     "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <iomanip>\n\ndouble half(int n)\n{\n    return n / 2;\n}\n\nint main()\n{\n    std::cout << std::fixed << std::setprecision(1) << half(5) << '\\n';\n    return 0;\n}\n```",
     "analysis": "输出 `2.0`：`n / 2` 是整型除法，5 / 2 先得 2，再隐式转换成 double 返回，所以值是 2.0 而不是 2.5；返回类型是 double 并不会让除法变成浮点除法。C++ 与 C 的规则相同，正确写法是 `static_cast<double>(n) / 2` 或 `n / 2.0`。C++ 还会在列表初始化处报“窄化转换”错误（如 `int x{2.5};`），但本例的 int→double 是拓宽转换，不会告警，这类“静默的类型转换”正是需要用 `static_cast` 显式表达的地方；开启 `-Wconversion` 之类的警告能帮你发现它。"
-  },
-  "数-01": {
-    "analysis": "C++ 中仍然只有 `int a[] = {1, 2, 3};` 正确：数组长度由初始化列表推出。其余三个在 C++ 里错得更明显：`int n = 5, a[n] = {...}` 依赖 C99 的变长数组，标准 C++ 不支持 VLA（GCC/Clang 作为扩展允许，但不可移植）；`int a[3] = {1,2,3,4}` 初始化元素过多；`a = {1,2,3}` 试图给数组整体赋值，数组名不是可修改的左值。C++ 的现代替代是 `std::array<int, 3> a = {1, 2, 3};`，它可以整体赋值（`a = {4, 5, 6};`）、自带 `size()`、能按值传参，这些都是 C 数组做不到的。"
-  },
-  "数-02": {
-    "analysis": "答案 4：`int a[6] = {4, 7};` 只显式初始化前两个元素，其余元素被初始化为 0，所以 a[5] = 0，a[0] + a[5] = 4。C++ 的聚合初始化规则相同，并且提供更明确的零初始化写法 `int a[6]{};`（全 0）与 `int a[6] = {};`，还能用 `std::array<int, 6> a{4, 7};` 得到同样的结果。C++ 的差别在类型安全：`std::array` 的 `at()` 会检查下标并抛 `std::out_of_range`，而 C 风格数组访问越界只是未定义行为。"
-  },
-  "数-04": {
-    "stem": "阅读下面程序：\n\n```cpp\n#include <iostream>\n\nint a[5] = {10, 20, 30, 40, 50};\n\nint main()\n{\n    for (int i = 0; i <= 5; i++)\n        std::cout << a[i] << ' ';\n    std::cout << '\\n';\n    return 0;\n}\n```\n\n关于该程序，说法正确的是（ ）。",
-    "analysis": "C++ 的结论与 C 相同：循环条件 `i <= 5` 让 i 取到 5，`a[5]` 超出 5 个元素的范围，属于越界访问，行为未定义——可能打印垃圾值、可能崩溃、也可能看似正常，编译器没有义务诊断。C++ 与 C 的差异在于 C++ 提供了带检查的容器：`std::array<int,5>::at(5)` 和 `std::vector::at(5)` 会抛 `std::out_of_range` 异常，把“未定义行为”变成“可捕获的错误”；调试时还可以用 `-fsanitize=address` 或 `_GLIBCXX_ASSERTIONS` 让越界立即报错。"
-  },
-  "数-05": {
-    "analysis": "答案 12：`sizeof(a)` 是 12 × 8 = 96，`sizeof(a[0])` 是 8，相除得元素个数 12，与元素类型无关。C++ 的等价且更安全的写法是 C++17 的 `std::size(a)`（返回 `std::size_t`，直接得 12），或改用 `std::array<double, 12>` 后调用 `a.size()`。要注意这个式子的前提是 a 仍是数组：一旦把 a 传给形参 `double a[]`，它会退化成指针，`sizeof(a)` 变成 8，`sizeof(a) / sizeof(a[0])` 就成了 1，这是 C 和 C++ 共有的经典陷阱。"
-  },
-  "数-07": {
-    "analysis": "第一轮结果仍是 `3 5 1 2 8`：5 与 3 交换、8 与 1 交换、8 与 2 交换，最大的 8 冒到末尾。C++ 中这个过程与 C 完全一致，但工程上不会手写冒泡：`std::sort(a, a + 5)`（内省排序，平均 O(n log n)）或需要稳定时用 `std::stable_sort`；交换两个元素用 `std::swap(a[i], a[j])` 或 `std::iter_swap`，比手写临时变量更清晰。要注意 `std::sort` 要求比较器满足严格弱序，写成 `<=` 是未定义行为，而冒泡里的 `a[j] > a[j+1]` 恰好就是严格弱序的正确形式。"
-  },
-  "数-08": {
-    "analysis": "答案 `n(n-1)/2`：第 i 轮在剩余 n-i 个元素里找最小，比较 n-i-1 次，累加得 (n-1) + (n-2) + … + 1 = n(n-1)/2，与语言无关。C++ 视角的对照是 `std::sort`：平均 O(n log n) 次比较，且要求比较器是严格弱序（`std::less` 默认满足），选择排序则是 O(n²) 比较、交换次数只有 O(n)。C++ 可以用 `std::nth_element` 在 O(n) 内把第 k 小放到正确位置，这类“只关心第 k 个”的需求不需要完整排序，也是考试与工程的分界点。"
-  },
-  "数-10": {
-    "analysis": "答案 `i < 3`：6 个元素只需交换 3 对（0↔5、1↔4、2↔3），写到 i < 3 正好；写成 `i <= 3` 会把已经换好的 2↔3 再换一次，数组又被还原一半，这正是本题的陷阱。C++ 里同样的循环可以写得更安全：`for (int i = 0, j = 5; i < j; ++i, --j) std::swap(a[i], a[j]);`，或者直接 `std::reverse(a, a + 6);`。手写时用 `std::swap` 而不是临时变量，既避免类型不匹配，也便于对自定义类型走移动语义。"
   },
   "数-12": {
     "analysis": "答案 `int a[][3] = {{1, 2}, {3, 4, 5}};`：二维数组只有第一维可以省略，编译器按行数推出 2 行；第一行不足 3 个元素时补 0，第二行正好 3 个。C++ 的规则相同，但要注意 C++11 的列表初始化更严格：元素发生窄化转换（如用 double 初始化 int）会直接编译错误，`int a[][3] = {{1.5}}` 在 C++ 里被拒绝。C++ 也可以写 `std::array<std::array<int,3>,2> a{{{1,2,0},{3,4,5}}};`，类型里带着维度，传参时不再退化。"
@@ -156,14 +72,8 @@
   "数-13": {
     "analysis": "答案：12 个元素、行优先连续存放。C++ 的 C 风格数组布局与 C 完全相同（标准保证数组元素连续、无填充），`std::array` 也是聚合类型、内部就是一个 C 数组，所以同样连续。关键的 C++ 差异在于容器选择：`int a[3][4]` 或 `std::array<std::array<int,4>,3>` 是整块连续内存；而 `std::vector<std::vector<int>>` 每一行都是一次独立分配，行与行之间不保证相邻，cache 局部性差，也不能直接 `memcpy` 或用一维指针遍历。"
   },
-  "数-15": {
-    "analysis": "答案 2 行 4 列：矩阵乘法要求左矩阵的列数等于右矩阵的行数（3 = 3），结果的维度取“左边行数 × 右边列数”，即 2 × 4，共需 2 × 3 × 4 = 24 次乘加。这个概念与语言无关，C++ 的写法可以是手写三重循环，也可以用 `std::vector<std::vector<int>>` 或扁平化的 `std::vector<int>`（`c[i * 4 + j]`）。C++ 里更推荐扁平存储：连续内存对缓存友好，且能避免嵌套 vector 逐行分配的开销，这和 C 里 `int c[2][4]` 的布局思想一致。"
-  },
   "数-17": {
     "analysis": "答案 `char s[3] = {'a', 'b', 'c'};`：逐字符初始化不会自动补 `'\\0'`，3 个字符正好占满 3 个字节，没有结束符；而 `char s[] = \"abc\"`、`char s[10] = \"abc\"` 用字符串字面量初始化时会补 `'\\0'`，`char s[4] = {'a','b','c'}` 也有空间放下结尾的 0（值初始化）。C++ 的字符数组初始化规则相同，但 C++ 里字符串字面量的类型是 `const char[N]`，`char *p = \"abc\";` 从 C++11 起非法（应写 `const char *p`），而 C 只是给出警告；C++ 的正解是用 `std::string s = \"abc\";`，长度由 `s.size()` 得到，不用担心结束符。"
-  },
-  "数-18": {
-    "analysis": "答案 6 和 5：`sizeof(s)` 算的是整个数组占用的字节数，字符串字面量 \"hello\" 有 5 个字符加 1 个结束符 `'\\0'`，所以是 6；`strlen(s)` 数到第一个 `'\\0'` 为止，得 5。C++ 的对比很有教学价值：`std::string s = \"hello\";` 时 `s.size()` 是 5（不含结束符），`sizeof(s)` 是 string 对象本身的大小（通常是 32 字节，与内容长度无关），因为 string 把字符存在堆上；`std::string` 的 `c_str()` 才按 C 的方式提供以 `'\\0'` 结尾的缓冲区。"
   },
   "数-20": {
     "analysis": "答案 2：`strcat(s, \"cde\")` 把 \"cde\" 接到 \"ab\" 后面，s 变成 \"abcde\"（长度 5）；紧接着 `strcpy(s, \"fg\")` 从 s[0] 开始覆盖，s 变成 \"fg\"，所以 strlen 是 2，前面的内容被彻底覆盖而不是拼接。C++ 里这些函数在 `<cstring>` 中可用，但更推荐 `std::string`：`s += \"cde\"; s = \"fg\";` 自动管理容量，不会像 strcpy/strcat 那样在目标缓冲区不够时越界写入（本题 s 只有 10 字节，虽够用但接口本身不检查容量）。"
@@ -204,41 +114,9 @@
     "stem": "阅读下面程序：\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int a[6] = {1, 2, 3, 4, 5, 6};\n    int t = a[5];\n\n    for (int i = 5; i > 0; i--)\n        a[i] = a[i - 1];\n    a[0] = t;\n\n    for (int i = 0; i < 6; i++)\n        std::cout << a[i];\n    return 0;\n}\n```\n\n程序输出（ ）。",
     "analysis": "输出 `612345`：先把末尾的 6 存进 t，再从后往前把每个元素右移一位，最后把 t 放到 a[0]，整个数组循环右移一位。移动必须从后往前，否则前面的元素会覆盖后面尚未搬走的值。C++ 里一行就能完成：`std::rotate(a, a + 5, a + 6);`（把 [a+5, a+6) 这段转到最前面），比手写循环更不易错；对 `std::vector` 同样用 `std::rotate`。注意 `int a[6]` 的下标是 `int`，若用 `size_t` 写 `i--` 并判断 `i > 0`，在 i 为 0 时再减会得到巨大值，是不减循环的经典事故。"
   },
-  "数-43": {
-    "analysis": "正确写法是 `i < 3` 且 `j < 4`：外层走完 3 行、内层走完 4 列，正好 12 个元素。另外三个错误分别是行列写反（i < 4 会越界）、`i <= 3` 多一行、`j <= 4` 多一列。C++ 里除了照抄这种写法，还可以用 range-for 彻底避免手写边界：`for (auto &row : a) for (int v : row) sum += v;`，配合 `std::array<std::array<int,4>,3>` 时完全不需要写 3 和 4；这也是 C++ 相比 C 更能“用类型表达维度”的地方。"
-  },
   "数-44": {
     "stem": "阅读下面程序：\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int a[7] = {3, 1, 3, 5, 3, 1, 7};\n    int cnt[8] = {0};\n\n    for (int i = 0; i < 7; i++)\n        cnt[a[i]]++;\n    std::cout << cnt[3] << ' ' << cnt[0];\n    return 0;\n}\n```\n\n程序输出（ ）。",
     "analysis": "输出 `3 0`：3 出现 3 次（下标 0、2、4），0 一次也没出现，所以 cnt[3] = 3、cnt[0] = 0。这是计数（桶）排序的统计阶段，`int cnt[8] = {0}` 把全部元素初始化为 0 是前提，漏写会得到不确定值。C++ 里同样写法可用，且 `std::count(a, a + 7, 3)` 直接得到 3；若值域很大，用 `std::unordered_map<int,int>` 计数；初始化还可写 `std::array<int, 8> cnt{};`（值初始化为 0，比 `= {0}` 更不易误解为“只有第一个是 0、其余缺省”）。"
-  },
-  "指-01": {
-    "stem": "若有定义：\n\n```cpp\nint x = 7;\nint *p = &x;\n```\n\n则下列对表达式值的判断，正确的是（ ）。",
-    "analysis": "答案 `*p` 的值是 7，且 `&*p` 与 `&x` 相等：`p` 存的是 x 的地址，`*p` 就是 x 本身，`&*p` 又取回同一地址，C++ 标准保证 `&*p == p`。干扰项里 `*&p` 的类型是 `int *`、值是 `&x`，不是 7；`&p` 是二级指针（p 自身的地址），与 `p` 的值不同。C++ 的补充是：`std::addressof(x)`（`<memory>`）能取到真实地址，即使类型重载了 `operator&`；而引用是“自动解引用的常量别名”，`int &r = x;` 之后 `&r == &x` 恒成立，C++ 的引用参数本质上就是这种别名。"
-  },
-  "指-02": {
-    "stem": "在 64 位平台上（指针占 8 字节，`int` 占 4 字节），某个函数中有定义：\n\n```cpp\nint a[10];\nint *p = a;\n```\n\n则 `sizeof(a)` 与 `sizeof(p)` 的值分别是（ ）。",
-    "analysis": "答案 40 和 8：`a` 是含 10 个 int 的数组，`sizeof(a)` 是整块大小 40；`p` 是指针，`sizeof(p)` 是 8，与它指向多少元素无关。C++ 的规则相同，`std::array<int, 10>` 的 `sizeof` 同样是 40，而 `std::vector<int>` 的 `sizeof` 只是对象头部（通常 24 字节，三个指针），元素在堆上。C++17 提供了 `std::size(a)` 直接得元素个数 10，避免 `sizeof(a) / sizeof(a[0])` 在数组退化成指针后静默算错（那时会得到 1）。"
-  },
-  "指-04": {
-    "analysis": "答案 20 和 40：`p = a + 2` 指向 a[2]（值 30），`*(p - 1)` 是 a[1] 得 20，`p[1]` 等价 `*(p + 1)` 是 a[3] 得 40。指针算术的单位是“元素”而不是字节，这一点 C 与 C++ 完全一致。C++ 里同样的语义适用于迭代器：`std::vector<int>::iterator` 的 `+ 1` 也是前进一个元素；而 `p[-1]` 在 C++ 中同样等价于 `*(p - 1)`，只是可读性差、且一旦越界就是未定义行为（`std::vector` 只有 `at()` 会检查）。"
-  },
-  "指-05": {
-    "stem": "执行下列代码：\n\n```cpp\nint a[3] = {1, 2, 3};\nint *p = a;\nint x = *p++;\nint y = (*p)++;\n```\n\n之后 a[0]、a[1]、x、y 的值依次是（ ）。",
-    "analysis": "答案 1、3、1、2：`*p++` 因后缀 `++` 优先级高于 `*`，等价于 `*(p++)`，x 取 a[0] 得 1，p 指向 a[1]；`(*p)++` 先解引用得到 a[1]，再对它自增，所以 y 得旧值 2、a[1] 变成 3。C++ 与 C 的优先级规则相同，C++ 里迭代器代码也常用 `*it++` 的写法。要注意 `(*p)++` 与 `++*p` 都是修改被指对象，而 `*++p` 是先移动指针再取值；另外 `p++` 的返回值是旧指针的副本，所以 `*p++` 能安全地“取值并前进”。"
-  },
-  "指-06": {
-    "stem": "在 64 位平台（指针 8 字节、`int` 4 字节）上运行：\n\n```cpp\n#include <iostream>\n\nvoid f(int a[10])\n{\n    std::cout << sizeof(a) << '\\n';\n}\n\nint main()\n{\n    int a[10];\n    std::cout << sizeof(a) << '\\n';\n    f(a);\n    return 0;\n}\n```\n\n输出是（ ）。",
-    "analysis": "输出先 40 后 8：main 里的 `a` 是数组，`sizeof(a)` 是 40；传给 `f` 时数组名退化成 `int *`，形参 `int a[10]` 中的 10 被编译器完全忽略，`sizeof(a)` 只是指针大小 8。C++ 与 C 的退化规则相同，但 C++ 有保留大小的写法：`void f(int (&a)[10])` 或 `template <std::size_t N> void f(int (&a)[N])`，此时 `sizeof(a)` 仍是 40；C++20 的 `std::span<int>` 则把指针和长度一起传。这也是 C++ 里 `std::size` 在 main 中可用、在 f 中不可用的原因。"
-  },
-  "指-08": {
-    "stem": "若有定义：\n\n```cpp\nint a[3][4];\nint (*p)[4] = a;\n```\n\n则 `p + 1` 与 `*(p + 1)` 分别表示（ ）。",
-    "analysis": "答案 `p + 1` 指向 a[1] 这一行（类型是 `int (*)[4]`），`*(p + 1)` 是数组 a[1]，在表达式中进一步退化为 a[1][0] 的地址，类型为 `int *`。行指针的步长是整行 4 个 int（16 字节），不是 4 字节，这就是 `p + 1` 与 `*p + 1` 的区别。C++ 的声明读法相同，也可以用 `using Row = int[4]; Row *p = a;` 或 `std::array<std::array<int,4>,3>` 让 `&a[1]` 的类型变成 `std::array<int,4>*`，此时 `p + 1` 同样跳一整行，但类型更清晰。"
-  },
-  "指-09": {
-    "analysis": "答案是 `int *p[4];`——`[]` 优先级高于 `*`，所以 p 先是含 4 个元素的数组，元素类型是 `int *`。其余选项分别是：`int (*p)[4]` 是数组指针（指向含 4 个 int 的数组）、`int **p[4]` 是 4 个二级指针、`int (*p[4])(void)` 是 4 个函数指针组成的数组。C++ 里这份优先级规则完全相同，但可以用 `using` 别名消除歧义：`using IntPtr = int *; IntPtr p[4];`，或直接用 `std::array<int *, 4>`；C++ 还多了 `std::vector<int *>`，长度可变。"
-  },
-  "指-11": {
-    "analysis": "答案：`NULL` 可赋给任意对象指针类型表示“不指向任何对象”，且 `free(NULL)` 安全（标准保证是空操作）。对 NULL 解引用是未定义行为，不会“得到 0”；`if (!p)` 完全合法且是惯用写法。C++ 的关键补充是 `nullptr`：C++11 引入 `std::nullptr_t` 类型的字面量，解决了 `NULL`（通常是 0 或 `__null`）在重载中的歧义——`f(int)` 与 `f(char *)` 同时存在时传 `NULL` 会选到 `f(int)`，传 `nullptr` 才明确选指针版本。C++ 里还应优先用 `nullptr`，并可用 `if (p)` 直接判断。"
   },
   "指-13": {
     "stem": "有声明：\n\n```cpp\nint x = 1, y = 2;\nconst int *p1 = &x;\nint *const p2 = &x;\nconst int *const p3 = &x;\n```\n\n下列语句中，**编译能通过**的是（ ）。",
@@ -268,9 +146,6 @@
     "stem": "执行下列代码：\n\n```cpp\nint a[4] = {10, 20, 30, 40};\nint *p = a;\nint x = *p++;\np++;\nint y = *p;\nint z = *++p;\n```\n\nx、y、z 的值依次是（ ）。",
     "analysis": "答案 10、30、40：`*p++` 取 a[0] 得 10 并让 p 指向 a[1]；再 `p++` 使 p 指向 a[2]；`y = *p` 得 30；`z = *++p` 先自增到 a[3] 再取值得 40。注意 `*p++`（取当前值、指针后移）与 `*++p`（指针先移、再取值）顺序相反，C 与 C++ 规则相同。C++ 里同样的语义适用于迭代器，`*it++` 是遍历容器的标准写法；不过迭代器的 `it++` 可能产生临时对象，循环里应优先写 `++it`（对指针没有性能差异，对 `std::list` 等有）。"
   },
-  "指-26": {
-    "analysis": "答案是 `a + 2`：数组名 a 在表达式中退化为指向首元素的 `int *`，`a + 2` 就是第 3 个元素的地址，与 `&a[2]` 相等且类型相同。其余：`*a + 2` 是 a[0] 的值加 2；`&a + 2` 的类型是 `int (*)[5]`、会偏移两整个数组（40 字节）；`a[2] + 2` 是值不是地址。C++ 里同样成立，且 `std::next(a, 2)` 或 `std::next(std::begin(a), 2)` 能表达同样含义并兼容迭代器；对 `std::array` 则用 `a.data() + 2` 或 `a.begin() + 2`。"
-  },
   "指-27": {
     "analysis": "答案是 `p < q`，`q - p` 等于 3：指针相减的单位是元素个数而不是字节，所以 4 - 1 = 3（字节差是 12，是干扰项）。指针比较在指向同一数组（或尾后位置）时才有确定意义，跨数组比较是未定义行为；这一点 C 与 C++ 相同。C++ 里推荐用 `std::distance(p, q)` 得到带符号的差值（返回 `std::ptrdiff_t`），语义更清晰；注意 `std::distance` 对随机访问迭代器是 O(1)，对 `std::list` 是 O(n)，这也是 C++ 要求你了解迭代器类别的原因。"
   },
@@ -280,112 +155,28 @@
   "指-31": {
     "analysis": "有错误的是 `free(p); free(p);`：同一块内存释放两次是未定义行为（double free），常见后果是堆管理器崩溃或被利用。C 里 `free(p); p = NULL;` 后再 free 是安全的，因为 `free(NULL)` 是空操作。C++ 的解法是从根上避免手工管理：`std::unique_ptr<int[]>`、`std::vector<int>` 在析构时释放一次，`reset()` 后不会重复释放；需要共享所有权时才用 `std::shared_ptr`（引用计数归零才释放）。C++ 里也应把 `free` 换成 `delete[]`，且不能混用 malloc/free 与 new/delete。"
   },
-  "指-33": {
-    "stem": "下列语句中，执行后**会出问题**的是（ ）。",
-    "options": [
-      "`char s[] = \"hello\"; s[0] = 'H';`",
-      "`const char *p = \"hello\"; std::printf(\"%s\", p);`",
-      "`const char *p = \"hello\"; p = \"world\";`",
-      "`char *p = const_cast<char *>(\"hello\"); p[0] = 'H';`"
-    ],
-    "answer": 3,
-    "analysis": "C++ 里字符串字面量的类型是 `const char[N]`，所以选项要先写成 `const char *`：`char *p = \"hello\";` 自 C++11 起直接编译错误（C 只给一条警告），这正是 C 与 C++ 的第一处差异。`p = \"world\";` 只是让指针改指向另一个字面量，合法；`const char *p` 打印也没问题；真正会出问题的是用 `const_cast` 把 const 去掉再写：字面量通常放在只读段，写入是未定义行为，多数平台会段错误。C++ 的正解是 `char s[] = \"hello\"; s[0] = 'H';`（数组是副本，可写）或 `std::string s = \"hello\"; s[0] = 'H';`。"
-  },
   "指-35": {
     "stem": "下列程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int a[3] = {7, 8, 9};\n    int *p = a + 1;\n    int **pp = &p;\n\n    std::cout << *p << ' ' << **pp << ' ' << *(*pp + 1) << '\\n';\n    return 0;\n}\n```",
     "analysis": "输出 `8 8 9`：p 指向 a[1]，`*p` 是 8；`*pp` 就是 p，所以 `**pp` 也是 8；`*(*pp + 1)` 等价 `*(p + 1)` 是 a[2] 得 9。C++ 与 C 的逐层解引用规则相同，但 C++ 里表达“修改调用者指针”更常用的写法是引用指针 `void advance(int *&p) { ++p; }`，不必引入二级指针；另外 `int **` 在 C++ 中仍常见于 `argv` 和二维动态数组，但更推荐 `std::vector` 或 `std::span`。"
-  },
-  "指-37": {
-    "stem": "关于 `void *`（无类型指针），下列说法正确的是（ ）。",
-    "options": [
-      "`void *` 既不能接收具体类型指针的值，也不能赋给具体类型指针，两个方向都必须强制转换",
-      "`void *` 可以隐式接收任意对象指针的值，但反过来赋给 `int *` 必须显式转换（如 `static_cast`），而且不能对它解引用",
-      "`void *` 可以解引用，解引用得到 1 个字节的值",
-      "`void *p = std::malloc(4); p++;` 在 C++ 中合法，p 前进 1 个字节"
-    ],
-    "answer": 1,
-    "analysis": "这题的答案在 C 与 C++ 中数值相同、理由不同。C 允许 `void *` 与任意对象指针双向隐式转换；C++ 只保留了一个方向：任何对象指针都能隐式转成 `void *`，但 `void *` 转回 `int *` 必须显式 `static_cast`（这正是 C++ 里 `malloc` 必须写 `static_cast<int *>(std::malloc(...))` 的原因）。两个方向都不能解引用：`*p` 无法确定类型和大小，编译报错。`p++` 在 C++ 中也非法，因为标准 C++ 里 `void` 不是完整类型、没有大小；GCC 把 `void` 大小当 1 是扩展。要做字节级操作应使用 `unsigned char *`（C++17 起也可以用 `std::byte *`）。"
   },
   "指-39": {
     "stem": "在 64 位平台（指针占 8 字节）上，某个函数中有：\n\n```cpp\n#include <cstring>\n\nchar s[] = \"hello\";\nchar *p = s;\n```\n\n则 `sizeof(s)`、`sizeof(p)`、`strlen(s)` 的值分别是（ ）。",
     "analysis": "答案 6、8、5：`sizeof(s)` 是数组总大小，\"hello\" 有 5 个字符加 1 个 `'\\0'`，所以 6；`sizeof(p)` 是指针大小 8；`strlen(s)` 数到第一个 `'\\0'`，得 5。C++ 里 `strlen` 在 `<cstring>` 中（C 的 `<string.h>` 也可用），但更推荐 `std::string`：`std::string s = \"hello\";` 的 `s.size()` 是 5，`sizeof(s)` 是对象本身（通常 32 字节），且 `s.c_str()` 才提供 `'\\0'` 结尾的 C 风格缓冲区。注意 `sizeof` 是编译期算的、`strlen` 是运行时数的，这个区别在 C 与 C++ 中完全一致。"
   },
-  "指-41": {
-    "stem": "下面函数想交换两个整数，但调用后主调函数中的实参并没有交换：\n\n```cpp\nvoid swap(int a, int b)\n{\n    int t = a;\n    a = b;\n    b = t;\n}\n```\n\n下列修改方式中，能真正实现交换的是（ ）。",
-    "options": [
-      "把形参改为 `int &a, int &b`，函数体与调用 `swap(x, y)` 都不变",
-      "把返回值类型改为 `int`，返回交换后的 `a`",
-      "在函数体内把 `int t = a;` 改为 `static int t = a;`",
-      "把形参改为 `int *a, int *b`，函数体改为 `int t = *a; *a = *b; *b = t;`，但调用仍写 `swap(x, y)`"
-    ],
-    "answer": 0,
-    "analysis": "答案是引用形参：`int &a` 让 a 成为实参的别名，函数体内的赋值直接作用在 x、y 上，调用处 `swap(x, y)` 完全不用改，这是 C++ 相对 C 最直接的改进，也是 C++ 里“输出型参数”的首选写法。C 语言没有引用，只能传指针，且调用必须写成 `swap(&x, &y)`——所以把形参改成 `int *` 却仍写 `swap(x, y)` 属于类型不匹配、编译不过，第四项由此错误。C++ 的标准做法更简单：`std::swap(x, y)`。注意不要写 `static int t`，它既没解决值传递问题，还引入了跨调用的隐藏状态和线程安全问题。"
-  },
   "指-43": {
     "stem": "下面函数存在的主要问题是（ ）。\n\n```cpp\nint *make()\n{\n    int a[3] = {1, 2, 3};\n    return a;\n}\n```",
     "analysis": "答案是“返回了局部数组的地址，函数返回后该内存已失效”：a 是栈上的局部数组，函数返回时栈帧被回收，调用者拿到的地址指向已失效的内存（悬空指针），再访问就是未定义行为。C++ 与 C 同样禁止这样做，但 C++ 有安全的替代：返回 `std::array<int, 3>` 或 `std::vector<int>`（按值返回，可以靠 RVO/移动语义做到几乎零开销），或返回 `std::unique_ptr<int[]>`。要注意 C++ 里即使写 `int (&make())[3]` 返回引用也仍然是悬空引用，编译器通常会给出警告，但不会阻止你。"
   },
-  "指-45": {
-    "stem": "下列程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    char s[] = \"abcd\";\n\n    for (char *p = s; *p != '\\0'; p += 2)\n        std::cout << *p;\n    std::cout << '\\n';\n    return 0;\n}\n```",
-    "analysis": "输出 `ac`：从 s[0] 开始每次前进 2 个字符，依次取到 'a'（下标 0）和 'c'（下标 2），再前进到下标 4 正是 `'\\0'`，循环结束。C++ 与 C 的指针遍历写法相同，C++ 里还可以写 `for (const char *p = s; *p; p += 2)`（`*p` 本身就是“非零即真”的判定），或改用 `std::string_view sv{s};` 配合下标遍历；注意 `p += 2` 是元素步长，`char` 的步长恰好 1 字节，所以看到的是字节偏移与下标一致。"
-  },
   "指-46": {
     "analysis": "答案是 `int (*op[2])(int, int) = {add, sub};`：`[]` 先与 op 结合说明它是数组，括号里的 `*` 说明元素是指针，最外层 `(int, int)` 说明指向接受两个 int 的函数。C++ 里同样写法可用，但更清晰的写法是 `using BinOp = int (*)(int, int); BinOp op[2] = {add, sub};` 或 `std::array<BinOp, 2>`；日常更常见的是 `std::function<int(int, int)>` 或直接把 lambda 放进 `std::vector`，这样还能捕获状态。注意 `int *op[2](int, int)` 会被解析成“返回 int* 的函数数组”，数组元素不能是函数，所以非法。"
-  },
-  "指-47": {
-    "analysis": "答案是 4 字节和 1 字节：指针 `+1` 前进的字节数等于所指类型的大小，`int *` 是 4 字节、`char *` 是 1 字节，与指针自身的 8 字节大小无关。C++ 的规则完全相同，这也是为什么按字节遍历内存必须转成 `unsigned char *` 或 C++17 的 `std::byte *`；`void *` 既不能解引用也不能做算术。C++ 里还可以用 `std::byte` 表达“这是原始字节”的意图，避免 `char` 的符号性带来的歧义。"
   },
   "指-48": {
     "stem": "有定义：\n\n```cpp\nint a[4] = {1, 2, 3, 4};\nint *p = &a[1];\n```\n\n则 `p[-1]`、`*(a + 3)`、`p - a` 的值分别是（ ）。",
     "analysis": "答案 1、4、1：p 指向 a[1]，`p[-1]` 等价 `*(p - 1)` 是 a[0] 得 1（仍在数组内，合法）；`*(a + 3)` 是 a[3] 得 4；`p - a` 是同一数组内的指针差，单位是元素，得 1。C++ 的规则相同，`p[-1]` 这种负下标只要落在数组内就合法，越界就是未定义行为。C++ 里 `std::distance(a, p)` 得 1，`std::prev(p)` 得指向 a[0] 的指针；注意对 `std::vector::iterator` 做 `-1` 同样要求结果在 `[begin, end]` 之内。"
   },
-  "结-01": {
-    "analysis": "答案是“右花括号后必须写分号”：`struct Point { ... };` 的分号是定义语句的结束符，漏掉会在后续使用处引发莫名其妙的错误（例如把下一个变量声明吞进类型定义里）。C++ 的规则完全一致，class、struct、union、enum 定义后都要分号。C++ 额外的语法点是：`struct` 的成员默认 public、`class` 默认 private；结构体里可以直接定义成员函数、构造函数，这已经远超 C 的“纯数据聚合”，但只要还保持聚合体（无用户声明构造函数、无私有成员等），`{3, 4}` 的聚合初始化依然可用。"
-  },
-  "结-02": {
-    "stem": "有定义\n\n```cpp\nstruct Point {\n    int x;\n    int y;\n};\n\nPoint p = {3};\n```\n\n则 `p.x` 与 `p.y` 的值分别是（ ）。",
-    "analysis": "答案 3 和 0：聚合初始化只给了第一个成员，其余成员按“值初始化”补 0，所以 p.x = 3、p.y = 0。C++ 的规则相同，而且写法更灵活：`Point p{3};`（C++11 起的统一初始化）、`Point p{};`（全 0）。要注意 C++ 里一旦给 Point 加上构造函数，`{3}` 的含义就变成“调用接受一个 int 的构造函数”，行为完全不同；C++11 还禁止在花括号初始化里做窄化转换（`Point p{3.9};` 会编译错误，而 C 风格的 `{3.9}` 会静默截断）。"
-  },
-  "结-04": {
-    "stem": "设有\n\n```cpp\nstruct Book {\n    char title[30];\n    double price;\n};\n\nBook b = {\"C Primer\", 59.5}, *pb = &b;\n```\n\n下列表达式中**错误**的是（ ）。",
-    "analysis": "错误表达式是 `pb.title`：pb 是指针，访问成员必须用 `->` 或先解引用再 `.`，写成 `(*pb).title` 才等价于 `b.title`。C++ 与 C 的规则相同，C++ 的补充是：可以写 `Book &r = b; r.title` 用引用避免指针语法；`title` 建议换成 `std::string`，这样不用关心 30 字节的定长限制，成员访问仍是 `b.title`；C++ 的 `->` 还能被类重载（智能指针 `std::unique_ptr<Book> pb; pb->title` 就是重载的效果）。"
-  },
-  "结-06": {
-    "stem": "有\n\n```cpp\nstruct Pair {\n    int a;\n    int b;\n};\n\nPair p1 = {1, 2}, p2;\n```\n\n下列语句中能把 `p1` 的两个成员完整复制给 `p2`，且不产生编译错误的是（ ）。",
-    "options": [
-      "`p2 = {1, 2, 3};`",
-      "`p2.a = p1;`",
-      "`p2 = *p1;`",
-      "`p2 = p1;`"
-    ],
-    "answer": 3,
-    "analysis": "答案是 `p2 = p1;`：同类型结构体可以直接整体赋值，编译器按成员逐个做拷贝。C++ 里这条语句调用的是编译器隐式生成的拷贝赋值运算符，对 POD 类型等价于逐字节拷贝；若结构体里有指针成员，就是“浅拷贝”，两个对象指向同一块内存，析构时会重复释放——这就是 C++ 的三/五法则和深拷贝要解决的问题。C++ 还允许 `p2 = {4, 5};` 这种聚合列表赋值（C 不支持），而 `{1, 2, 3}` 元素过多会编译错误；`p2.a = p1;` 是把结构体赋给 int，类型不匹配；`p2 = *p1;` 对非指针解引用，非法。"
-  },
-  "结-07": {
-    "stem": "设有\n\n```cpp\nstruct Stu {\n    int id;\n    int score[3];\n};\n\nStu s[2] = {{101, {80, 90, 85}}, {102, {70, 75, 88}}};\nStu *p = s;\n```\n\n则表达式 `(*(p + 1)).score[2]` 的值是（ ）。",
-    "analysis": "答案 88：`p + 1` 是 `&s[1]`，解引用得 s[1]，`score[2]` 是第三个成绩 88。`(*(p + 1)).score[2]` 与 `p[1].score[2]` 完全等价，后者更常用。C++ 的规则相同，C++ 里可以用 `std::array<Stu, 2>` 配合 range-for：`for (const auto &stu : s) ...`，或者用引用 `Stu &stu = s[1]; stu.score[2]`；把 `score` 换成 `std::array<int, 3>` 后还能用 `stu.score.at(2)` 做边界检查。"
-  },
-  "结-09": {
-    "stem": "设有\n\n```cpp\nstruct Date {\n    int year;\n    int month;\n    int day;\n};\n\nstruct Employee {\n    int id;\n    char name[16];\n    struct Date birth;\n};\n```\n\n在 `char` 占 1 字节、`int` 占 4 字节且按 4 字节对齐的常见环境中，`sizeof(struct Employee)` 的值是（ ）。",
-    "analysis": "答案 32：id 占 0~3、name 占 4~19（16 字节），此后偏移 20 已是 4 的倍数，birth 从 20 开始占 12 字节到 31，总大小 32，正好是最大对齐 4 的倍数，无需尾部填充。C++ 的对齐规则完全相同，并且提供了工具：`alignof(Employee)`、`offsetof(Employee, birth)`（`<cstddef>`）、`alignas(16)` 指定对齐、`#pragma pack` 或 `__attribute__((packed))` 改变布局。C++ 里还可以通过调整成员顺序（把大的放前面）减少填充；`std::byte` 可用来做序列化时的字节视图。"
-  },
-  "结-11": {
-    "stem": "有\n\n```cpp\nstruct Point {\n    int x;\n    int y;\n};\n\nvoid move(Point p)\n{\n    p.x += 10;\n    p.y += 10;\n}\n```\n\n主函数中执行 `Point a = {1, 2}; move(a);` 之后，`a.x` 的值是（ ）。",
-    "analysis": "答案是 1：结构体按值传参，形参 p 是 a 的一份拷贝，函数里改的是拷贝，调用者的 a 不受影响。C++ 与 C 都是值传递，但 C++ 的“拷贝”不是简单 memcpy，而是调用拷贝构造函数——如果 Point 里有 `std::string` 成员，这次调用会分配新字符串；因此 C++ 常用 `void move(Point &p)`（要修改）或 `void move(const Point &p)`（只读）来避免拷贝。如果想让修改生效又保持调用写法，也可以让函数按值接收再返回新对象：`a = move(a);`。"
-  },
-  "结-12": {
-    "analysis": "答案“可以直接返回结构体类型的值，调用处用同类型变量接收”：结构体是完整类型，可以作为返回值，C89 起就支持。C++ 不仅支持，而且效率有保证：返回局部结构体时编译器会做返回值优化（RVO/NRVO），C++17 起对纯右值还强制省略拷贝，`return Point{1, 2};` 不会真的拷贝两次。C++ 还能返回 `std::pair`、`std::tuple`、`std::optional<Point>` 来表达“多个值”或“可能没有值”，这些容器都支持结构化绑定 `auto [x, y] = f();`。"
-  },
-  "结-14": {
-    "stem": "有语句\n\n```cpp\ntypedef struct Node {\n    int data;\n    struct Node *next;\n} Node;\n```\n\n下列说法正确的是（ ）。",
-    "analysis": "答案：为 `struct Node` 起别名 Node，之后可以直接写 `Node` 定义变量而省略 struct。C++ 里这条语句仍然合法，但 `typedef` 已经是多余的：C++ 的结构体名本身就进入普通类型名空间，`struct Node { ... };` 之后直接写 `Node n;` 就可以。typedef 是编译期建立的同义词、不是预处理文本替换，所以“文本替换”的说法错；它只定义类型别名，不定义变量。C++ 更推荐 `using Node = struct Node;` 或直接省略 typedef；结构体内部的 `struct Node *next;` 在 C++ 里也可以简写成 `Node *next;`。"
-  },
   "结-16": {
     "stem": "在常见 32 位或 64 位环境中（`char` 占 1 字节、`int` 占 4 字节并按 4 字节对齐），有\n\n```cpp\nstruct S {\n    char c;\n    int i;\n};\n```\n\n则 `sizeof(S)` 的值是（ ）。",
     "analysis": "答案是 8：c 占偏移 0 的 1 个字节，i 要求 4 字节对齐，编译器在偏移 1~3 填入 3 个填充字节，i 占 4~7，总大小 8（正好是最大对齐 4 的倍数，无需尾部填充）。C++ 的规则相同，并提供 `alignof(S)`（得 4）、`offsetof(S, i)`（得 4）、`alignas` 强制对齐等工具。把成员按“从大到小”排列可以减少填充：`struct { int i; char c; }` 仍然是 8，但 `struct { char c; char d; int i; }` 也是 8；只有 `struct { int i; char c; char d; }` 这种顺序才可能把填充压到最少。"
-  },
-  "结-17": {
-    "analysis": "答案“可以在定义类型的同时直接定义变量，但之后再无法用这个类型定义新的变量”：匿名结构体没有类型名，所以不能写 `struct ??? x;` 再用它，也不能做函数参数或返回类型；它常作为另一个结构体的嵌入成员使用（C11 匿名成员）。C++ 里同样可以写 `struct { int x; int y; } p;`，而且 C++11 起有了变通手段：`decltype(p) q;` 能拿到这个无名类型并定义同类型变量，`auto q = p;` 也行——这是 C 没有的能力。不过可读性差，C++ 更推荐给它起个名字。"
   },
   "结-20": {
     "stem": "执行下面程序段后，输出结果是（ ）（程序片段）。\n\n```cpp\n#include <cstdlib>\n#include <iostream>\n\nstruct Node {\n    int data;\n    struct Node *next;\n};\n\nint main()\n{\n    Node *head = nullptr, *p;\n\n    for (int i = 1; i <= 3; i++) {\n        p = static_cast<Node *>(std::malloc(sizeof(Node)));\n        p->data = i * 2;\n        p->next = head;\n        head = p;\n    }\n    for (p = head; p != nullptr; p = p->next)\n        std::cout << p->data << ' ';\n    return 0;\n}\n```",
@@ -393,10 +184,6 @@
   },
   "结-21": {
     "analysis": "答案是 `q->next = p->next; free(p);`：先让前驱绕过 p 完成摘链，再释放 p 的内存；顺序不能反，因为 `free(p)` 之后再读 `p->next` 是访问已释放内存，属于未定义行为。C++ 的等价写法是 `q->next = p->next; delete p;`，或者干脆用 `std::list<int>::erase(it)` 让容器自己处理前后链接与释放；用 `std::unique_ptr` 串起来的链表则只要 `q->next = std::move(p->next);`，p 析构时自动释放。核心思想一致：先改链、后释放。"
-  },
-  "结-24": {
-    "stem": "在 `int` 占 4 字节并按 4 字节对齐、`char` 占 1 字节的环境中，有\n\n```cpp\nunion U {\n    int i;\n    char c;\n};\n\nstruct S {\n    int i;\n    char c;\n};\n```\n\n则 `sizeof(union U)` 与 `sizeof(struct S)` 分别是（ ）。",
-    "analysis": "答案 4 和 8：union 的所有成员共用同一块内存，大小取最大成员并按最大对齐补齐，所以是 4；struct 的成员各自占位，i 占 4 字节后 c 占 1 字节，再补 3 个字节凑齐 4 的倍数，所以是 8。C++ 的布局规则相同，并且 C++ 的 union 可以带成员函数、构造函数和析构函数（C++11 起还支持带非平凡成员的 union，需自己管理构造/析构）。C++17 的 `std::variant<int, char>` 是类型安全的替代：它记录当前活跃的是哪个类型，取错类型会抛 `std::bad_variant_access`，而 union 读错成员只是未定义行为。"
   },
   "结-25": {
     "analysis": "答案是 `struct Node { int data; struct Node *next; };`：成员必须是指针，因为此时 Node 还未定义完整，不能包含自身类型的对象（会导致无限大小）；而“指向自身类型的指针”是合法的，因为指针大小固定。C++ 里同样可以写 `struct Node { Node *next; };`——结构体名在 C++ 中直接是类型名，不必重复写 struct。C++ 里若用 `std::unique_ptr<Node> next;` 表达所有权，要注意递归析构需要完整类型，通常在类内声明、类外定义析构函数；`std::shared_ptr` 没有这个问题。"
@@ -431,31 +218,9 @@
     "stem": "有\n\n```cpp\nstruct Stu {\n    int id;\n    char name[10];\n};\n\nStu s[3] = {{1, \"A\"}, {2, \"B\"}};\n```\n\n关于 `s[2]`，下列说法正确的是（ ）。",
     "analysis": "答案：`s[2].id` 为 0，`s[2].name` 是空字符串。聚合初始化只写了前两个元素，第三个元素被值初始化——所有成员清零，所以 id 为 0、name 全是 `'\\0'`。C++ 的规则相同，`std::array<Stu, 3> s{{{1, \"A\"}, {2, \"B\"}}};` 的剩余元素同样被值初始化。要注意区分“值初始化”和“默认初始化”：`Stu s[3];` 在函数内是默认初始化，成员内容不确定；写成 `Stu s[3]{};` 或部分初始化才会清零。C++11 起还可以用 `Stu s[3] = {};` 明确表达“全部清零”。"
   },
-  "结-37": {
-    "stem": "有\n\n```cpp\nstruct Point {\n    int x;\n    int y;\n};\ntypedef struct Point Point;\n```\n\n下列定义并初始化变量 `p` 的语句中，正确的是（ ）。",
-    "analysis": "答案是 `Point p = {1, 2};`：Point 是 typedef 出来的类型名，聚合初始化按成员顺序赋 1、2。C++ 里这条 typedef 是多余的（`struct Point` 的 Point 本身已是类型名），但写了也合法，说明 C++ 兼容 C 的写法。另外三项的错误在 C++ 中同样成立：`(1, 2)` 是逗号表达式，结果是 2，不能初始化结构体；`p = Point{1, 2}` 前面没有声明 p 的类型；`struct p Point` 语法不通。C++11 还可以写 `Point p{1, 2};`（统一初始化，且禁止窄化转换）。"
-  },
-  "结-39": {
-    "stem": "设有\n\n```cpp\nstruct Item {\n    int id;\n    double price;\n};\n\nItem list[10];\n```\n\n要求出数组 `list` 的元素个数，正确的表达式是（ ）。",
-    "analysis": "答案是 `sizeof(list) / sizeof(list[0])`：整个数组的字节数除以单个元素的字节数，与元素类型无关，得 10。C++17 提供 `std::size(list)` 直接得 10，`std::array<Item, 10>::size()` 也行；要注意这个式子只在 list 仍是数组时成立，一旦作为实参传给 `Item list[]` 形参就退化成指针，商变成 1（或 0，如果元素比指针大）。另外 `sizeof(list) / sizeof(int)` 只有在元素恰好 4 字节时才碰巧正确，`sizeof(list) / 10` 更是把“元素个数”和“元素大小”搞混。"
-  },
   "结-40": {
     "stem": "有\n\n```cpp\nstruct Rec {\n    int id;\n    int score;\n};\n\nRec a[3] = {{1, 80}, {2, 90}, {3, 70}};\nRec *p = a;\n```\n\n执行 `p++;` 之后，`p` 指向哪个元素，它保存的地址比自增前增加了多少字节（假设 `sizeof(Rec)` 为 8）（ ）。",
     "analysis": "答案是 `a[1]`、增加 8 字节：指针 `++` 前进的字节数等于所指类型的大小，`sizeof(Rec)` 是 8，所以 p 从 &a[0] 移到 &a[1]，地址加 8。C++ 的规则相同，`std::next(p)` 表达同样语义；对 `std::vector<Rec>::iterator` 做 `++` 也是前进一个元素（内部就是这个指针加法）。别把“结构体第一个成员占 4 字节”误当成步长，指针算术只看整个类型的大小。"
-  },
-  "枚-01": {
-    "stem": "有定义\n\n```cpp\nenum Season {\n    SPRING,\n    SUMMER,\n    AUTUMN,\n    WINTER\n};\n```\n\n则枚举常量 `AUTUMN` 的值是（ ）。",
-    "analysis": "答案 2：未显式赋值的枚举常量从 0 开始依次递增，SPRING=0、SUMMER=1、AUTUMN=2、WINTER=3。C++ 的默认值规则相同，但类型语义不同：C 中枚举常量的类型就是 int；C++ 中无作用域枚举常量的类型是 Season 本身，参与算术时再做整型提升，`sizeof(AUTUMN)` 通常是 4。C++11 的 `enum class Season { SPRING, SUMMER, AUTUMN, WINTER };` 更安全：常量必须写 `Season::AUTUMN`，不会隐式转成 int，也不能和别的枚举混用，但计数值规则完全一样。"
-  },
-  "枚-02": {
-    "stem": "有定义\n\n```cpp\nenum Code {\n    RED = 4,\n    GREEN,\n    BLUE = 9,\n    WHITE\n};\n```\n\n则表达式 `GREEN + WHITE` 的值是（ ）。",
-    "analysis": "答案 15：显式赋值后，未赋值的常量在前一个基础上加 1，所以 GREEN = 5；BLUE 重新指定为 9，WHITE = 10；GREEN + WHITE = 5 + 10 = 15。C++ 的取值规则完全相同。差别在类型：C++ 中 `GREEN + WHITE` 会先把两个 Code 常量整型提升为 int 再相加，结果是 int；若换成 `enum class Code`，`GREEN + WHITE` 直接编译错误，必须先 `static_cast<int>(Code::GREEN) + static_cast<int>(Code::WHITE)`，这正是强类型枚举防止误算的设计意图。"
-  },
-  "枚-04": {
-    "analysis": "答案“枚举常量是整型常量，`sizeof` 一个枚举常量通常等于 `sizeof(int)`，可以参与算术与比较”：无作用域枚举的底层类型通常就是 int，所以占 4 字节，能参与算术。这里要讲清 C 与 C++ 的细微差别：C 标准规定枚举常量的类型是 int；C++ 规定无作用域枚举常量的类型是枚举类型本身，只是在算术、比较时经过整型提升变成 int，`sizeof` 的结果一般仍是 4。C++11 的 `enum class` 则完全不隐式转换，`sizeof` 由底层类型决定（可写 `enum class E : unsigned char`）。“只占 1 字节”“只能做 case 标签”都是错的。"
-  },
-  "枚-05": {
-    "analysis": "答案是“枚举由编译器处理，是具有名字的整型常量，参与作用域与类型检查，出错信息中保留常量名”：宏在预处理阶段就被文本替换掉，调试器里看不到 RED 这个名字，也没有类型和作用域。C++ 里这一优势被进一步放大：可以用 `constexpr int RED = 0;` 替代宏（类型明确、可参与模板实参、有作用域），用 `enum class Color { RED, GREEN };` 把常量关进 Color 作用域，避免不同模块的同名常量冲突。枚举常量的值仍然不能修改，“更省内存”“可 #undef”都是错的。"
   },
   "枚-07": {
     "stem": "有\n\n```cpp\nenum Cmd { START = 1, STOP, PAUSE };\nCmd c = STOP;\n```\n\n下列 `switch` 用法中，语法正确的是（ ）。",
@@ -482,9 +247,6 @@
     "stem": "在 `int` 占 4 个字节的环境中，下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int a = -1;\n    unsigned int b = 1;\n\n    if (a < b)\n        std::cout << \"yes\\n\";\n    else\n        std::cout << \"no\\n\";\n    return 0;\n}\n```",
     "analysis": "输出 no：`int` 与 `unsigned int` 比较时按“通常算术转换”，int 被转成 unsigned int，-1 变成 4294967295，所以 `a < b` 为假，走 else。C 与 C++ 的转换规则相同（C++20 还把这种转换明确定义为模 2^N）。C++ 的实用对策是用 C++20 的 `std::cmp_less(a, b)`（`<utility>`）做数学意义上的比较，返回 true；或者打开 `-Wsign-compare` 让编译器提前警告。这类隐藏的无符号转换是 C/C++ 里最常见的逻辑 bug 来源之一。"
   },
-  "基-37": {
-    "analysis": "答案：用 `fabs(a - b) < 1e-9` 判断（C++ 里写 `std::fabs`，头文件 `<cmath>`）：浮点数是二进制近似表示，0.1 + 0.2 并不精确等于 0.3，所以直接 `==` 往往不成立。C++ 的补充：`<cmath>` 里 `std::fabs` 有 float/double/long double 重载，`std::abs` 对浮点也可用；更严格的做法是按量级选相对误差，如 `std::fabs(a - b) <= std::numeric_limits<double>::epsilon() * std::max(std::fabs(a), std::fabs(b))`。C++20 的 `<=>` 对浮点给出偏序（`std::partial_ordering`），NaN 会得到 unordered，但“近似相等”仍需自己写。"
-  },
   "基-38": {
     "stem": "在 `unsigned char` 为 8 位、`int` 为 32 位的环境中，下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    unsigned char x = 0x5A;\n\n    x = static_cast<unsigned char>((x << 2) | (x >> 6));\n    std::cout << static_cast<unsigned>(x) << '\\n';\n    return 0;\n}\n```",
     "analysis": "输出 105：0x5A = 0101 1010，左移 2 位得 0x168（int 提升后不丢高位），截断成 8 位是 0x68；右移 6 位得 0x01；相或得 0x69 = 105，正好是把 8 位循环左移 2 位。C++ 的规则相同，但更安全的写法是 C++20 的 `std::rotl(x, 2)` / `std::rotr`（`<bit>`），它直接表达循环移位、不依赖位宽假设。注意若把 x 声明成 `signed char`，右移是算术右移（补符号位）且左移溢出是未定义行为，所以做位运算应始终用无符号类型。"
@@ -493,13 +255,6 @@
     "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int x = 4;\n\n    switch (x) {\n    case 1: std::cout << 'A';\n    default: std::cout << 'B';\n    case 2: std::cout << 'C'; break;\n    case 3: std::cout << 'D';\n    }\n    std::cout << '\\n';\n    return 0;\n}\n```",
     "analysis": "输出 BC：x = 4 匹配不到任何 case，于是跳到 default 输出 B；由于 default 后面没有 break，继续穿透执行 case 2 输出 C 后才 break；case 3 不会被执行（穿透是按代码顺序往下走）。这说明 default 的位置可以在中间，它的作用只是“没有匹配时从这里进入”，而不是“放到最后”。C++ 的规则相同，C++17 还可以在 default 与 case 2 之间加 `[[fallthrough]];` 明确表示有意穿透；C++ 的 switch 条件必须是整型或枚举类型，不能是字符串。"
   },
-  "基-42": {
-    "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int n = 0, cnt = 0;\n\n    do {\n        cnt++;\n        n /= 10;\n    } while (n > 0);\n    std::cout << cnt << '\\n';\n    return 0;\n}\n```",
-    "analysis": "输出 1：do-while 先执行循环体，cnt 变 1、n 变 0，判断 `0 > 0` 为假退出，所以只执行一次。这题常被误解成“数字 0 有 0 位”，但 do-while 的语义决定了至少执行一次，这正是它与 while 的区别。C++ 的规则相同；如果换成 `while (n > 0)` 则一次都不执行、cnt 为 0。注意 `n /= 10` 对负数向零截断，`-123` 会经历 -12、-1、0，循环 3 次，负数的位数统计要配合 `std::abs`。"
-  },
-  "基-44": {
-    "analysis": "答案：goto 的标号具有函数作用域，只能跳转到同一函数内的标号。C++ 的规则与 C 基本一致，但更严格：C++ 禁止 goto 跳过带初始化的变量声明、跳入变量的作用域（例如跳过 `int x = 5;` 再跳到它后面使用 x 的位置会直接编译错误），因为那会破坏对象的生命周期；这一点比 C 严格。C++ 里 goto 的正当用途主要是从多重嵌套循环中一次跳出（向前跳），其余场景应改用 RAII、函数拆分或标志位，因为跳转会绕过析构函数。跨函数跳转在任何一种语言里都不存在。"
-  },
   "基-45": {
     "stem": "下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n#include <iomanip>\n\nint main()\n{\n    int a = 2;\n    double d = 2.5;\n\n    std::cout << std::fixed << std::setprecision(1)\n              << (a > 3 ? d : a > 0 ? a : d) << '\\n';\n    return 0;\n}\n```",
     "analysis": "输出 2.0：嵌套条件运算符先算 `a > 3` 为假，再算 `a > 0` 为真，取 `a`（int 2）；但整个条件表达式的两个分支类型是 double 与 int，按通常算术转换统一成 double，所以结果是 2.0，用一位小数输出就是 `2.0`。C++ 的规则相同，且 C++ 用 `std::common_type` 精确描述这种“两分支类型求公共类型”的过程。若直接把 `a` 分支的结果存进 int（`int m = a > 3 ? d : a;`）才会截断成 2，可见类型由整个表达式决定，而不是由被选中的分支决定。"
@@ -507,19 +262,6 @@
   "基-47": {
     "stem": "在 `short` 占 2 个字节、`int` 和 `unsigned int` 占 4 个字节的环境中，下面程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    short s = -1;\n    unsigned int u = s;\n\n    std::cout << u << '\\n';\n    return 0;\n}\n```",
     "analysis": "输出 4294967295：short 的 -1 先整型提升为 int 的 -1（32 位全 1），再转成 unsigned int，按模 2^32 得到 4294967295，而不是 65535（65535 是只按 16 位截断的结果，那需要先转 unsigned short 再提升）。C++ 与 C 的转换规则相同，但 C++ 要求把这种转换写成 `static_cast<unsigned int>(s)` 更清晰，并可用 `std::bit_cast<unsigned int>(s)`（C++20）观察位模式；`-Wconversion` / `-Wsign-conversion` 能在编译期提示这类有损转换。"
-  },
-  "基-49": {
-    "analysis": "答案：`const int N = 10;` 有类型、编译器做类型检查；`#define N 10` 只是预处理阶段的文本替换。C++ 还比 C 多两层优势：一，C++ 的 const 全局变量默认是内部链接（C 默认外部链接），所以把 `const int N = 10;` 写在头文件里被多个源文件包含不会重复定义；二，C++ 的 const 整型变量是编译期常量，可以直接做数组大小和 case 标签，而 C 的 const 变量不是常量表达式，`int a[N];` 在 C 里（C99 前）不合法。更推荐 C++11 的 `constexpr int N = 10;`：明确表示编译期求值，能用于模板实参和 `static_assert`。"
-  },
-  "基-50": {
-    "stem": "下面程序的编译结果是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    int a = 1;\n    int b = 2\n    std::cout << a + b << '\\n';\n    return 0;\n}\n```",
-    "analysis": "答案是“编译错误：`int b = 2` 这一行缺少分号”。C++ 的编译器通常会把错误定位在下一行（`std::cout`）并报出难以理解的 “expected ';' before ...”，因为分号是上一条语句的结束符，解析器读到下一行才发现语法不通。C++ 与 C 在这一点上相同，但 C++ 还有一类更隐蔽的“看起来像定义、实际是函数声明”的解析问题（most vexing parse，如 `Widget w();` 声明了函数），也需要靠大括号初始化 `Widget w{};` 规避。写代码时不要依赖编译器把错误指到正确的那一行。"
-  },
-  "函-23": {
-    "analysis": "答案：调用前应有函数声明，使编译器能检查实参个数、类型和返回值类型。C++ 的规则相同，但更严格也更丰富：形参名可以省略；默认实参只能在一个声明里给一次；重载函数要分别声明；`extern \"C\"` 会改变链接名。C++ 还多了一条 C 没有的约束——ODR 要求同一函数在所有翻译单元中的声明一致，否则是未定义行为（不报错也可能链接到错误的实体）；把声明放进头文件、定义只放一个源文件，是 C 与 C++ 共同的最佳实践。"
-  },
-  "函-25": {
-    "analysis": "答案：`exit` 可在任意函数中调用并结束整个程序，`return` 只从当前函数返回。C++ 的 `std::exit`（`<cstdlib>`）比 C 多做一件事：它会销毁静态存储期对象、刷新并关闭标准流（C++ 标准规定），但不会销毁局部自动对象——所以用 RAII 管理资源的程序里，`exit` 会跳过局部对象的析构函数，可能丢数据；`std::abort` 连静态对象的析构都不做。`exit(0)` 与 main 里的 `return 0` 效果接近（后者还会先销毁 main 的局部对象），但与其他函数里的 `return 0` 完全不同。"
   },
   "函-27": {
     "analysis": "答案：尾递归的递归调用是函数返回前的最后一个动作、其结果被直接返回，编译器有可能把它优化成循环。C 与 C++ 都不保证尾调用优化（TCO），它取决于编译器与优化级别；所以“不会栈溢出”不能作为正确性依据。C++ 里保证栈深度可控的稳妥做法是改成迭代、用显式栈，或用 `std::accumulate` 之类的算法；`constexpr` 递归虽然能在编译期求值，但标准建议的实现限制（至少 512 层）仍会限制深度。尾递归的判定要看“调用后是否还有计算”，`return f(n-1) + 1` 恰恰不是尾递归。"
@@ -531,9 +273,6 @@
   "函-30": {
     "stem": "在 64 位环境中（指针占 8 个字节，`int` 占 4 个字节），有函数：\n\n```cpp\n#include <iostream>\n\nvoid f(int a[10])\n{\n    std::cout << sizeof(a) << '\\n';\n}\n```\n\n调用 `f` 时，函数内 `sizeof(a)` 的输出是（ ）。",
     "analysis": "输出 8：形参 `int a[10]` 中的 10 被忽略，a 实际是 `int *`，`sizeof` 得到指针大小 8。C++ 与 C 的退化规则相同（所以 `%zu` 或流输出都打印 8）。C++ 的改进是 `template <std::size_t N> void f(int (&a)[N])`：数组引用不退化，N 被推导为 10，`sizeof(a)` 回到 40；C++20 也可以传 `std::span<const int>`，长度在运行时携带。注意 `sizeof` 的结果类型是 `std::size_t`，C 里应该用 `%zu` 而不是 `%d`。"
-  },
-  "数-45": {
-    "analysis": "答案：合法下标 0~9，共 10 个元素，`a[10]` 越界、结果未定义。C++ 的规则完全相同，但提供了分层保护：`std::array<int,10>::at(10)` 抛 `std::out_of_range`；`std::vector::at` 同理；而 `operator[]` 与 C 数组一样不做检查、越界即未定义行为。“留一个位置放结束标志”是字符数组的习惯（`'\\0'`），整型数组没有这种约定。C++ 容器用 `size()` 取代 `sizeof` 求长度，从根本上避免了把 10 写成 11 或 9 的错误。"
   },
   "数-47": {
     "stem": "在 64 位环境下（指针占 8 字节，`int` 占 4 字节）运行下面程序：\n\n```cpp\n#include <iostream>\n\nvoid f(int b[10])\n{\n    std::cout << sizeof(b);\n}\n\nint main()\n{\n    int a[10] = {0};\n\n    std::cout << sizeof(a) << ' ';\n    f(a);\n    return 0;\n}\n```\n\n程序的输出是（ ）。",
@@ -550,9 +289,6 @@
     "answer": 3,
     "analysis": "C99 的变长数组（VLA）允许 `int a[n]`，长度在运行到该定义时由 n 决定，`sizeof(a)` 也在运行期求值（所以选项“sizeof 无效”是错的）；但 VLA 只能定义在块作用域内，不能是全局的（全局对象的长度必须在编译期确定）。C++ 的关键差异是：标准 C++ 从未采纳 VLA，`int a[n]` 在严格模式下是 ill-formed，GCC/Clang 只是把它当扩展放行，MSVC 直接拒绝。C++ 的正解是 `std::vector<int> a(n);`（堆上分配，`a.size()` 在运行期得到 n），或者 `std::unique_ptr<int[]> a(new int[n]);`。`sizeof(std::vector<int>)` 是对象头部大小（与 n 无关），元素个数要用 `size()`——这正是“容器把长度和存储分开管理”的价值。"
   },
-  "数-51": {
-    "analysis": "答案是 `int a[] = {1, 2, 3};`：只给出初始化列表时，数组长度由元素个数确定为 3。C++ 的规则相同，其余三项在 C++ 里同样非法：`int a[];` 无法推导长度；`int a[3] = {1,2,3,4}` 初始化项过多；`a[3] = 4` 越界写且数组不会“自动扩容”。C++ 的现代替代是 `std::array<int, 3> a = {1, 2, 3};`（长度是类型的一部分，不能越界改大小，但可以用 `at()` 检查）或 `std::vector<int> a = {1, 2, 3};`（可动态增长，`push_back` 才是“扩容”的正确方式）。"
-  },
   "数-52": {
     "analysis": "答案是 `*(*(a + 1) + 2)`：`a + 1` 是第 1 行的行指针，`*(a + 1)` 退化为该行首元素地址，再 `+ 2` 并解引用即 a[1][2]。其余三项分别得到“a[1][2] 的地址”“指针乘 2（非法）”“a[1][0] 的值加 2”，都不等价。C++ 的规则相同，但 `std::array<std::array<int,4>,3>` 不支持这种指针算术，只能用 `a[1][2]`，反而更安全；C++23 起还有多维下标 `a[1, 2]` 的提案写法在多维容器上更直观。"
   },
@@ -562,9 +298,6 @@
   },
   "数-56": {
     "analysis": "答案是“归并排序是稳定的，合并时相等元素优先取前一段”。稳定性指相等元素的相对次序在排序后保持不变。C++ 里这个区别体现在接口上：`std::sort` 不保证稳定（通常是内省排序），`std::stable_sort` 保证稳定（通常用归并，代价是额外 O(n) 空间）；`std::list::sort` 也稳定。快速排序、堆排序都不稳定（堆排序在交换时会把相等元素的次序打乱），直接插入排序在“严格大于才移动”的实现下是稳定的。C++ 的比较器还要求严格弱序，用 `<=` 作比较器会破坏排序的正确性，这与稳定性是两回事。"
-  },
-  "数-59": {
-    "analysis": "答案：函数内部不能通过 a 修改调用者的数组元素，但调用者传入的数组本身不必定义为 const。形参 `const int a[]` 等价于 `const int *a`，const 修饰的是“被指的元素”，是函数对调用者的只读承诺；调用者可以把普通 `int[]` 传进来（加上 const 只是限制函数自己），所以“必须传入 const 数组”是错的。C++ 的规则相同，而且更推荐用 `void show(const int (&a)[N])` 或 `std::span<const int>` 把长度一起带上；注意 `const int *a` 里的指针本身可以改指向（`a = other;` 合法），只有 `int *const a` 才是常量指针。"
   },
   "数-60": {
     "stem": "阅读下面程序：\n\n```cpp\n#include <cstdio>\n\nint main()\n{\n    char s[] = \"aaabbc1\";\n    int i, j;\n\n    for (i = 0; s[i] != '\\0'; i = j) {\n        for (j = i; s[j] == s[i]; j++)\n            ;\n        std::printf(\"%c%d\", s[i], j - i);\n    }\n    return 0;\n}\n```\n\n程序输出（ ）。",
@@ -576,28 +309,11 @@
   "数-65": {
     "analysis": "答案：只需 200 个三元组，另记行数、列数和非零元个数，存储量与非零元个数成正比。稀疏矩阵的三元组顺序表只存非零元，代价是失去 O(1) 随机存取（要按行、列有序再二分或顺序扫描），这与“天然随机存取”的说法相反。C++ 里的对应实现是 `std::vector<Triplet>`、`std::map<std::pair<int,int>, int>`（按键有序，可二分）或 CSR（行偏移数组 + 列索引 + 值）——CSR 正是 C++ 高性能计算库里稀疏矩阵的标准表示，本质仍是“只存非零元 + 辅助索引”。"
   },
-  "数-66": {
-    "analysis": "答案 5 和 1：`\"a\\0bc\"` 这个字面量包含 'a'、'\\0'、'b'、'c' 四个字符，再加上编译器自动补的结尾 `'\\0'`，共 5 字节，所以 `sizeof(s)` 是 5；而 `strlen` 数到第一个 `'\\0'` 就停，得 1，后面的 \"bc\" 被“看不见”。C++ 的规则相同，但 C++ 里更要注意：`std::string s = \"a\\0bc\";` 用 C 字符串构造，长度同样是 1（在第一个 `'\\0'` 截断），要保留中间的 0 必须显式给长度 `std::string s(\"a\\0bc\", 4);` 或 `std::string_view sv(\"a\\0bc\", 4);`。"
-  },
-  "数-67": {
-    "stem": "阅读下面程序：\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    char s[] = \"  -123abc\";\n    int i = 0, sign = 1, v = 0;\n\n    while (s[i] == ' ')\n        i++;\n    if (s[i] == '+' || s[i] == '-') {\n        if (s[i] == '-')\n            sign = -1;\n        i++;\n    }\n    while (s[i] >= '0' && s[i] <= '9') {\n        v = v * 10 + (s[i] - '0');\n        i++;\n    }\n    std::cout << sign * v;\n    return 0;\n}\n```\n\n程序输出（ ）。",
-    "analysis": "输出 -123：跳过前导空格、识别负号、逐位累加 `v = v * 10 + (s[i] - '0')`，遇到 'a' 停止，所以只转换出 123 再乘符号得 -123，后面的 \"abc\" 被忽略——这正是 atoi 类函数“能转多少转多少”的语义。C++ 里有三种现成做法：`std::atoi` 同样不报错、遇非法字符就停；`std::stoi` 遇到无法转换会抛 `std::invalid_argument`、越界抛 `std::out_of_range`（需要 try/catch）；`std::from_chars`（C++17）不抛异常，返回 `std::errc` 和停止位置，是最适合逐位解析的接口。"
-  },
-  "数-68": {
-    "analysis": "答案是 `for (i = 1; i <= 5; i++) a[i] = i;`：`a[5]` 超出 5 个元素的范围（合法下标 0~4），属于越界写。其余三项都合法：`i < 5` 写满 0~4；`char s[6] = \"hello\"` 正好容纳 5 个字符加 `'\\0'`；`s[1]` 是 'i'。C++ 的规则相同，但 `std::array<int,5>` 用 `at(5)` 会抛 `std::out_of_range`，`std::vector` 的 `at` 同理；而 `operator[]` 与 C 数组一样不做检查。C 与 C++ 都要求程序员自己守住 `i < n` 这条边界。"
-  },
   "指-49": {
     "analysis": "答案是第一个：参数类型必须是 `const void *`，函数内强转成 `const int *` 后取值相减，返回 int，与 qsort 要求的 `int (*)(const void *, const void *)` 完全匹配。C++ 里 `qsort` 仍在 `<cstdlib>` 中，规则不变；但 C++ 更推荐 `std::sort(a, a + n)`：它是模板、比较器可内联、类型安全、不需要 void* 强转，性能通常比 qsort 好。若坚持用减法写比较函数，要注意溢出问题——安全写法是 `return (x > y) - (x < y);`，因为两个 int 相减可能超出 int 范围。"
   },
-  "指-50": {
-    "stem": "有如下代码：\n\n```cpp\ntypedef int (*BinOp)(int, int);\nint add(int a, int b) { return a + b; }\n```\n\n要定义一个指向 `add` 的变量 `op` 并用它调用，下列写法正确的是（ ）。",
-    "analysis": "答案是 `BinOp op = add; printf(\"%d\", op(2, 3));`：BinOp 本身就是“函数指针类型”，所以 `BinOp op;` 已经是指针变量，不需要再写 `*`；函数名在表达式中自动转换为函数指针，`= add` 与 `= &add` 等价，`op(2, 3)` 与 `(*op)(2, 3)` 等价。C++ 里这些规则相同，且可以写 `using BinOp = int (*)(int, int);`（比 typedef 更易读），或干脆 `auto op = &add;`；日常更常用 `std::function<int(int, int)>` 来容纳 lambda 与带状态的调用对象。"
-  },
   "指-52": {
     "analysis": "答案是“指向函数的指针，函数接受一个 int，返回指向含 3 个 int 的数组的指针”。按“由内向外、先右后左”拆：`(*f)` 说明 f 是指针，`(*f)(int)` 说明指向接受 int 的函数，函数前的 `*` 说明返回值是 `int (*)[3]`（行指针），最外层的 int 说明数组元素是 int。C++ 里可以用别名逐层拆开：`typedef int (*Row)[3]; typedef Row *(*Fn)(int); Fn f;`，读起来清楚得多；也可以用 C++11 的尾置返回类型 `auto f(int) -> int (*)[3];`，让声明变成“从左往右读”，可读性明显提升。"
-  },
-  "指-55": {
-    "analysis": "答案：可能返回 NULL，也可能返回唯一非空指针；非空时不能访问任何对象，但可以安全传给 free。C 标准把 malloc(0) 定为实现定义。C++ 的对应函数 `::operator new(0)` 与 `new int[0]` 则保证返回唯一的非空指针（必须用 `delete[]` 释放），`std::vector<int> v;` 根本不分配。C++ 里还要注意 `malloc` 返回 `void *` 需要显式转换，而 `new` 返回带类型的指针；两者不能混用释放方式。"
   },
   "指-56": {
     "stem": "有结构体定义：\n\n```cpp\nstruct Line {\n    int len;\n    int data[];   // 柔性数组成员：标准 C++ 不支持，GCC/Clang 作为扩展接受\n};\n```\n\n关于柔性数组成员 `data`，下列说法正确的是（ ）。",
@@ -618,13 +334,6 @@
     "stem": "标准库 `qsort` 的比较函数只能拿到两个元素。很多平台另外提供带上下文参数的版本，例如 POSIX 的：\n\n```cpp\nvoid qsort_r(void *base, std::size_t nmemb, std::size_t size,\n             int (*compar)(const void *, const void *, void *), void *arg);\n```\n\n若要用它实现「按调用者给定的基准值排序」，比较函数的第三个参数 `arg` 应当（ ）。",
     "analysis": "答案：由调用者传入、由库原样转发给比较函数，函数内转换成所需类型后使用。这是 C 语言实现“带上下文回调”的标准手法：`void *` 能装任何对象指针，类型安全由调用双方自行保证。C++ 的对比非常鲜明：`std::sort(v.begin(), v.end(), [pivot](int x, int y) { return std::abs(x - pivot) < std::abs(y - pivot); })` 用带捕获的 lambda 直接“记住”基准值，不需要 void* 上下文参数，也不会出现类型转换错误——这是 C++ 相对 C 在回调设计上最大的进步。另外 `qsort_r` 本身是 POSIX/GNU 扩展，不是 C 或 C++ 标准的一部分（GNU 与 BSD 的参数顺序还不一样）。"
   },
-  "指-64": {
-    "analysis": "答案：`*p(3)` 错误。`()` 的优先级高于 `*`，`*p(3)` 被解析为 `*(p(3))`：先调用 p 得到 int，再对 int 解引用，编译错误；要解引用函数指针必须写 `(*p)(3)`。C++ 的规则相同，`p(3)`、`(*p)(3)`、`(&f)(3)` 都合法且等价——函数名和函数指针在调用时几乎完全等价，`&f` 与 `f` 也等价。C++ 里 `std::function` 的调用更简单，`f(3)` 直接可用；但同样要注意 `*f(3)` 这种优先级陷阱在 lambda、成员函数指针上依然存在。"
-  },
-  "指-66": {
-    "stem": "有：\n\n```cpp\nconst char *s[3] = {\"red\", \"green\", \"blue\"};\nchar t[3][6] = {\"red\", \"green\", \"blue\"};\n```\n\n关于两者的内存布局与 `sizeof`，说法正确的是（ ）。",
-    "analysis": "答案：`sizeof(s)` 是 3 个指针的大小（64 位下 24），`sizeof(t)` 是 18；s 的元素指向别处的字符串，t 的字符按行连续存放。C++ 里必须把 s 声明成 `const char *s[3]`，因为字符串字面量的类型是 `const char[N]`，写成 `char *s[3] = {\"red\", ...}` 自 C++11 起是编译错误（C 只给警告），这是本题在 C++ 下的第一处差异。更符合 C++ 习惯的写法是 `std::array<std::string, 3> s = {\"red\", \"green\", \"blue\"};`（每行长度独立、自动管理内存）或 `std::array<std::string_view, 3>`（不拥有内存、零拷贝），两者都不需要预先算好每行 6 字节。"
-  },
   "指-68": {
     "stem": "下面函数存在内存管理问题：\n\n```cpp\nchar *make_copy(const char *src)\n{\n    char *p = static_cast<char *>(std::malloc(std::strlen(src) + 1));\n    if (p == nullptr)\n        return nullptr;\n    std::strcpy(p, src);\n    if (p[0] == '\\0') {\n        std::free(p);\n        return p;\n    }\n    return p;\n}\n```\n\n主要问题是（ ）。",
     "analysis": "答案：释放后仍然 `return p`，把已释放的指针交给调用者，形成悬空指针。`malloc(strlen(src) + 1)` 的长度是对的（含结尾 `'\\0'`），`strcpy` 之后读 `p[0]` 也在 free 之前、合法；问题只出在“free 完还返回”。C++ 的改写方向很明确：用 `std::string make_copy(const std::string &src) { return src; }` 彻底不碰裸指针；或者返回 `std::unique_ptr<char[]>`，由智能指针负责释放。C++ 里还应把 `malloc/free` 换成 `new[]/delete[]`，不能混用；`nullptr` 也取代了 `NULL`。"
@@ -642,21 +351,11 @@
   "指-73": {
     "analysis": "答案是 `int (*choose(char))(int, int);`：`choose(char)` 说明 choose 是接受 char 的函数，外面一层的 `(*...)` 与 `(int, int)` 合起来说明它的返回类型是 `int (*)(int, int)`。C++ 里这种声明可以用更可读的形式表达：`using BinOp = int (*)(int, int); BinOp choose(char);`，或者 C++11 的尾置返回类型 `auto choose(char) -> int (*)(int, int);`——把返回类型放到最后，从左往右读就顺畅了。用 typedef 时要注意 `F *choose(char)` 返回的是“函数指针的指针”，多了一层 `*`，所以本题第三个选项错。"
   },
-  "指-74": {
-    "analysis": "答案：`argv` 的实际类型是 `char **`，即指向字符指针的指针，`argv[i]` 是第 i 个参数字符串的首地址，`argv[0]` 是程序名，且标准保证 `argv[argc]` 是空指针，可作为遍历的结束标志。C++ 的规则相同，`char *argv[]` 作为形参同样退化为 `char **`。C++ 的补充：可以用 `std::vector<std::string> args(argv, argv + argc);` 把参数收集成容器，避免裸指针遍历；`main` 也可以写成 `int main()` 完全不接收参数。注意 `argv` 里的字符串内容是否可修改由实现定义，不要随意写它。"
-  },
-  "指-75": {
-    "stem": "下列程序的输出是（ ）。\n\n```cpp\n#include <iostream>\n\nint main()\n{\n    const char *s[3] = {\"ab\", \"cd\", \"ef\"};\n    const char **p = s;\n\n    std::cout << *(p + 1) << ' ' << **(p + 2) << '\\n';\n    return 0;\n}\n```",
-    "analysis": "输出 `cd e`：`p = s` 让 p 指向 s[0]（类型 `const char **`），`p + 1` 前进一个指针，`*(p + 1)` 就是 s[1] 即 \"cd\"，用 `<<` 输出整个字符串；`*(p + 2)` 是 s[2] 即 \"ef\"，再解引用一次得到首字符 'e'。C++ 里必须写 `const char *s[3]`，因为字符串字面量是 `const char[N]`（C 里 `char *` 只给警告）。C++ 的更现代写法是 `std::array<std::string_view, 3>`：`s[1]` 直接是字符串视图，`s[2].front()` 取首字符，既不用二级指针也不用担心字面量的只读性。"
-  },
   "指-76": {
     "analysis": "答案 1004、1020、1001：`a + 1` 中 a 退化为 `int *`，步长是 4 字节；`&a + 1` 的类型是 `int (*)[5]`，步长是整个数组 20 字节；`(char *)a + 1` 把地址按字节解释，步长 1。三者值都是 1000 起算，但类型不同导致偏移不同，这正是“先看类型、再看值”的经典例子。C++ 里第二种转换必须写 `reinterpret_cast<char *>(a) + 1`，C 风格的 `(char *)` 在 C++ 中虽仍可用但不推荐；C++ 也可以写 `reinterpret_cast<std::byte *>(a) + 1` 明确表示“按字节访问”。"
   },
   "结-41": {
     "analysis": "答案是 `next = cur->next; cur->next = prev; prev = cur; cur = next;`：必须先保存后继再改链，否则改完 `cur->next` 就找不到原来的下一个结点了。改链后 prev 前移、cur 前进，循环结束时 prev 指向原表尾，也就是新表头。C++ 里同样的顺序思维适用于 `std::list`：容器自带 `reverse()`，但对自定义链表仍要手写；如果链表用 `std::unique_ptr` 串联，改链时要 `std::move` 转移所有权，避免同一结点被两个 unique_ptr 持有。这个四步顺序是链表题的通用骨架。"
-  },
-  "结-42": {
-    "analysis": "答案：第 4 个。逐轮模拟：初始 slow=1、fast=1；第 1 轮 slow=2、fast=3；第 2 轮 fast->next 是第 4 个非空，继续，slow=3、fast=5；第 3 轮 fast->next 是第 6 个非空，继续，slow=4、fast 越过表尾变成空；循环条件不成立退出，所以 slow 停在第 4 个，正好是 6 个结点的“后半段起点”。C++ 里同样可以写 `std::next` 或迭代器版本，但要注意 `fast->next != nullptr` 这个检查不能省，否则 `fast->next->next` 会解引用空指针。"
   },
   "结-44": {
     "stem": "下面用快慢指针判断单链表是否有环。关于这段代码，下列说法正确的是（ ）。\n\n```cpp\nint has_cycle(Node *head)\n{\n    Node *slow = head, *fast = head;\n\n    while (fast != nullptr && fast->next != nullptr) {\n        slow = slow->next;\n        fast = fast->next->next;\n        if (slow == fast)\n            return 1;\n    }\n    return 0;\n}\n```",
@@ -665,10 +364,6 @@
   "结-46": {
     "stem": "下面代码用双指针定位倒数第 k 个结点（head 不带头结点，1 ≤ k ≤ 链表长度）。\n\n```cpp\nNode *fast = head, *slow = head, *prev = nullptr;\n\nfor (int i = 0; i < k; i++)\n    fast = fast->next;\nwhile (fast != nullptr) {\n    prev = slow;\n    slow = slow->next;\n    fast = fast->next;\n}\n/* 此时 slow 指向倒数第 k 个结点 */\n```\n\n若 k 恰好等于链表长度，执行到注释处时 `prev` 的值是（ ）。",
     "analysis": "答案：`prev` 是 `nullptr`——fast 先走 k 步刚好到链表末尾之后（空），while 一次都不执行，slow 仍在 head、prev 保持初值 nullptr。这说明要删的正是首结点，必须单独用 `head = slow->next` 更新表头，否则 head 会继续指向已被 free 的结点。C++ 里应写 `nullptr` 而不是 `NULL`，同样的边界问题也存在于 `std::list::erase` 的返回值——它返回下一个元素的迭代器，正是为了避免这类“删了表头之后迭代器失效”的错误。"
-  },
-  "结-47": {
-    "stem": "有\n\n```cpp\nstruct Stu {\n    int id;\n    char name[10];\n};\n\nStu a[3] = {{1, \"A\"}, {2, \"B\"}, {3, \"C\"}};\nStu *p[3] = {&a[0], &a[1], &a[2]};\n```\n\n在指针占 8 字节的 64 位环境中，`sizeof(p)` 与表达式 `p[1]->name` 的值分别是（ ）。",
-    "analysis": "答案 24 与 \"B\"：`p[3]` 先说明 p 是含 3 个元素的数组，`Stu *` 说明每个元素是指向结构体的指针，所以 `sizeof(p)` = 3 × 8 = 24，与结构体本身多大无关；`p[1]` 是 `Stu *`，用 `->` 取成员，`p[1]->name` 就是 `a[1].name`，值为 \"B\"。C++ 的声明读法相同，但可以用 `std::array<Stu *, 3>`，或者更彻底地改成 `std::array<std::string, 3>` 直接存名字。要区分 `Stu (*q)[3]`（数组指针，`sizeof` 是 8）与 `Stu *p[3]`（指针数组，`sizeof` 是 24），这是本节最容易混的一对声明。"
   },
   "结-50": {
     "stem": "有\n\n```cpp\nstruct Point {\n    int x;\n    int y;\n};\n\nPoint a = {1, 2}, b = {3, 4};\nconst Point *p1 = &a;\nPoint *const p2 = &a;\n```\n\n下列语句中**错误**（无法通过编译）的是（ ）。",
@@ -693,19 +388,9 @@
     "answer": 0,
     "analysis": "答案：sizeof(Buf) 是 4（柔性数组不占结构体自身大小），申请时按“头部 + 元素个数 × 元素大小”一次 malloc，即 `sizeof(Buf) + 5 * sizeof(int)`。C++ 的差异必须讲清：标准 C++ 没有柔性数组成员，`int data[];` 在严格模式下是 ill-formed，GCC/Clang 只是作为扩展支持，MSVC 直接拒绝；所以 C++ 版的正确做法是 `std::vector<int> data;`，长度由 `data.size()` 自动携带，扩容和释放都不用自己算。若坚持用扩展写法，也要记得只用一次 free，并用 `len` 记录元素个数——`sizeof` 永远求不出实际元素数。"
   },
-  "结-57": {
-    "analysis": "答案：让“向空结果表追加第一个结点”和“追加后续结点”共用同一句 `tail->next = ...`，省掉为表头单独写的分支。哑结点（dummy head）通常是一个栈上的局部结构体变量，不需要 malloc；它只是占位的“假表头”，最终应返回 `dummy.next` 而不是 `&dummy`（后者返回栈地址会悬空）。C++ 里合并有序链表可以直接用 `std::list::merge` 或 `std::forward_list::merge`，容器内部就是这个思路；手写时把哑结点声明为局部对象、用 `tail = &dummy` 起步，是 C 与 C++ 通用的写法。`->next` 是普通成员访问，与有无哑结点无关。"
-  },
   "结-58": {
     "stem": "有\n\n```cpp\nvoid push_front(Node **head, int v)\n{\n    Node *p = static_cast<Node *>(std::malloc(sizeof(Node)));\n\n    if (p == nullptr)\n        return;\n    p->data = v;\n    p->next = *head;\n    *head = p;\n}\n```\n\n主函数中执行 `push_front(&head, 5);` 之后，主函数的 `head` 为什么会被改成指向新结点（ ）。",
     "analysis": "答案：因为形参是指向指针的指针，`*head = p` 修改的正是主函数中 head 这个指针变量本身。`&head` 把 head 的地址传进去，形参 `Node **head` 保存这个地址，于是 `*head` 就是主函数的 head，赋值直接改到它。C++ 里更简洁的等价写法是引用指针：`void push_front(Node *&head, int v)`，调用仍是 `push_front(head, 5)`，函数内 `head = p;` 直接生效，不必写 `&` 和 `*`——这是 C++ 相对 C 最实用的改进之一。若形参写成 `Node *head`（值传递），函数内的 `head = p` 只改副本，主函数不变，只能靠返回值 `head = push_front(head, v);` 接回。"
-  },
-  "结-60": {
-    "analysis": "答案：原表头变成表尾，新的 head 指向原来的表尾。反转改变的是每个结点 next 的方向，整体次序颠倒：原第一个结点的 next 被置为 NULL，成为新链表最后一个结点；原表尾的 next 原本是 NULL，反转后成为第一个结点，所以三指针循环结束时 prev 停在那里，`return prev;` 就是新表头——这也是反转函数必须返回 prev 而不能返回原 head 的原因。C++ 里 `std::list::reverse()` 做了同样的事；对数组则用 `std::reverse`，两者都只是把“首尾互换”的结果交给你。"
-  },
-  "枚-13": {
-    "stem": "有\n\n```cpp\n#include <cstdio>\n\nenum Color { RED, GREEN, BLUE, COLOR_COUNT };\nconst char *names[COLOR_COUNT] = {\"red\", \"green\", \"blue\"};\n\nint main()\n{\n    Color c = BLUE;\n    std::printf(\"%s\\n\", names[c]);\n    return 0;\n}\n```\n\n程序输出是（ ）。",
-    "analysis": "输出 blue：枚举常量本质上是整型常量（RED=0、GREEN=1、BLUE=2），可以作数组下标，`names[c]` 就是 `names[2]`，得到 \"blue\"；`COLOR_COUNT` 是哨兵常量，值正好等于前面常量的个数 3，用来定数组长度并做循环边界。C++ 里同样的写法可用（`const char *names[]` 应改成 `const char *const names[]` 更严谨），但更推荐 `std::array<std::string_view, COLOR_COUNT>`；另外 C++ 里 `names[c]` 需要枚举到 `std::size_t` 的转换，无作用域枚举可以隐式提升，`enum class Color` 则必须先 `static_cast<std::size_t>(c)`。注意 `%s` 打印的是名字表里的字符串，常量名 \"BLUE\" 只存在于源码里。"
   },
   "枚-15": {
     "stem": "有\n\n```cpp\nenum Perm { READ = 1, WRITE = 2, EXEC = 4 };\nint p = READ | WRITE;\n```\n\n要判断变量 `p` 中是否含有 WRITE 权限，正确且规范的说法是（ ）。",

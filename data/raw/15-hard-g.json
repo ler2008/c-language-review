@@ -1,0 +1,442 @@
+[
+  {
+    "id": "函-67",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "归并排序",
+      "逆序对",
+      "递归分治"
+    ],
+    "stem": "给定 n 个整数，请用归并排序的递归分治思路把它们按非递减顺序排好，并在合并过程中统计逆序对的个数。\n\n逆序对指向量中满足 i < j 且 a[i] > a[j] 的数对 (i, j)。合并两个有序段时，只要右段的元素先被取出，就说明左段剩下的所有元素都比它大，可以一次性累加 mid − i + 1 个逆序对，不必逐对枚举。\n\n建议把代码拆成三个函数：merge_range(left, mid, right) 负责合并并累加逆序对，merge_sort(left, right) 负责递归拆分，main 只负责读入与输出。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100000）；第二行 n 个整数 a[i]（−10^9 ≤ a[i] ≤ 10^9），相邻两个数之间用一个空格分隔。\n\n**输出格式：** 第一行为排序后的 n 个整数，相邻两个数之间用一个空格分隔，行末没有多余空格；第二行为逆序对的个数。\n\n**输入样例：**\n```text\n5\n2 4 1 3 5\n```\n**输出样例：**\n```text\n1 2 3 4 5\n3\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 100005\n\nstatic int a[MAXN];\nstatic int tmp[MAXN];\nstatic long long inv_count = 0;\n\n/* 合并 [left, mid] 与 [mid + 1, right] 两个有序段，并累加跨段的逆序对 */\nvoid merge_range(int left, int mid, int right)\n{\n    int i = left, j = mid + 1, k = left;\n\n    while (i <= mid && j <= right) {\n        if (a[i] <= a[j]) {\n            tmp[k++] = a[i++];\n        } else {\n            tmp[k++] = a[j++];\n            inv_count += mid - i + 1;   /* 左段剩下的都比 a[j] 大 */\n        }\n    }\n    while (i <= mid)\n        tmp[k++] = a[i++];\n    while (j <= right)\n        tmp[k++] = a[j++];\n    for (i = left; i <= right; i++)\n        a[i] = tmp[i];\n}\n\n/* 递归分治：把区间一分为二，各自排好序后再合并 */\nvoid merge_sort(int left, int right)\n{\n    int mid;\n\n    if (left >= right)\n        return;\n    mid = left + (right - left) / 2;\n    merge_sort(left, mid);\n    merge_sort(mid + 1, right);\n    merge_range(left, mid, right);\n}\n\nint main(void)\n{\n    int n, i;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n    merge_sort(0, n - 1);\n    for (i = 0; i < n; i++) {\n        if (i > 0)\n            putchar(' ');\n        printf(\"%d\", a[i]);\n    }\n    putchar('\\n');\n    printf(\"%lld\\n\", inv_count);\n    return 0;\n}\n",
+    "points": [
+      "递归把 [left, right] 二分，直到 left >= right 返回",
+      "merge_range 用 i、j 双指针合并两个有序段，先写临时数组再写回",
+      "右段元素先出队时累加 mid − i + 1 个逆序对",
+      "逆序对个数用 long long 保存，输出用 %lld"
+    ],
+    "analysis": "思路：归并排序是分治思想的标准范例 —— 把长度为 n 的区间一分为二，分别递归排好左右两半，再把两个有序段合并成一个有序段。递归的终止条件是区间只剩一个元素（left >= right），此时它天然有序。\n\n关键步骤：① merge_sort(left, right) 先求中点 mid，递归处理 [left, mid] 与 [mid + 1, right]，再调用 merge_range；② merge_range 用 i、j 两个指针分别扫描左右两段，谁小就先写进临时数组 tmp，k 记录写入位置；③ 当右段元素 a[j] 先出队时，说明左段从 i 到 mid 的所有元素都比 a[j] 大，它们与 a[j] 各构成一个逆序对，于是 inv_count += mid - i + 1，这一步把 O(n²) 的逐对枚举压缩成一次区间计数；④ 某一段先扫完后，把另一段剩余元素整体搬进 tmp，最后用一个循环写回原数组，不写回的话上一层看到的仍然是乱序；⑤ 逆序对最坏为 n(n-1)/2，n = 10^5 时约 5×10^9，超过 int 上限，必须用 long long 保存。\n\n复杂度：每层合并的总代价是 O(n)，递归深度 O(log n)，总时间 O(n log n)；临时数组额外占 O(n) 空间，本实现把它放在全局区，避免在大区间上开栈数组。\n\n易错点：① 合并条件写成 a[i] < a[j]（少了等号），相等元素被当成逆序对，计数偏大；② 累加公式写成 j - (mid + 1) + 1 之类的错误下标；③ 忘记把 tmp 写回 a，上一层合并时数据已经不对；④ 用 int 存逆序对数导致溢出；⑤ 中点写成 (left + right) / 2，在 n 更大时可能溢出；⑥ 输出时最后一个数后面多打一个空格。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nstatic long long inv_count = 0;\n\nvoid merge_range(std::vector<int> &a, std::vector<int> &tmp,\n                 int left, int mid, int right)\n{\n    int i = left, j = mid + 1, k = left;\n\n    while (i <= mid && j <= right) {\n        if (a[i] <= a[j]) {\n            tmp[k++] = a[i++];\n        } else {\n            tmp[k++] = a[j++];\n            inv_count += mid - i + 1;\n        }\n    }\n    while (i <= mid)\n        tmp[k++] = a[i++];\n    while (j <= right)\n        tmp[k++] = a[j++];\n    for (i = left; i <= right; ++i)\n        a[i] = tmp[i];\n}\n\nvoid merge_sort(std::vector<int> &a, std::vector<int> &tmp, int left, int right)\n{\n    if (left >= right)\n        return;\n    int mid = left + (right - left) / 2;\n    merge_sort(a, tmp, left, mid);\n    merge_sort(a, tmp, mid + 1, right);\n    merge_range(a, tmp, left, mid, right);\n}\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n))\n        return 0;\n\n    std::vector<int> a(n), tmp(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    if (n > 0)\n        merge_sort(a, tmp, 0, n - 1);\n\n    for (int i = 0; i < n; ++i) {\n        if (i > 0)\n            std::cout << ' ';\n        std::cout << a[i];\n    }\n    std::cout << '\\n' << inv_count << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 std::vector 代替全局数组，并把引用传进递归函数",
+          "merge_sort 递归二分，merge_range 双指针合并并统计",
+          "逆序对用 long long 累加，右段出队时加 mid − i + 1"
+        ],
+        "analysis": "思路：与 C 版完全一致 —— 递归二分加双指针合并，逆序对在「右段元素先出队」时用 mid − i + 1 一次累加。差别只在容器：C 用全局数组，C++ 用 std::vector 并把引用传进递归函数，避免每层复制整个数组。\n\n关键步骤：① 读入 n 后分配 vector<int> a(n) 与 tmp(n)；② merge_sort 接收 a 与 tmp 的引用，递归拆分区间；③ merge_range 合并时先写 tmp，再整段写回 a；④ inv_count 用全局 long long，省去在每一层多传一个参数；⑤ 输出时用 if (i > 0) 控制空格，保证行末没有多余空格。\n\n复杂度：时间 O(n log n)，空间 O(n)。n ≤ 10^5 时 vector 的下标用 int 完全够用。\n\n易错点：① 参数按值传递，递归里排的是副本，原数组不变；② 合并后忘记写回；③ 用 int 存逆序对；④ 把 a 与 tmp 的实参顺序写反；⑤ 用 std::endl 输出 10 万个数会频繁刷新缓冲区，明显变慢；⑥ n = 1 时忘记跳过 merge_sort，虽然不会出错，但要保证不越界访问 tmp。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef merge_sort(a):\n    \"\"\"递归分治：返回 (排序后的列表, 逆序对个数)。\"\"\"\n    if len(a) <= 1:\n        return a[:], 0\n\n    mid = len(a) // 2\n    left, inv_left = merge_sort(a[:mid])\n    right, inv_right = merge_sort(a[mid:])\n\n    merged = []\n    i = j = 0\n    inv = inv_left + inv_right\n    while i < len(left) and j < len(right):\n        if left[i] <= right[j]:\n            merged.append(left[i])\n            i += 1\n        else:\n            merged.append(right[j])\n            j += 1\n            inv += len(left) - i      # 左段剩下的元素都比它大\n\n    merged.extend(left[i:])\n    merged.extend(right[j:])\n    return merged, inv\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    a = [int(x) for x in data[1:1 + n]]\n\n    ordered, inv_count = merge_sort(a)\n    print(\" \".join(str(x) for x in ordered))\n    print(inv_count)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "merge_sort 返回 (有序列表, 逆序对数) 二元组",
+          "递归切分为 a[:mid] 与 a[mid:] 两段，再双指针合并",
+          "右段元素先出队时 inv += len(left) - i"
+        ],
+        "analysis": "思路：Python 版把分治写成「函数返回 (有序列表, 逆序对数)」的纯函数形式，不再原地修改数组，结果通过返回值向上传递，比 C 版的原地三参数写法更贴近分治的数学定义。\n\n关键步骤：① 递归出口：长度小于等于 1 的列表直接返回它的副本与 0；② mid = len(a) // 2，把列表切成 a[:mid] 与 a[mid:] 两个新列表；③ 合并时用 while 双指针比较 left[i] 与 right[j]，右段元素先出队就 inv += len(left) - i；④ 某一段耗尽后用 extend 把另一段整体接到末尾；⑤ 返回 (merged, inv)。\n\n复杂度：时间 O(n log n)；空间 O(n log n)，因为切片在每层都会复制，临时列表总量比 C 版多，但 n ≤ 10^5 完全够用。Python 的 int 是任意精度，逆序对数不存在溢出问题，这是与 C 版最重要的差异。\n\n易错点：① 直接用 a.sort() 图省事，逆序对就没法统计了；② 切片写成 a[:mid] 与 a[mid + 1:]，丢掉了中间元素；③ 累加写成 len(left) - i - 1，差一；④ 在递归函数里修改外部列表，结果不可重入；⑤ 用 input() 逐行读入，遇到「n 与数组分两行」的格式出错；⑥ 只输出排序结果，忘记输出逆序对数。"
+      }
+    }
+  },
+  {
+    "id": "函-68",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "快速幂",
+      "递归",
+      "二分指数"
+    ],
+    "stem": "读入三个整数 a、n、m，用递归的快速幂计算 a^n mod m。\n\n快速幂把指数二分：n 为偶数时 a^n = (a^(n/2))^2，n 为奇数时 a^n = (a^(n/2))^2 × a，n = 0 时结果为 1。每层指数减半，递归深度只有 O(log n)。要求递归函数 pow_mod(a, n, m) 完成全部计算，主函数只负责读入与输出。\n\n底数与模数都可能接近 10^9，两个小于 10^9 的数相乘会超出 32 位 int 的范围，中间结果必须用 long long 保存。\n\n**输入格式：** 一行三个整数 a、n、m（1 ≤ a ≤ 10^9，0 ≤ n ≤ 10^9，1 ≤ m ≤ 10^9），用空格分隔。\n\n**输出格式：** 一行一个整数，为 a^n mod m 的值。\n\n**输入样例：**\n```text\n2 10 1000\n```\n**输出样例：**\n```text\n24\n```",
+    "solution": "#include <stdio.h>\n\n/* 递归快速幂：返回 a^n mod m */\nlong long pow_mod(long long a, long long n, long long m)\n{\n    long long half;\n\n    if (m == 1)\n        return 0;\n    if (n == 0)\n        return 1;\n    half = pow_mod(a, n / 2, m);\n    half = half * half % m;          /* 先算 a^(n/2)，再平方 */\n    if (n % 2 == 1)\n        half = half * a % m;         /* 指数为奇数时再补乘一个 a */\n    return half;\n}\n\nint main(void)\n{\n    long long a, n, m;\n\n    if (scanf(\"%lld %lld %lld\", &a, &n, &m) != 3)\n        return 0;\n    printf(\"%lld\\n\", pow_mod(a % m, n, m));\n    return 0;\n}\n",
+    "points": [
+      "递归出口：n = 0 返回 1，m = 1 直接返回 0",
+      "先递归求 a^(n/2)，平方后立即对 m 取模",
+      "n 为奇数时再补乘一个 a 并取模",
+      "底数、指数、模数与中间结果全用 long long"
+    ],
+    "analysis": "思路：直接循环乘 n 次，n 可达 10^9，必然超时；快速幂把指数二分，把乘法次数从 O(n) 降到 O(log n)。核心恒等式是 a^n = (a^(n/2))^2（n 为偶数）与 a^n = (a^(n/2))^2 × a（n 为奇数）。\n\n关键步骤：① 递归出口：n == 0 时返回 1；m == 1 时结果恒为 0，单独返回 0 最省事；② 先递归求 half = pow_mod(a, n / 2, m)，注意必须先拿到子问题的结果再平方，不能在自己内部重复调用；③ 平方后立刻取模：half * half % m，防止数值膨胀；④ n 为奇数时再乘一次 a 并取模，这一步对应恒等式里多出来的那个因子；⑤ 主函数先把 a 对 m 取模再传入，避免第一次乘法就出现接近 10^9 的底数。\n\n复杂度：递归深度为 O(log n)，n = 10^9 时约 30 层，每层常数次乘法，时间 O(log n)，空间 O(log n)（递归栈）。long long 上限约 9.2×10^18，而 a 与 half 都小于 10^9，乘积小于 10^18，不会溢出。\n\n易错点：① 忘记在乘法后取模，数值迅速膨胀；② half 声明成 int，half * half 在 32 位里已经溢出；③ 判断奇偶写成 n / 2 == 1，逻辑完全不对；④ 递归出口写成 n == 1 返回 a，n = 0 时会出错；⑤ 先平方再递归（顺序写反），等于每次都乘了平方，结果错得离谱；⑥ 把 (double)pow(a, n) 再取模，浮点精度根本不可靠。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\nlong long pow_mod(long long a, long long n, long long m)\n{\n    if (m == 1)\n        return 0;\n    if (n == 0)\n        return 1;\n\n    long long half = pow_mod(a, n / 2, m);\n    half = half * half % m;\n    if (n % 2 == 1)\n        half = half * a % m;\n    return half;\n}\n\nint main()\n{\n    long long a, n, m;\n    if (!(std::cin >> a >> n >> m))\n        return 0;\n\n    std::cout << pow_mod(a % m, n, m) << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "三者都用 long long 读入，主函数里先做 a % m",
+          "递归求出 half 后再平方取模，奇数时补乘 a",
+          "递归出口处理 n == 0 与 m == 1"
+        ],
+        "analysis": "思路：与 C 版一模一样，只是把 scanf/printf 换成 std::cin 与 std::cout。快速幂的递归结构不变：指数减半、结果平方、奇数补乘。\n\n关键步骤：① 三个 long long 变量依次读入；② pow_mod 内部先判断 m == 1 与 n == 0；③ half = pow_mod(a, n / 2, m) 递归处理一半的指数；④ half = half * half % m，再按奇偶决定是否执行 half = half * a % m；⑤ 主函数把 a % m 传进去，输出一行结果。\n\n复杂度：时间 O(log n)，空间 O(log n)。C++ 的 long long 与 C 一样至少 64 位，溢出边界相同。\n\n易错点：① 用 int 接收 a 或 m，读入 10^9 没问题，但乘法会溢出；② 用 std::pow 求幂再取模，浮点误差不可接受；③ 递归里写成 half *= half 而忘记取模；④ 把 n / 2 换成 n >> 1 虽然正确，但要保证 n 非负（本题 n ≥ 0）；⑤ 输出时用 printf 配合 long long，格式符必须写 %lld 而不是 %d。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef pow_mod(a, n, m):\n    \"\"\"递归快速幂：返回 a^n mod m。\"\"\"\n    if m == 1:\n        return 0\n    if n == 0:\n        return 1\n\n    half = pow_mod(a, n // 2, m)\n    half = half * half % m\n    if n % 2 == 1:\n        half = half * a % m\n    return half\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 3:\n        return\n\n    a, n, m = int(data[0]), int(data[1]), int(data[2])\n    print(pow_mod(a % m, n, m))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "pow_mod 递归，n // 2 取整除后平方取模",
+          "m == 1 时直接返回 0，n == 0 返回 1",
+          "主函数读入三个整数并打印结果"
+        ],
+        "analysis": "思路：递归结构与 C 版相同，但 Python 的 int 是任意精度，乘法不会溢出，因此不必担心 long long 的边界。也可以直接用内置的 pow(a, n, m)，它本身就是快速幂实现，但题目要求练习递归分治，所以手写。\n\n关键步骤：① pow_mod(a, n, m)：m == 1 返回 0，n == 0 返回 1；② half = pow_mod(a, n // 2, m)，注意 // 才是整除；③ half = half * half % m；④ 若 n % 2 == 1，再执行 half = half * a % m；⑤ 主函数用 sys.stdin.read().split() 读入三个整数，直接 print。\n\n复杂度：时间 O(log n)，空间 O(log n)。Python 默认递归上限约 1000 层，本题最深约 30 层，不需要调整；即便 n 到 10^18，深度也只有 60 层。\n\n易错点：① 用 n / 2 得到浮点数，递归永不收敛；② 用 a ** n 直接算，n = 10^9 时会耗尽内存；③ 忘记取模，虽然结果等价但运算量暴涨；④ 先平方再递归，逻辑顺序错误；⑤ 把 n == 0 的判断放在递归调用之后，直接无限递归。"
+      }
+    }
+  },
+  {
+    "id": "函-69",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "二分查找",
+      "递归",
+      "有序数组"
+    ],
+    "stem": "给定一个长度为 n 的升序数组（元素互不相同）和 q 次查询，请用递归的二分查找回答每一次查询：若 key 在数组中，输出它的位置（下标从 1 开始）；否则输出 -1。\n\n二分查找必须写成递归函数 bin_search(left, right, key)：区间为空（left > right）时返回 -1；否则取中点 mid，命中就返回 mid，key 小于 a[mid] 就在左半区间递归查找，否则在右半区间递归查找。注意每次递归都要把区间收缩到 mid 的两侧，否则区间不会变小。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100000）；第二行 n 个严格递增的整数（−10^9 ≤ a[i] ≤ 10^9）；第三行一个整数 q（1 ≤ q ≤ 100000）；第四行 q 个整数，依次为每次查询的 key。\n\n**输出格式：** 共 q 行，每行一个整数，为本次查询的结果（1 基下标，找不到输出 -1）。\n\n**输入样例：**\n```text\n5\n1 3 5 7 9\n3\n5 1 8\n```\n**输出样例：**\n```text\n3\n1\n-1\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 100005\n\nstatic int a[MAXN];\n\n/* 递归二分查找：找到返回下标，找不到返回 -1 */\nint bin_search(int left, int right, int key)\n{\n    int mid;\n\n    if (left > right)\n        return -1;\n    mid = left + (right - left) / 2;\n    if (a[mid] == key)\n        return mid;\n    if (key < a[mid])\n        return bin_search(left, mid - 1, key);\n    return bin_search(mid + 1, right, key);\n}\n\nint main(void)\n{\n    int n, q, i, key, pos;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n    if (scanf(\"%d\", &q) != 1)\n        return 0;\n    for (i = 0; i < q; i++) {\n        if (scanf(\"%d\", &key) != 1)\n            return 0;\n        pos = bin_search(0, n - 1, key);\n        printf(\"%d\\n\", pos < 0 ? -1 : pos + 1);\n    }\n    return 0;\n}\n",
+    "points": [
+      "递归出口 left > right 时返回 -1",
+      "mid 取 left + (right - left) / 2，与 a[mid] 比较",
+      "递归时区间收缩为 mid − 1 与 mid + 1，避免死递归",
+      "把返回下标加 1 变 1 基，找不到输出 -1"
+    ],
+    "analysis": "思路：数组已经升序，二分查找每次把候选区间砍掉一半：取中点 mid，相等即命中；key 更小说明答案只可能在左半，key 更大则只可能在右半。写成递归后，函数签名要带上 left 与 right 两个边界。\n\n关键步骤：① 递归出口 left > right 表示区间已空，返回 -1；② mid = left + (right - left) / 2，这种写法可以避免 left + right 溢出，n 更大时也安全；③ a[mid] == key 时直接返回 mid；④ key < a[mid] 递归左半，否则递归右半；⑤ 主函数把返回的下标加 1 转成 1 基，未找到（返回值为负）时输出 -1。\n\n复杂度：每次规模减半，递归深度 O(log n)，单次查询 O(log n)；q 次查询总时间 O(q log n)。n 与 q 都是 10^5 时，顺序查找约 10^10 次比较，二分只需约 1.7×10^6 次。\n\n易错点：① 递归出口写成 left >= right，长度为 1 的区间被漏掉；② 递归时写成 bin_search(left, mid, key)，区间不缩小导致死递归；③ 返回下标后忘记加 1，与题目要求的 1 基位置不符；④ 判断「未找到」用 pos == 0，而合法的 0 下标其实是第一个元素；⑤ 数组没排序就二分；⑥ 用 int 读入但元素接近 10^9，仍在 int 范围内，本题安全，但 |−10^9| 时要注意不要做绝对值运算。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nint bin_search(const std::vector<int> &a, int left, int right, int key)\n{\n    if (left > right)\n        return -1;\n\n    int mid = left + (right - left) / 2;\n    if (a[mid] == key)\n        return mid;\n    if (key < a[mid])\n        return bin_search(a, left, mid - 1, key);\n    return bin_search(a, mid + 1, right, key);\n}\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n))\n        return 0;\n\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    int q;\n    if (!(std::cin >> q))\n        return 0;\n\n    for (int i = 0; i < q; ++i) {\n        int key;\n        std::cin >> key;\n        int pos = bin_search(a, 0, n - 1, key);\n        std::cout << (pos < 0 ? -1 : pos + 1) << '\\n';\n    }\n    return 0;\n}\n",
+        "points": [
+          "用 const std::vector<int> & 传数组，避免每层复制",
+          "递归出口 left > right 返回 -1，命中返回 mid",
+          "主函数把下标加 1 输出，找不到输出 -1"
+        ],
+        "analysis": "思路：与 C 版相同，用递归二分在升序 vector 上查找；因为数组只读，参数用 const 引用传递，递归每层只传四个标量，开销很小。\n\n关键步骤：① 读入 n 与 n 个元素，再读 q 与 q 个查询值；② bin_search 接收 const vector<int> &、left、right、key；③ 区间为空返回 -1；取中点比较后只递归一侧；④ 主函数对每次查询调用一次，用条件表达式把结果转成 1 基或 -1。\n\n复杂度：单次查询 O(log n)，q 次共 O(q log n)；递归深度 O(log n)，空间 O(log n)。\n\n易错点：① 参数写成值传递，每层复制整个 vector，n = 10^5 时慢得明显；② 每次查询都把下标当 0 基直接输出；③ 用 std::binary_search 只拿到布尔值，拿不到下标；④ 递归区间不收缩；⑤ 读入 q 之前忘记把数组读完，后面的查询全部错位；⑥ 用 int 存下标没问题，但用 size_t 做左右边界时 right 可能下溢成巨大值。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef bin_search(a, left, right, key):\n    \"\"\"递归二分查找：返回下标，找不到返回 -1。\"\"\"\n    if left > right:\n        return -1\n\n    mid = (left + right) // 2\n    if a[mid] == key:\n        return mid\n    if key < a[mid]:\n        return bin_search(a, left, mid - 1, key)\n    return bin_search(a, mid + 1, right, key)\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    idx = 0\n    n = int(data[idx])\n    idx += 1\n    a = [int(x) for x in data[idx:idx + n]]\n    idx += n\n    q = int(data[idx])\n    idx += 1\n\n    out = []\n    for k in range(q):\n        key = int(data[idx + k])\n        pos = bin_search(a, 0, n - 1, key)\n        out.append(str(pos + 1) if pos >= 0 else \"-1\")\n\n    sys.stdout.write(\"\\n\".join(out) + \"\\n\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "bin_search(a, left, right, key) 递归实现",
+          "区间为空返回 -1，命中返回 mid",
+          "用 // 求中点，避免浮点除法"
+        ],
+        "analysis": "思路：Python 同样用下标区间递归，只是中点要用 // 求整除；列表本身通过参数传递（传的是引用，不会复制），所以性能与 C 版接近。\n\n关键步骤：① 用 sys.stdin.read().split() 一次性读入全部记号，按 n、数组、q、查询值的顺序切分；② bin_search 中先判断 left > right；③ mid = (left + right) // 2；④ 命中返回 mid，否则按大小关系递归一侧；⑤ 主函数把结果加 1 或输出 -1，逐行收集到列表再统一输出。\n\n复杂度：单次 O(log n)，q 次共 O(q log n)；递归深度 O(log n)，远小于 Python 默认的 1000 层上限。\n\n易错点：① 用 / 求中点得到浮点数，当列表下标会报错；② 用 list.index() 代替二分，最坏 O(n)，q 大了会超时；③ 递归区间写成 [left, mid] 不收缩；④ 输出用 print 逐条打印本身没问题，但拼接大量字符串时不要用 += 累加；⑤ 忘记处理「数组元素互不相同」这个前提，遇到重复元素时返回的下标不唯一。"
+      }
+    }
+  },
+  {
+    "id": "函-70",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "全排列",
+      "回溯",
+      "递归"
+    ],
+    "stem": "读入 n，按字典序输出 1 到 n 的全部排列，每行一个排列，最后一行输出排列的总数。\n\n要求用回溯实现：用 used[i] 标记数字 i 是否已经用过，用 perm[depth] 记录当前排列第 depth 个位置上的数。递归到 depth == n 时输出并返回；否则从小到大尝试每个还没用过的数字，选中后标记、递归、再撤销标记。撤销标记这一步是回溯的关键，漏掉它会丢掉大量排列。\n\n**输入格式：** 一行一个整数 n（1 ≤ n ≤ 7）。\n\n**输出格式：** 共 n! + 1 行：前 n! 行为按字典序排列的每个排列，同一排列内相邻两个数用一个空格分隔；最后一行为 total = n!。\n\n**输入样例：**\n```text\n3\n```\n**输出样例：**\n```text\n1 2 3\n1 3 2\n2 1 3\n2 3 1\n3 1 2\n3 2 1\ntotal = 6\n```",
+    "solution": "#include <stdio.h>\n\nstatic int n;\nstatic int used[12];\nstatic int perm[12];\n\n/* 回溯：为第 depth 个位置挑一个还没用过的数 */\nvoid dfs(int depth)\n{\n    int v, i;\n\n    if (depth == n) {\n        for (i = 0; i < n; i++) {\n            if (i > 0)\n                putchar(' ');\n            printf(\"%d\", perm[i]);\n        }\n        putchar('\\n');\n        return;\n    }\n    for (v = 1; v <= n; v++) {\n        if (used[v])\n            continue;\n        used[v] = 1;              /* 选中 v */\n        perm[depth] = v;\n        dfs(depth + 1);\n        used[v] = 0;              /* 撤销选择，回到上一层 */\n    }\n}\n\nint main(void)\n{\n    long long total = 1;\n    int i;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    dfs(0);\n    for (i = 2; i <= n; i++)\n        total *= i;\n    printf(\"total = %lld\\n\", total);\n    return 0;\n}\n",
+    "points": [
+      "used 数组标记已用数字，perm 记录当前排列",
+      "depth == n 时输出一整行并返回",
+      "循环 1..n，跳过已用数字后标记、递归、撤销",
+      "最后一行输出 n!，用 long long 累计"
+    ],
+    "analysis": "思路：全排列是回溯法的入门题。把「填第 depth 个位置」看成一棵决策树的第 depth 层，每一层从 1 到 n 里挑一个还没用过的数；填满 n 个位置就得到一个排列，输出后返回上一层继续尝试别的分支。\n\n关键步骤：① used 数组标记数字是否已被使用，perm 保存当前正在构造的排列；② dfs(depth) 先判断 depth == n，是则输出 perm 并 return；③ 否则 for v = 1..n，跳过 used[v] 为真的数字；④ 做选择：used[v] = 1、perm[depth] = v，然后递归 dfs(depth + 1)；⑤ 撤销选择 used[v] = 0，这是回溯的灵魂 —— 不撤销的话，后面的分支会以为这个数还被占用，大量排列会凭空消失。\n\n复杂度：共 n! 个叶子，每个叶子输出 n 个数，总时间 O(n × n!)，n = 7 时约 3.5 万次数字输出；递归深度 n，空间 O(n)（不计输出），搜索树结点总数约为 e × n!。\n\n易错点：① 忘记撤销 used[v]，输出数量远少于 n!；② 把 used[v] = 0 写在递归之前，等于没有标记；③ 循环写成 v = 0..n-1 却按 1..n 理解，漏掉 n；④ 直接用 next_permutation 之类的库函数，不符合「用回溯实现」的要求；⑤ 输出时每个数后面都跟一个空格，行末多出空格；⑥ total 用 int 存，n 更大时会溢出（本题 n ≤ 7，安全）。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nnamespace {\n\nint n;\nstd::vector<int> used;\nstd::vector<int> perm;\n\nvoid dfs(int depth)\n{\n    if (depth == n) {\n        for (int i = 0; i < n; ++i) {\n            if (i > 0)\n                std::cout << ' ';\n            std::cout << perm[i];\n        }\n        std::cout << '\\n';\n        return;\n    }\n    for (int v = 1; v <= n; ++v) {\n        if (used[v])\n            continue;\n        used[v] = 1;\n        perm[depth] = v;\n        dfs(depth + 1);\n        used[v] = 0;\n    }\n}\n\n}  // namespace\n\nint main()\n{\n    if (!(std::cin >> n))\n        return 0;\n\n    used.assign(n + 1, 0);\n    perm.assign(n, 0);\n    dfs(0);\n\n    long long total = 1;\n    for (int i = 2; i <= n; ++i)\n        total *= i;\n    std::cout << \"total = \" << total << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 vector 存 used 与 perm，递归函数访问全局状态",
+          "depth == n 时逐个数输出并换行",
+          "循环中标记、递归、撤销三步完整"
+        ],
+        "analysis": "思路：与 C 版一致，用 used 与 perm 两个 vector 保存回溯状态，dfs 逐层填写。C++ 里把这两个数组放进匿名命名空间，既避免与库名冲突，也让它们只在本翻译单元可见。\n\n关键步骤：① 读入 n 后 used.assign(n + 1, 0)、perm.assign(n, 0)；② dfs(depth) 在 depth == n 时输出整行；③ 否则用 for (int v = 1; v <= n; ++v) 尝试，跳过已用数字；④ 标记 used[v] = 1、写入 perm[depth]、递归、再恢复 used[v] = 0；⑤ 主函数用循环算 n! 并输出 total 行。\n\n复杂度：时间 O(n × n!)，空间 O(n)。递归深度 n ≤ 7，栈压力可以忽略。\n\n易错点：① 递归参数传 vector 的副本，撤销操作作用在副本上；② 输出用 std::endl 导致每个排列都刷新一次缓冲区，n = 7 时明显变慢；③ 把撤销写成 used[v] = 1；④ perm 容量不足导致越界；⑤ 忘记输出 total 行，或者把 total 写成 n 而不是 n!；⑥ 循环变量与全局变量同名，遮蔽后逻辑出错。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    used = [False] * (n + 1)\n    perm = [0] * n\n    lines = []\n\n    def dfs(depth):\n        if depth == n:\n            lines.append(\" \".join(str(v) for v in perm))\n            return\n        for v in range(1, n + 1):\n            if used[v]:\n                continue\n            used[v] = True          # 选中 v\n            perm[depth] = v\n            dfs(depth + 1)\n            used[v] = False         # 撤销选择\n\n    dfs(0)\n\n    total = 1\n    for i in range(2, n + 1):\n        total *= i\n\n    for line in lines:\n        print(line)\n    print(f\"total = {total}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "used 用布尔列表，perm 用定长列表",
+          "嵌套函数 dfs(depth)，输出收集到列表再统一打印",
+          "total 用循环累乘 2..n"
+        ],
+        "analysis": "思路：Python 的写法与 C 很像，只是把数组换成列表、把输出先收集起来。因为 n! 行输出很多，先把每行拼成字符串存进列表、最后统一 print，比在递归里逐行 print 快得多。\n\n关键步骤：① used = [False] * (n + 1)，perm = [0] * n；② 定义嵌套函数 dfs(depth)，在 depth == n 时用 join 拼出整行追加到 lines；③ 循环 v 从 1 到 n，跳过 used[v]，置真、写 perm、递归、再置假；④ 递归结束后用循环算阶乘；⑤ 依次输出 lines，再输出 total 行。\n\n复杂度：时间 O(n × n!)，空间 O(n × n!)（保存全部输出行），n = 7 时约 5040 行，完全可接受。\n\n易错点：① 用 itertools.permutations 一行搞定，绕过了回溯练习；② 忘记 used[v] = False，输出数量骤减；③ 在递归里直接 print，输出顺序虽然对，但大量小 IO 较慢；④ perm 用 append 而不是按下标赋值，导致排列长度越来越长；⑤ 阶乘用 math.factorial 也行，但要保证与输出顺序一致；⑥ 输出行尾多空格。"
+      }
+    }
+  },
+  {
+    "id": "函-71",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "组合",
+      "回溯",
+      "剪枝"
+    ],
+    "stem": "读入 n 和 m，按字典序输出从 1 到 n 中任取 m 个数的全部组合，每行一个组合，最后一行输出组合的总数。\n\n要求用回溯实现：dfs(start, depth) 表示正在为第 depth 个位置选数，并且只能从 start 到 n 之间选。这样组合内部严格递增，既不会重复也不会漏解，不需要额外的 used 数组。\n\n**输入格式：** 一行两个整数 n 和 m（1 ≤ m ≤ n ≤ 8），用空格分隔。\n\n**输出格式：** 共 C(n, m) + 1 行：前 C(n, m) 行每行为一个组合（递增排列，相邻两个数用一个空格分隔）；最后一行为 total = C(n, m)。\n\n**输入样例：**\n```text\n5 3\n```\n**输出样例：**\n```text\n1 2 3\n1 2 4\n1 2 5\n1 3 4\n1 3 5\n1 4 5\n2 3 4\n2 3 5\n2 4 5\n3 4 5\ntotal = 10\n```",
+    "solution": "#include <stdio.h>\n\nstatic int n, m;\nstatic int chosen[12];\nstatic long long total = 0;\n\n/* 回溯：第 depth 个位置从 start 到 n 中选，保证组合递增且不重复 */\nvoid dfs(int start, int depth)\n{\n    int v, i;\n\n    if (depth == m) {\n        for (i = 0; i < m; i++) {\n            if (i > 0)\n                putchar(' ');\n            printf(\"%d\", chosen[i]);\n        }\n        putchar('\\n');\n        total++;\n        return;\n    }\n    /* 还要放 m - depth 个数，v 最大只能取到 n - (m - depth) + 1 */\n    for (v = start; v <= n - (m - depth) + 1; v++) {\n        chosen[depth] = v;\n        dfs(v + 1, depth + 1);\n    }\n}\n\nint main(void)\n{\n    if (scanf(\"%d %d\", &n, &m) != 2)\n        return 0;\n    dfs(1, 0);\n    printf(\"total = %lld\\n\", total);\n    return 0;\n}\n",
+    "points": [
+      "dfs(start, depth) 只能从 start 往后选，保证组合递增不重复",
+      "depth == m 时输出当前组合并计数",
+      "循环上界用 n − (m − depth) + 1 剪掉凑不够的分支",
+      "不需要 used 数组，也不需要撤销"
+    ],
+    "analysis": "思路：组合与全排列的区别在于「顺序无关」：{1,2,3} 与 {3,2,1} 是同一个组合。为了避免重复，规定组合内部数字严格递增，于是第 depth 个位置只能从上一个选中数字的下一个开始选。\n\n关键步骤：① dfs(start, depth)：start 是本次可选的最小值，depth 是已经选了几个；② depth == m 时输出 chosen[0..m-1] 并计数；③ 循环 v 从 start 开始，chosen[depth] = v，递归 dfs(v + 1, depth + 1)；④ 循环上界不是 n，而是 n - (m - depth) + 1：还剩 m - depth 个位置要填，v 取太大就凑不够数，直接把这些分支剪掉；⑤ 与全排列不同，这里不需要 used 数组，因为「只能往后选」天然保证了不重复。\n\n复杂度：解的个数为 C(n, m)，每个解输出 m 个数，时间 O(m × C(n, m))；递归深度 m，空间 O(m)，不含输出。剪枝把大量注定凑不满的分支挡在递归之前。\n\n易错点：① 循环从 1 开始而不是从 start 开始，出现大量重复组合；② 递归传 v 而不是 v + 1，同一个数被选两次；③ 上界写成 n 虽然结果正确（多余分支会在下一层被自然淘汰），但效率变差；④ 与全排列混淆，加了 used 数组又不敢撤销；⑤ total 统计写在递归出口之外，导致重复计数；⑥ 输出格式：组合之间用空格，行末多一个空格。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nnamespace {\n\nint n, m;\nstd::vector<int> chosen;\nlong long total = 0;\n\nvoid dfs(int start, int depth)\n{\n    if (depth == m) {\n        for (int i = 0; i < m; ++i) {\n            if (i > 0)\n                std::cout << ' ';\n            std::cout << chosen[i];\n        }\n        std::cout << '\\n';\n        ++total;\n        return;\n    }\n    for (int v = start; v <= n - (m - depth) + 1; ++v) {\n        chosen[depth] = v;\n        dfs(v + 1, depth + 1);\n    }\n}\n\n}  // namespace\n\nint main()\n{\n    if (!(std::cin >> n >> m))\n        return 0;\n\n    chosen.assign(m, 0);\n    dfs(1, 0);\n    std::cout << \"total = \" << total << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "chosen 用 vector，dfs(start, depth) 传递起点",
+          "循环上界 n − (m − depth) + 1 做剪枝",
+          "depth == m 时输出并累加 total"
+        ],
+        "analysis": "思路：与 C 版相同 —— 用「只能往后选」保证组合递增，用 n - (m - depth) + 1 作为循环上界剪枝。C++ 里把状态放进匿名命名空间，函数签名保持简洁。\n\n关键步骤：① 读入 n、m 后 chosen.assign(m, 0)；② dfs(1, 0) 从数字 1 开始填第 0 个位置；③ depth == m 时逐个输出并 ++total；④ 否则 for (int v = start; v <= n - (m - depth) + 1; ++v)，写入后递归 v + 1；⑤ 最后输出 total 行。\n\n复杂度：时间 O(m × C(n, m))，空间 O(m)。n ≤ 8 时组合数最多 70，输出量很小。\n\n易错点：① 上界算错成 n - (m - depth)，少了一组解；② 递归传 start 而不是 v + 1，允许重复取数；③ 把 chosen 当栈用 push_back / pop_back，却没有在出口处清理；④ 输出 total 时忘了前缀「total = 」；⑤ 用 int 存统计值没问题，但要与输出格式一致；⑥ 与全排列搞混，多写了 used 标记。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    n, m = int(data[0]), int(data[1])\n    chosen = [0] * m\n    total = 0\n\n    def dfs(start, depth):\n        nonlocal total\n        if depth == m:\n            print(\" \".join(str(v) for v in chosen))\n            total += 1\n            return\n        # 还要放 m - depth 个数，v 最大只能取到 n - (m - depth) + 1\n        for v in range(start, n - (m - depth) + 2):\n            chosen[depth] = v\n            dfs(v + 1, depth + 1)\n\n    dfs(1, 0)\n    print(f\"total = {total}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "chosen 定长列表按下标赋值，dfs 递增选数",
+          "range(start, n - (m - depth) + 2) 对应 C 的闭区间上界",
+          "每输出一个组合 total 加一"
+        ],
+        "analysis": "思路：Python 用嵌套函数 dfs(start, depth) 实现，nonlocal 让 total 可以在内层修改；输出直接 print，因为组合数量最多 70 组，不需要先缓存。\n\n关键步骤：① 读入 n、m，chosen = [0] * m，total = 0；② dfs(start, depth)：depth == m 时用 join 输出并让 total 加一；③ 否则 for v in range(start, n - (m - depth) + 2)：注意 range 的右端是开区间，所以 C 里的 n - (m - depth) + 1 要写成 +2；④ 写入 chosen[depth] 后递归 dfs(v + 1, depth + 1)；⑤ 最后输出 total。\n\n复杂度：时间 O(m × C(n, m))，空间 O(m)。nonlocal 声明的 total 不会被当成局部变量。\n\n易错点：① range 右端忘记加 1，丢掉最后一组解；② 忘记 nonlocal total，赋值时把它变成局部变量并报错；③ 用 itertools.combinations 直接出结果，绕开回溯练习；④ 递归参数写成 v，允许同一个数重复出现；⑤ 输出行末多空格；⑥ 把 total 打印在第一个组合之前。"
+      }
+    }
+  },
+  {
+    "id": "函-72",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "函数拆分",
+      "回文判断",
+      "字符统计"
+    ],
+    "stem": "读入一行文本（长度不超过 200），把三件事分别交给三个函数完成：\n\n1. clean_text(src, dst)：把文本中的字母统一转成小写，去掉所有非字母非数字的字符，结果写入 dst；\n2. is_palindrome(s)：判断 s 是否为回文串（正读反读相同），是返回 1，否返回 0；\n3. count_chars(s, &letters, &digits, &others)：统计原始文本中字母、数字与其他字符（含空格）的个数，三个结果通过指针参数带回。\n\n主函数只负责读入、调用这三个函数，并调用 print_report 按下面的格式输出。注意：回文判断用的是 clean_text 规范化之后的串，字符统计用的是原始文本；读入要用能读整行的方式，scanf 的 %s 遇到空格就停了。\n\n**输入格式：** 一行文本，可能包含空格、逗号、冒号等字符，行末有换行符。\n\n**输出格式：** 三行：\n- clean = 后接规范化之后的串（可能为空）；\n- palindrome = 后接 yes 或 no；\n- letters = A digits = B others = C，A、B、C 依次为字母、数字、其他字符的个数。\n\n**输入样例：**\n```text\nA man, a plan, a canal: Panama\n```\n**输出样例：**\n```text\nclean = amanaplanacanalpanama\npalindrome = yes\nletters = 21 digits = 0 others = 9\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\n/* 只保留字母与数字，字母统一转成小写 */\nvoid clean_text(const char *src, char *dst)\n{\n    int i, k = 0;\n\n    for (i = 0; src[i] != '\\0'; i++) {\n        char ch = src[i];\n        if (ch >= 'A' && ch <= 'Z')\n            dst[k++] = (char)(ch - 'A' + 'a');\n        else if ((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9'))\n            dst[k++] = ch;\n    }\n    dst[k] = '\\0';\n}\n\n/* 判断 s 是否回文：是返回 1，否返回 0 */\nint is_palindrome(const char *s)\n{\n    int i = 0;\n    int j = (int)strlen(s) - 1;\n\n    while (i < j) {\n        if (s[i] != s[j])\n            return 0;\n        i++;\n        j--;\n    }\n    return 1;\n}\n\n/* 统计原始文本中字母、数字与其他字符（含空格）的个数 */\nvoid count_chars(const char *s, int *letters, int *digits, int *others)\n{\n    int i;\n\n    *letters = 0;\n    *digits = 0;\n    *others = 0;\n    for (i = 0; s[i] != '\\0'; i++) {\n        char ch = s[i];\n        if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))\n            (*letters)++;\n        else if (ch >= '0' && ch <= '9')\n            (*digits)++;\n        else\n            (*others)++;\n    }\n}\n\n/* 输出单独抽成一个函数，主函数里不再出现 printf */\nvoid print_report(const char *clean, int palindrome,\n                  int letters, int digits, int others)\n{\n    printf(\"clean = %s\\n\", clean);\n    printf(\"palindrome = %s\\n\", palindrome ? \"yes\" : \"no\");\n    printf(\"letters = %d digits = %d others = %d\\n\", letters, digits, others);\n}\n\nint main(void)\n{\n    char line[512];\n    char clean[512];\n    int letters, digits, others;\n    size_t len;\n\n    if (fgets(line, (int)sizeof line, stdin) == NULL)\n        return 0;\n    len = strlen(line);\n    while (len > 0 && (line[len - 1] == '\\n' || line[len - 1] == '\\r'))\n        line[--len] = '\\0';\n\n    clean_text(line, clean);\n    count_chars(line, &letters, &digits, &others);\n    print_report(clean, is_palindrome(clean), letters, digits, others);\n    return 0;\n}\n",
+    "points": [
+      "clean_text 只保留字母数字并把字母转小写，末尾补结束符",
+      "is_palindrome 用首尾双指针比较，空串视为回文",
+      "count_chars 用三个指针参数把统计结果带回主函数",
+      "print_report 单独负责输出，main 只做读入与调度"
+    ],
+    "analysis": "思路：本题的重点不是算法，而是职责拆分：判断回文、统计字符、格式化输出三件事各写一个函数，main 只负责读入和调度。这样每个函数都能单独测试，改需求时也只需要动一处。\n\n关键步骤：① clean_text(src, dst) 遍历 src，大写字母用 ch - 'A' + 'a' 转小写，小写字母与数字原样保留，其余字符（空格、逗号、冒号）全部丢弃，最后补结束符；② is_palindrome(s) 用首尾双指针向中间夹，遇到不相等的字符立即返回 0；③ count_chars(s, &letters, &digits, &others) 通过三个指针参数把三个统计值带回来，这是 C 语言函数「返回多个值」最常用的手法；④ print_report 统一负责 printf，main 里不再出现输出语句；⑤ 用 fgets 读整行（scanf 的 %s 遇到空格就停），再循环去掉行末的换行符与回车符。\n\n复杂度：各函数都只遍历一遍字符串，时间 O(L)，clean 缓冲区额外占 O(L) 空间，L ≤ 200。\n\n易错点：① 用 scanf 的 %s 读入，空格之后的文本全部丢失；② 去换行时只处理一种字符，在某些输入下残留回车导致 others 多 1；③ 统计时用了规范化之后的串，空格和标点没被计入；④ 三个计数器用值传递，函数外拿不到结果；⑤ is_palindrome 在循环条件里反复调用 strlen，每次都重新扫一遍；⑥ 空串被判成「不是回文」，而按定义空串正反相同，应为 yes。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n\nstd::string clean_text(const std::string &src)\n{\n    std::string dst;\n\n    for (char ch : src) {\n        if (ch >= 'A' && ch <= 'Z')\n            dst.push_back(static_cast<char>(ch - 'A' + 'a'));\n        else if ((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9'))\n            dst.push_back(ch);\n    }\n    return dst;\n}\n\nbool is_palindrome(const std::string &s)\n{\n    std::size_t i = 0;\n    std::size_t j = s.size();\n\n    while (i + 1 < j) {\n        --j;\n        if (s[i] != s[j])\n            return false;\n        ++i;\n    }\n    return true;\n}\n\nvoid count_chars(const std::string &s, int &letters, int &digits, int &others)\n{\n    letters = digits = others = 0;\n    for (char ch : s) {\n        if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))\n            ++letters;\n        else if (ch >= '0' && ch <= '9')\n            ++digits;\n        else\n            ++others;\n    }\n}\n\nvoid print_report(const std::string &clean, bool palindrome,\n                  int letters, int digits, int others)\n{\n    std::cout << \"clean = \" << clean << '\\n';\n    std::cout << \"palindrome = \" << (palindrome ? \"yes\" : \"no\") << '\\n';\n    std::cout << \"letters = \" << letters << \" digits = \" << digits\n              << \" others = \" << others << '\\n';\n}\n\nint main()\n{\n    std::string line;\n    if (!std::getline(std::cin, line))\n        return 0;\n    if (!line.empty() && line.back() == '\\r')\n        line.pop_back();\n\n    std::string clean = clean_text(line);\n    int letters = 0, digits = 0, others = 0;\n    count_chars(line, letters, digits, others);\n    print_report(clean, is_palindrome(clean), letters, digits, others);\n    return 0;\n}\n",
+        "points": [
+          "三个函数分别负责清洗、判断与统计，main 只做调度",
+          "用 std::string 与引用参数返回多个统计值",
+          "print_report 统一输出，getline 读整行"
+        ],
+        "analysis": "思路：与 C 版职责划分完全一致，只是把 C 字符串换成了 std::string：clean_text 返回新串，count_chars 用三个 int & 把统计值带回来，print_report 负责输出。\n\n关键步骤：① 用 std::getline 读入整行，若末尾有回车符就 pop_back 掉；② clean_text 遍历字符，大写转小写、小写与数字保留、其余丢弃，结果 push_back 到新串；③ is_palindrome 用双下标从两端向中间比较；④ count_chars 通过引用参数写回三个计数；⑤ print_report 依次输出三行。\n\n复杂度：时间 O(L)，空间 O(L)。std::string 会自动管理内存，不需要手写结束符。\n\n易错点：① 用 std::cin >> s 读入，空格之后的内容丢失；② 把 '\r' 留在串里，others 计数多 1；③ 统计用了 clean 之后的串；④ 引用参数写成值参数，函数外的计数不变；⑤ is_palindrome 里用 s.size() - 1 计算末位下标，空串时下溢成巨大的无符号数；⑥ 输出时忘记 \"clean = \" 后面的空格与串之间的空格。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef clean_text(src):\n    \"\"\"只保留字母与数字，字母统一转成小写。\"\"\"\n    out = []\n    for ch in src:\n        if \"A\" <= ch <= \"Z\":\n            out.append(ch.lower())\n        elif \"a\" <= ch <= \"z\" or \"0\" <= ch <= \"9\":\n            out.append(ch)\n    return \"\".join(out)\n\n\ndef is_palindrome(s):\n    \"\"\"正读反读相同返回 True。\"\"\"\n    return s == s[::-1]\n\n\ndef count_chars(s):\n    \"\"\"统计原始文本中字母、数字与其他字符（含空格）的个数。\"\"\"\n    letters = digits = others = 0\n    for ch in s:\n        if \"A\" <= ch <= \"Z\" or \"a\" <= ch <= \"z\":\n            letters += 1\n        elif \"0\" <= ch <= \"9\":\n            digits += 1\n        else:\n            others += 1\n    return letters, digits, others\n\n\ndef print_report(clean, palindrome, letters, digits, others):\n    print(f\"clean = {clean}\")\n    print(f\"palindrome = {'yes' if palindrome else 'no'}\")\n    print(f\"letters = {letters} digits = {digits} others = {others}\")\n\n\ndef main():\n    line = sys.stdin.readline()\n    if line == \"\":\n        return\n    line = line.rstrip(\"\\r\\n\")\n\n    clean = clean_text(line)\n    letters, digits, others = count_chars(line)\n    print_report(clean, is_palindrome(clean), letters, digits, others)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "clean_text 只保留 ASCII 字母与数字，字母转小写",
+          "is_palindrome 用 s == s[::-1] 判断",
+          "count_chars 返回三元组，print_report 统一输出"
+        ],
+        "analysis": "思路：Python 没有指针，多返回值直接返回一个元组；判断回文最地道的写法是 s == s[::-1]，等价于 C 里的双指针但短得多。三个函数各司其职，main 只负责读一行并调用。\n\n关键步骤：① 用 sys.stdin.readline() 读入一行，再用 rstrip 去掉行末换行；② clean_text 遍历字符，用 'A' <= ch <= 'Z' 这类区间判断，避免把非 ASCII 字母也算进去；③ is_palindrome 直接比较原串与反转串；④ count_chars 返回 (letters, digits, others) 三元组；⑤ print_report 用 f-string 输出三行。\n\n复杂度：时间 O(L)，空间 O(L)。切片反转会复制一份字符串。\n\n易错点：① 用 ch.isalnum() 判断，会把中文等 Unicode 字符也当成字母，与 C 版结果不一致；② 只 rstrip 换行却忘了回车符；③ 用 input() 读入后再 strip()，把有意义的前后空格也删了；④ 统计写在 clean 之后的串上；⑤ 把回文判断写成 s == s.reverse()（列表方法不存在于字符串上）；⑥ 三个计数拼接输出时分隔符与样例不一致。"
+      }
+    }
+  },
+  {
+    "id": "函-73",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "八皇后",
+      "回溯",
+      "冲突判断"
+    ],
+    "stem": "在 n×n 的棋盘上放置 n 个皇后，要求任意两个皇后不在同一行、同一列，也不在同一条对角线上。请用回溯求出全部摆法，输出解的个数，以及字典序最小的一组解。\n\n用 pos[row] = col 记录第 row 行皇后所在的列，逐行放置。第 row 行第 col 列能否放皇后，只需要和前面已经放好的各行比较：同列看 pos[r] == col，主对角线看 pos[r] − r == col − row（行列差相同），副对角线看 pos[r] + r == col + row（行列和相同）。\n\n**输入格式：** 一行一个整数 n（4 ≤ n ≤ 10）。\n\n**输出格式：** 两行：第一行为解的个数；第二行为字典序最小那组解的 n 个列号，按第 1 行到第 n 行的顺序用空格分隔。\n\n**输入样例：**\n```text\n4\n```\n**输出样例：**\n```text\n2\n2 4 1 3\n```",
+    "solution": "#include <stdio.h>\n\nstatic int n;\nstatic int pos[12];              /* pos[row] = 该行皇后所在列 */\nstatic int first_solution[12];\nstatic long long solution_count = 0;\n\n/* 第 row 行第 col 列能否放皇后：只需检查上面已经放好的各行 */\nint can_place(int row, int col)\n{\n    int r;\n\n    for (r = 1; r < row; r++) {\n        if (pos[r] == col)                 /* 同列 */\n            return 0;\n        if (pos[r] - r == col - row)       /* 主对角线 */\n            return 0;\n        if (pos[r] + r == col + row)       /* 副对角线 */\n            return 0;\n    }\n    return 1;\n}\n\n/* 回溯：一行一行往下放 */\nvoid dfs(int row)\n{\n    int col;\n\n    if (row > n) {\n        solution_count++;\n        if (solution_count == 1) {\n            for (col = 1; col <= n; col++)\n                first_solution[col] = pos[col];\n        }\n        return;\n    }\n    for (col = 1; col <= n; col++) {\n        if (can_place(row, col)) {\n            pos[row] = col;\n            dfs(row + 1);\n        }\n    }\n}\n\nint main(void)\n{\n    int i;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    dfs(1);\n    printf(\"%lld\\n\", solution_count);\n    for (i = 1; i <= n; i++) {\n        if (i > 1)\n            putchar(' ');\n        printf(\"%d\", first_solution[i]);\n    }\n    putchar('\\n');\n    return 0;\n}\n",
+    "points": [
+      "按行放置，pos[row] 记录列号，冲突就换下一列",
+      "同列、主对角线（差相等）、副对角线（和相等）三重检查",
+      "row > n 时解计数加一，并保存第一个解",
+      "回溯剪枝，避免枚举 n^n 种摆法"
+    ],
+    "analysis": "思路：八皇后是回溯法的经典模型。n 个皇后必须各行一个、各列一个，所以可以按行放置：第 row 行只决定皇后放在哪一列。放好前 row - 1 行后，第 row 行依次尝试每一列，不冲突就继续放下一行，冲突就换列；全部行都放满就得到一个解。\n\n关键步骤：① pos[row] = col 记录每行皇后所在的列；② can_place(row, col) 只与 1..row-1 行比较：同列看 pos[r] == col，主对角线看 pos[r] - r == col - row，副对角线看 pos[r] + r == col + row；③ dfs(row) 中 row > n 表示放满，解计数加一，并在第一个解出现时把 pos 拷贝到 first_solution；④ 否则枚举 col = 1..n，能放就写入 pos[row] 后递归；⑤ 这里不需要显式撤销，因为下一轮 col 会直接覆盖 pos[row]，只有被后续行读取的 1..row-1 才需要保持稳定。\n\n复杂度：解的个数随 n 指数增长（n = 8 时 92 个，n = 10 时 724 个），但三重冲突检查把搜索树剪得很小，n ≤ 10 时瞬间完成；递归深度 n，空间 O(n)。朴素枚举的规模是 n^n，回溯把它降到了实际可算的范围。\n\n易错点：① 对角线判断写成 pos[r] - r == row - col，差的方向反了；② 只检查同列，漏掉两条对角线；③ 循环列号与形参重名，逻辑错乱；④ 想用二维数组逐格标记却不撤销，棋盘状态被污染；⑤ 保存第一个解时在递归返回后再拷贝，此时 pos 已被覆盖；⑥ n = 4 时输出 2 与样例不符，多半是对角线判断有误。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nnamespace {\n\nint n;\nstd::vector<int> pos;\nstd::vector<int> first_solution;\nlong long solution_count = 0;\n\nbool can_place(int row, int col)\n{\n    for (int r = 1; r < row; ++r) {\n        if (pos[r] == col)\n            return false;\n        if (pos[r] - r == col - row)\n            return false;\n        if (pos[r] + r == col + row)\n            return false;\n    }\n    return true;\n}\n\nvoid dfs(int row)\n{\n    if (row > n) {\n        ++solution_count;\n        if (solution_count == 1)\n            first_solution.assign(pos.begin() + 1, pos.end());\n        return;\n    }\n    for (int col = 1; col <= n; ++col) {\n        if (can_place(row, col)) {\n            pos[row] = col;\n            dfs(row + 1);\n        }\n    }\n}\n\n}  // namespace\n\nint main()\n{\n    if (!(std::cin >> n))\n        return 0;\n\n    pos.assign(n + 1, 0);\n    dfs(1);\n\n    std::cout << solution_count << '\\n';\n    for (int i = 0; i < n; ++i) {\n        if (i > 0)\n            std::cout << ' ';\n        std::cout << first_solution[i];\n    }\n    std::cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "pos 用 vector 保存每行列号，dfs 逐行放置",
+          "can_place 检查同列与两条对角线",
+          "第一个解用 assign 拷贝，最后按顺序输出"
+        ],
+        "analysis": "思路：与 C 版相同，按行回溯；C++ 里 pos 与 first_solution 用 vector，第一个解在解计数为 1 时用 assign 一次性拷贝。\n\n关键步骤：① 读入 n，pos.assign(n + 1, 0)；② can_place 循环 r 从 1 到 row - 1 检查三种冲突；③ dfs(row) 在 row > n 时累加计数，第一次成功时拷贝当前方案；④ 否则 for col 从 1 到 n，能放则写入并递归；⑤ 输出计数与第一个解的各个列号。\n\n复杂度：时间正比于搜索树结点数，n = 10 时也在毫秒级；递归深度 n，空间 O(n)。\n\n易错点：① first_solution 用引用赋值后又随 pos 改动而变化（本题存的是 int 的副本，安全，但要看清类型）；② 输出用 vector 的 size() 与 n 混用；③ 对角线条件写成差的绝对值比较，虽然也能判断，但容易写错符号；④ 递归时没有在 row 层重置 pos，导致残留；⑤ 忘记处理 n 较小（4、5）时的第一个解；⑥ 用 std::endl 输出只有两行，无影响。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    pos = [0] * (n + 1)\n    first = []\n    count = 0\n\n    def can_place(row, col):\n        for r in range(1, row):\n            if pos[r] == col:              # 同列\n                return False\n            if pos[r] - r == col - row:    # 主对角线\n                return False\n            if pos[r] + r == col + row:    # 副对角线\n                return False\n        return True\n\n    def dfs(row):\n        nonlocal count\n        if row > n:\n            count += 1\n            if not first:\n                first.extend(pos[1:])\n            return\n        for col in range(1, n + 1):\n            if can_place(row, col):\n                pos[row] = col\n                dfs(row + 1)\n\n    dfs(1)\n    print(count)\n    print(\" \".join(str(c) for c in first))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "pos 列表记录每行列号，can_place 检查冲突",
+          "dfs 内用 nonlocal 修改解计数",
+          "first 只在第一个解出现时拷贝一次"
+        ],
+        "analysis": "思路：Python 版把棋盘状态放进列表 pos，用嵌套函数 dfs 逐行回溯；解计数用 nonlocal 声明，第一个解出现时把 pos[1:] 拷进 first。\n\n关键步骤：① 读入 n，pos = [0] * (n + 1)；② can_place(row, col) 遍历 1..row-1 检查同列与两条对角线；③ dfs(row)：row > n 时 count 加一，若 first 为空则扩展为当前方案；④ 否则 for col in range(1, n + 1)，能放就赋值并递归；⑤ 输出 count 和 first 的各个列号。\n\n复杂度：时间与搜索树规模成正比，n = 10 时约几万个结点；递归深度 n，空间 O(n)。\n\n易错点：① 忘记 nonlocal count，赋值时把它变成局部变量；② first 用 first = pos 变成别名，之后 pos 改动会污染结果，必须切片拷贝；③ 冲突判断用 abs(pos[r] - col) == row - r，正确但要注意与差、和两种写法保持一致；④ 输出时把 0 号位也打印出来；⑤ 递归中没有清理 pos[row]，虽然会被覆盖，但调试时容易误判；⑥ 把 n = 4 的样例当成唯一解。"
+      }
+    }
+  },
+  {
+    "id": "函-74",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "最大子段和",
+      "分治",
+      "递归"
+    ],
+    "stem": "读入 n 个整数（可能有负数），求最大的连续子段和，子段不能为空。要求用分治递归完成。\n\n把区间 [left, right] 从中点 mid 切开，最大子段和只有三种可能：完全落在左半、完全落在右半、跨越中点。前两种递归求解；第三种交给 max_cross：从中点向左求出「必须以 a[mid] 结尾」的最大后缀和，再从中点右侧求出「必须以 a[mid+1] 开头」的最大前缀和，两者相加即为跨中点的最优解。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100000）；第二行 n 个整数 a[i]（−10^4 ≤ a[i] ≤ 10^4），相邻两个数用一个空格分隔。\n\n**输出格式：** 一行一个整数，为最大子段和。\n\n**输入样例：**\n```text\n8\n-2 1 -3 4 -1 2 1 -5\n```\n**输出样例：**\n```text\n6\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 100005\n\nstatic long long a[MAXN];\n\n/* 求跨越中点的最大子段和：左半必须以 mid 结尾，右半必须以 mid + 1 开头 */\nlong long max_cross(int left, int mid, int right)\n{\n    long long sum = 0;\n    long long best_left = a[mid];\n    long long best_right = a[mid + 1];\n    int i;\n\n    for (i = mid; i >= left; i--) {\n        sum += a[i];\n        if (sum > best_left)\n            best_left = sum;\n    }\n    sum = 0;\n    for (i = mid + 1; i <= right; i++) {\n        sum += a[i];\n        if (sum > best_right)\n            best_right = sum;\n    }\n    return best_left + best_right;\n}\n\n/* 分治：答案要么在左半、要么在右半、要么跨越中点 */\nlong long max_sub(int left, int right)\n{\n    int mid;\n    long long best, other;\n\n    if (left == right)\n        return a[left];\n\n    mid = left + (right - left) / 2;\n    best = max_sub(left, mid);\n    other = max_sub(mid + 1, right);\n    if (other > best)\n        best = other;\n    other = max_cross(left, mid, right);\n    if (other > best)\n        best = other;\n    return best;\n}\n\nint main(void)\n{\n    int n, i;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%lld\", &a[i]) != 1)\n            return 0;\n    }\n    printf(\"%lld\\n\", max_sub(0, n - 1));\n    return 0;\n}\n",
+    "points": [
+      "递归出口 left == right 时返回单个元素",
+      "分别递归左右两半，取两者较大值",
+      "max_cross 求必含 mid 的最大后缀与必含 mid+1 的最大前缀之和",
+      "三路取最大；子段非空，全负数时不能返回 0"
+    ],
+    "analysis": "思路：分治法求最大子段和，把区间 [left, right] 从中点 mid 切开，答案只可能落在三种位置：完全在左半、完全在右半、跨越中点。前两种递归求解，第三种单独用一个函数算。\n\n关键步骤：① 递归出口 left == right，单个元素的最大子段和就是它自己；② mid = left + (right - left) / 2，分别递归左右两半并取较大者；③ max_cross 从中点向左扫描，维护「必须以 mid 结尾」的最大后缀和；再从中点右侧向右扫描，维护「必须以 mid + 1 开头」的最大前缀和；两者相加就是跨中点的最优解；④ 三路结果取最大值返回；⑤ 用 long long，n = 10^5、每个数 10^4 时总和可达 10^9，接近 int 上限，用 long long 更稳妥。\n\n复杂度：T(n) = 2T(n/2) + O(n)，由主定理得 O(n log n)；递归深度 log n，除数组外空间 O(log n)。相比 O(n) 的 Kadane 算法略慢，但分治是「最大子段和」最标准的教学解法，也便于理解「跨越中点」这一关键分类。\n\n易错点：① max_cross 的初值写成 0，遇到全负数时返回 0，而题目要求子段非空；② 前缀和的扫描方向写反，实际求成了别的量；③ 只看左半或右半，忘记跨中点的情况；④ 用 int 导致总和溢出；⑤ 递归出口写成 left >= right 后又访问 a[mid + 1] 造成越界；⑥ 误以为「不选任何元素」和为 0 是合法答案。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nlong long max_cross(const std::vector<long long> &a, int left, int mid, int right)\n{\n    long long sum = 0;\n    long long best_left = a[mid];\n    long long best_right = a[mid + 1];\n\n    for (int i = mid; i >= left; --i) {\n        sum += a[i];\n        if (sum > best_left)\n            best_left = sum;\n    }\n    sum = 0;\n    for (int i = mid + 1; i <= right; ++i) {\n        sum += a[i];\n        if (sum > best_right)\n            best_right = sum;\n    }\n    return best_left + best_right;\n}\n\nlong long max_sub(const std::vector<long long> &a, int left, int right)\n{\n    if (left == right)\n        return a[left];\n\n    int mid = left + (right - left) / 2;\n    long long best = max_sub(a, left, mid);\n    long long right_best = max_sub(a, mid + 1, right);\n    if (right_best > best)\n        best = right_best;\n    long long cross_best = max_cross(a, left, mid, right);\n    if (cross_best > best)\n        best = cross_best;\n    return best;\n}\n\nint main()\n{\n    int n;\n    if (!(std::cin >> n))\n        return 0;\n\n    std::vector<long long> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    std::cout << max_sub(a, 0, n - 1) << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "max_cross 用引用传 vector，避免复制",
+          "递归求左右两半，再与跨中点结果比较",
+          "结果用 long long 保存"
+        ],
+        "analysis": "思路：与 C 版一致的分治结构，只是数组换成 vector 并用 const 引用传递；max_cross 与 max_sub 都返回 long long。\n\n关键步骤：① 读入 n 与 n 个 long long；② max_sub 在 left == right 时返回 a[left]；③ 递归左右两半，分别得到 best 与 right_best，取较大者；④ 调用 max_cross 得到跨中点结果，再与当前最优比较；⑤ 主函数输出 max_sub(a, 0, n - 1)。\n\n复杂度：时间 O(n log n)，空间 O(log n) 递归栈。n = 10^5 时约 170 万次加法，很快。\n\n易错点：① 参数用值传递，每层复制 vector，复杂度退化为 O(n²)；② max_cross 中 best_left 与 best_right 初值写成 0；③ 递归时 mid + 1 越界；④ 把三路结果用 std::max 嵌套时参数顺序写错（不影响正确性，但要保证都参与了比较）；⑤ 用 int 存累加和；⑥ 输出时多打一行。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef max_cross(a, left, mid, right):\n    \"\"\"求跨越中点的最大子段和：左半必须以 mid 结尾，右半必须以 mid + 1 开头。\"\"\"\n    total = 0\n    best_left = a[mid]\n    for i in range(mid, left - 1, -1):\n        total += a[i]\n        if total > best_left:\n            best_left = total\n\n    total = 0\n    best_right = a[mid + 1]\n    for i in range(mid + 1, right + 1):\n        total += a[i]\n        if total > best_right:\n            best_right = total\n\n    return best_left + best_right\n\n\ndef max_sub(a, left, right):\n    \"\"\"分治：答案在左半、在右半，或跨越中点。\"\"\"\n    if left == right:\n        return a[left]\n\n    mid = (left + right) // 2\n    best = max_sub(a, left, mid)\n    right_best = max_sub(a, mid + 1, right)\n    if right_best > best:\n        best = right_best\n    cross_best = max_cross(a, left, mid, right)\n    if cross_best > best:\n        best = cross_best\n    return best\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    a = [int(x) for x in data[1:1 + n]]\n    print(max_sub(a, 0, n - 1))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "max_cross 与 max_sub 两个递归函数，返回整数",
+          "切片不是必须的，直接传下标区间",
+          "用 long long 的 Python 等价物：任意精度 int"
+        ],
+        "analysis": "思路：Python 版同样用下标区间做分治，不切片，避免每层复制列表；max_cross 与 max_sub 各司其职，结构与 C 版一一对应。\n\n关键步骤：① 读入 n 与数组 a；② max_sub(a, left, right)：left == right 返回 a[left]；③ 递归左右两半取较大值；④ 调用 max_cross 得到跨中点结果再比较；⑤ 输出 max_sub(a, 0, n - 1)。\n\n复杂度：时间 O(n log n)，空间 O(log n)。Python 递归深度 log2(10^5) 约 17 层，远低于默认上限；但常数较大，n = 10^5 时约需零点几秒。\n\n易错点：① 在递归里用 a[left:right+1] 切片，空间与时间都变成 O(n log n) 级别的复制；② max_cross 用 0 初始化；③ 递归区间写成 [left, mid] 与 [mid, right] 造成重叠；④ 用 int 不存在溢出问题，但要保证返回的是整数而不是浮点；⑤ 用 max() 嵌套时漏掉一路；⑥ 忘记子段非空这一约束。"
+      }
+    }
+  },
+  {
+    "id": "函-75",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "汉诺塔",
+      "递归",
+      "状态复原"
+    ],
+    "stem": "汉诺塔的逆问题：三根柱子编号 A、B、C，n 个圆盘（1 号最小）散布在柱子上，同一根柱子上圆盘自下而上按编号递减堆放。每次只能移动某根柱子最上面的一个圆盘，且大圆盘不能压在小圆盘上。读入每个圆盘当前所在的柱子，求把它们全部集中到 C 柱所需的最少移动次数。\n\n递归思路：设 steps(k, dst) 表示把 1 到 k 号圆盘全部搬到 dst 柱的最少步数。\n\n- k = 0 时返回 0；\n- 若 k 号圆盘已经在 dst 上，它不必再动，只需把 1 到 k−1 号圆盘也搬到 dst，即 steps(k−1, dst)；\n- 否则 k 号圆盘至少要移动一次。移动之前，1 到 k−1 号圆盘必须先全部集中到「既不是 k 号圆盘所在柱、也不是 dst」的那根柱子 other 上，代价为 steps(k−1, other)；接着 k 号圆盘移动 1 步到 dst；此后 1 到 k−1 号圆盘正好作为一个整体摞在 other 上，整体搬到 dst 需要 2^(k−1) − 1 步。\n\n要求最少移动次数由递归函数算出，主函数只负责读入与输出，不能真的模拟每一次移动。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 30）；第二行为 n 个字符，第 i 个字符表示 i 号圆盘当前所在的柱子（A、B、C 之一），字符之间用空格分隔。保证给出的状态合法。\n\n**输出格式：** 一行一个整数，为把全部圆盘移到 C 柱的最少移动次数。\n\n**输入样例：**\n```text\n3\nB B A\n```\n**输出样例：**\n```text\n4\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 35\n\nstatic int n;\nstatic int pos[MAXN];            /* 0 = A, 1 = B, 2 = C */\n\n/* 把 1..k 号圆盘全部搬到 dst 柱所需的最少步数 */\nlong long steps(int k, int dst)\n{\n    int other;\n\n    if (k == 0)\n        return 0;\n    if (pos[k] == dst)           /* k 号已在目的地，只需处理上面 k-1 个 */\n        return steps(k - 1, dst);\n\n    /* k 号必须动一次：先把 1..k-1 号集中到第三根柱 */\n    other = 3 - pos[k] - dst;\n    return steps(k - 1, other) + 1 + (((long long)1 << (k - 1)) - 1);\n}\n\nint main(void)\n{\n    int i;\n    char buf[8];\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 1; i <= n; i++) {\n        if (scanf(\"%7s\", buf) != 1)\n            return 0;\n        pos[i] = buf[0] - 'A';\n    }\n    printf(\"%lld\\n\", steps(n, 2));\n    return 0;\n}\n",
+    "points": [
+      "steps(k, dst) 表示把 1..k 号圆盘全部搬到 dst 的最少步数",
+      "k 号已在 dst 时只需递归处理 1..k−1",
+      "否则先递归集中到第三根柱，再加 1 步与 2^(k−1)−1 步",
+      "步数用 long long，不能真的模拟 2^n 次移动"
+    ],
+    "analysis": "思路：这是汉诺塔的逆问题：不要求输出移动序列，而是已知每个圆盘当前所在柱，求全部移到 C 柱的最少步数。关键是抓住递归结构 —— 处理 k 号圆盘（当前最大的那个）时，只有两种情况。\n\n关键步骤：① steps(k, dst) 表示把 1..k 号圆盘全部搬到 dst 的最少步数；② k == 0 返回 0；③ 若 k 号圆盘已经在 dst 上，它不需要动，问题退化为把 1..k-1 号也搬到 dst，即 steps(k - 1, dst)；④ 否则 k 号圆盘必须移动一次。移动之前，1..k-1 号圆盘必须先全部集中到「既不是 k 所在柱、也不是 dst」的第三根柱 other 上，否则 k 无法落到 dst，代价是 steps(k - 1, other)；⑤ k 移动一步到 dst；⑥ 此后 1..k-1 号圆盘作为一个整体完整地摞在 other 上，把它们整体搬到 dst 正好需要 2^(k-1) - 1 步；⑦ 三部分相加即为答案，全程用 long long，k ≤ 30 时 2^29 - 1 远小于 long long 上限。\n\n复杂度：每层只做一次递归调用，深度 k，时间 O(n)，空间 O(n)。如果改成模拟每一次移动，n = 30 时需要 2^30 次操作，完全不可行 —— 这正是本题要求「用递归结构直接算步数」而不是「模拟过程」的原因。\n\n易错点：① 真的去模拟移动过程，n 一大就超时；② other 的计算写成 3 - pos[k] - dst 之外的错误公式，柱编号必须是 0、1、2；③ 忘记加 1（k 自己移动的那一步）；④ 把 2^(k-1) - 1 写成 2^k - 1；⑤ 用 int 存步数导致溢出；⑥ 认为「k 已在 dst」时仍要移动它，答案偏大。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nnamespace {\n\nint n;\nstd::vector<int> pos;\n\nlong long steps(int k, int dst)\n{\n    if (k == 0)\n        return 0;\n    if (pos[k] == dst)\n        return steps(k - 1, dst);\n\n    int other = 3 - pos[k] - dst;\n    return steps(k - 1, other) + 1 + ((1LL << (k - 1)) - 1);\n}\n\n}  // namespace\n\nint main()\n{\n    if (!(std::cin >> n))\n        return 0;\n\n    pos.assign(n + 1, 0);\n    for (int i = 1; i <= n; ++i) {\n        char ch;\n        std::cin >> ch;\n        pos[i] = ch - 'A';\n    }\n\n    std::cout << steps(n, 2) << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "pos 用 vector 保存每个圆盘所在柱（0/1/2）",
+          "steps 递归，k 已在 dst 时直接下探 k−1",
+          "否则用 3 − pos[k] − dst 求出中转柱"
+        ],
+        "analysis": "思路：与 C 版相同的递推：先判断 k 号圆盘是否已在目标柱，再决定是否需要「集中到第三根柱 + 移动 + 整体搬运」这三段。\n\n关键步骤：① 读入 n 与 n 个字符，把 A、B、C 映射为 0、1、2；② steps(k, dst) 递归；③ k == 0 返回 0；④ pos[k] == dst 时返回 steps(k - 1, dst)；⑤ 否则 third = 3 - pos[k] - dst，返回 steps(k - 1, third) + 1 + (1LL << (k - 1)) - 1；⑥ 主函数调用 steps(n, 2) 输出。\n\n复杂度：时间 O(n)，空间 O(n)。1LL << (k - 1) 用 long long 移位，k ≤ 30 时不会溢出。\n\n易错点：① 用 int 做 1 << (k - 1)，k 超过 30 时溢出；② 把 3 - pos[k] - dst 写成 3 - dst - dst；③ 递归里漏掉 +1；④ 忘记把 C 映射成 2；⑤ 用 std::cin >> char 读入时忘记跳过空白（operator>> 会自动跳过，这一点比 scanf 省心）；⑥ 输出用 endl 无所谓，只有一行。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    n = int(data[0])\n    pos = [0] * (n + 1)\n    for i in range(1, n + 1):\n        pos[i] = ord(data[i]) - ord(\"A\")\n\n    def steps(k, dst):\n        if k == 0:\n            return 0\n        if pos[k] == dst:\n            return steps(k - 1, dst)\n        other = 3 - pos[k] - dst\n        return steps(k - 1, other) + 1 + (2 ** (k - 1) - 1)\n\n    print(steps(n, 2))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "把 A、B、C 映射为 0、1、2 后递归",
+          "steps(k, dst) 按 k 号圆盘是否就位分支",
+          "整体搬运用 2 ** (k - 1) - 1"
+        ],
+        "analysis": "思路：Python 版把柱子字符映射成 0、1、2，然后用嵌套函数递归；整体搬运那一步直接写成 2 ** (k - 1) - 1，不需要考虑移位溢出。\n\n关键步骤：① 读入 n 与 n 个字符，用 ord(ch) - ord(\"A\") 得到柱号；② 定义 steps(k, dst)；③ k == 0 返回 0；④ 已就位则递归 k - 1；⑤ 否则 other = 3 - pos[k] - dst，返回 steps(k - 1, other) + 1 + 2 ** (k - 1) - 1；⑥ 输出 steps(n, 2)。\n\n复杂度：时间 O(n)，空间 O(n)。Python 的 int 任意精度，2^29 无需担心。\n\n易错点：① 用 A、B、C 字符直接做加减，类型不匹配；② 把 pos 建成 0 基列表却用 1 基下标；③ other 用 (3 - pos[k] - dst) 之外的推导；④ 忘记 +1；⑤ 递归深度只有 30，不需要 setrecursionlimit；⑥ 输入字符之间可能没有空格，split() 依然能正确切分。"
+      }
+    }
+  },
+  {
+    "id": "函-76",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "函数指针",
+      "排序策略",
+      "比较函数"
+    ],
+    "stem": "读入 n 个整数和一个策略编号 op，用函数指针选择比较规则后对数组排序。\n\n要求：\n- 写出三个比较函数 cmp_asc、cmp_desc、cmp_abs，签名都是 int cmp(const void *p, const void *q)；\n- 写一个 sort_with(int *a, int n, int (*cmp)(const void *, const void *))，把比较函数作为参数接收，内部调用 qsort；\n- 主函数根据 op 把不同的比较函数传给 sort_with，再从策略名表里取出对应的名字输出。\n\n三种策略：\n- op = 1：非递减排序；\n- op = 2：非递增排序；\n- op = 3：按绝对值从小到大排序，绝对值相同时数值小的排在前面。\n\n比较函数必须返回负数、0、正数三种结果，不能直接用 x − y（相减可能溢出）。\n\n**输入格式：** 第一行两个整数 n 和 op（1 ≤ n ≤ 100000，1 ≤ op ≤ 3）；第二行 n 个整数（−10^9 ≤ a[i] ≤ 10^9），相邻两个数用一个空格分隔。\n\n**输出格式：** 两行：第一行为排序后的 n 个整数（相邻两个数用一个空格分隔，行末无多余空格）；第二行为 strategy = 后接策略名，依次为 ascending、descending、absolute。\n\n**输入样例：**\n```text\n6 2\n3 -1 4 -1 5 9\n```\n**输出样例：**\n```text\n9 5 4 3 -1 -1\nstrategy = descending\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\n#define MAXN 100005\n\nstatic int a[MAXN];\n\nint cmp_asc(const void *p, const void *q)\n{\n    int x = *(const int *)p;\n    int y = *(const int *)q;\n\n    return (x > y) - (x < y);\n}\n\nint cmp_desc(const void *p, const void *q)\n{\n    int x = *(const int *)p;\n    int y = *(const int *)q;\n\n    return (x < y) - (x > y);\n}\n\nint cmp_abs(const void *p, const void *q)\n{\n    int x = *(const int *)p;\n    int y = *(const int *)q;\n    int ax = x < 0 ? -x : x;\n    int ay = y < 0 ? -y : y;\n\n    if (ax != ay)                    /* 绝对值不同时按绝对值升序 */\n        return (ax > ay) - (ax < ay);\n    return (x > y) - (x < y);        /* 绝对值相同则小的在前 */\n}\n\n/* 把比较函数作为参数传进来，内部交给 qsort */\nvoid sort_with(int *data, int count, int (*cmp)(const void *, const void *))\n{\n    qsort(data, (size_t)count, sizeof(int), cmp);\n}\n\nint main(void)\n{\n    int n, op, i;\n    int (*cmp)(const void *, const void *);\n    static const char *names[] = { \"\", \"ascending\", \"descending\", \"absolute\" };\n\n    if (scanf(\"%d %d\", &n, &op) != 2)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    if (op == 1)\n        cmp = cmp_asc;\n    else if (op == 2)\n        cmp = cmp_desc;\n    else\n        cmp = cmp_abs;\n    sort_with(a, n, cmp);\n\n    for (i = 0; i < n; i++) {\n        if (i > 0)\n            putchar(' ');\n        printf(\"%d\", a[i]);\n    }\n    putchar('\\n');\n    printf(\"strategy = %s\\n\", names[op]);\n    return 0;\n}\n",
+    "points": [
+      "三个比较函数签名一致：int cmp(const void *, const void *)",
+      "比较函数返回负数、0、正数三态，避免 x − y 溢出",
+      "sort_with 以函数指针为形参，内部调用 qsort",
+      "主函数按 op 给函数指针赋值，再用名字表输出策略名"
+    ],
+    "analysis": "思路：题目要求「同一种操作、不同的比较策略」，最自然的实现就是把比较函数做成函数指针参数。qsort 的第四个参数正是 int (*)(const void *, const void *)，把 cmp_asc、cmp_desc、cmp_abs 分别传进去，排序框架只写一遍。\n\n关键步骤：① 三个比较函数的签名必须完全一致，内部先把 void * 强转成 const int * 再解引用；② 返回值必须体现负数、0、正数三态，用 (x > y) - (x < y) 这种写法既避免减法溢出，又保证严格的三值语义；③ sort_with 把 cmp 作为形参接收，函数体内调用 qsort(a, n, sizeof(int), cmp)；④ main 根据 op 给函数指针变量赋值（cmp = cmp_asc 等），再传给 sort_with；⑤ 策略名用字符串数组 names[] 按 op 索引输出。\n\n复杂度：qsort 平均 O(n log n) 次比较，比较函数自身 O(1)，总时间 O(n log n)，递归栈空间 O(log n)。若给三个策略各写一遍排序循环，代码量翻三倍还容易改漏。\n\n易错点：① 比较函数返回 x - y，当 x、y 相差很大时溢出，符号反转；② 函数指针声明写成 int (*cmp)() 丢了参数，或写成 int *cmp(...)（那是返回指针的函数）；③ cmp_desc 写成 return (x > y) - (x < y)，与升序完全相同；④ 绝对值比较在相等时没有给出确定的次序，违反严格弱序，qsort 行为未定义；⑤ op 越界访问 names 数组；⑥ 以为 C 的函数指针不能指向不同函数 —— 只要签名一致就可以。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nbool less_asc(int x, int y)\n{\n    return x < y;\n}\n\nbool less_desc(int x, int y)\n{\n    return x > y;\n}\n\nbool less_abs(int x, int y)\n{\n    int ax = x < 0 ? -x : x;\n    int ay = y < 0 ? -y : y;\n\n    if (ax != ay)\n        return ax < ay;\n    return x < y;\n}\n\n/* 把比较函数作为参数传进来，内部交给 std::sort */\nvoid sort_with(std::vector<int> &a, bool (*less)(int, int))\n{\n    std::sort(a.begin(), a.end(), less);\n}\n\nint main()\n{\n    int n, op;\n    if (!(std::cin >> n >> op))\n        return 0;\n\n    std::vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n\n    const char *names[] = { \"\", \"ascending\", \"descending\", \"absolute\" };\n    bool (*less)(int, int) = less_asc;\n    if (op == 2)\n        less = less_desc;\n    else if (op == 3)\n        less = less_abs;\n\n    sort_with(a, less);\n\n    for (int i = 0; i < n; ++i) {\n        if (i > 0)\n            std::cout << ' ';\n        std::cout << a[i];\n    }\n    std::cout << '\\n' << \"strategy = \" << names[op] << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "三个 bool 比较函数，通过函数指针传给 sort_with",
+          "sort_with 内部调用 std::sort，比较器为函数指针",
+          "策略名用字符串数组按 op 取"
+        ],
+        "analysis": "思路：C++ 版把 C 的三态比较函数换成 bool 比较器，用函数指针传给 sort_with，内部调用 std::sort。std::sort 接受任意可调用对象，函数指针也满足要求。\n\n关键步骤：① 写 less_asc、less_desc、less_abs 三个 bool 函数，签名统一为 bool(int, int)；② sort_with(std::vector<int> &a, bool (*less)(int, int)) 内部执行 std::sort(a.begin(), a.end(), less)；③ 主函数声明 bool (*less)(int, int) = less_asc，再按 op 改成 less_desc 或 less_abs；④ 输出排序结果与策略名。\n\n复杂度：std::sort 平均 O(n log n) 次比较，总时间 O(n log n)，空间 O(log n)。\n\n易错点：① 比较器写成 <=，违反严格弱序，std::sort 可能越界或崩溃；② less_abs 在绝对值相等时也返回 false，两个不同元素互不比较，次序不确定；③ 函数指针类型与 std::sort 要求的比较器不匹配（例如多写了默认参数）；④ 用 lambda 捕获局部变量后把它当函数指针传（捕获型 lambda 不能转函数指针）；⑤ 忘记 include <algorithm>；⑥ 输出时最后一个数后面多空格。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef sort_with(values, key):\n    \"\"\"把「排序依据函数」当参数传入，对应 C 里传比较函数的做法。\"\"\"\n    return sorted(values, key=key)\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    n, op = int(data[0]), int(data[1])\n    a = [int(x) for x in data[2:2 + n]]\n\n    if op == 1:\n        ordered = sort_with(a, lambda v: v)\n        name = \"ascending\"\n    elif op == 2:\n        ordered = sort_with(a, lambda v: -v)\n        name = \"descending\"\n    else:\n        ordered = sort_with(a, lambda v: (abs(v), v))\n        name = \"absolute\"\n\n    print(\" \".join(str(v) for v in ordered))\n    print(f\"strategy = {name}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "把「排序依据函数」作为参数传给 sort_with",
+          "升序、降序、按绝对值分别传不同的 key",
+          "最后按 op 输出对应策略名"
+        ],
+        "analysis": "思路：Python 没有函数指针，等价物是「把函数当参数传」：sort_with(values, key) 接收一个 key 函数并调用 sorted。三种策略分别传不同的 key，排序框架只写一次。\n\n关键步骤：① sort_with(values, key) 返回 sorted(values, key=key)；② op == 1 传 lambda v: v，op == 2 传 lambda v: -v，op == 3 传 lambda v: (abs(v), v)；③ 按 op 输出对应策略名 ascending、descending、absolute。\n\n复杂度：sorted 是 Timsort，平均与最坏均为 O(n log n)，空间 O(n)。key 函数每个元素调用一次，总 O(n) 次调用。\n\n易错点：① 把 key 写成比较函数（接收两个参数），sorted 会报错；② 降序用 reverse=True 却与 key 组合时优先级搞错；③ 按绝对值排序只写 abs 而忘记并列时按数值升序，结果与 C 版不一致；④ 用 list.sort() 原地排序却仍用返回值；⑤ 策略名拼写与样例不符；⑥ 输出行末多空格。"
+      }
+    }
+  },
+  {
+    "id": "函-77",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "子集和",
+      "回溯",
+      "剪枝"
+    ],
+    "stem": "读入 n 个正整数和一个目标 s，求有多少个子集的元素和恰好等于 s。\n\n要求用回溯加剪枝实现：dfs(i, sum) 表示已经考虑到第 i 个数、当前选出的元素之和为 sum。对每个数都有「选」与「不选」两种决策，处理完 n 个数后判断 sum 是否等于 s。因为元素都是正数，可以在两处提前剪枝：sum 已经超过 s 时直接返回；预先算出后缀和 suf[i]（a[i] 之后所有数之和），当 sum + suf[i] < s 时说明后面全选也不够，同样直接返回。\n\n**输入格式：** 第一行两个整数 n 和 s（1 ≤ n ≤ 18，1 ≤ s ≤ 1000）；第二行为 n 个正整数（1 ≤ a[i] ≤ 100），相邻两个数用一个空格分隔。\n\n**输出格式：** 一行一个整数，为满足条件的子集个数（本题 s ≥ 1，空集不计入）。\n\n**输入样例：**\n```text\n5 5\n1 2 3 4 5\n```\n**输出样例：**\n```text\n3\n```",
+    "solution": "#include <stdio.h>\n\n#define MAXN 25\n\nstatic int n, target;\nstatic int a[MAXN];\nstatic long long suf[MAXN];       /* suf[i] = a[i] + ... + a[n-1] */\nstatic long long subset_count = 0;\n\n/* 回溯：第 i 个数选或不选，sum 为已经选出的元素之和 */\nvoid dfs(int i, int sum)\n{\n    if (sum == target) {          /* 达到目标和，且元素都是正数，无需再选 */\n        subset_count++;\n        return;\n    }\n    if (i >= n || sum > target)\n        return;\n    if (sum + suf[i] < target)    /* 后面全选也不够，剪枝 */\n        return;\n\n    dfs(i + 1, sum + a[i]);       /* 选第 i 个 */\n    dfs(i + 1, sum);              /* 不选第 i 个 */\n}\n\nint main(void)\n{\n    int i;\n\n    if (scanf(\"%d %d\", &n, &target) != 2)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n    suf[n] = 0;\n    for (i = n - 1; i >= 0; i--)\n        suf[i] = suf[i + 1] + a[i];\n\n    dfs(0, 0);\n    printf(\"%lld\\n\", subset_count);\n    return 0;\n}\n",
+    "points": [
+      "dfs(i, sum) 对第 i 个数做选或不选的决策",
+      "sum == s 时计数并立即返回（元素全为正）",
+      "sum > s 与 sum + suf[i] < s 两处剪枝",
+      "两条分支分别对应选与不选，不能重复计数"
+    ],
+    "analysis": "思路：子集和计数是「选或不选」型回溯：对第 i 个数做决策，选它就把和加上 a[i]，不选就跳过，处理完 n 个数后看和是否等于 s。搜索树是一棵二叉树，深度 n。\n\n关键步骤：① dfs(i, sum)：i 是当前考虑的下标，sum 是已选元素之和；② 若 sum == s，计数加一并立即返回 —— 因为所有元素都是正数，再选任何数都会超过 s，不可能产生新的解；③ 若 i 已越界或 sum > s，返回；④ 用后缀和 suf[i] 判断「剩下的全选也不够」，sum + suf[i] < s 时直接返回；⑤ 两条分支：dfs(i + 1, sum + a[i]) 与 dfs(i + 1, sum)，分别表示选与不选；⑥ 计数用 long long，虽然 n = 18 时最多 2^18 个子集，int 也够，但保持一致的写法更稳妥。\n\n复杂度：最坏 O(2^n)，n ≤ 18 时约 26 万个叶子；两处剪枝在数据稀疏时能砍掉大量分支。空间 O(n) 递归栈加 O(n) 后缀和数组。\n\n易错点：① sum == s 后继续往下搜，正数情况下不会多算，但白白浪费时间；② 两处剪枝都不写，虽然 n 小也能过，但 target 较小时会明显变慢；③ 把空集也算进去（sum 初始为 0 且 s = 0 时会多算，本题 s ≥ 1 不受影响）；④ 累加用 int 且 n 很大时溢出；⑤ 把 suf 写成前缀和，剪枝条件失效；⑥ 重复计数：选与不选两条分支里对同一个 i 处理了两次。",
+    "module": "函数",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\n\nnamespace {\n\nint n, target;\nstd::vector<int> a;\nstd::vector<long long> suf;\nlong long subset_count = 0;\n\nvoid dfs(int i, int sum)\n{\n    if (sum == target) {\n        ++subset_count;\n        return;\n    }\n    if (i >= n || sum > target)\n        return;\n    if (sum + suf[i] < target)\n        return;\n\n    dfs(i + 1, sum + a[i]);\n    dfs(i + 1, sum);\n}\n\n}  // namespace\n\nint main()\n{\n    if (!(std::cin >> n >> target))\n        return 0;\n\n    a.assign(n, 0);\n    suf.assign(n + 1, 0);\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n    for (int i = n - 1; i >= 0; --i)\n        suf[i] = suf[i + 1] + a[i];\n\n    dfs(0, 0);\n    std::cout << subset_count << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "a 与 suf 用 vector，dfs 递归选或不选",
+          "sum == target 时立即计数返回",
+          "用 sum + suf[i] < target 做后缀剪枝"
+        ],
+        "analysis": "思路：与 C 版一致，用 vector 保存元素与后缀和，dfs(i, sum) 做二叉决策；由于所有元素为正，sum 一旦达到目标就可以直接计数返回。\n\n关键步骤：① 读入 n 与 target，读入 n 个数；② 从后往前计算 suf[i] = suf[i + 1] + a[i]；③ dfs(i, sum)：命中目标计数并返回；越界或超目标返回；后缀不足返回；④ 递归选第 i 个数与不选第 i 个数两条分支；⑤ 输出计数。\n\n复杂度：时间最坏 O(2^n)，空间 O(n)。n ≤ 18 时递归深度与结点数都可控。\n\n易错点：① 计算后缀和时方向写反，变成前缀和；② 忘记在 sum == target 时 return，继续递归造成无意义搜索；③ 递归参数写成引用，各分支互相污染；④ 用 int 计数虽然本题够用，但换成更大 n 时会溢出；⑤ 剪枝条件写成 <= 把边界情况误剪；⑥ 输入 n 与 target 的顺序读反。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    n, target = int(data[0]), int(data[1])\n    a = [int(x) for x in data[2:2 + n]]\n\n    suf = [0] * (n + 1)            # suf[i] = a[i] + ... + a[n-1]\n    for i in range(n - 1, -1, -1):\n        suf[i] = suf[i + 1] + a[i]\n\n    count = 0\n\n    def dfs(i, total):\n        nonlocal count\n        if total == target:\n            count += 1\n            return\n        if i >= n or total > target:\n            return\n        if total + suf[i] < target:   # 后面全选也不够，剪枝\n            return\n        dfs(i + 1, total + a[i])      # 选第 i 个\n        dfs(i + 1, total)             # 不选第 i 个\n\n    dfs(0, 0)\n    print(count)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "suf 后缀和列表，dfs 二元决策递归",
+          "nonlocal 统计个数，命中即返回",
+          "total > target 与 total + suf[i] < target 两处剪枝"
+        ],
+        "analysis": "思路：Python 用嵌套函数 dfs(i, total) 做选或不选的递归，计数用 nonlocal 修改；后缀和先算好，用于「后面全选也不够」的剪枝。\n\n关键步骤：① 读入 n、target 与数组；② 从后往前构造 suf；③ dfs(i, total)：total == target 时 count 加一并返回；越界、超目标、后缀不足三种情况返回；④ 两条递归分支分别对应选与不选；⑤ 输出 count。\n\n复杂度：时间最坏 O(2^n)，n ≤ 18 时约 26 万个结点；空间 O(n)（递归栈与后缀和）。Python 递归深度 18，不需要调整上限。\n\n易错点：① 忘记 nonlocal count；② 用 global 在函数外声明，嵌套函数作用域搞混；③ 剪枝条件写成 total + suf[i] <= target，把「恰好补齐」的分支也剪掉；④ 先判断 i >= n 再判断 total == target，漏掉最后一个元素选中的情况；⑤ 用 itertools.combinations 暴力枚举，虽然 n 小也能过，但不符合回溯要求；⑥ 输出时多打印一行说明。"
+      }
+    }
+  }
+]

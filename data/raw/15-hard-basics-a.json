@@ -1,0 +1,464 @@
+[
+  {
+    "id": "基-89",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "整数溢出",
+      "long long",
+      "边界判断"
+    ],
+    "stem": "读入 n 个整数，要求做两件事：\n\n1. 用 64 位整型求出这 n 个数的总和，按 `sum: <S>` 输出；\n2. 假设我们坚持只用一个 32 位 int 变量 acc（初值 0）依次累加，判断「第一次加完之后结果超出 int 表示范围」发生在加第几个数时，按 `overflow: <P>` 输出；如果全部加完都没有超出，输出 `overflow: safe`。\n\n注意：判断是否溢出时必须先用更宽的类型把这一步的结果算出来再和边界比较，不能真的执行那次会溢出的加法——C 标准规定有符号整数溢出是未定义行为。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数 x（-2000000000 ≤ x ≤ 2000000000），相邻两个数之间用一个空格分隔。\n\n**输出格式：** 两行：第一行 `sum: <S>`，S 为 64 位意义下的总和；第二行 `overflow: <P>`，P 为第一次溢出的位置（从 1 开始计数），若始终不溢出则输出 `safe`。\n\n**输入样例：**\n```text\n5\n2000000000 2000000000 -1000000000 -1 5\n```\n**输出样例：**\n```text\nsum: 3000000004\noverflow: 2\n```",
+    "solution": "#include <stdio.h>\n#include <limits.h>\n\nint main(void)\n{\n    int n, i, first = -1;\n    long long sum = 0;\n    long long acc = 0;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n\n    for (i = 1; i <= n; i++) {\n        long long x;\n        if (scanf(\"%lld\", &x) != 1)\n            return 0;\n        sum += x;\n        if (first == -1) {\n            long long nxt = acc + x;\n            if (nxt > (long long)INT_MAX || nxt < (long long)INT_MIN)\n                first = i;\n            else\n                acc = nxt;\n        }\n    }\n\n    printf(\"sum: %lld\\n\", sum);\n    if (first == -1)\n        printf(\"overflow: safe\\n\");\n    else\n        printf(\"overflow: %d\\n\", first);\n    return 0;\n}\n",
+    "points": [
+      "用 long long 保存真实总和，同时用 64 位影子变量跟踪 32 位累加器的值",
+      "先把这一步的提升结果算出来，再与 INT_MAX / INT_MIN 比较，避免真的触发溢出",
+      "只在第一次越界时记录位置，之后不再更新影子累加器",
+      "两行输出标签正确，未溢出时输出 safe"
+    ],
+    "analysis": "思路：题目同时要两样东西——不受 32 位限制的真实总和，以及「如果只用一个 int 累加，会在第几步溢出」。前者把累加器声明成 long long 就解决了；后者要求我们在真正做加法之前，先用更宽的类型算出这一步的结果，再和 int 的边界比较。原因是有符号整数溢出在 C99 里属于未定义行为：编译器可以假设它不会发生，从而把这个判断整个优化掉，所以绝不能「先让它溢出再看符号」。\n\n关键步骤：① 用 scanf(\"%d\", &n) 读入个数；② 循环 n 次，每次把 x 读进 long long，同时累加到 sum；③ 维护 long long 型的 acc 表示「32 位累加器当前的值」，每步先算 nxt = acc + x，如果 nxt 超过 INT_MAX 或小于 INT_MIN，就把 i 记进 first，并且从此不再更新 acc（真实程序里那个 int 变量此时已经不可定义了，我们只关心第一次）；否则 acc = nxt；④ 输出 sum，再根据 first 是否为 -1 输出位置或 safe。\n\n题目给出的 |x| ≤ 2×10^9，单个 x 还装得进 int，但两个 2×10^9 相加就是 4×10^9，早已越过 2147483647，所以样例在第二个数上就溢出了。sum 的最大绝对值是 2×10^12，long long 上限约 9.2×10^18，余量充足。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① 直接写 int acc，靠溢出后变成负数来判断——这已经是未定义行为，开优化后结果不可预期；② 用 acc + x > INT_MAX 判断，但 acc 与 x 都是 int 时这个加法本身先溢出了，必须先把操作数提升到 64 位；③ 只判断上界忘了 INT_MIN 一侧；④ 溢出后继续拿错误的 acc 往下累加，导致后续所有判定都失真；⑤ 用 %d 输出 long long 的 sum，格式符与实参不匹配；⑥ 把溢出位置记成 0 基下标。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <climits>\nusing namespace std;\n\nint main()\n{\n    int n;\n    if (!(cin >> n))\n        return 0;\n\n    long long sum = 0;\n    long long acc = 0;\n    int first = -1;\n\n    for (int i = 1; i <= n; ++i) {\n        long long x;\n        if (!(cin >> x))\n            return 0;\n        sum += x;\n        if (first == -1) {\n            long long nxt = acc + x;\n            if (nxt > static_cast<long long>(INT_MAX) ||\n                nxt < static_cast<long long>(INT_MIN))\n                first = i;\n            else\n                acc = nxt;\n        }\n    }\n\n    cout << \"sum: \" << sum << '\\n';\n    if (first == -1)\n        cout << \"overflow: safe\\n\";\n    else\n        cout << \"overflow: \" << first << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 cin 读入 n 与 n 个整数，用 long long 承接每个加数",
+          "借助 <climits> 的 INT_MAX / INT_MIN 与 64 位结果比较，判断 32 位是否越界",
+          "用两个 long long 分别保存真实总和与 32 位影子累加值",
+          "按格式输出 sum 与 overflow，未溢出时输出 safe"
+        ],
+        "analysis": "思路：与 C 版完全一致——一个 long long 记真实总和，另一个 long long 充当 32 位累加器的影子，每步先用 64 位算出结果再和 INT_MAX / INT_MIN 比较。C++ 的 iostream 在读入失败时会置 fail 位，所以可以用 if (!(cin >> x)) 提前返回。\n\n关键步骤：① cin >> n；② for 循环从 1 到 n，读入 long long 型 x 并累加到 sum；③ 若 first 仍为 -1，计算 nxt = acc + x，用 static_cast<long long>(INT_MAX) 与 INT_MIN 比较，越界就记下位置，否则更新 acc；④ 先输出 sum，再按 first 输出 overflow: safe 或 overflow: 位置。\n\nC++ 里 INT_MAX 来自 <climits>，类型是 int；直接和 long long 比较会按通常算术转换提升为 long long，不会溢出，但显式 static_cast 更能表达意图。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① 用 int 存总和或影子累加值；② 把判断写成 acc + x > INT_MAX，让 int 加法先溢出；③ 忘记 INT_MIN；④ 溢出后仍更新 acc；⑤ 用 endl 逐行刷新，虽正确但比 '\\n' 慢；⑥ 输出漏掉冒号后的空格，与样例不符。"
+      },
+      "python": {
+        "solution": "import sys\n\nINT_MAX = 2147483647\nINT_MIN = -2147483648\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    total = 0\n    acc = 0\n    first = -1\n\n    for i in range(1, n + 1):\n        x = int(data[i])\n        total += x\n        if first == -1:\n            nxt = acc + x\n            if nxt > INT_MAX or nxt < INT_MIN:\n                first = i\n            else:\n                acc = nxt\n\n    print(f\"sum: {total}\")\n    if first == -1:\n        print(\"overflow: safe\")\n    else:\n        print(f\"overflow: {first}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 Python 的任意精度整数求真实总和，不会溢出",
+          "用常量 2147483647 / -2147483648 模拟 32 位 int 的上下界",
+          "先算出 nxt 再与边界比较，只在第一次越界时记录位置",
+          "按两行格式输出，未溢出时输出 safe"
+        ],
+        "analysis": "思路：Python 的 int 是任意精度，总和永远不会溢出，所以题目真正要练的是「如何模拟 32 位边界」：把 INT_MAX、INT_MIN 写成模块级常量，每步先算出 nxt 再和它们比较，就能判断「如果这里换成 C 的 int 会不会溢出」。\n\n关键步骤：① 用 sys.stdin.read().split() 一次性切分记号；② 取 data[0] 作为 n，循环 i 从 1 到 n，用 int(data[i]) 取加数；③ total 累加真实总和；④ 当 first 还是 -1 时计算 nxt = acc + x，越界就令 first = i，否则 acc = nxt；⑤ 先 print 总和，再按 first 输出 safe 或位置。\n\n注意 Python 的整数没有回绕，所以「溢出」这件事必须由我们自己用边界常量表达出来；如果直接照抄 C 的写法、以为 nxt 会自己变成负数，是行不通的。\n\n复杂度：时间 O(n)，空间 O(n)（保存全部记号）。\n\n易错点：① 用 sys.maxsize（这是 64 位边界）冒充 32 位 int 的边界；② 把比较写在累加之后才做，逻辑顺序反了；③ 忘记 first 只记一次，后面的数覆盖了第一次的位置；④ 下标错位，把 n 本身当成第一个加数；⑤ 输出写成 print(\"overflow:\", first) 多出一个空格或少了空格。"
+      }
+    }
+  },
+  {
+    "id": "基-90",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "浮点比较",
+      "相对误差",
+      "多组输入"
+    ],
+    "stem": "浮点数不能用 == 直接比较。给定若干组实数 a、b，请按相对误差判断它们是否「相等」：令 scale = max(1, |a|, |b|)，若 |a − b| ≤ 10⁻⁹ × scale 就认为相等，输出 `eq`；否则输出 `ne ` 再接 |a − b|（保留 6 位小数）。数据一直读到输入结束。\n\n**输入格式：** 若干行，每行两个实数 a、b（|a| ≤ 10⁶，|b| ≤ 10⁶，小数位数不超过 17 位），至少有一行数据。\n\n**输出格式：** 每组数据输出一行：相等时输出 `eq`，否则输出 `ne <diff>`，其中 diff 为 |a − b| 保留 6 位小数。\n\n**输入样例：**\n```text\n0.1 0.1\n0.30000000000000004 0.3\n1000.0 1000.001\n```\n**输出样例：**\n```text\neq\neq\nne 0.001000\n```",
+    "solution": "#include <stdio.h>\n#include <math.h>\n\nint main(void)\n{\n    double a, b;\n\n    while (scanf(\"%lf %lf\", &a, &b) == 2) {\n        double diff = fabs(a - b);\n        double scale = fabs(a) > fabs(b) ? fabs(a) : fabs(b);\n\n        if (scale < 1.0)\n            scale = 1.0;\n        if (diff <= 1e-9 * scale)\n            printf(\"eq\\n\");\n        else\n            printf(\"ne %.6f\\n\", diff);\n    }\n    return 0;\n}\n",
+    "points": [
+      "用 while (scanf(\"%lf %lf\", &a, &b) == 2) 处理到 EOF 的多组输入",
+      "用 fabs 求差值与绝对值，用 max(1, |a|, |b|) 构造相对尺度的基准",
+      "按相对误差而非绝对误差判断，大数时阈值自动放宽",
+      "eq 与 ne 两种输出的格式正确，差值保留 6 位小数"
+    ],
+    "analysis": "思路：计算机用二进制小数存储实数，0.1、0.3 这类十进制小数大多无法精确表示，所以 0.1 + 0.2 得到的是 0.30000000000000004 而不是 0.3，直接用 == 比较必然失败。工程上的做法是给一个容差：差值的绝对值小于阈值就认为相等。\n\n关键步骤：① 用 while (scanf(\"%lf %lf\", &a, &b) == 2) 循环读入，读到 EOF 时 scanf 返回 EOF，循环自然结束；② diff = fabs(a - b)；③ 取 scale = max(1, |a|, |b|)，其中 1 这个下限保证 a、b 都接近 0 时不会把阈值压到 0；④ 用 diff <= 1e-9 * scale 判断相等，成立输出 eq，否则用 %.6f 输出差值。\n\n为什么不用绝对误差？假设阈值固定为 1e-9，比较 1e6 附近的两个数时，double 本身的机器精度（约 2.2e-16 的相对误差）在 1e6 上就有 2e-10 的绝对量级，两次运算的舍入误差很容易超过 1e-9，从而把本来相等的值判成不等；反之在 0 附近，绝对阈值又可能过宽。乘上 scale 之后阈值随数量级同步放大，才是尺度无关的判据，这也正是样例第三组（1000 与 1000.001，相差 0.001）被判为 ne 的原因。\n\n复杂度：时间 O(T)，T 为数据组数；空间 O(1)。\n\n易错点：① 用 a == b 直接比较；② 用 while (!feof(stdin))，feof 只有在读失败之后才置位，会多处理一组；③ 阈值写成绝对值 1e-9，大数误判；④ 用 float 保存，精度只剩约 7 位十进制，大数附近的有效位被抹掉，判据会失真；⑤ 输出差值时忘了取绝对值，得到负数；⑥ 用 %d 输出 double，或把 %.6f 写成 %6f 丢掉小数位。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <cmath>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    double a, b;\n\n    while (cin >> a >> b) {\n        double diff = fabs(a - b);\n        double scale = fabs(a) > fabs(b) ? fabs(a) : fabs(b);\n\n        if (scale < 1.0)\n            scale = 1.0;\n        if (diff <= 1e-9 * scale)\n            cout << \"eq\\n\";\n        else\n            cout << \"ne \" << fixed << setprecision(6) << diff << '\\n';\n    }\n    return 0;\n}\n",
+        "points": [
+          "用 while (cin >> a >> b) 读到输入结束",
+          "用 std::fabs 求差值，用三目运算取 max(1, |a|, |b|)",
+          "相对误差判据与 C 版一致，保证两侧行为相同",
+          "用 fixed 与 setprecision(6) 输出 6 位小数"
+        ],
+        "analysis": "思路：与 C 版相同，用相对误差代替 ==。C++ 的 cin 在读到 EOF 时返回流对象，转换成 bool 为 false，所以 while (cin >> a >> b) 就能自然地处理多组输入，不需要像 scanf 那样比较返回值。\n\n关键步骤：① 读入 a、b；② diff = fabs(a - b)，取 |a|、|b| 中较大者与 1 比较得到 scale；③ 若 diff <= 1e-9 * scale 输出 eq；④ 否则先 fixed 再 setprecision(6)，输出 ne 与差值。\n\nfixed 的作用是把浮点数按定点格式输出，此时 setprecision(6) 表示「小数点后 6 位」；如果不加 fixed，setprecision(6) 表示 6 位有效数字，1000.001 会变成 1000.00 之类，与样例不符。另外 fixed 与 setprecision 都是粘性状态，一旦设置就一直有效，本题中只会影响 ne 分支，无副作用。\n\n复杂度：时间 O(T)，空间 O(1)。\n\n易错点：① 用 == 比较 double；② 只用绝对阈值；③ 忘记 fixed 导致小数位数不对；④ 用 while (!cin.eof())，会多输出一行；⑤ 把 scale 写死成 1.0，退化成绝对误差；⑥ 输出 ne 时多打一个空格或漏掉空格。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    index = 0\n    while index + 1 < len(data):\n        a = float(data[index])\n        b = float(data[index + 1])\n        index += 2\n\n        diff = abs(a - b)\n        scale = max(1.0, abs(a), abs(b))\n        if diff <= 1e-9 * scale:\n            print(\"eq\")\n        else:\n            print(f\"ne {diff:.6f}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 sys.stdin.read().split() 一次性读入并按两个一组配对",
+          "用 abs(a - b) 与 max(1.0, abs(a), abs(b)) 实现相对误差判据",
+          "按 eq / ne 两种格式输出，差值保留 6 位小数",
+          "循环下标按 2 递增，正确处理任意组数"
+        ],
+        "analysis": "思路：Python 的 float 就是 IEEE 754 双精度，和 C 的 double 完全一样，所以同样不能用 ==。把输入切成记号列表后，每两个记号配成一对，用 abs(a - b) 与 1e-9 * max(1.0, abs(a), abs(b)) 比较即可。\n\n关键步骤：① data = sys.stdin.read().split()；② 用 index 指针，while index + 1 < len(data) 保证还能取到一对；③ a、b 用 float() 转换，index 前进 2；④ diff = abs(a - b)，scale = max(1.0, abs(a), abs(b))；⑤ diff <= 1e-9 * scale 时 print(\"eq\")，否则 print(f\"ne {diff:.6f}\")。\n\n用 .6f 而不是 round(diff, 6)：round 会把 0.001 显示成 0.001（末尾的 0 被丢掉），而样例要求固定 6 位小数，必须靠格式说明符补齐。另外 Python 的 max 可以一次接收多个参数，比 C 里的三目嵌套更好读。\n\n复杂度：时间 O(T)，空间 O(T)（一次性读入全部记号）。\n\n易错点：① 用 input() 逐行读而不判空行，遇到末尾空行会抛 ValueError；② 把字符串直接相减，忘记 float()；③ 用 == 比较两个 float；④ 阈值固定成 1e-9 而没有乘 scale；⑤ 输出用了 round 导致小数位数不固定；⑥ 下标只加 1，导致 a、b 错位。"
+      }
+    }
+  },
+  {
+    "id": "基-91",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "字符编码",
+      "大小写转换",
+      "ASCII"
+    ],
+    "stem": "读入一个由英文字母和数字组成的字符串，完成四件事：\n\n1. 把大写字母改成小写、小写字母改成大写，数字保持不变，输出变换后的串；\n2. 输出该串的 ROT13 结果：每个字母在字母表内向后循环移动 13 位，大写仍为大写、小写仍为小写，非字母不变；\n3. 统计原串中大写字母与小写字母的个数；\n4. 输出原串所有字符的 ASCII 编码之和。\n\n**输入格式：** 一行一个不含空白字符的字符串 s（1 ≤ |s| ≤ 100，只含英文字母与数字 0~9）。\n\n**输出格式：** 四行：\n- 第一行：大小写互换后的字符串；\n- 第二行：ROT13 之后的字符串；\n- 第三行：`upper: U lower: L`；\n- 第四行：`checksum: C`，C 为所有字符 ASCII 编码之和。\n\n**输入样例：**\n```text\nc3P0\n```\n**输出样例：**\n```text\nC3p0\np3C0\nupper: 1 lower: 1\nchecksum: 278\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    char s[128];\n    int i, upper = 0, lower = 0, sum = 0;\n\n    if (scanf(\"%127s\", s) != 1)\n        return 0;\n\n    for (i = 0; s[i] != '\\0'; i++) {\n        char ch = s[i];\n        if (ch >= 'A' && ch <= 'Z')\n            putchar(ch - 'A' + 'a');\n        else if (ch >= 'a' && ch <= 'z')\n            putchar(ch - 'a' + 'A');\n        else\n            putchar(ch);\n    }\n    putchar('\\n');\n\n    for (i = 0; s[i] != '\\0'; i++) {\n        char ch = s[i];\n        if (ch >= 'A' && ch <= 'Z')\n            putchar((ch - 'A' + 13) % 26 + 'A');\n        else if (ch >= 'a' && ch <= 'z')\n            putchar((ch - 'a' + 13) % 26 + 'a');\n        else\n            putchar(ch);\n    }\n    putchar('\\n');\n\n    for (i = 0; s[i] != '\\0'; i++) {\n        if (s[i] >= 'A' && s[i] <= 'Z')\n            upper++;\n        else if (s[i] >= 'a' && s[i] <= 'z')\n            lower++;\n        sum += (int)(unsigned char)s[i];\n    }\n\n    printf(\"upper: %d lower: %d\\n\", upper, lower);\n    printf(\"checksum: %d\\n\", sum);\n    return 0;\n}\n",
+    "points": [
+      "用 scanf(\"%127s\") 读入不含空白的字符串，并限制长度防止缓冲溢出",
+      "用 ch >= 'A' && ch <= 'Z' 判断字母类别，而不是写死编码",
+      "用 (ch - 'A' + 13) % 26 + 'A' 完成 ROT13 的循环移位，大小写分开处理",
+      "统计大小写个数并用 (int)(unsigned char)ch 累加 ASCII 校验和"
+    ],
+    "analysis": "思路：C 里的 char 本质上是一个字节的小整数，所以「字符」和「编码」是同一份数据的两种看法。ASCII 表中 A~Z、a~z、0~9 各自连续排列，大小写之间固定相差 32，因此判断类别和做变换都可以直接用区间比较和字符运算，而不必查表。\n\n关键步骤：① 用 scanf(\"%127s\", s) 读入一个不含空白的串，格式串里的 127 是缓冲区 s[128] 的安全上限；② 第一遍逐字符输出：大写就换成 ch - 'A' + 'a'，小写就换成 ch - 'a' + 'A'，其余原样输出，用 putchar 逐字符打印；③ 第二遍做 ROT13：字母在 0~25 的偏移上循环，写成 (ch - 'A' + 13) % 26 + 'A'，取模保证 z 之后回到 a；④ 第三遍统计大小写个数，并把每个字符的编码累加成 checksum。\n\n为什么第二次遍历里对非字母要单独判断？因为 ROT13 只对 26 个字母循环，数字和标点必须原样保留，若直接对编码做取模运算会把数字也搅乱。另外大小写必须分开取模：如果统一减去 'A' 再算，小写字母会被映射到 26 以外的偏移上，结果错位。\n\n复杂度：时间 O(|s|)，空间 O(1)（只用一个固定大小的缓冲区）。\n\n易错点：① 把字符常量写成双引号字符串（应为 ',' 而不是 \",\"）；② 判断写成 ch >= 'a' 而漏掉上界，把数字也算进小写；③ ROT13 写成 ch + 13，超过 'Z' 的字符不会被折回开头；④ 对全部字符统一取模，数字被破坏；⑤ 累加校验和时把 char 当成有符号数，遇到高位为 1 的字符会得到负数——显式转 unsigned char 更稳妥；⑥ 输出多打了空格或漏掉标签的冒号。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main()\n{\n    string s;\n    if (!(cin >> s))\n        return 0;\n\n    string swapped;\n    string rot13;\n    int upper = 0, lower = 0, sum = 0;\n\n    for (char ch : s) {\n        if (ch >= 'A' && ch <= 'Z') {\n            swapped += static_cast<char>(ch - 'A' + 'a');\n            rot13 += static_cast<char>((ch - 'A' + 13) % 26 + 'A');\n            ++upper;\n        } else if (ch >= 'a' && ch <= 'z') {\n            swapped += static_cast<char>(ch - 'a' + 'A');\n            rot13 += static_cast<char>((ch - 'a' + 13) % 26 + 'a');\n            ++lower;\n        } else {\n            swapped += ch;\n            rot13 += ch;\n        }\n        sum += static_cast<int>(ch);\n    }\n\n    cout << swapped << '\\n';\n    cout << rot13 << '\\n';\n    cout << \"upper: \" << upper << \" lower: \" << lower << '\\n';\n    cout << \"checksum: \" << sum << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 cin >> s 读入不含空白的字符串",
+          "用范围 for 遍历字符，分别构造大小写互换串与 ROT13 串",
+          "用 (ch - 'A' + 13) % 26 + 'A' 实现字母表的循环移位",
+          "输出四行内容，计数与校验和与 C 版完全一致"
+        ],
+        "analysis": "思路：与 C 版相同，只是把结果拼成两个 string 再一次性输出。C++ 的 std::string 支持 += 追加字符，用范围 for（for (char ch : s)）遍历比下标循环更简洁。\n\n关键步骤：① cin >> s 读入到空白为止；② 对每个字符：大写时把 ch - 'A' + 'a' 追加到 swapped，把 (ch - 'A' + 13) % 26 + 'A' 追加到 rot13，同时 upper++；小写时对称处理；其他字符原样追加；③ 无论哪类都执行 sum += static_cast<int>(ch)；④ 依次输出 swapped、rot13、计数行、校验和行。\n\n注意两个变换都必须先转成 int 再算：ch - 'A' + 13 的结果是 int，取模后再加 'A'，最后用 static_cast<char> 收窄回字符；直接对 char 做加法在 C++ 里同样会先整型提升，但显式转换能让意图更清楚。\n\n复杂度：时间 O(|s|)，空间 O(|s|)（两个结果串）。\n\n易错点：① 用 getline 读进来带空行的整行，反而与「不含空白」的前提不符；② 把 swapped += ch - 'A' + 'a' 写成 swapped += ch - 32 这种硬编码；③ ROT13 用 % 26 时搞混大小写基准；④ 计数与变换分两次遍历导致条件重复；⑤ 用 cout << ch 输出 int 表达式而不加 static_cast，得到的是数字。"
+      },
+      "python": {
+        "solution": "import sys\n\nUPPER_BASE = ord(\"A\")\nLOWER_BASE = ord(\"a\")\n\n\ndef swap_case(text):\n    out = []\n    for ch in text:\n        if \"A\" <= ch <= \"Z\":\n            out.append(chr(ord(ch) - UPPER_BASE + LOWER_BASE))\n        elif \"a\" <= ch <= \"z\":\n            out.append(chr(ord(ch) - LOWER_BASE + UPPER_BASE))\n        else:\n            out.append(ch)\n    return \"\".join(out)\n\n\ndef rot13(text):\n    out = []\n    for ch in text:\n        if \"A\" <= ch <= \"Z\":\n            out.append(chr((ord(ch) - UPPER_BASE + 13) % 26 + UPPER_BASE))\n        elif \"a\" <= ch <= \"z\":\n            out.append(chr((ord(ch) - LOWER_BASE + 13) % 26 + LOWER_BASE))\n        else:\n            out.append(ch)\n    return \"\".join(out)\n\n\ndef main():\n    line = sys.stdin.readline()\n    s = line.strip()\n    if not s:\n        return\n\n    upper = sum(1 for ch in s if \"A\" <= ch <= \"Z\")\n    lower = sum(1 for ch in s if \"a\" <= ch <= \"z\")\n    checksum = sum(ord(ch) for ch in s)\n\n    print(swap_case(s))\n    print(rot13(s))\n    print(f\"upper: {upper} lower: {lower}\")\n    print(f\"checksum: {checksum}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 ord/chr 与编码基准常量实现大小写互换",
+          "用 (ord(ch) - base + 13) % 26 + base 实现 ROT13 循环移位",
+          "用生成器表达式配合 sum 统计大写、小写与 ASCII 校验和",
+          "分别打印四行结果，顺序与格式符合要求"
+        ],
+        "analysis": "思路：Python 没有单字符类型，长度为 1 的 str 就是「字符」，ord 取编码、chr 由编码还原，正好对应 C 里 char 与 int 的互转。把变换逻辑封装成两个函数 swap_case 与 rot13，主函数只负责统计和输出，结构更清楚。\n\n关键步骤：① sys.stdin.readline() 读一行再 strip() 去掉首尾空白；② swap_case 遍历字符，大写用 ord(ch) - ord('A') + ord('a') 换成小写，小写反之，其他字符原样；③ rot13 用 (ord(ch) - base + 13) % 26 + base，取模实现字母表回绕；④ 用 sum(1 for ch in s if \"A\" <= ch <= \"Z\") 统计大写、用 sum(ord(ch) for ch in s) 求校验和；⑤ 依次 print 四行。\n\n这里刻意没有用 str.swapcase() 和 str.maketrans：题目要考的正是「编码加偏移、再对 26 取模」这一套字符运算，用库函数虽然一行就完成，但无法体现 ASCII 连续性，也无法说明为什么大小写要分开取模。\n\n复杂度：时间 O(|s|)，空间 O(|s|)（结果串）。\n\n易错点：① 直接对字符串做 + 32 这样的算术，抛 TypeError；② chr 传入字符串而非整数；③ 用 s.upper() 之后又拿它去统计原串，大小写个数全错；④ ROT13 只对字母取模却忘了判断字符类别，数字被改写；⑤ 输出用 print(a, b) 拼出多余空格；⑥ 读入时没有 strip，把行尾换行符也算进校验和。"
+      }
+    }
+  },
+  {
+    "id": "基-92",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "位运算",
+      "掩码",
+      "二进制输出"
+    ],
+    "stem": "给定一个非负整数 x 和一个位序号 k（最低位是第 0 位），针对 x 的 32 位二进制表示完成若干位操作并按格式输出。\n\n**输入格式：** 一行两个整数 x 和 k（0 ≤ x ≤ 10⁹，0 ≤ k ≤ 29），用一个空格分隔。\n\n**输出格式：** 六行：\n- `bin: ` 后接 x 的 32 位二进制补零表示（高位在前，没有 0b 前缀）；\n- `set: ` 后接把第 k 位置 1 后的值；\n- `clr: ` 后接把第 k 位清成 0 后的值；\n- `flip: ` 后接把第 k 位取反后的值；\n- `low: ` 后接 x 的低 8 位（按无符号解释）；\n- `high: ` 后接 x 的高 8 位，即第 24~31 位（按无符号解释）。\n\n**输入样例：**\n```text\n45 1\n```\n**输出样例：**\n```text\nbin: 00000000000000000000000000101101\nset: 47\nclr: 45\nflip: 47\nlow: 45\nhigh: 0\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    unsigned int x;\n    int k, i;\n    unsigned int mask;\n\n    if (scanf(\"%u %d\", &x, &k) != 2 || k < 0 || k > 31)\n        return 0;\n\n    mask = 1u << k;\n\n    printf(\"bin: \");\n    for (i = 31; i >= 0; i--)\n        printf(\"%u\", (x >> i) & 1u);\n    printf(\"\\n\");\n    printf(\"set: %u\\n\", x | mask);\n    printf(\"clr: %u\\n\", x & ~mask);\n    printf(\"flip: %u\\n\", x ^ mask);\n    printf(\"low: %u\\n\", x & 0xFFu);\n    printf(\"high: %u\\n\", (x >> 24) & 0xFFu);\n    return 0;\n}\n",
+    "points": [
+      "用 1u << k 构造只有第 k 位为 1 的掩码",
+      "置位用 |、清位用 & ~、取反用 ^，三种掩码运算是互逆的组合",
+      "用 (x >> i) & 1u 从第 31 位到第 0 位输出 32 位二进制",
+      "用 & 0xFF 取低 8 位、用 >> 24 再取掩码得到高 8 位，并以 %u 输出"
+    ],
+    "analysis": "思路：位运算的核心是「掩码」——先用 1u << k 造出一个只有第 k 位是 1 的整数，再让它与原来的数做按位与、或、异或。或运算 x | mask 能把某位置 1，与运算 x & ~mask 能把某位清 0，异或 x ^ mask 能把某位取反，这三者恰好构成对单比特的三套操作。\n\n关键步骤：① 用 %u 把 x 读进 unsigned int，保证后面的右移是逻辑右移；② mask = 1u << k，后缀 u 很重要：若写 1 << k 而 k 达到 31，1 会变成符号位，属于未定义行为；③ 输出二进制时从 i = 31 递减到 0，每次取 (x >> i) & 1u，配合 %u 输出单个 0/1，不要用 %d 混着打；④ 清位必须写 x & ~mask，~mask 会把第 k 位变 0、其余位变 1；⑤ 低 8 位是 x & 0xFF，高 8 位是 (x >> 24) & 0xFF，后者先右移把第 24~31 位移到最低端，再与 0xFF 收敛到 0~255。\n\n样例 x = 45 = 0b101101，第 1 位本来是 0，所以置 1 后变成 47（0b101111）、清 0 之后仍是 45、取反后是 47；低 8 位是 45 本身，高 8 位为 0，这正好说明题目给的 x 只用到低位。\n\n复杂度：O(1)（固定 32 次循环）。\n\n易错点：① 用有符号 int 做右移，负数时高位补 1，结果错乱；② 写 1 << 31 触发有符号左移的未定义行为；③ 清位写成 x & mask（那是取位，不是清位）；④ 输出二进制用 %d 并在循环里拼接字符串，容易多空格；⑤ 高 8 位忘记 & 0xFF，x 较大时输出超过 255；⑥ 移位数写成 k - 1，把最低位当成第 1 位。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    unsigned int x;\n    int k;\n\n    if (!(cin >> x >> k) || k < 0 || k > 31)\n        return 0;\n\n    unsigned int mask = 1u << k;\n\n    cout << \"bin: \";\n    for (int i = 31; i >= 0; --i)\n        cout << ((x >> i) & 1u);\n    cout << '\\n';\n\n    cout << \"set: \" << (x | mask) << '\\n';\n    cout << \"clr: \" << (x & ~mask) << '\\n';\n    cout << \"flip: \" << (x ^ mask) << '\\n';\n    cout << \"low: \" << (x & 0xFFu) << '\\n';\n    cout << \"high: \" << ((x >> 24) & 0xFFu) << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 unsigned int 保存 x，保证右移是逻辑右移",
+          "用 1u << k 生成掩码，分别做 |、& ~、^ 三种操作",
+          "用循环从高位到低位输出 32 位二进制",
+          "分别用 & 0xFF 与 >> 24 提取低 8 位和高 8 位"
+        ],
+        "analysis": "思路：与 C 版完全一致，unsigned int 保证移位行为可预期。C++ 里位运算符与 C 相同，只是输出换成了 cout，需要注意 cout << 对无符号整数会按十进制打印。\n\n关键步骤：① cin >> x >> k；② mask = 1u << k；③ 32 位二进制用 for (int i = 31; i >= 0; --i) 逐位输出 (x >> i) & 1u，这个表达式的结果是 0 或 1，cout 直接打印数字；④ 依次输出 set、clr、flip、low、high 五行，每行都是标签加十进制值。\n\n注意 cout << ((x >> i) & 1u) 里的括号：如果写成 x >> i & 1 虽然优先级恰好也是先移位后与，但可读性差，加上括号能避免读者二次确认。另外 C++ 没有 C 的 printf 格式符问题，无符号值不会被打成负数，这一点比 C 省心。\n\n复杂度：O(1)。\n\n易错点：① 用 int 而不是 unsigned int，x 高位为 1 时右移结果错；② 清位写成 x & mask；③ 输出二进制时把 0 和 1 当字符处理，或每输出一位就换行；④ 高 8 位写成 x >> 24 却不收敛到 0~255；⑤ 把 1u << k 写成 1 << k，k = 31 时是未定义行为；⑥ 漏掉某一行输出或标签拼写与样例不一致。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    x = int(data[0])\n    k = int(data[1])\n    mask = 1 << k\n\n    print(\"bin: \" + format(x, \"032b\"))\n    print(f\"set: {x | mask}\")\n    print(f\"clr: {x & ~mask}\")\n    print(f\"flip: {x ^ mask}\")\n    print(f\"low: {x & 0xFF}\")\n    print(f\"high: {(x >> 24) & 0xFF}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 1 << k 生成掩码，用 |、& ~、^ 完成置位、清位与取反",
+          "用 format(x, \"032b\") 得到 32 位补零二进制",
+          "用 & 0xFF 与 >> 24 再 & 0xFF 提取低 8 位与高 8 位",
+          "六行输出与样例逐字一致"
+        ],
+        "analysis": "思路：Python 的位运算符与 C 完全对应，1 << k 就是掩码，| 是置位、& ~mask 是清位、^ 是取反。最大的差别在于 Python 的整数是任意精度的，没有 32 位回绕，所以「二进制表示」必须自己用 format 指定宽度。\n\n关键步骤：① 读入 x、k；② mask = 1 << k；③ 用 format(x, \"032b\") 得到 32 位补零的二进制串，直接拼在 \"bin: \" 后面；④ set、clr、flip 分别用 x | mask、x & ~mask、x ^ mask；⑤ 低 8 位是 x & 0xFF，高 8 位是 (x >> 24) & 0xFF。\n\n为什么要写 & 0xFF？因为 Python 的按位与不会自动截断到 8 位，x & 0xFF 才是真正的低字节取值；而 ~mask 在 Python 里是负数（无限位补码），x & ~mask 依然能得到正确的清位结果，因为参与与运算的负数等价于无限个 1 的高位，不影响低位的正确性——这一点与 C 的 32 位补码在数学上是一致的。\n\n复杂度：O(1)。\n\n易错点：① 用 bin(x) 输出，带 0b 前缀且不补零；② 用 format(x, \"32b\") 补空格而不是补零（应写 \"032b\"）；③ 清位写成 x & mask；④ 高 8 位忘了 & 0xFF；⑤ 把 ~mask 误认为 32 位取反后数值会很大，其实在 Python 里它是负数，和 & 运算照样正确；⑥ 输出用逗号分隔的 print 导致多空格。"
+      }
+    }
+  },
+  {
+    "id": "基-93",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "定点运算",
+      "舍入",
+      "整数除法"
+    ],
+    "stem": "一张账单的总额用「分」给出（整数），要由 n 个人平摊。分摊规则：前 n−1 个人各付 base = total / n 分（整除），余下的 total % n 分全部由最后一个人承担。\n\n输出金额时把「分」换算成「元.分」：元的部分不补零，分的部分固定两位，例如 20000 分输出 200.00，3 分输出 0.03。\n\n此外还要输出平均每人应付的金额，要求**四舍五入到分**（恰好 0.5 分时向上进位），不允许用浮点格式化碰运气。\n\n**输入格式：** 一行两个整数 total 和 n（0 ≤ total ≤ 10^10，1 ≤ n ≤ 1000），分别表示账单总额（单位：分）和人数。\n\n**输出格式：** 前 n 行，第 i 行为 `p<i>: <元>.<分>`，表示第 i 个人应付的金额；最后一行 `avg: <元>.<分>`，表示平均每人应付的金额（四舍五入到分）。\n\n**输入样例：**\n```text\n120003 6\n```\n**输出样例：**\n```text\np1: 200.00\np2: 200.00\np3: 200.00\np4: 200.00\np5: 200.00\np6: 200.03\navg: 200.01\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    long long total, base, rest, avg_cents;\n    int n, i;\n\n    if (scanf(\"%lld %d\", &total, &n) != 2 || n <= 0 || total < 0)\n        return 0;\n\n    base = total / n;\n    rest = total % n;\n\n    for (i = 1; i <= n; i++) {\n        long long cents = base + (i == n ? rest : 0);\n        printf(\"p%d: %lld.%02lld\\n\", i, cents / 100, cents % 100);\n    }\n\n    avg_cents = (2 * total + n) / (2 * (long long)n);\n    printf(\"avg: %lld.%02lld\\n\", avg_cents / 100, avg_cents % 100);\n    return 0;\n}\n",
+    "points": [
+      "全程用整数「分」计算，不引入任何浮点误差",
+      "用 total / n 求 base、total % n 求余数，余数全部加到最后一人",
+      "用 (2 * total + n) / (2 * n) 实现「四舍五入到分」的整数版公式",
+      "输出时元与分用小数点连接，分固定两位、不足补零"
+    ],
+    "analysis": "思路：金额分摊是定点小数运算的经典场景。把总额换算成最小的货币单位「分」之后，所有计算都变成整数，既不丢精度，也不受二进制浮点表示的干扰。题目要求三件事：算出每人应付、把余数给最后一人、再单独给出四舍五入到分的平均值。\n\n关键步骤：① 用 scanf(\"%lld %d\") 读入 total 与 n；② base = total / n（整数除法向零截断），rest = total % n；③ 循环 i 从 1 到 n，第 i 个人拿 base，只有 i == n 时再额外拿 rest，这样所有人加起来恰好等于 total；④ 输出时用 cents / 100 得到元、cents % 100 得到分，格式串里写成 `%lld.%02lld`，其中 02 保证分不足两位时补零；⑤ 平均值用整数版四舍五入公式 avg_cents = (2 * total + n) / (2 * n)。\n\n这个公式怎么来的？对正的 total、n，四舍五入到分就是 floor(total / n + 1/2)，把 1/2 通分进去即 floor((2 × total + n) / (2n))，而 C 的整数除法在操作数非负时正好等于 floor，所以直接写 (2 * total + n) / (2 * n) 即可，全程不出现浮点数，也就不存在 0.5 分该进还是该舍的歧义。样例 total = 120003、n = 6 时平均值恰好是 20000.5 分，正卡在半值上；公式给出 (2 × 120003 + 6) / (2 × 6) = 240012 / 12 = 20001，向上进位成 200.01 元。如果改用 double 算 1200.03 / 6 再 printf(\"%.2f\")，200.005 在二进制里实际存成 200.004999…，会被舍成 200.00，恰好与要求相反，这就是本题坚持用整数公式的理由。\n\n复杂度：输出 n 行再加一行平均值，时间 O(n)，空间 O(1)。\n\n易错点：① 用 double 存金额再除以人数，末位误差不可控；② 只让最后一人多拿 1 分，忘记 rest 可能大于 1；③ 平均值直接把 base 当答案，没有单独做舍入；④ 用 printf(\"%.2f\") 代替整数公式，遇到 .5 分时被舍成偶数（银行家舍入）；⑤ 输出分时用 %lld 而不补零，得到 200.3 这样的结果；⑥ 把 (2 * total + n) / (2 * n) 写成 (2 * total + n) / 2 / n，先除 2 又截断了一次。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    long long total, base, rest, avg_cents;\n    int n;\n\n    if (!(cin >> total >> n) || n <= 0 || total < 0)\n        return 0;\n\n    base = total / n;\n    rest = total % n;\n\n    for (int i = 1; i <= n; ++i) {\n        long long cents = base + (i == n ? rest : 0);\n        cout << \"p\" << i << \": \" << cents / 100 << '.'\n             << setfill('0') << setw(2) << cents % 100 << setfill(' ') << '\\n';\n    }\n\n    avg_cents = (2 * total + n) / (2LL * n);\n    cout << \"avg: \" << avg_cents / 100 << '.'\n         << setfill('0') << setw(2) << avg_cents % 100 << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 long long 保存总额与计算结果，全程整数运算",
+          "用 / 与 % 求每人基础金额和余数，余数归最后一人",
+          "用 (2 * total + n) / (2LL * n) 实现四舍五入到分",
+          "用 setfill('0') 与 setw(2) 把「分」补成两位输出"
+        ],
+        "analysis": "思路：与 C 版一致——把金额拆成整数「分」做全部运算，只在输出阶段用 iomanip 补零。C++ 的 long long 与 C 的 long long 同为 64 位，2 * total 在 total ≤ 10^10 时约 2×10^10，远未触及上限。\n\n关键步骤：① cin >> total >> n；② base = total / n，rest = total % n；③ 循环输出 p1 到 pn，第 n 个人额外加 rest；④ 元用 cents / 100 直接输出，分用 setfill('0') 配 setw(2) 输出 cents % 100，中间夹一个小数点字符；⑤ 平均值用 (2 * total + n) / (2LL * n) 求出分，再按同样方式输出。\n\nsetw(2) 只对紧随其后的一次输出生效，所以每个分都要重新写一次；setfill 则是粘性状态，本题在每行末尾用 setfill(' ') 复位，避免影响后续可能的输出。另外 2LL * n 里的 LL 后缀保证乘法在 long long 域内进行，虽然本题 n ≤ 1000 不会溢出，但写出类型后缀是更稳的习惯。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① 用 double 计算金额；② 用 setprecision 代替「元整数 + 点 + 两位分」的拼接，导致 200.005 之类被舍错；③ 忘记 setfill('0')，setw(2) 默认补空格；④ 余数只给最后一人加 1 而不是加 rest；⑤ 平均值忘了单独舍入，直接复用 base；⑥ 把小数点写成字符串 \".\" 时与 setw 顺序搞反，输出成 .20003。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef format_cents(cents):\n    return f\"{cents // 100}.{cents % 100:02d}\"\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    total = int(data[0])\n    n = int(data[1])\n    if n <= 0 or total < 0:\n        return\n\n    base = total // n\n    rest = total % n\n\n    for i in range(1, n + 1):\n        cents = base + (rest if i == n else 0)\n        print(f\"p{i}: {format_cents(cents)}\")\n\n    avg_cents = (2 * total + n) // (2 * n)\n    print(f\"avg: {format_cents(avg_cents)}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 // 与 % 在整数域内完成分摊，避免浮点误差",
+          "把余数 total % n 全部加给最后一个人",
+          "用 (2 * total + n) // (2 * n) 实现四舍五入到分",
+          "用 f-string 的 :02d 把分补成两位，元不补零"
+        ],
+        "analysis": "思路：Python 的 int 是任意精度，做金额分摊天生没有溢出和精度问题，但「四舍五入到分」仍然要自己用整数实现，否则会掉进浮点的坑。把金额统一成「分」，最后再用字符串格式化拼出「元.分」。\n\n关键步骤：① 读入 total 与 n；② base = total // n，rest = total % n，两者都非负，所以 // 与 C 的 / 结果相同；③ 循环 i 从 1 到 n，第 n 个人额外拿 rest；④ 写一个 format_cents 辅助函数，用 f\"{cents // 100}.{cents % 100:02d}\" 拼出金额；⑤ 平均值用 avg_cents = (2 * total + n) // (2 * n)，再交给 format_cents 输出。\n\n为什么不用 round(total / n) 或 f\"{total / n / 100:.2f}\"？Python 的 round 采用银行家舍入（round(2.5) 得 2 而不是 3），而 %.2f 走的是对二进制近似值做正确舍入，200.005 在 double 里其实是 200.00499999…，两种方式都得不到题目要求的「0.5 分向上」。整数公式把 1/2 变成 (2n) 分母上的加法，结果精确且与语言无关。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① 用 total / n 得到 float，再做格式化；② 用 round 处理 .5 的情况，被舍成偶数；③ 余数只加 1 分；④ format_cents 里忘了 :02d，输出 200.3；⑤ 把 total % n 写成 total % (n - 1)；⑥ 人数为 1 时余数为 0，却仍给「最后一人」多算了一份。"
+      }
+    }
+  },
+  {
+    "id": "基-94",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "异或运算",
+      "分组",
+      "位技巧"
+    ],
+    "stem": "有 n 个正整数，其中恰好有两个数各出现一次，其余每个数都恰好出现两次（n 一定是偶数）。请找出这两个只出现一次的数，按从小到大的顺序输出。\n\n要求不使用排序、哈希表或额外的大块存储来解决「找出这两个数」这一步（可以用数组保存输入），时间复杂度 O(n)。\n\n**输入格式：** 第一行一个偶数 n（2 ≤ n ≤ 100000）；第二行 n 个正整数（1 ≤ 数值 ≤ 10⁹），相邻两数用一个空格分隔。\n\n**输出格式：** 一行两个整数，按从小到大的顺序输出，中间用一个空格分隔。\n\n**输入样例：**\n```text\n6\n4 1 2 1 2 3\n```\n**输出样例：**\n```text\n3 4\n```",
+    "solution": "#include <stdio.h>\n\nstatic unsigned int arr[100005];\n\nint main(void)\n{\n    int n, i;\n    unsigned int xr = 0, low, u = 0, v = 0, tmp;\n\n    if (scanf(\"%d\", &n) != 1 || n < 2)\n        return 0;\n\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%u\", &arr[i]) != 1)\n            return 0;\n        xr ^= arr[i];\n    }\n\n    low = xr & (~xr + 1u);\n    for (i = 0; i < n; i++) {\n        if (arr[i] & low)\n            u ^= arr[i];\n        else\n            v ^= arr[i];\n    }\n\n    if (u > v) {\n        tmp = u;\n        u = v;\n        v = tmp;\n    }\n    printf(\"%u %u\\n\", u, v);\n    return 0;\n}\n",
+    "points": [
+      "把全部数异或起来，成对的数互相抵消，剩下 u ^ v",
+      "用 xr & (~xr + 1u) 取出 u ^ v 中最低的那个 1，它一定能把 u、v 分到不同组",
+      "按该位是否为 1 把数分成两组分别异或，组内成对的数抵消，剩下的就是 u 和 v",
+      "比较大小后按升序输出"
+    ],
+    "analysis": "思路：先用异或的两个基本性质：x ^ x = 0、x ^ 0 = x。把 n 个数全部异或起来，出现两次的数两两抵消，最终只剩下那两个单身数异或的结果，记作 xr = u ^ v。因为 u ≠ v，xr 必定不为 0，它的二进制里至少有一位是 1。\n\n关键步骤：① 读入 n 个数并存进数组（必须存，因为要遍历两遍）；② 边读边异或得到 xr；③ low = xr & (~xr + 1u)，这是「取出最低位的 1」的经典写法，等价于 xr & -xr；④ 用 low 这一位做判据，把全部数分成两组：该位为 1 的一组、该位为 0 的一组，分别异或；⑤ 因为 u 与 v 在这一位上必然不同，它们一定被分到不同组；而每个成对的数完全相同时该位也相同，必定落在同一组并互相抵消，于是两组异或的结果正好是 u 和 v；⑥ 比较后按升序输出。\n\n为什么 low 一定有效？xr = u ^ v 的第 b 位为 1，当且仅当 u、v 的第 b 位不同，取最低的那个 1 位就是取一个「能区分 u 和 v」的位，用它与每个数做按位与，正好实现一次二分。补码下 -xr 等于 ~xr + 1，所以 xr & -xr 会保留最低位的 1，这里为了全程无符号运算写成 xr & (~xr + 1u)。\n\n复杂度：时间 O(n)（两遍扫描），空间 O(n)（保存输入）。\n\n易错点：① 用 int 保存数组元素，遇到大于 2^31 的值会出问题（本题数值 ≤ 10^9，但用 unsigned 更稳）；② low 写成 xr & (xr - 1)，那是「清掉最低位的 1」，得到的是掩码的补集，分组就错了；③ 只用一次遍历边读边分组——分组判据依赖 xr，而 xr 要等全部读完才知道；④ 忘记 u、v 可能逆序，输出不是升序；⑤ 把两组的异或结果再异或一次，又回到 xr；⑥ 数组开得太小，n = 100000 时越界。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    int n;\n    if (!(cin >> n) || n < 2)\n        return 0;\n\n    vector<unsigned int> a(n);\n    unsigned int xr = 0;\n    for (int i = 0; i < n; ++i) {\n        cin >> a[i];\n        xr ^= a[i];\n    }\n\n    unsigned int low = xr & (~xr + 1u);\n    unsigned int u = 0, v = 0;\n    for (int i = 0; i < n; ++i) {\n        if (a[i] & low)\n            u ^= a[i];\n        else\n            v ^= a[i];\n    }\n\n    if (u > v)\n        swap(u, v);\n    cout << u << ' ' << v << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 vector 保存全部输入，第一遍求全体异或值 xr = u ^ v",
+          "用 xr & (~xr + 1u) 取出最低位的 1 作为分组掩码",
+          "第二遍按掩码把数分成两组分别异或，得到两个单身数",
+          "用 swap 保证升序后输出"
+        ],
+        "analysis": "思路：与 C 版完全一致——先整体异或得到 u ^ v，再用最低位 1 分组，两组各异或一次。C++ 用 vector 代替固定数组，长度随 n 变化，不需要预估上限；用 std::swap 交换两个值，比手写临时变量更简洁。\n\n关键步骤：① cin >> n，n < 2 时直接返回；② vector<unsigned int> a(n) 一次分配到位；③ 循环读入并同步异或到 xr；④ low = xr & (~xr + 1u)；⑤ 再遍历一次，a[i] & low 为真则 u ^= a[i]，否则 v ^= a[i]；⑥ 若 u > v 就 swap，然后输出。\n\n注意 n 一定是偶数且只有两个单身数，所以 xr 不为 0，low 必然取到某一位；如果输入不满足这个前提（比如有三个单身数），xr 可能是 0，low 也是 0，所有数都会被分到同一组，结果就退化成一个整体异或值——这说明算法的正确性依赖题目给出的「恰好两个」这一条件。\n\n复杂度：时间 O(n)，空间 O(n)。\n\n易错点：① 用 int 数组接 10^9 以内的值本身没问题，但与掩码做运算时符号位会干扰，统一用 unsigned 更安全；② 忘记 n < 2 的边界；③ low 写成 xr & -xr 在有符号类型上是未定义行为，务必用无符号；④ 分组时交换了条件，两组结果互换后忘记排序；⑤ 输出用 endl 导致多次刷新；⑥ 用 set 去重再找——虽然能过，但违背了 O(n) 与不排序的要求。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    n = int(data[0])\n    nums = [int(x) for x in data[1:1 + n]]\n\n    xr = 0\n    for value in nums:\n        xr ^= value\n\n    low = xr & (-xr)\n    u = 0\n    v = 0\n    for value in nums:\n        if value & low:\n            u ^= value\n        else:\n            v ^= value\n\n    if u > v:\n        u, v = v, u\n    print(f\"{u} {v}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用列表保存输入，先对全部元素求异或得到 u ^ v",
+          "用 xr & (-xr) 取最低位的 1 作为分组依据",
+          "按该位把元素分成两组分别异或，得到两个只出现一次的数",
+          "排序后按升序输出"
+        ],
+        "analysis": "思路：Python 的整数支持任意精度的按位异或，x ^ x = 0、x ^ 0 = x 这两条性质照样成立，所以算法与 C 版一模一样：整体异或得到 u ^ v，取最低位的 1 分组，两组各异或一次。\n\n关键步骤：① 读入 n 与 n 个数，放进列表；② 用 for 循环把全部元素异或到 xr；③ low = xr & (-xr)，Python 的负数用无限位补码表示，这个式子同样能取出最低位的 1，效果与 C 的 xr & (~xr + 1) 完全一致，而且不需要考虑类型宽度；④ 再遍历一次，value & low 为真进 u 组，否则进 v 组；⑤ 用 if u > v: u, v = v, u 保证升序，然后一次 print 两个数。\n\n为什么不能用集合或计数？用 set 记录出现过的数再删除重复项虽然也能过题，但那是 O(n) 额外空间且依赖哈希；用 collections.Counter 更是把「找出单身数」变成了统计题。异或解法的价值在于：它把「成对抵消」这件事直接编码进了运算本身，额外空间只有两个变量。\n\n复杂度：时间 O(n)，空间 O(n)（保存输入）。\n\n易错点：① 用 xr & (xr - 1) 取掩码，得到的是清掉最低位 1 之后的值；② 忘记 n 可能是 2（两个数各出现一次，直接输出它们）；③ 列表切片写成 data[1:1 + n] 却在中途算错长度；④ 用 sorted 输出而不是比较交换，多了一次 O(n log n)；⑤ 分组时用 != 0 判断而不是按位与的布尔值，逻辑反了；⑥ 输出用 print(u, v) 时多加逗号导致多余空格（本题恰好一个空格，print 默认也满足，但要与样例逐字核对）。"
+      }
+    }
+  },
+  {
+    "id": "基-95",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "整型除法",
+      "类型转换",
+      "格式化输出"
+    ],
+    "stem": "某班有 n 名学生，给出每人的百分制成绩（0~100 的整数）。请统计并输出：总分、平均分（保留两位小数）、及格率（成绩 ≥ 60 视为及格，保留一位小数并以百分号结尾）。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数（0 ≤ 成绩 ≤ 100），相邻两数用一个空格分隔。\n\n**输出格式：** 三行：\n- `sum: <S>`，S 为总分（整数）；\n- `avg: <A>`，A 为平均分，保留两位小数；\n- `pass: <P>%`，P 为及格率，保留一位小数，末尾带一个百分号。\n\n**输入样例：**\n```text\n6\n50 60 70 80 90 55\n```\n**输出样例：**\n```text\nsum: 405\navg: 67.50\npass: 66.7%\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int n, i, x, sum = 0, pass = 0;\n\n    if (scanf(\"%d\", &n) != 1 || n <= 0)\n        return 0;\n\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &x) != 1)\n            return 0;\n        sum += x;\n        if (x >= 60)\n            pass++;\n    }\n\n    printf(\"sum: %d\\n\", sum);\n    printf(\"avg: %.2f\\n\", (double)sum / n);\n    printf(\"pass: %.1f%%\\n\", pass * 100.0 / n);\n    return 0;\n}\n",
+    "points": [
+      "用 int 累加总分、用计数器统计及格人数",
+      "平均分用 (double)sum / n 做浮点除法，再以 %.2f 输出",
+      "及格率先乘 100.0 再除，避免 pass * 100 / n 的整除截断",
+      "用 %% 在 printf 中输出字面百分号"
+    ],
+    "analysis": "思路：题目本身不难，三个输出分别踩在三个不同的知识点上：整数累加、整型除法与浮点提升、格式串中的百分号转义。\n\n关键步骤：① 读入 n，循环 n 次读成绩，累加到 sum，遇到 ≥ 60 就 pass++；② 输出总分用 %d；③ 平均分必须写 (double)sum / n：如果写成 sum / n，两个 int 相除会先截断成整数，样例会得到 67 而不是 67.5；如果写成 (double)(sum / n)，转换加在括号外面，同样先截断；④ 及格率写 pass * 100.0 / n，其中 100.0 是 double，会把整个表达式提升为浮点运算，得到 66.666…；若写成 pass * 100 / n，则先算整数乘法再整数除法，样例会得到 66.0 而不是 66.7；⑤ printf(\"pass: %.1f%%\") 中两个连续的 %% 输出一个字面百分号。\n\n样例的 6 个成绩总和 405，平均 67.5，格式化后是 67.50；成绩 ≥ 60 的有 60、70、80、90 共 4 人，及格率 400 / 6 = 66.6666…，保留一位小数得到 66.7。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① 平均分写成 sum / n，得到整数；② 及格率写成 pass / n * 100，先整除直接得 0；③ 百分号只写一个 %，printf 会把后面的字符当成格式符；④ 用 %d 输出 double，结果不可预期；⑤ 及格判断写成 x > 60，把 60 分算成不及格；⑥ 用 float 累加分数（本题不会出错，但习惯不好），大数时可能丢精度。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    int n;\n    if (!(cin >> n) || n <= 0)\n        return 0;\n\n    int sum = 0, pass = 0;\n    for (int i = 0; i < n; ++i) {\n        int x;\n        cin >> x;\n        sum += x;\n        if (x >= 60)\n            ++pass;\n    }\n\n    cout << \"sum: \" << sum << '\\n';\n    cout << \"avg: \" << fixed << setprecision(2)\n         << static_cast<double>(sum) / n << '\\n';\n    cout << \"pass: \" << fixed << setprecision(1)\n         << pass * 100.0 / n << \"%\\n\";\n    return 0;\n}\n",
+        "points": [
+          "用 int 累加总分、统计及格人数",
+          "用 static_cast<double>(sum) / n 先转换再做浮点除法",
+          "用 fixed 与 setprecision 分别控制 2 位和 1 位小数",
+          "百分号直接作为普通字符串输出，无需转义"
+        ],
+        "analysis": "思路：三个输出对应三个知识点，与 C 版一样。C++ 用 iomanip 控制小数位：fixed 表示定点表示法，setprecision(2) 表示小数点后两位；若不加 fixed，setprecision 表示的是有效数字位数，67.5 会变成 68。\n\n关键步骤：① cin >> n；② 循环读成绩，累加 sum、统计 pass；③ 总分直接输出；④ 平均分必须先 static_cast<double>(sum) 再除以 n，否则两个 int 相除先截断；⑤ 及格率写 pass * 100.0 / n，其中 100.0 是 double 字面量，保证整个表达式按浮点计算；⑥ 百分号在 cout 里就是普通字符，直接 << \"%\\n\"。\n\nfixed 与 setprecision 是粘性状态：第一次设置后对后续所有浮点输出生效，所以输出平均分之后不需要复位，紧接着输出及格率时为一位小数重新 setprecision(1) 即可。这一点与 C 的格式串「一次一个」不同，写的时候要留意状态延续。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① 忘记 fixed，setprecision(2) 变成两位有效数字；② 平均分写成 sum / n 或 static_cast<double>(sum / n)；③ 及格率写成 pass * 100 / n，整数截断成 83；④ 以为 cout 里的 % 需要转义；⑤ 用 endl 每行刷新；⑥ setprecision 设置后没有重设，及格率也按两位小数输出。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    scores = [int(x) for x in data[1:1 + n]]\n\n    total = sum(scores)\n    passed = 0\n    for score in scores:\n        if score >= 60:\n            passed += 1\n\n    print(f\"sum: {total}\")\n    print(f\"avg: {total / n:.2f}\")\n    print(f\"pass: {passed * 100.0 / n:.1f}%\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 sum 与列表推导读入全部成绩",
+          "用 total / n 做真除法，f-string 的 :.2f 输出两位小数",
+          "及格率用 passed * 100.0 / n 计算，:.1f 保留一位小数",
+          "末尾的百分号作为普通字符拼进输出"
+        ],
+        "analysis": "思路：Python 的 / 永远是真除法，不存在 C 里「两个 int 相除先截断」的坑，所以平均分和及格率都可以直接除；真正要注意的是格式化：必须用 f-string 的 :.2f、:.1f 固定小数位，而不是 round。\n\n关键步骤：① 用 sys.stdin.read().split() 读入；② 取 data[0] 作为 n，用列表推导把后 n 个记号转成整数；③ total = sum(scores)，用循环（或生成器）统计 ≥ 60 的个数；④ print(f\"avg: {total / n:.2f}\")；⑤ print(f\"pass: {passed * 100.0 / n:.1f}%\")，百分号直接写在花括号外面。\n\n如果 60 分及格的人数恰好是 4、n 是 6，4 / 6 得 0.6666…，乘以 100 后是 66.666…，:.1f 得到 66.7；如果写成 passed / n * 100 也能得到同样结果（Python 没有整除截断），但写成 (passed // n) * 100 就会得到 0——这正是把 C 的思维直接搬过来会踩的坑。\n\n复杂度：时间 O(n)，空间 O(n)。\n\n易错点：① 用 // 求平均分，得到整数；② 用 round(x, 2) 输出，67.5 会显示成 67.5 而不是 67.50；③ 百分号写成 %% 或漏掉；④ 把 f-string 的花括号写在引号外；⑤ 成绩列表切片长度算错，把多余的记号也读进来；⑥ 用 input() 分行读，遇到成绩跨多行时解析失败。"
+      }
+    }
+  },
+  {
+    "id": "基-96",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "整数回绕",
+      "补码",
+      "类型转换"
+    ],
+    "stem": "一个 32 位有符号整数变量初值为 x，按顺序执行 k 条操作。每一步的精确结果（用无限精度计算）如果落在 −2³¹ ~ 2³¹−1 之内，就原样保存；否则按 32 位补码回绕，即把结果加上或减去若干个 2³²，直到落回该范围。\n\n每条操作占一行，形式为 `+ m`、`- m` 或 `* m`，其中 m 是非负整数，运算符与 m 之间有一个空格。\n\n**输入格式：** 第一行两个整数 x 和 k（−10⁹ ≤ x ≤ 10⁹，1 ≤ k ≤ 100）；接下来 k 行，每行一条操作，0 ≤ m ≤ 10⁹。保证每一步用无限精度算出的结果绝对值不超过 10¹⁸。\n\n**输出格式：** k 行，第 i 行为 `<i>: <v>`，v 是这一步执行完并完成回绕后的值；如果这一步发生了回绕，则在行末追加 ` (wrap)`（括号前有一个空格）。\n\n**输入样例：**\n```text\n2000000000 3\n+ 1000000000\n* 3\n- 5\n```\n**输出样例：**\n```text\n1: -1294967296 (wrap)\n2: 410065408 (wrap)\n3: 410065403\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nint main(void)\n{\n    long long x;\n    int k, i;\n    char op[8];\n\n    if (scanf(\"%lld %d\", &x, &k) != 2)\n        return 0;\n\n    for (i = 1; i <= k; i++) {\n        long long m, exact, folded;\n        int v;\n\n        if (scanf(\"%7s\", op) != 1)\n            return 0;\n        if (scanf(\"%lld\", &m) != 1)\n            return 0;\n\n        if (strcmp(op, \"+\") == 0)\n            exact = x + m;\n        else if (strcmp(op, \"-\") == 0)\n            exact = x - m;\n        else\n            exact = x * m;\n\n        folded = exact % 4294967296LL;\n        if (folded < 0)\n            folded += 4294967296LL;\n        if (folded > 2147483647LL)\n            folded -= 4294967296LL;\n\n        v = (int)folded;\n        printf(\"%d: %d\", i, v);\n        if ((long long)v != exact)\n            printf(\" (wrap)\");\n        printf(\"\\n\");\n        x = v;\n    }\n    return 0;\n}\n",
+    "points": [
+      "用 long long 保存无限精度的中间结果，避免有符号溢出",
+      "用对 2³² 取模把结果折回无符号范围，再判断是否大于 int 上界并减回 2³²",
+      "用还原后的值与精确结果比较，判断本步是否发生了回绕",
+      "按 <i>: <v> 输出，回绕时追加 (wrap)，并把 v 作为下一步的初值"
+    ],
+    "analysis": "思路：题目要求「先算出精确结果，再按 32 位补码回绕」。直接用 int 做计算是错的：一旦溢出，C 标准把它定义为未定义行为，编译器可以假设它不发生，从而给出任何结果。正确做法是用 long long 算精确值，再用取模把它映射回 32 位补码区间。\n\n关键步骤：① 用 scanf(\"%lld %d\") 读入初值与操作数——操作符用 %s 读成字符串，这样 +、-、* 都能统一处理；② 每步读入 op 与 m（m 是 64 位，避免乘出界），用 strcmp 分派到 x + m、x - m、x * m，中间结果全部存在 long long 里；③ folded = exact % 4294967296LL，C99 的 % 对负数结果是负数（例如 -3884901888 % 4294967296 得 -3884901888 本身），所以若为负就加上 2³²，得到 [0, 2³²) 内的无符号解释；④ 若 folded 大于 2147483647，说明落在了补码的负半区，再减去 2³²，得到 [-2³¹, 2³¹−1] 内的有符号值；⑤ 用 (long long)v != exact 判断是否回绕，是就补打 ` (wrap)`；⑥ 把 v 赋回 x，作为下一步的初值。\n\n样例第一步：2000000000 + 1000000000 = 3000000000，超过 2147483647，折回 3000000000 − 4294967296 = −1294967296，属于回绕；第二步：−1294967296 × 3 = −3884901888，小于 −2147483648，加上 2³² 得 410065408，仍然回绕；第三步 410065408 − 5 = 410065403 在范围内，不回绕。\n\n复杂度：时间 O(k)，空间 O(1)。\n\n易错点：① 用 int 直接算，靠溢出判断——这是未定义行为；② 用 (int)(unsigned)exact 之类的实现定义转换，虽然常见编译器都对，但不如取模写法明确；③ 忘记负数取模的结果仍为负，漏掉加 2³² 那一步；④ 判断回绕时拿 folded（已折叠）与 exact 比较之前就把 exact 覆盖掉了；⑤ 用 %s 读操作符却不限制长度，缓冲区溢出；⑥ 把 ` (wrap)` 的空格写成 `(wrap)`，与样例不符。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main()\n{\n    long long x;\n    int k;\n\n    if (!(cin >> x >> k))\n        return 0;\n\n    for (int i = 1; i <= k; ++i) {\n        string op;\n        long long m;\n        if (!(cin >> op >> m))\n            return 0;\n\n        long long exact;\n        if (op == \"+\")\n            exact = x + m;\n        else if (op == \"-\")\n            exact = x - m;\n        else\n            exact = x * m;\n\n        long long folded = exact % 4294967296LL;\n        if (folded < 0)\n            folded += 4294967296LL;\n        if (folded > 2147483647LL)\n            folded -= 4294967296LL;\n\n        int v = static_cast<int>(folded);\n        cout << i << \": \" << v;\n        if (static_cast<long long>(v) != exact)\n            cout << \" (wrap)\";\n        cout << '\\n';\n        x = v;\n    }\n    return 0;\n}\n",
+        "points": [
+          "用 long long 计算精确结果，避免 int 溢出带来的未定义行为",
+          "用 % 2³² 加条件调整，把结果折叠进 32 位补码区间",
+          "用 static_cast<long long>(v) != exact 判断本步是否回绕",
+          "用 string 读操作符，按 +、-、* 分派，输出格式与 C 版一致"
+        ],
+        "analysis": "思路：与 C 版相同，用 long long 做无限精度的近似（本题范围远小于 2⁶³），再用取模把结果折回 32 位。C++ 用 std::string 读操作符，与字符串字面量比较即可，不需要 strcmp。\n\n关键步骤：① cin >> x >> k；② 每轮 cin >> op >> m，m 用 long long 接收；③ 按 op 计算 exact；④ folded = exact % 4294967296LL，负数先加 2³²，大于 INT_MAX 再减 2³²；⑤ static_cast<int>(folded) 一定安全，因为 folded 已落在 int 范围内；⑥ 输出 “序号: 值”，若 static_cast<long long>(v) != exact 则追加 ` (wrap)`；⑦ x = v 进入下一步。\n\n这里刻意没有用 static_cast<int>(exact)：从超范围的 long long 转 int 属于实现定义行为（C++20 之前是未定义/实现定义，之后才明确为模运算），先用取模算好再转，语义清晰且不依赖具体编译器。另外操作符用 string 而不是 char，避免 `+` 与后续数字之间的解析歧义。\n\n复杂度：时间 O(k)，空间 O(1)。\n\n易错点：① 直接 int 相乘；② 忘记处理负数取模；③ 判断回绕时比较对象写错，用折叠后的值和自己比；④ 用 char 读操作符，遇到 `* 3` 时把空格当操作符；⑤ 输出格式缺少括号前的空格；⑥ 忘记把 v 写回 x，导致每步都从初值开始算。"
+      },
+      "python": {
+        "solution": "import sys\n\nTWO32 = 4294967296\nINT_MAX = 2147483647\n\n\ndef wrap32(value):\n    value %= TWO32\n    if value > INT_MAX:\n        value -= TWO32\n    return value\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    cur = int(data[0])\n    k = int(data[1])\n    pos = 2\n\n    for step in range(1, k + 1):\n        op = data[pos]\n        m = int(data[pos + 1])\n        pos += 2\n\n        if op == \"+\":\n            exact = cur + m\n        elif op == \"-\":\n            exact = cur - m\n        else:\n            exact = cur * m\n\n        folded = wrap32(exact)\n        line = f\"{step}: {folded}\"\n        if folded != exact:\n            line += \" (wrap)\"\n        print(line)\n        cur = folded\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 Python 的任意精度整数算出 exact，天然不存在溢出",
+          "用 value % 2³² 折回无符号区间，再根据 INT_MAX 减回 2³²",
+          "比较 folded 与 exact 判断本步是否回绕",
+          "按 <i>: <v> 输出并在回绕时追加 (wrap)"
+        ],
+        "analysis": "思路：Python 的整数没有位宽，x + m、x * m 永远得到精确结果，所以「算出精确值」这一步是免费的；需要自己实现的是「折回 32 位补码」这个动作，用一个 wrap32 函数完成。\n\n关键步骤：① 从 sys.stdin.read().split() 里按位置取记号：第一个是 x，第二个是 k，之后每两个一组是「操作符、数字」；② 按 op 分别计算 exact = cur + m、cur - m、cur * m；③ wrap32 里先做 value %= 4294967296，Python 的 % 对负数返回非负余数（-3884901888 % 4294967296 得 410065408），所以这一步直接得到 [0, 2³²) 的值；④ 若结果大于 2147483647 就减去 2³²，落到有符号区间；⑤ 比较 folded 与 exact，不同就说明发生了回绕，行末追加 ` (wrap)`；⑥ 把 cur 更新为 folded。\n\n注意 Python 的取模语义与 C 不同：C 里 -1 % 5 等于 -1，Python 里等于 4。本题正好利用 Python 的这一特性省掉「加 2³²」的判断，但也因此不能用同样的思路去解释 C 版本，两种语言的写法必须各自贴合自己的语义。\n\n复杂度：时间 O(k)，空间 O(k)（一次性读入全部记号）。\n\n易错点：① 用 numpy 的 int32 反而要额外处理溢出告警；② 忘记大于 INT_MAX 时要减 2³²，输出全是 4000000000 这样的正数；③ 用 C 的思维写 if value < 0: value += TWO32，在 Python 里这段永远不会执行；④ 每步读两个记号却只前进 1 格，下一轮 op 读到数字；⑤ 用 eval 执行操作；⑥ 把 (wrap) 前的空格漏掉。"
+      }
+    }
+  },
+  {
+    "id": "基-97",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "表达式求值",
+      "递归下降",
+      "整数除法"
+    ],
+    "stem": "给定一个算术表达式，只包含非负整数、二元运算符 `+` `-` `*` `/`、圆括号和空格，请按 C 语言的整数语义求值：\n\n- `*` 与 `/` 的优先级高于 `+` 与 `-`，同级运算符从左到右结合；\n- 圆括号内的部分先算；\n- 除法是整数除法，向零截断（例如 7 / 2 得 3，-7 / 2 得 -3）。\n\n**输入格式：** 一行一个表达式，长度 1 ≤ L ≤ 200，字符只含数字 `0`~`9`、`+`、`-`、`*`、`/`、`(`、`)` 和空格。保证表达式语法正确、除法的除数不为 0、所有中间结果的绝对值不超过 10⁹。\n\n**输出格式：** 一行一个整数，表示表达式的值。\n\n**输入样例：**\n```text\n(3+5)*2-10/4\n```\n**输出样例：**\n```text\n14\n```",
+    "solution": "#include <stdio.h>\n#include <ctype.h>\n#include <string.h>\n\nstatic char text[512];\nstatic int pos = 0;\n\nstatic int parse_expr(void);\n\nstatic void skip_spaces(void)\n{\n    while (text[pos] == ' ')\n        pos++;\n}\n\nstatic int parse_factor(void)\n{\n    int value;\n\n    skip_spaces();\n    if (text[pos] == '(') {\n        pos++;\n        value = parse_expr();\n        skip_spaces();\n        if (text[pos] == ')')\n            pos++;\n        return value;\n    }\n\n    value = 0;\n    while (isdigit((unsigned char)text[pos])) {\n        value = value * 10 + (text[pos] - '0');\n        pos++;\n    }\n    return value;\n}\n\nstatic int parse_term(void)\n{\n    int value = parse_factor();\n\n    for (;;) {\n        int rhs;\n\n        skip_spaces();\n        if (text[pos] == '*') {\n            pos++;\n            rhs = parse_factor();\n            value = value * rhs;\n        } else if (text[pos] == '/') {\n            pos++;\n            rhs = parse_factor();\n            value = value / rhs;\n        } else {\n            return value;\n        }\n    }\n}\n\nstatic int parse_expr(void)\n{\n    int value = parse_term();\n\n    for (;;) {\n        int rhs;\n\n        skip_spaces();\n        if (text[pos] == '+') {\n            pos++;\n            rhs = parse_term();\n            value = value + rhs;\n        } else if (text[pos] == '-') {\n            pos++;\n            rhs = parse_term();\n            value = value - rhs;\n        } else {\n            return value;\n        }\n    }\n}\n\nint main(void)\n{\n    if (fgets(text, sizeof(text), stdin) == NULL)\n        return 0;\n    text[strcspn(text, \"\\r\\n\")] = '\\0';\n    printf(\"%d\\n\", parse_expr());\n    return 0;\n}\n",
+    "points": [
+      "把文法拆成 expr（加减）、term（乘除）、factor（数字或括号）三层，逐层递归下降",
+      "term 内部循环处理乘除，保证同级从左到右结合",
+      "factor 遇到左括号就递归调用 expr，读到右括号后返回",
+      "用 / 实现向零截断的整数除法，并用 isdigit 跳过数字以外的字符"
+    ],
+    "analysis": "思路：手写表达式求值最常用的方法是递归下降。先把表达式文法拆成三层：expr 由若干 term 用加减连接，term 由若干 factor 用乘除连接，factor 要么是一个整数，要么是括号包着的 expr。每一层只处理自己那一级的运算符，优先级就自然体现出来了。\n\n关键步骤：① 用 fgets 读整行，再用 strcspn 把行尾的 \\r\\n 换成 \\0，这样解析时不必处理换行；② skip_spaces 跳过空格；③ parse_factor：遇到 `(` 就 pos++ 并递归调用 parse_expr，返回后跳过空格、吃掉 `)`；否则把连续的数字字符累加成整数，注意 value = value * 10 + (ch - '0') 是从左往右累积；④ parse_term：先取一个 factor，然后循环——只要下一个非空字符是 * 或 / 就再取一个 factor 并立即运算，这保证 8/4/2 按 (8/4)/2 计算；⑤ parse_expr：同样的循环，只是运算符换成 + 和 -；⑥ 所有解析函数共享全局的 pos，靠它推进读取位置。\n\n为什么不能在读到乘号时先去把后面的加减都算完？因为 term 只处理乘除、expr 只处理加减，遇到不属于自己的运算符就返回，交由上层继续——这种「各管一级、按需返回」的分层正是递归下降的核心，也使得括号可以无限嵌套。样例 (3+5)*2-10/4 的解析过程是：factor 读到括号，递归算出 8，乘 2 得 16；减号出现后 term 返回 16，expr 继续取下一个 term，得到 10/4 = 2；最终 16 - 2 = 14。\n\n复杂度：每个字符只被扫描常数次，时间 O(L)，递归深度等于括号层数，空间 O(括号层数)。\n\n易错点：① 只用一层循环从左到右算，忽略乘除优先级，(3+5)*2-10/4 会算成 12；② 用 double 求值再取整，7/2 得到 3.5 再截断成 3 勉强对，但负数与精度问题会暴露；③ 除法用向下取整（Python 的 // 语义），-7/2 得到 -4 与 C 不符；④ 忘记跳过空格，遇到「( 3 + 5 )」这样的写法直接读不到数字；⑤ 括号匹配后没有吃掉右括号，导致外层继续把 `)` 当运算符；⑥ 递归函数写成互相调用却不做前置声明，编译报未定义。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n#include <cctype>\nusing namespace std;\n\nstatic string text;\nstatic size_t pos = 0;\n\nint parse_expr();\n\nstatic void skip_spaces()\n{\n    while (pos < text.size() && text[pos] == ' ')\n        ++pos;\n}\n\nstatic int parse_factor()\n{\n    skip_spaces();\n    if (pos < text.size() && text[pos] == '(') {\n        ++pos;\n        int value = parse_expr();\n        skip_spaces();\n        if (pos < text.size() && text[pos] == ')')\n            ++pos;\n        return value;\n    }\n\n    int value = 0;\n    while (pos < text.size() && isdigit(static_cast<unsigned char>(text[pos]))) {\n        value = value * 10 + (text[pos] - '0');\n        ++pos;\n    }\n    return value;\n}\n\nstatic int parse_term()\n{\n    int value = parse_factor();\n\n    for (;;) {\n        skip_spaces();\n        if (pos < text.size() && text[pos] == '*') {\n            ++pos;\n            value = value * parse_factor();\n        } else if (pos < text.size() && text[pos] == '/') {\n            ++pos;\n            value = value / parse_factor();\n        } else {\n            return value;\n        }\n    }\n}\n\nint parse_expr()\n{\n    int value = parse_term();\n\n    for (;;) {\n        skip_spaces();\n        if (pos < text.size() && text[pos] == '+') {\n            ++pos;\n            value = value + parse_term();\n        } else if (pos < text.size() && text[pos] == '-') {\n            ++pos;\n            value = value - parse_term();\n        } else {\n            return value;\n        }\n    }\n}\n\nint main()\n{\n    if (!getline(cin, text))\n        return 0;\n\n    cout << parse_expr() << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 string 保存整行，用 size_t 下标推进解析位置",
+          "按 expr / term / factor 三层递归下降，分别对应加减、乘除、数字或括号",
+          "factor 遇到括号递归回 expr，实现括号优先",
+          "除法沿用 C++ 的 /（向零截断），与 C 版结果一致"
+        ],
+        "analysis": "思路：与 C 版相同的三层递归下降，只是用 std::string 和 getline 读入，下标用 size_t，边界检查写成 pos < text.size()。\n\n关键步骤：① getline(cin, text) 读入整行（不含换行），失败则返回；② skip_spaces 跳过空格；③ parse_factor：若当前字符是 `(`，前进一格并递归 parse_expr，回来后跳过空格、吃掉 `)`；否则循环 isdigit 累积整数；④ parse_term：取 factor 后循环，遇到 `*` 或 `/` 就前进并再取一个 factor，立即做乘除，保证左结合；⑤ parse_expr：取 term 后循环，遇到 `+` 或 `-` 同理；⑥ 输出 parse_expr() 的结果。\n\nC++ 里 isdigit 的参数必须转成 unsigned char，直接传 char 在字符为负时是未定义行为；这一点 C 版同样需要注意（C 里也写了强制转换）。另外 C++ 的 / 只在两个操作数都是整数时向零截断，与 C 一致，所以 C 版的分析对这里完全适用。\n\n复杂度：时间 O(L)，空间 O(括号层数)。\n\n易错点：① 用 cin >> text 读入，遇到空格就截断，表达式被拆成多段；② 忘记把 isdigit 的参数转 unsigned char；③ 循环条件写成 pos <= text.size()，越界访问；④ 乘除循环里用递归调用 parse_term，把优先级抬错了层；⑤ 括号分支里没有跳过空格就去比较 `)`；⑥ 用 int 累加导致大数溢出（本题中间结果 ≤ 10⁹，仍在范围内，但思路要清楚）。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef trunc_div(a, b):\n    q = abs(a) // abs(b)\n    if (a < 0) != (b < 0):\n        q = -q\n    return q\n\n\ndef main():\n    text = sys.stdin.readline().strip()\n    if not text:\n        return\n\n    n = len(text)\n    pos = 0\n\n    def skip_spaces():\n        nonlocal pos\n        while pos < n and text[pos] == \" \":\n            pos += 1\n\n    def factor():\n        nonlocal pos\n        skip_spaces()\n        if pos < n and text[pos] == \"(\":\n            pos += 1\n            value = expr()\n            skip_spaces()\n            if pos < n and text[pos] == \")\":\n                pos += 1\n            return value\n\n        value = 0\n        while pos < n and text[pos].isdigit():\n            value = value * 10 + int(text[pos])\n            pos += 1\n        return value\n\n    def term():\n        nonlocal pos\n        value = factor()\n        while True:\n            skip_spaces()\n            if pos < n and text[pos] in \"*/\":\n                op = text[pos]\n                pos += 1\n                rhs = factor()\n                if op == \"*\":\n                    value *= rhs\n                else:\n                    value = trunc_div(value, rhs)\n            else:\n                return value\n\n    def expr():\n        nonlocal pos\n        value = term()\n        while True:\n            skip_spaces()\n            if pos < n and text[pos] in \"+-\":\n                op = text[pos]\n                pos += 1\n                rhs = term()\n                value = value + rhs if op == \"+\" else value - rhs\n            else:\n                return value\n\n    print(expr())\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用嵌套函数 expr / term / factor 配合 nonlocal pos 实现递归下降",
+          "factor 处理括号递归与多位整数，跳过空格字符",
+          "term 与 expr 各自循环处理自己那一级运算符，保证优先级与左结合",
+          "用 trunc_div 实现与 C 一致的向零截断除法"
+        ],
+        "analysis": "思路：Python 版本同样是三层递归下降，区别在于用 nonlocal 让内层函数修改外层的 pos，并把文法三个层次写成三个嵌套函数，读起来更紧凑。\n\n关键步骤：① 读入整行并 strip；② n = len(text) 固定长度，pos 用 nonlocal 声明；③ factor：跳过空格，遇到 `(` 递归 expr，否则把连续数字字符累积成整数；④ term：先取 factor，再循环处理 `*`、`/`；⑤ expr：先取 term，再循环处理 `+`、`-`；⑥ 输出 expr()。\n\n最关键的一点是除法：Python 的 // 是向下取整，-7 // 2 得 -4，而 C 的 / 是向零截断，-7 / 2 得 -3。题目要求与 C 一致，所以必须自己写 trunc_div：先取绝对值相除，再根据符号决定是否取负。样例 (3+5)*2-10/4 的结果是 14，中间没有负数除法，但像 (2-9)/2 这样的表达式就会暴露差异，不能只靠 // 蒙混。\n\n复杂度：时间 O(L)，空间 O(括号层数)。\n\n易错点：① 用 eval 直接算，虽然快，但 Python 的 / 是浮点除法、// 是向下取整，语义与题目要求不符；② 用 // 代替 trunc_div，负数结果差 1；③ 内层函数忘记 nonlocal pos，赋值时创建了新的局部变量，位置永远不前进；④ 数字累积时用 text[pos] 直接参与加法，得到字符串拼接；⑤ 跳过空格只在 factor 里做，term/expr 比较运算符时又被空格挡住；⑥ 递归函数在定义前被调用（Python 里嵌套函数可以这样写，但顺序要保证 factor 内部调用 expr 时 expr 已定义——本实现靠闭包延迟查找，运行时才解析，没问题）。"
+      }
+    }
+  },
+  {
+    "id": "基-98",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "格式化输出",
+      "列宽对齐",
+      "浮点格式化"
+    ],
+    "stem": "读入若干条商品记录，按固定列宽输出一张对齐的表格，并在最后给出合计。\n\n列宽约定（四列之间各用一个空格分隔）：\n\n- 第一列 `item`：商品名，左对齐，宽度 10；\n- 第二列 `price`：单价，右对齐，宽度 8，保留两位小数；\n- 第三列 `qty`：数量，右对齐，宽度 5，整数；\n- 第四列 `total`：小计 = 单价 × 数量，右对齐，宽度 10，保留两位小数。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；接下来 n 行，每行依次为商品名（不含空白的字符串，长度不超过 20）、单价（非负实数，最多两位小数）、数量（0 ≤ 数量 ≤ 1000 的整数），三者用一个空格分隔。\n\n**输出格式：** 共 n + 2 行：第一行是表头 `item`、`price`、`qty`、`total`，按上面约定的列宽与对齐方式输出；接下来 n 行是每条记录；最后一行第一列输出 `TOTAL`（左对齐，宽度 10），中间两列留空，第四列输出所有小计之和（右对齐，宽度 10，保留两位小数）。所有行末尾不要多余空格。\n\n**输入样例：**\n```text\n3\napple 3.50 2\nbanana 1.25 10\ncherry 12.00 1\n```\n**输出样例：**\n```text\nitem          price   qty      total\napple          3.50     2       7.00\nbanana         1.25    10      12.50\ncherry        12.00     1      12.00\nTOTAL                          31.50\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    int n, i, qty;\n    char name[32];\n    double price, line, grand = 0.0;\n\n    if (scanf(\"%d\", &n) != 1 || n <= 0)\n        return 0;\n\n    printf(\"%-10s %8s %5s %10s\\n\", \"item\", \"price\", \"qty\", \"total\");\n\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%31s %lf %d\", name, &price, &qty) != 3)\n            return 0;\n        line = price * qty;\n        grand += line;\n        printf(\"%-10s %8.2f %5d %10.2f\\n\", name, price, qty, line);\n    }\n\n    printf(\"%-10s %8s %5s %10.2f\\n\", \"TOTAL\", \"\", \"\", grand);\n    return 0;\n}\n",
+    "points": [
+      "用 %-10s 实现左对齐，用 %8.2f、%5d、%10.2f 实现右对齐与小数位控制",
+      "表头也用同样的宽度输出，保证表头与数据列严格对齐",
+      "单价 × 数量得到小计，同时累加进 grand 作为合计",
+      "合计行的中间两列用空字符串占位，行末不产生多余空格"
+    ],
+    "analysis": "思路：格式化输出的核心是「宽度」和「对齐」两个属性。printf 的格式说明符里，负号表示左对齐、正数表示右对齐（默认），数字表示最小宽度，小数点后的数字表示小数位数。把四列的宽度写死，表头和数据自然就对齐了。\n\n关键步骤：① 读入 n，先输出表头：%-10s 让 item 占 10 格并左对齐，%8s 让 price 右对齐占 8 格，%5s、%10s 同理；② 循环读入商品名、单价、数量，用 price * qty 算出小计，累加到 grand；③ 数据行用 %-10s、%8.2f、%5d、%10.2f，四列之间各放一个空格；④ 合计行用 %-10s 输出 TOTAL，中间两列传空字符串 \"\"（配 %8s、%5s 就变成相应宽度的空格），最后用 %10.2f 输出 grand。\n\n为什么合计行的中间两列要传空字符串，而不是干脆少写两个格式符？因为那样会丢掉这两列的宽度，第四列会左移，与上面的数字对不齐。传 \"\" 配合 %8s 相当于显式占位，思路最清楚。另外要注意 %-10s 在字段不足 10 格时会在右边补空格，如果它恰好是行尾，就会留下行末空格；本题商品名在第一列，后面还有内容，所以不会出现行末空格的问题。\n\n关于 float 与 double：scanf 读 double 必须用 %lf，printf 输出 double 用 %f（C99 里 %lf 在 printf 中也允许，但没有必要）。单价最多两位小数，price * qty 在样例中都是精确值（3.50×2、1.25×10、12.00×1），小计与合计不会出现 7.000000001 之类的尾巴。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① 把 %-10s 写成 %10s，商品名变成右对齐，整张表错位；② 用 %10.2f 却漏掉小数点前的宽度，导致数字挤压；③ 合计行少写两个占位格式符，第四列左移；④ 读 double 用 %f、读 int 用 %lf，参数类型不匹配；⑤ 表头与数据用了不同的宽度；⑥ 在格式串末尾多写一个空格，产生行末空格。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <iomanip>\n#include <string>\nusing namespace std;\n\nint main()\n{\n    int n;\n    if (!(cin >> n) || n <= 0)\n        return 0;\n\n    cout << left << setw(10) << \"item\"\n         << ' ' << right << setw(8) << \"price\"\n         << ' ' << setw(5) << \"qty\"\n         << ' ' << setw(10) << \"total\" << '\\n';\n\n    double grand = 0.0;\n    for (int i = 0; i < n; ++i) {\n        string name;\n        double price;\n        int qty;\n        if (!(cin >> name >> price >> qty))\n            return 0;\n\n        double line = price * qty;\n        grand += line;\n\n        cout << left << setw(10) << name\n             << ' ' << right << fixed << setprecision(2) << setw(8) << price\n             << ' ' << setw(5) << qty\n             << ' ' << setw(10) << line << '\\n';\n    }\n\n    cout << left << setw(10) << \"TOTAL\"\n         << ' ' << right << setw(8) << \"\"\n         << ' ' << setw(5) << \"\"\n         << ' ' << fixed << setprecision(2) << setw(10) << grand << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 left / right 切换对齐方式，用 setw 指定每次输出的最小宽度",
+          "用 fixed 与 setprecision(2) 输出两位小数",
+          "setw 只对紧随其后的一次输出生效，每个字段都要重新设置",
+          "合计行用空字符串占位，保证四列位置与数据行一致"
+        ],
+        "analysis": "思路：C++ 的 iomanip 用两个状态控制表格：left / right 决定对齐方向（粘性，设置一次持续有效），setw(n) 指定紧接着那一次输出的最小宽度（非粘性，每次都要重设）。配合 fixed 与 setprecision(2) 控制小数位，就能复现 printf 的列宽效果。\n\n关键步骤：① 输出表头：left + setw(10) 输出 item，然后 right + setw(8) 输出 price，再 setw(5)、setw(10) 输出 qty 与 total；② 每条记录先 setw(10) 输出名称，再切回 right 输出 price、qty、line；③ line 用 price * qty 计算并累加到 grand；④ 合计行用 setw(10) 输出 TOTAL，两个空字符串各占 8 格与 5 格，最后输出 grand。\n\n这里有两个容易忽略的细节：第一，setw 会「消费掉」自己，只影响下一次输出，所以每个字段前都得写一次，否则宽度失效；第二，left 是粘性状态，输出完名称后必须切回 right，否则后面的数字全部左对齐，表格立刻歪掉。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① 以为 setw 一直有效，只写一次导致后面全部不对齐；② 忘记切回 right，数字左对齐；③ 忘了 fixed，setprecision(2) 变成两位有效数字，3.50 输出 3.5；④ 用 setfill 补零影响了表格；⑤ 合计行只输出 TOTAL 和数字，中间列宽度丢失；⑥ 用 endl 换行导致频繁刷新（本题数据量小，不影响正确性）。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    pos = 1\n\n    print(f\"{'item':<10} {'price':>8} {'qty':>5} {'total':>10}\")\n\n    grand = 0.0\n    for _ in range(n):\n        name = data[pos]\n        price = float(data[pos + 1])\n        qty = int(data[pos + 2])\n        pos += 3\n\n        line = price * qty\n        grand += line\n        print(f\"{name:<10} {price:>8.2f} {qty:>5d} {line:>10.2f}\")\n\n    print(f\"{'TOTAL':<10} {'':>8} {'':>5} {grand:>10.2f}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 f-string 的 <10、>8、>5、>10 指定宽度与对齐方向",
+          "用 :.2f 控制两位小数、:d 控制整数",
+          "表头、数据行、合计行使用同一套宽度，保证严格对齐",
+          "合计行中间两列用空串占位，行末没有多余空格"
+        ],
+        "analysis": "思路：Python 的 f-string 格式说明符把「填充、对齐、宽度、精度、类型」串在一起：< 表示左对齐，> 表示右对齐，数字表示宽度，.2f 表示保留两位小数。写成 f\"{name:<10} {price:>8.2f}\" 就能复刻 printf 的 %-10s 与 %8.2f。\n\n关键步骤：① 读入 n，用固定宽度的表头打印第一行；② 每次取三个记号：名称字符串、float 单价、int 数量；③ line = price * qty，并累加到 grand；④ 用 f\"{name:<10} {price:>8.2f} {qty:>5d} {line:>10.2f}\" 输出数据行；⑤ 合计行用 f\"{'TOTAL':<10} {'':>8} {'':>5} {grand:>10.2f}\"，中间两个空串占位。\n\n为什么要用 :.2f 而不是 round(price, 2)？round 只改变数值、不改变显示，3.5 依旧打印成 3.5 而不是 3.50；格式说明符负责补零到指定小数位，这一点与 C 的 %.2f 行为一致。另外对齐方向必须显式写 < 或 >，字符串默认左对齐、数字默认右对齐，混用时很容易错位。\n\n复杂度：时间 O(n)，空间 O(n)（一次性读入全部记号）。\n\n易错点：① 用 % 格式化时漏掉负号，左对齐写成右对齐；② 用 round 代替 :.2f，末尾补零丢失；③ 表头用一套宽度、数据用另一套，列错位；④ 合计行只写 TOTAL 和数字，第四列跑到前面；⑤ 输出时多写一个空格产生行末空格；⑥ 用 input() 逐行读，商品名含空格时被拆开（本题名称不含空格，但要意识到这个前提）。"
+      }
+    }
+  },
+  {
+    "id": "基-99",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "补码",
+      "无符号转换",
+      "十六进制输出"
+    ],
+    "stem": "给定一个 32 位有符号整数 x，请按二进制补码的视角输出四项信息：它的 32 位补码、同一串比特按无符号解释的值、对它按位取反后的值，以及它的 8 位十六进制补码表示。\n\n**输入格式：** 一行一个整数 x（−2147483648 ≤ x ≤ 2147483647）。\n\n**输出格式：** 四行：\n- `bits: ` 后接 32 位补码（高位在前，没有前缀）；\n- `unsigned: ` 后接同一串比特按无符号整数解释的值（0 ~ 4294967295）；\n- `neg: ` 后接对 x 按位取反后的值（仍按 32 位有符号解释）；\n- `hex: ` 后接 8 位小写十六进制补码表示（不足 8 位补 0）。\n\n**输入样例：**\n```text\n-5\n```\n**输出样例：**\n```text\nbits: 11111111111111111111111111111011\nunsigned: 4294967291\nneg: 4\nhex: fffffffb\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    long long x;\n    int i, xi;\n    unsigned int u;\n\n    if (scanf(\"%lld\", &x) != 1)\n        return 0;\n    if (x < -2147483648LL || x > 2147483647LL)\n        return 0;\n\n    xi = (int)x;\n    u = (unsigned int)xi;\n\n    printf(\"bits: \");\n    for (i = 31; i >= 0; i--)\n        printf(\"%u\", (u >> i) & 1u);\n    printf(\"\\n\");\n    printf(\"unsigned: %u\\n\", u);\n    printf(\"neg: %d\\n\", ~xi);\n    printf(\"hex: %08x\\n\", u);\n    return 0;\n}\n",
+    "points": [
+      "用 (unsigned int) 把有符号值重新解释为无符号值，得到同一串比特",
+      "用 (u >> i) & 1u 从第 31 位到第 0 位输出 32 位补码",
+      "用 ~xi 求按位取反，用 %08x 输出 8 位小写十六进制",
+      "读入用 long long 并检查范围，避免把超范围的值强转成 int"
+    ],
+    "analysis": "思路：C 里的有符号整数在绝大多数平台上用补码表示，同一个 32 位比特串既可以按有符号解释（−2³¹ ~ 2³¹−1），也可以按无符号解释（0 ~ 2³²−1），转换只需要一次类型转换，比特本身完全不变。\n\n关键步骤：① 用 %lld 把输入读进 long long，再检查是否落在 int 范围内，避免把超范围的值硬转成 int（那是实现定义行为）；② xi = (int)x，u = (unsigned int)xi：从有符号到无符号的转换由 C 标准保证为「模 2³²」，所以 −5 变成 4294967291；③ 输出补码时从 i = 31 递减，取 (u >> i) & 1u，逐位打印 0 或 1；④ 输出无符号值用 %u；⑤ 取反用 ~xi，−5 的补码是 …11111011，取反得到 …00000100 即 4，符合「~x = −x−1」的关系；⑥ 十六进制用 %08x，其中 8 是最小宽度、0 表示不足补零，小写 x 表示输出小写字母。\n\n为什么要绕一圈用 unsigned 来打印二进制？因为对负的有符号整数做右移是实现定义的（可能是算术右移，高位补 1），而对无符号整数右移是逻辑右移，标准保证高位补 0，只有这样才能稳定地逐位取出补码。同样，%x 输出 unsigned 才是标准用法，传 int 虽然实践中也能工作，但严格说是格式不匹配。\n\n复杂度：O(1)（固定 32 次循环）。\n\n易错点：① 用 %d 输出 u，4294967291 会被打成 −5；② 直接对有符号负数右移取位，不同编译器结果不同；③ 把 ~x 当成「乘以 −1」，−5 取反得 4 而不是 5；④ 十六进制用 %x 而不补零，得到 fffffffb 之外的短串（本题恰好 8 位，但小值会露馅）；⑤ 用 %X 输出大写字母，与样例不符；⑥ 输入 −2147483648 时先取绝对值再处理，触发溢出。",
+    "module": "C语言基础",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\nusing namespace std;\n\nint main()\n{\n    long long x;\n    if (!(cin >> x))\n        return 0;\n    if (x < -2147483648LL || x > 2147483647LL)\n        return 0;\n\n    int xi = static_cast<int>(x);\n    unsigned int u = static_cast<unsigned int>(xi);\n\n    cout << \"bits: \";\n    for (int i = 31; i >= 0; --i)\n        cout << ((u >> i) & 1u);\n    cout << '\\n';\n\n    cout << \"unsigned: \" << u << '\\n';\n    cout << \"neg: \" << ~xi << '\\n';\n    cout << \"hex: \";\n    cout << hex;\n    for (int shift = 28; shift >= 0; shift -= 4) {\n        unsigned int digit = (u >> shift) & 0xFu;\n        cout << \"0123456789abcdef\"[digit];\n    }\n    cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 static_cast<unsigned int> 把有符号值重解释为无符号值",
+          "用无符号右移逐位输出 32 位补码",
+          "用 ~xi 求按位取反并按有符号输出",
+          "手工把每 4 位映射成一个十六进制字符，或用 hex 输出 8 位补码"
+        ],
+        "analysis": "思路：与 C 版一致——同一串比特，用 unsigned 解释得到无符号值，用 int 解释得到有符号值。C++ 的 static_cast<unsigned int>(负值) 与 C 的转换规则相同，都按模 2³² 处理，因此 −5 得到 4294967291。\n\n关键步骤：① 用 long long 读入并检查范围；② int xi = static_cast<int>(x)，unsigned int u = static_cast<unsigned int>(xi)；③ 输出 32 位补码：从 i = 31 递减，输出 (u >> i) & 1u；④ 输出无符号值；⑤ 输出 ~xi，C++ 的按位取反在 int 上同样满足 ~x = −x−1；⑥ 十六进制用循环每 4 位取一个 nibble，再查字符串 \"0123456789abcdef\"——这样不依赖流的格式状态，输出一定是 8 位小写。\n\n也可以写 cout << hex << setw(8) << setfill('0') << u，但那样要额外引入 iomanip，而且 hex 是粘性状态、会影响后续输出；本题最后一行就是十六进制，看起来无害，但手工映射四位一组更直观，也顺便演示了「十六进制就是每 4 个二进制位」这一事实。\n\n复杂度：O(1)。\n\n易错点：① 用 static_cast<unsigned int>(x) 之前就让 x 溢出 int；② 对负数直接右移，算术右移让高位全是 1，位数判断出错；③ 用 ~x 期望得到相反数；④ 十六进制没有补足 8 位；⑤ 用 hex 输出后忘记它对后续输出的影响；⑥ 把 \"0123456789abcdef\" 的下标写成 digit - '0'，超过 9 就错位。"
+      },
+      "python": {
+        "solution": "import sys\n\nTWO31 = 2147483648\nMASK32 = 0xFFFFFFFF\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    x = int(data[0])\n    if x < -TWO31 or x > TWO31 - 1:\n        return\n\n    u = x & MASK32\n    print(\"bits: \" + format(u, \"032b\"))\n    print(f\"unsigned: {u}\")\n    print(f\"neg: {-x - 1}\")\n    print(\"hex: \" + format(u, \"08x\"))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 x & 0xFFFFFFFF 把负数折成 32 位无符号值",
+          "用 format(u, \"032b\") 与 format(u, \"08x\") 输出补码与十六进制",
+          "利用 ~x = −x−1 求按位取反的结果",
+          "先检查输入是否落在 32 位有符号范围内"
+        ],
+        "analysis": "思路：Python 的整数没有固定位宽，负数也不是补码存储，所以「同一个比特串的两种解释」必须用位掩码手工构造：x & 0xFFFFFFFF 会把负数折成它在 32 位补码下的无符号值。\n\n关键步骤：① 读入 x 并检查 −2³¹ ≤ x ≤ 2³¹−1；② u = x & MASK32，其中 MASK32 = 0xFFFFFFFF，−5 与掩码相与得到 4294967291；③ 用 format(u, \"032b\") 输出 32 位补零二进制；④ 打印 u 作为无符号值；⑤ 按位取反用 −x − 1：Python 的 ~ 运算定义为 ~x = −x−1，与 32 位有符号取反的结果在本题范围内完全一致（−5 取反是 4，2147483647 取反是 −2147483648）；⑥ 用 format(u, \"08x\") 输出 8 位小写十六进制。\n\n为什么不能直接 format(x, \"032b\")？对负数 format 会输出负号加绝对值，例如 format(−5, \"032b\") 得到 \"-00000000000000000000000000000101\"，宽度计数还把负号算进去，完全不是补码。必须先与掩码相与，把值折到 [0, 2³²) 再格式化，这一点正是「比特与解释分离」的体现。\n\n复杂度：O(1)。\n\n易错点：① 直接 format 负数，得到带负号的串；② 用 x % 2**32（对负数返回非负余数）虽然也能得到同样结果，但和 & 掩码相比不够直白；③ 用 bin(x) 输出，带 0b 前缀且不补零；④ 把 ~x 写成 −x，−5 得到 5 而不是 4；⑤ 十六进制用 hex(u) 输出，带 0x 前缀且不补零；⑥ 忘记校验输入范围，x = 2³¹ 时 u 仍是 32 位内，但已经不属于题目约定的输入。"
+      }
+    }
+  }
+]

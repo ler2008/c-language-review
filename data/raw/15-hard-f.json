@@ -1,0 +1,590 @@
+[
+  {
+    "id": "指-109",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "二级指针",
+      "指针输出参数",
+      "数组查找"
+    ],
+    "stem": "读入 n 个整数和一个目标值 x，用二级指针作为输出参数把「找到的位置」带回调用者。\n\n要求实现函数 `int find_ptr(int *a, int n, int x, int **out)`：在 a[0..n-1] 中从左到右查找第一个等于 x 的元素；找到时让 `*out = &a[i]` 并返回下标 i，找不到时让 `*out = NULL` 并返回 -1。\n\nmain 中调用该函数：若找到，通过 `*out` 把该元素的值加上 100；若找不到则不改动数组。最后输出下标、被修改元素的值以及修改后的整个数组。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 100）；第二行 n 个整数（-1000 ≤ a[i] ≤ 1000），用空格分隔；第三行一个整数 x（-1000 ≤ x ≤ 1000）。\n\n**输出格式：** 若找到，输出三行：`index: i`、`value: v`（v 为该元素加 100 后的值）、`array:` 后接修改后的数组；若找不到，输出 `index: -1`、`value: -`、`array:` 后接原数组。数组行在冒号后跟一个空格，元素之间也用一个空格，行末无多余空格。\n\n**输入样例：**\n```text\n5\n3 8 8 5 9\n8\n```\n**输出样例：**\n```text\nindex: 1\nvalue: 108\narray: 3 108 8 5 9\n```",
+    "solution": "#include <stdio.h>\n\n/* 在 a[0..n-1] 中查找第一个等于 x 的元素：\n   找到时让 *out 指向它并返回下标，否则把 *out 置 NULL 返回 -1。 */\nstatic int find_ptr(int *a, int n, int x, int **out)\n{\n    int i;\n\n    for (i = 0; i < n; i++) {\n        if (a[i] == x) {\n            *out = &a[i];       /* 通过二级指针把元素地址写回调用者 */\n            return i;\n        }\n    }\n    *out = NULL;                /* 没找到：让调用者的指针变成空指针 */\n    return -1;\n}\n\nint main(void)\n{\n    int a[100];\n    int n, x, i, idx;\n    int *hit = NULL;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 0; i < n; i++)\n        scanf(\"%d\", &a[i]);\n    if (scanf(\"%d\", &x) != 1)\n        return 0;\n\n    idx = find_ptr(a, n, x, &hit);   /* &hit 的类型是 int ** */\n    if (idx >= 0 && hit != NULL)\n        *hit += 100;                 /* 通过一级指针修改数组元素 */\n\n    printf(\"index: %d\\n\", idx);\n    if (idx >= 0)\n        printf(\"value: %d\\n\", *hit);\n    else\n        printf(\"value: -\\n\");\n\n    printf(\"array:\");\n    for (i = 0; i < n; i++)\n        printf(\" %d\", a[i]);\n    printf(\"\\n\");\n    return 0;\n}\n",
+    "points": [
+      "形参写成 int **out，在函数里通过 *out = &a[i] 写回地址",
+      "调用时传 &hit（指针变量的地址），形成 int ** 实参",
+      "未命中时把 *out 置 NULL，调用者先判空再解引用",
+      "输出下标、被修改的值与数组，空格与样例完全一致"
+    ],
+    "analysis": "思路：C 的函数参数一律按值传递，指针参数能改的只是「它指向的那个对象」，改不了调用者手里这个指针变量本身的指向。要让 main 里的 hit 指向数组中的某个元素，就必须把 hit 的地址（类型 int **）传进去，在函数里通过 `*out = &a[i]` 写回。这就是「二级指针作输出参数」的标准用法，也是本题的核心。\n\n关键步骤：① 形参写成 `int **out`；② 命中时执行 `*out = &a[i]` 并返回 i —— 注意 `*out` 的类型是 int *，与 `&a[i]` 匹配，一次解引用就落到「指针变量」这一层；③ 未命中时执行 `*out = NULL` 并返回 -1，避免调用者拿到不确定的值；④ main 里调用 `find_ptr(a, n, x, &hit)`，返回后先判断 `hit != NULL` 再解引用，通过 `*hit += 100` 原地修改数组元素；⑤ 输出用 `printf(\"array:\")` 加若干 `printf(\" %d\")` 控制空格，保证行末不多空格。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① 调用时传 hit 而不是 &hit，类型是 int * 却要求 int **，编译器通常只给警告，运行时会把数组首地址当成指针变量去解引用而崩溃；② 函数里写成 `out = &a[i]`，只改了形参本身，main 的 hit 仍然是 NULL；③ 未命中分支忘记 `*out = NULL`，调用者拿到未初始化的指针；④ 解引用层次搞混，把 `*out`（int *）当成 int；⑤ 数组行用 `printf(\"%d \")` 输出，行末多出空格；⑥ 命中后先输出 *hit 再修改，value 与 array 行对不上。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n\n// 用「指针的引用」作输出参数：引用是别名，改 out 就是改调用者的变量\nstatic int find_ptr(int *a, int n, int x, int *&out)\n{\n    for (int i = 0; i < n; ++i) {\n        if (a[i] == x) {\n            out = &a[i];\n            return i;\n        }\n    }\n    out = nullptr;\n    return -1;\n}\n\nint main()\n{\n    int a[100];\n    int n, x;\n\n    if (!(std::cin >> n))\n        return 0;\n    for (int i = 0; i < n; ++i)\n        std::cin >> a[i];\n    if (!(std::cin >> x))\n        return 0;\n\n    int *hit = nullptr;\n    int idx = find_ptr(a, n, x, hit);   // 引用参数直接传变量本身\n    if (idx >= 0 && hit != nullptr)\n        *hit += 100;\n\n    std::cout << \"index: \" << idx << '\\n';\n    if (idx >= 0)\n        std::cout << \"value: \" << *hit << '\\n';\n    else\n        std::cout << \"value: -\\n\";\n\n    std::cout << \"array:\";\n    for (int i = 0; i < n; ++i)\n        std::cout << ' ' << a[i];\n    std::cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 int *&out（指针的引用）表达输出参数，调用处不写取地址符",
+          "命中时 out = &a[i]，未命中时 out = nullptr",
+          "通过 *hit 修改数组元素后统一输出",
+          "cout 的空格控制与样例一致"
+        ],
+        "analysis": "思路：C++ 除了照搬二级指针，还可以用「指针的引用」`int *&out` 表达同一个语义：引用是变量的别名，函数里改 out 就是改调用者的那个指针变量，调用处直接写 `find_ptr(a, n, x, hit)`，不必再取地址，可读性更好。本题的 C++ 版仍保留指针运算，方便与 C 版逐行对照，只把输入输出换成 iostream 与 cout。\n\n关键步骤：① 形参写成 `int *&out`，函数体里 `out = &a[i]` 与 C 版 `*out = &a[i]` 效果相同；② 未命中时 `out = nullptr`；③ main 用 std::cin 读入 n、数组与 x；④ 调用后先判 `hit != nullptr` 再执行 `*hit += 100`；⑤ 输出 index 与 value 两行，数组行先输出 \"array:\"，再在循环里输出空格与元素，保证行末无空格。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① 形参写成 `int *out` 却仍按引用方式传参，编译不过；② 用引用后忘记在未命中分支把 out 置 nullptr，调用者会顺着野指针写内存；③ 把引用参数理解成传副本，以为函数内的赋值不影响 main；④ 输出漏掉 \"array:\" 后的空格；⑤ 命中后忘记先加 100 再输出，value 行变成原值；⑥ 用 endl 代替换行符，频繁刷新没有实际意义。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef find_ptr(a, x, out):\n    \"\"\"out 是长度为 1 的列表，用来模拟 C 里「二级指针输出参数」的写回效果。\"\"\"\n    for i, v in enumerate(a):\n        if v == x:\n            out[0] = i\n            return i\n    out[0] = None\n    return -1\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    n = int(data[0])\n    a = [int(x) for x in data[1:1 + n]]\n    x = int(data[1 + n])\n\n    slot = [None]                 # 相当于 C 里的 int *hit\n    idx = find_ptr(a, x, slot)    # 把 slot 传进去，函数内改写 slot[0]\n    if idx >= 0 and slot[0] is not None:\n        a[idx] += 100             # 通过写回的位置修改原列表\n\n    print(f\"index: {idx}\")\n    print(f\"value: {a[idx]}\" if idx >= 0 else \"value: -\")\n    print(\"array:\" + \"\".join(f\" {v}\" for v in a))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用长度为 1 的列表模拟输出参数，函数内写 out[0]",
+          "命中返回下标，未命中把 out[0] 置 None 并返回 -1",
+          "用返回的下标修改原列表，再输出三行",
+          "数组行用 join 拼接，行末无多余空格"
+        ],
+        "analysis": "思路：Python 没有指针，但「输出参数」可以用一个长度为 1 的列表来模拟：列表对象传进函数后，函数里执行 `out[0] = i`，调用者立刻能看到变化 —— 这与二级指针写回「指针变量」的效果一致，因为列表的元素槽本身就是可变的引用位置。\n\n关键步骤：① 用 `sys.stdin.read().split()` 一次读入全部记号，第 0 个是 n，接着 n 个是数组，下标 1+n 是目标值 x；② 定义 `find_ptr(a, x, out)`，命中时写 `out[0] = i` 并返回 i，未命中时 `out[0] = None` 返回 -1；③ main 里先建 `slot = [None]`，调用后既用返回值判断是否命中，也用 slot[0] 确认写入位置；④ 输出三行，数组行用标题加逐项拼接的方式构造，保证冒号后只有一个空格、行末不多空格。\n\n复杂度：O(n) 时间，O(n) 空间（保存 n 个整数）。\n\n易错点：① 只 return 下标而不写 out[0]，模拟不出输出参数的效果；② 用 0 而不是 None 表示未命中，与合法下标 0 混淆；③ 命中后忘记真正修改 `a[idx]`，value 行与 array 行对不上；④ 用 `print(\"array:\", a)` 输出，会带出方括号和逗号；⑤ 把全部记号一次性转成整数后又去拿字符串比较，类型混乱；⑥ 返回 -1 后仍用 `a[-1]` 访问，Python 的负下标会悄悄取到最后一个元素。"
+      }
+    }
+  },
+  {
+    "id": "指-110",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "指针数组",
+      "字符串排序",
+      "二级指针"
+    ],
+    "stem": "读入 n 个不含空格的单词，把它们按「长度升序；长度相同时按字典序升序」排序后输出。\n\n要求：单词本身存放在二维字符数组中，另建一个指针数组 `char *p[MAX]`，让 p[i] 依次指向每个单词；排序时只交换指针数组里的指针，绝不搬动字符内容。排序完成后再按原始存放顺序输出二维数组里的单词，验证字符内容确实没有被移动。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 20）；接下来 n 行，每行一个由小写字母组成的单词，长度不超过 19。\n\n**输出格式：** 先输出一行 `sorted:`，随后 n 行依次为排序后的单词；再输出一行 `origin:`，同一行内按输入顺序输出全部单词（用一个空格分隔，行末无多余空格）。\n\n**输入样例：**\n```text\n5\nbb\naa\nc\naaa\nb\n```\n**输出样例：**\n```text\nsorted:\nb\nc\naa\nbb\naaa\norigin: bb aa c aaa b\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nint main(void)\n{\n    char word[20][20];\n    char *p[20];\n    int n, i, j;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 0; i < n; i++) {\n        scanf(\"%19s\", word[i]);   /* 限制宽度，防止写穿到下一行 */\n        p[i] = word[i];           /* 指针数组的每个元素指向一行字符 */\n    }\n\n    /* 直接插入排序：只交换指针，字符一个都不动 */\n    for (i = 1; i < n; i++) {\n        char *key = p[i];\n        j = i - 1;\n        while (j >= 0 && (strlen(p[j]) > strlen(key) ||\n                          (strlen(p[j]) == strlen(key) && strcmp(p[j], key) > 0))) {\n            p[j + 1] = p[j];\n            j--;\n        }\n        p[j + 1] = key;\n    }\n\n    printf(\"sorted:\\n\");\n    for (i = 0; i < n; i++)\n        printf(\"%s\\n\", p[i]);\n\n    printf(\"origin:\");\n    for (i = 0; i < n; i++)\n        printf(\" %s\", word[i]);\n    printf(\"\\n\");\n    return 0;\n}\n",
+    "points": [
+      "用 char *p[n] 指针数组指向二维数组的每一行，不复制字符串",
+      "排序时交换的是 p[j] 与 p[j+1] 这两个指针",
+      "比较先用 strlen 比长度，长度相同再用 strcmp 比字典序",
+      "输出 origin 行证明字符内容从未被搬动"
+    ],
+    "analysis": "思路：本题的关键是把「数据存在哪里」和「按什么顺序访问」分开。单词本身放在二维字符数组 `word[20][20]` 里，word[i] 是第 i 行的首地址，作为表达式使用时退化为 char *；再建一个指针数组 `char *p[20]`，让 p[i] 指向 word[i]。排序时只交换 p 里的指针，字符一个都不动，所以最后按 word 的顺序输出，仍然是输入时的顺序 —— 这正是「排序指针而不是排序数据」的意义。\n\n关键步骤：① 用 `scanf(\"%19s\", word[i])` 读入单词，同时执行 `p[i] = word[i]` 建立指向关系；② 用直接插入排序，外层从 1 到 n-1，先 `char *key = p[i]` 把待插入的指针取出来；③ 比较规则是「长度升序，长度相同按字典序」，条件写成 `strlen(p[j]) > strlen(key) || (strlen(p[j]) == strlen(key) && strcmp(p[j], key) > 0)`；④ 内层后移只写 `p[j + 1] = p[j]`，最后 `p[j + 1] = key`；⑤ 先输出 sorted 段，再输出 origin 行验证数据没被搬动。\n\n复杂度：时间 O(n²·L)（每次比较都要 strlen 与 strcmp），空间 O(n·L)。\n\n易错点：① 用 strcpy 交换字符串内容 —— 结果虽然对，但违背了「只交换指针」的要求，也体现不出指针数组的价值；② 只按 strcmp 排序，得到的是字典序而不是长度序；③ 长度相同时没有第二关键字，相同长度的单词顺序不确定；④ `scanf(\"%s\", word[i])` 不限宽度，超长单词会写坏相邻行；⑤ 输出 origin 时误用了 p，看到的是排序后的顺序，对照就失效了；⑥ 把 key 声明成 char 而不是 char *。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n#include <vector>\n#include <algorithm>\nusing namespace std;\n\nint main()\n{\n    int n;\n    if (!(cin >> n))\n        return 0;\n\n    vector<string> words(n);\n    for (int i = 0; i < n; ++i)\n        cin >> words[i];\n\n    // 单词全部读完后再取地址，避免 vector 扩容让旧地址失效\n    vector<const string *> ptrs;\n    ptrs.reserve(n);\n    for (const string &w : words)\n        ptrs.push_back(&w);\n\n    sort(ptrs.begin(), ptrs.end(), [](const string *a, const string *b) {\n        if (a->size() != b->size())\n            return a->size() < b->size();\n        return *a < *b;          // 长度相同按字典序\n    });\n\n    cout << \"sorted:\\n\";\n    for (const string *p : ptrs)\n        cout << *p << '\\n';\n\n    cout << \"origin:\";\n    for (int i = 0; i < n; ++i)\n        cout << ' ' << words[i];\n    cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 vector<const string *> 当指针数组，排序的是指针",
+          "读完所有单词后再取地址，避开 vector 扩容导致的地址失效",
+          "lambda 先比 size()，相等再比字符串内容",
+          "origin 行仍按 words 输出，验证数据未移动"
+        ],
+        "analysis": "思路：C++ 版把二维字符数组换成 `vector<string>` 保存原始数据，再建一个 `vector<const string *>` 当指针数组：排序时交换的是指针元素，字符串本身一个字节都不动，这与 C 版「只交换指针」的思路完全对应，而且长度与内存由 string 自己管理，省掉了 19 这个宽度上限。\n\n关键步骤：① 读入 n 与 n 个单词存入 words；② 等全部读完再遍历 words 取地址，逐个放进 ptrs —— 顺序很重要，vector 扩容时会把元素搬到新内存，先取地址再 push_back 会留下悬空指针；③ 用 std::sort 配 lambda：先比 size()，相等再用 `*a < *b` 比字典序；④ 输出 sorted 段时解引用指针，origin 行直接输出 words，顺序与输入一致。\n\n复杂度：O(n log n · L) 时间（每次比较最多看 L 个字符），O(n) 额外指针。\n\n易错点：① lambda 只比 size()，相同长度的单词顺序不确定；② 边读边取地址，vector 扩容后旧指针全部失效；③ 直接对 words 调用 sort，origin 行的顺序被一起打乱，无法验证「数据没动」；④ 输出时忘记解引用，打出一串地址；⑤ 把 ptrs 声明成 `vector<string>` 而不是指针容器，等于复制了一份数据；⑥ 先 reserve 再取地址时误以为 reserve 之后就不会搬家，其实 push_back 仍可能触发扩容。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    words = data[1:1 + n]\n\n    # ptrs 是与 words 指向同一批字符串的引用列表；排序只改变引用顺序\n    ptrs = list(words)\n    ptrs.sort(key=lambda s: (len(s), s))     # 先长度、后字典序\n\n    print(\"sorted:\")\n    for w in ptrs:\n        print(w)\n\n    print(\"origin: \" + \" \".join(words))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 list(words) 建立引用列表，模拟指针数组",
+          "排序用 key=(len, 字符串) 实现长度优先、字典序兜底",
+          "输出 sorted 段与 origin 行，两者对照",
+          "origin 行用 join 拼接，行末无多余空格"
+        ],
+        "analysis": "思路：Python 的字符串不可变，无法「原地交换字符」，这恰好和 C 版「只交换指针、不动数据」相对应。用 words 保存原始顺序，另建 `ptrs = list(words)`：新列表的元素与 words 指向同一批字符串对象，排序它只改变列表里的引用顺序，words 完全不受影响。\n\n关键步骤：① 读入全部记号，第 0 个是 n，后面 n 个是单词；② 用 `list(words)` 建立引用列表；③ 调用 `ptrs.sort(key=lambda s: (len(s), s))`，元组先比长度、长度相同再比字符串，正好实现题目要求的两级排序；④ 先逐行输出 ptrs，再输出 `origin:` 与 words 的内容，形成对照。\n\n复杂度：O(n log n · L) 时间，O(n) 空间（两个列表）。\n\n易错点：① 直接对 words 调用 sort，origin 行跟着变了，题目要求的对照就没了；② key 只写 len，长度相同时顺序取决于原始顺序，没有体现字典序规则；③ 用 sorted(words) 却忘了接收返回值，ptrs 仍是原顺序；④ 用 `print(words)` 输出 origin，会打出方括号和引号；⑤ 误以为 `list(words)` 会复制字符串本身，其实只复制引用，语义上正等价于建一个指针数组；⑥ origin 行先拼了冒号又用空格连接，出现连续两个空格。"
+      }
+    }
+  },
+  {
+    "id": "指-111",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "动态数组",
+      "realloc",
+      "容量倍增"
+    ],
+    "stem": "用 malloc / realloc / free 实现一个「容量自动翻倍」的动态整型数组：初始容量为 2，每读入一个数就放进数组；放之前若已满（size == cap），用 realloc 把容量翻倍。读入 n 个数后输出总和、最终容量、扩容次数和数组内容，最后释放内存。\n\n**输入格式：** 第一行一个整数 n（1 ≤ n ≤ 1000）；第二行 n 个整数（-1000 ≤ a[i] ≤ 1000），用空格分隔。\n\n**输出格式：** 四行：`sum: S`、`cap: C`、`grow: G`、`array:` 后接 n 个整数（元素之间一个空格，行末无多余空格）。\n\n**输入样例：**\n```text\n5\n10 20 30 40 50\n```\n**输出样例：**\n```text\nsum: 150\ncap: 8\ngrow: 2\narray: 10 20 30 40 50\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void)\n{\n    int n, i, size = 0, cap = 2, grow = 0;\n    int sum = 0;\n    int *a;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n\n    a = (int *)malloc((size_t)cap * sizeof(int));\n    if (a == NULL)\n        return 1;\n\n    for (i = 0; i < n; i++) {\n        int v;\n\n        if (scanf(\"%d\", &v) != 1) {\n            free(a);\n            return 0;\n        }\n        if (size == cap) {              /* 满了才扩容，容量翻倍 */\n            int *tmp = (int *)realloc(a, (size_t)cap * 2 * sizeof(int));\n\n            if (tmp == NULL) {          /* 失败时原指针仍然有效 */\n                free(a);\n                return 1;\n            }\n            a = tmp;                    /* 成功后才覆盖旧指针 */\n            cap *= 2;\n            grow++;\n        }\n        a[size] = v;                    /* 先写元素，再把 size 加 1 */\n        size++;\n        sum += v;\n    }\n\n    printf(\"sum: %d\\n\", sum);\n    printf(\"cap: %d\\n\", cap);\n    printf(\"grow: %d\\n\", grow);\n    printf(\"array:\");\n    for (i = 0; i < size; i++)\n        printf(\" %d\", a[i]);\n    printf(\"\\n\");\n\n    free(a);                            /* 释放后不要再解引用 */\n    a = NULL;\n    return 0;\n}\n",
+    "points": [
+      "用 malloc 申请初始容量 2 的数组，用 size 与 cap 区分「已用」与「已分配」",
+      "满时用 realloc 翻倍扩容，并用临时指针接收返回值",
+      "正确统计扩容次数：容量按 2→4→8 增长，n = 5 时 grow 为 2",
+      "输出最终容量与数组内容后 free 释放内存"
+    ],
+    "analysis": "思路：动态数组的核心是把「已经装了几个元素」和「一共申请了多少空间」分成两个变量：size 是已用长度，cap 是当前容量。一开始 malloc 2 个 int；每读入一个值，先检查 size == cap，满了就用 realloc 把容量翻倍并让 grow 加 1，再把新值写到 a[size]，最后 size 自增。\n\n关键步骤：① `a = malloc(cap * sizeof(int))`，注意乘上 sizeof，并把容量先转成 size_t；② 循环里先读值，再判满、扩容、写入、累加；③ 扩容时用临时指针 `int *tmp = realloc(a, cap * 2 * sizeof(int))` 接收返回值，成功后才赋给 a —— 这样即使 realloc 失败，原来的 a 仍然有效，可以 free 后退出；④ 按 size（而不是 cap）遍历输出，未使用的容量不输出；⑤ 结尾 free(a) 并把 a 置 NULL，避免悬空指针。\n\n样例验证：n = 5，容量从 2 开始：插入第 3 个数时 2→4（grow = 1），插入第 5 个数时 4→8（grow = 2），所以输出 cap: 8、grow: 2，数组内容仍是 10 20 30 40 50。\n\n复杂度：时间 O(n)（扩容次数是 log n，复制总量均摊 O(n)），空间 O(cap)。\n\n易错点：① 写成 `a = realloc(a, cap * 2 * sizeof(int))` 直接覆盖，失败时原指针丢失，内存泄漏；② 忘记乘 sizeof(int)，只申请很少的字节却按 int 访问，属于越界写；③ 判满条件写成 size > cap，导致写满后还要多写一个；④ 扩容后忘记 size 自增，所有值都写进 a[0]；⑤ 用 cap 而不是 size 遍历输出，把未初始化的格子也打出来；⑥ 结尾不 free，或者在 free 之后继续读 a[i]。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    int n;\n    if (!(cin >> n))\n        return 0;\n\n    vector<int> a;\n    int cap = 2, grow = 0, sum = 0;\n    a.reserve(cap);                 // 初始预留 2 个位置，对应 malloc\n\n    for (int i = 0; i < n; ++i) {\n        int v;\n        cin >> v;\n        if (static_cast<int>(a.size()) == cap) {   // 满了就翻倍\n            cap *= 2;\n            a.reserve(cap);                        // 相当于 realloc\n            ++grow;\n        }\n        a.push_back(v);\n        sum += v;\n    }\n\n    cout << \"sum: \" << sum << '\\n';\n    cout << \"cap: \" << cap << '\\n';\n    cout << \"grow: \" << grow << '\\n';\n    cout << \"array:\";\n    for (int x : a)\n        cout << ' ' << x;\n    cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 vector 加 reserve 模拟「初始容量 + 扩容」的过程",
+          "在 push_back 之前判断 size() == cap，满了才 reserve 翻倍",
+          "统计扩容次数与最终容量，输出与 C 版一致",
+          "用范围 for 输出容器内容"
+        ],
+        "analysis": "思路：C++ 版用 vector 承担内存管理，但为了和 C 版对照，仍然显式保留 cap 与 grow 两个变量：初始 `reserve(2)` 相当于 malloc 2 个 int，每次 push_back 之前检查 size() 是否等于 cap，等于就翻倍 reserve 并让 grow 加 1。这样输出的 cap 与 grow 与 C 版完全一致。\n\n关键步骤：① 声明 `vector<int> a` 后立刻执行 `a.reserve(cap)`；② 循环读值，先判满再执行 `cap *= 2; a.reserve(cap); ++grow;`；③ 然后 push_back 并累加 sum；④ 依次输出 sum、cap、grow；⑤ 最后按元素逐个输出数组，空格由自己控制。\n\n延伸：vector 在 push_back 触发扩容时通常按 1.5 或 2 倍增长，具体倍数由标准库实现决定，所以本题必须手工 reserve 才能保证容量序列与 C 版一致；如果只关心结果，直接 push_back 即可，但要输出 cap 就必须自己控制。\n\n复杂度：O(n) 时间（reserve 的复制总量均摊 O(n)），O(cap) 空间。\n\n易错点：① 忘记 reserve，vector 自己决定何时扩容，cap 就不可控了；② 判满条件写成 `a.size() > cap`，会晚一拍拍；③ 先 push_back 再判满，扩容次数少一次、最终容量也可能不同；④ 用 a.capacity() 输出，得到的往往不等于手工维护的 cap；⑤ 输出时越界访问 a[a.size()]；⑥ 把 size_t 与 int 混在一起比较，产生符号警告。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    values = [int(x) for x in data[1:1 + n]]\n\n    cap = 2                     # 当前容量，相当于 malloc 了 2 个格子\n    grow = 0                    # 扩容次数\n    buf = [0] * cap             # 模拟申请到的存储块\n    size = 0\n    total = 0\n\n    for v in values:\n        if size == cap:                     # 满了：容量翻倍，相当于 realloc\n            cap *= 2\n            grow += 1\n            buf = buf + [0] * (cap // 2)    # 新申请更大的块，旧内容保留\n        buf[size] = v\n        size += 1\n        total += v\n\n    print(f\"sum: {total}\")\n    print(f\"cap: {cap}\")\n    print(f\"grow: {grow}\")\n    print(\"array:\" + \"\".join(f\" {x}\" for x in buf[:size]))\n\n    buf = None                  # 释放：显式放弃引用\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 size 与 cap 分离，模拟 malloc 出来的定长存储块",
+          "满时用「旧列表 + 新格子」模拟 realloc 的翻倍扩容",
+          "按 size 切出有效部分输出，不打印未使用的容量",
+          "统计 sum、cap、grow，最后放弃引用表示释放"
+        ],
+        "analysis": "思路：Python 的 list 自带动态扩容，但那样就看不出「容量」这个概念了。本题用最朴素的列表操作把 malloc 与 realloc 的语义显式演一遍：buf 就是拿到的存储块，长度始终等于 cap，size 是已经写入了几个元素。\n\n关键步骤：① 读入 n 与 n 个值；② 初始化 cap = 2、buf = [0] * 2、size = 0、grow = 0；③ 每处理一个值，先判断 size == cap，满了就执行 `cap *= 2; grow += 1; buf = buf + [0] * (cap // 2)` —— 拼接会新建列表，等价于 realloc 申请更大的块并把旧内容搬过去；④ `buf[size] = v; size += 1`，再累加 total；⑤ 输出时用 `buf[:size]` 切出有效部分；⑥ 结束时 `buf = None`，显式表达释放。\n\n复杂度：O(n) 时间（扩容总复制量均摊 O(n)），O(cap) 空间。\n\n易错点：① 直接用 `buf.append(v)`，容量增长交给解释器，输出的 cap 就没有依据了；② 扩容后用 `buf = [0] * cap`，把旧数据全清零，输出变成一堆 0；③ 判满条件写成 `size > cap`，会写越界（IndexError）或多扩一次；④ 输出用 buf 而不是 buf[:size]，把未使用的 0 也打出来；⑤ 忘记统计 grow，导致 cap 与 grow 不匹配；⑥ 把 cap // 2 写成 cap，新拼接的长度翻倍增长，容量序列与 C 版不符。"
+      }
+    }
+  },
+  {
+    "id": "指-112",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "二级指针",
+      "动态矩阵",
+      "内存释放"
+    ],
+    "stem": "用「指针的指针」分配 r×c 的整型矩阵：先用 malloc 分配 r 个 int * 的指针数组，再为每一行 malloc c 个 int。读入矩阵后，输出每行元素之和与每列元素之和，最后按「先 free 每一行、再 free 指针数组」的顺序释放内存。\n\n**输入格式：** 第一行两个整数 r、c（1 ≤ r, c ≤ 50）；接下来 r 行，每行 c 个整数（-100 ≤ 元素 ≤ 100），用空格分隔。\n\n**输出格式：** 两行：\n- `row sums:` 后接 r 个整数，为各行的和；\n- `col sums:` 后接 c 个整数，为各列的和。\n数字之间用一个空格，行末无多余空格。\n\n**输入样例：**\n```text\n3 4\n1 2 3 4\n5 6 7 8\n9 10 11 12\n```\n**输出样例：**\n```text\nrow sums: 10 26 42\ncol sums: 15 18 21 24\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void)\n{\n    int r, c, i, j;\n    int **m;\n\n    if (scanf(\"%d %d\", &r, &c) != 2)\n        return 0;\n\n    m = (int **)malloc((size_t)r * sizeof(int *));   /* 指针数组：r 个 int * */\n    if (m == NULL)\n        return 1;\n\n    for (i = 0; i < r; i++) {\n        m[i] = (int *)malloc((size_t)c * sizeof(int));  /* 每行 c 个 int */\n        if (m[i] == NULL) {                             /* 半途失败要回滚 */\n            while (i > 0)\n                free(m[--i]);\n            free(m);\n            return 1;\n        }\n    }\n\n    for (i = 0; i < r; i++)\n        for (j = 0; j < c; j++)\n            scanf(\"%d\", &m[i][j]);\n\n    printf(\"row sums:\");\n    for (i = 0; i < r; i++) {\n        int s = 0;\n        for (j = 0; j < c; j++)\n            s += m[i][j];\n        printf(\" %d\", s);\n    }\n    printf(\"\\n\");\n\n    printf(\"col sums:\");\n    for (j = 0; j < c; j++) {          /* 外层是列，内层才是行 */\n        int s = 0;\n        for (i = 0; i < r; i++)\n            s += m[i][j];\n        printf(\" %d\", s);\n    }\n    printf(\"\\n\");\n\n    for (i = 0; i < r; i++)\n        free(m[i]);                    /* 先释放每一行 */\n    free(m);                           /* 再释放指针数组本身 */\n    return 0;\n}\n",
+    "points": [
+      "先分配 int ** 指针数组，再逐行 malloc，形成 int ** / int * / int 三层",
+      "读入时用 m[i][j] 访问，理解 m[i] 就是第 i 行的首地址",
+      "求列和时把两层循环的顺序对调（外层 j、内层 i）",
+      "释放顺序与申请相反：先逐行 free，再 free 指针数组"
+    ],
+    "analysis": "思路：二维动态数组要分两步申请：先申请「行指针数组」，它包含 r 个 int *；再为每一行单独申请 c 个 int。这样 m 的类型是 int **，m[i] 是 int *，m[i][j] 才是 int，三层解引用正好对应「指针数组 → 行 → 元素」。这种结构常叫「指针的指针」或「不规则数组」，每行长度其实可以不同。\n\n关键步骤：① `m = malloc(r * sizeof(int *))`；② 循环 r 次执行 `m[i] = malloc(c * sizeof(int))`，若某次失败，先把已经申请的行 free 掉再退出，避免半途而废的泄漏；③ 用双重循环读入 m[i][j]；④ 求行和：外层 i、内层 j 累加；求列和：外层 j、内层 i 累加，两个循环的嵌套顺序刚好相反；⑤ 释放顺序必须与申请相反：先 free(m[i]) 逐行释放，再 free(m) 释放指针数组，否则指针数组一释放就再也找不到各行的地址了。\n\n复杂度：时间 O(r·c)，空间 O(r·c + r)。\n\n易错点：① 只 malloc 了指针数组就写 m[i][j]，解引用未初始化的指针；② 释放顺序写反，先 free(m) 再 free(m[i])，此时 m[i] 已无法访问；③ 只 free(m) 漏掉各行，造成 r 块内存泄漏；④ 用 `malloc(r * c * sizeof(int))` 申请一维再强转成 int **，类型与内存布局都不匹配；⑤ 列和循环仍按外层 i、内层 j 写，得到的是行和；⑥ 行列数读入顺序颠倒，输出个数与样例不符。⑦ 释放完成后把 m 置为 NULL，防止后续误用。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    int r, c;\n    if (!(cin >> r >> c))\n        return 0;\n\n    // 外层 vector 相当于 int **，每个内层 vector 相当于一行\n    vector<vector<int>> m(r, vector<int>(c));\n    for (int i = 0; i < r; ++i)\n        for (int j = 0; j < c; ++j)\n            cin >> m[i][j];\n\n    cout << \"row sums:\";\n    for (int i = 0; i < r; ++i) {\n        int s = 0;\n        for (int j = 0; j < c; ++j)\n            s += m[i][j];\n        cout << ' ' << s;\n    }\n    cout << '\\n';\n\n    cout << \"col sums:\";\n    for (int j = 0; j < c; ++j) {        // 外层列、内层行\n        int s = 0;\n        for (int i = 0; i < r; ++i)\n            s += m[i][j];\n        cout << ' ' << s;\n    }\n    cout << '\\n';\n    return 0;                            // vector 自动释放，无需手写 free\n}\n",
+        "points": [
+          "用 vector<vector<int>> 表达「指针数组 + 每行数据」的两层结构",
+          "m[i][j] 的访问层次与 C 版 int ** 完全一致",
+          "列和交换两层循环顺序",
+          "依赖容器自动释放，替代手写 free"
+        ],
+        "analysis": "思路：C++ 用 `vector<vector<int>>` 表达同样的「行指针数组 + 每行数据」结构：外层 vector 相当于 int **，m[i] 是第 i 行的 vector，m[i][j] 是元素。内存由容器负责释放，省掉了 C 版「先逐行 free、再 free 指针数组」的顺序问题，也天然支持每行长度不同。\n\n关键步骤：① `vector<vector<int>> m(r, vector<int>(c))` 一次建好 r 行 c 列；② 双重循环读入；③ 行和用内层循环累加；④ 列和把两层循环顺序对调，外层是列、内层是行；⑤ 输出两行，先打标题，再在循环里用 `cout << ' '` 控制空格。\n\n延伸：如果每行长度不同（锯齿矩阵），C 版只要把第二层循环的 malloc 长度换成该行的实际长度，C++ 版则把内层 vector 的长度按行设置，这正是「指针的指针」比一维数组灵活的地方。\n\n复杂度：O(r·c) 时间，O(r·c) 空间。\n\n易错点：① 用一维 `vector<int> m(r * c)` 再手工算下标，虽然能跑但丢掉了「指针的指针」这层结构；② 列和仍按行遍历，结果错位；③ 输出用 endl 打散格式；④ 行末多打一个空格；⑤ 用 m[r][c] 越界访问（合法下标是 0 到 r-1、0 到 c-1）；⑥ 只写 `vector<vector<int>> m(r)` 而没有为每行分配长度，直接 m[i][j] 越界。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    r, c = int(data[0]), int(data[1])\n    nums = [int(x) for x in data[2:2 + r * c]]\n\n    # 每一行都是新建的列表，等价于 C 里为每行单独 malloc\n    m = [nums[i * c:(i + 1) * c] for i in range(r)]\n\n    row_sums = [sum(row) for row in m]\n    col_sums = [sum(m[i][j] for i in range(r)) for j in range(c)]\n\n    print(\"row sums:\" + \"\".join(f\" {s}\" for s in row_sums))\n    print(\"col sums:\" + \"\".join(f\" {s}\" for s in col_sums))\n\n    m = None            # 释放：放弃对行指针数组的引用\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用列表的列表表达「行指针数组 + 每行数据」",
+          "每行都是独立的新列表，与逐行 malloc 对应",
+          "行和用 sum(row)，列和按列遍历取 m[i][j]",
+          "输出用 join 拼接，行末无多余空格"
+        ],
+        "analysis": "思路：Python 的列表天然是「引用的数组」：外层列表相当于 int **，每个元素又是一个长度为 c 的内层列表，相当于一行，这与 C 里「先申请 r 个指针、再为每行申请 c 个 int」的层次完全对应，m[i][j] 的写法也一样。释放内存由引用计数与垃圾回收负责，最后的 `m = None` 只是显式表达「不再持有」。\n\n关键步骤：① 读入 r、c，并按空白取后面 r×c 个整数；② 用列表推导把 nums 切成 r 段，每段是一行新列表；③ 行和直接调用内建 sum，列和用生成器按列取值再求和；④ 输出时用标题加逐项拼接，保证冒号后一个空格、行末无空格。\n\n复杂度：O(r·c) 时间，O(r·c) 空间。\n\n易错点：① 用乘法复制内层列表，r 行共享同一个内层列表，改一行会「传染」到所有行；② 列和写成对行求和，得到的是行和；③ 直接打印行和列表，会打出方括号与逗号；④ 行列数读反，切片长度对不上；⑤ 用 m[i][j] 之前没有按 c 正确切分，导致下标错位；⑥ 把生成器表达式直接传给 join，忘了先转成字符串。"
+      }
+    }
+  },
+  {
+    "id": "指-113",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "函数指针",
+      "回调函数",
+      "指针传参"
+    ],
+    "stem": "定义三个一元整数函数：abs（取绝对值）、sq（求平方）、neg（取相反数）。再实现回调函数 `void map(int *a, int n, int (*f)(int))`：用函数指针 f 把 a 中的每个元素原地替换成 f(a[i])。\n\n程序读入操作名与 n 个整数，按操作名选出对应的函数指针传给 map，然后输出变换后的数组。操作名不是 abs、sq、neg 中的任何一个时，只输出一行 `unknown op`。\n\n**输入格式：** 第一行一个字符串 op（abs、sq、neg 之一）和一个整数 n（1 ≤ n ≤ 100），用一个空格分隔；第二行 n 个整数（-1000 ≤ a[i] ≤ 1000），用空格分隔。\n\n**输出格式：** 一行 n 个整数，为变换后的数组，数字之间用一个空格，行末无多余空格；op 非法时只输出 `unknown op`。\n\n**输入样例：**\n```text\nsq 5\n-3 4 0 -2 7\n```\n**输出样例：**\n```text\n9 16 0 4 49\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nstatic int op_abs(int x) { return x < 0 ? -x : x; }\nstatic int op_sq(int x)  { return x * x; }\nstatic int op_neg(int x) { return -x; }\n\n/* 回调：只负责遍历，具体运算由函数指针 f 决定 */\nstatic void map(int *a, int n, int (*f)(int))\n{\n    int i;\n\n    for (i = 0; i < n; i++)\n        a[i] = f(a[i]);\n}\n\nint main(void)\n{\n    char op[8];\n    int a[100];\n    int n, i;\n    int (*fn)(int) = NULL;      /* 函数指针变量，初值为空 */\n\n    if (scanf(\"%7s %d\", op, &n) != 2)\n        return 0;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1)\n            return 0;\n    }\n\n    if (strcmp(op, \"abs\") == 0)\n        fn = op_abs;            /* 函数名就是函数地址 */\n    else if (strcmp(op, \"sq\") == 0)\n        fn = op_sq;\n    else if (strcmp(op, \"neg\") == 0)\n        fn = op_neg;\n\n    if (fn == NULL) {\n        printf(\"unknown op\\n\");\n        return 0;\n    }\n\n    map(a, n, fn);\n\n    for (i = 0; i < n; i++) {\n        if (i > 0)\n            printf(\" \");\n        printf(\"%d\", a[i]);\n    }\n    printf(\"\\n\");\n    return 0;\n}\n",
+    "points": [
+      "用 int (*f)(int) 声明函数指针形参，括号不能省",
+      "用 int (*fn)(int) 变量保存选中的函数地址，非法名字保持 NULL",
+      "map 内对每个元素执行 a[i] = f(a[i])，实现原地回调",
+      "调用前判空，非法操作名只输出 unknown op"
+    ],
+    "analysis": "思路：函数指针把「做什么」从「怎么做」里抽出来。map 只负责遍历数组并调用回调，具体是取绝对值、求平方还是取相反数，由调用方通过函数指针 f 决定 —— 这就是回调最基本的形式，也是 C 里实现「算法可替换」的标准手段。\n\n关键步骤：① 三个函数的签名必须一致，都是 `int f(int)`，只有这样它们的地址才能赋给同一个函数指针类型；② map 的形参写成 `int (*f)(int)`，括号不能省，因为 `int *f(int)` 是「返回 int * 的函数」；③ 函数名在表达式中退化为函数地址，`fn = op_abs` 不需要写 &op_abs（写成 `&op_abs` 也合法）；④ main 里用 strcmp 按名字选函数，非法名字时 fn 保持 NULL；⑤ 调用前判空，再执行 `map(a, n, fn)`，回调里完成 `a[i] = f(a[i])`；⑥ 输出用 `if (i > 0) printf(\" \")` 控制空格。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① 形参写成 `int *f(int)`，语义完全变了；② 忘记判空就调用 fn，非法操作名会跳到空地址；③ 写成 `a[i] = *f(a[i])`，由于函数调用优先级高于解引用，它被解析成 `*(f(a[i]))`，对 int 解引用编译不过；④ abs 函数里用位运算或忘记处理 -x 的边界；⑤ 输出用 `printf(\"%d \", a[i])` 导致行末多空格；⑥ 把 map 的返回值写成 int 却什么都没返回。⑦ 三个函数中若有一个签名不一致，赋给函数指针时会编译报错，这正是统一签名的意义。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n#include <cstring>\nusing namespace std;\n\nstatic int op_abs(int x) { return x < 0 ? -x : x; }\nstatic int op_sq(int x)  { return x * x; }\nstatic int op_neg(int x) { return -x; }\n\n// 回调：形参类型是「指向函数的指针」\nstatic void map(int *a, int n, int (*f)(int))\n{\n    for (int i = 0; i < n; ++i)\n        a[i] = f(a[i]);\n}\n\nint main()\n{\n    string op;\n    int a[100];\n    int n;\n\n    if (!(cin >> op >> n))\n        return 0;\n    for (int i = 0; i < n; ++i)\n        cin >> a[i];\n\n    int (*fn)(int) = nullptr;\n    if (op == \"abs\")\n        fn = op_abs;\n    else if (op == \"sq\")\n        fn = op_sq;\n    else if (op == \"neg\")\n        fn = op_neg;\n\n    if (fn == nullptr) {\n        cout << \"unknown op\\n\";\n        return 0;\n    }\n\n    map(a, n, fn);\n\n    for (int i = 0; i < n; ++i) {\n        if (i)\n            cout << ' ';\n        cout << a[i];\n    }\n    cout << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用函数指针变量保存回调地址，用 string 直接比较操作名",
+          "map 形参保持 int (*f)(int)，与 C 版一致",
+          "回调在 map 内完成原地替换",
+          "判空后输出 unknown op，正常时一行结果"
+        ],
+        "analysis": "思路：C++ 版继续用函数指针（而不是 std::function），这样回调的机制与 C 版完全一致：把函数地址存在变量里传给别的函数去调用；差别只在输入输出与字符串比较上，string 的 == 比 strcmp 直观，也更安全。\n\n关键步骤：① 三个静态函数签名统一为 int(int)；② map 的形参写成 `int (*f)(int)`；③ 用 string 读入操作名，用 == 逐个比较，命中后把函数名赋给 fn；④ fn 初值为 nullptr，判空后输出 unknown op；⑤ 调用 map 完成原地替换；⑥ 输出用 `if (i) cout << ' '` 控制空格。\n\n延伸：如果还要继续扩展命令，只要保持 int(int) 这一种签名，就能把所有一元整数函数放进同一张表；这个「用统一签名换取可替换性」的思路，与后面分派表那道题完全一致。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① 把函数指针形参写成漏掉括号的形式，语义变成返回指针的函数；② 用 std::function 虽然能编译，但丢掉了「函数指针」这个考点；③ 把函数调用结果当成参数传给 map；④ 判空之前就调用 fn，非法名字会跳到空地址；⑤ 用 endl 分段刷新、行末多空格；⑥ 三个函数中有一个签名不一致，赋值时编译报错。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef op_abs(x):\n    return -x if x < 0 else x\n\n\ndef op_sq(x):\n    return x * x\n\n\ndef op_neg(x):\n    return -x\n\n\ndef apply_map(a, f):\n    \"\"\"f 是函数对象；把它当参数传进来，效果等同 C 的函数指针回调。\"\"\"\n    for i in range(len(a)):\n        a[i] = f(a[i])\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    op = data[0]\n    n = int(data[1])\n    a = [int(x) for x in data[2:2 + n]]\n\n    table = {\"abs\": op_abs, \"sq\": op_sq, \"neg\": op_neg}\n    fn = table.get(op)\n    if fn is None:\n        print(\"unknown op\")\n        return\n\n    apply_map(a, fn)\n    print(\" \".join(str(x) for x in a))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "把函数对象当参数传给 apply_map，等价于函数指针回调",
+          "用字典把操作名映射到函数对象，代替 strcmp 分支",
+          "apply_map 内原地修改列表元素",
+          "非法操作名输出 unknown op 后直接返回"
+        ],
+        "analysis": "思路：Python 的函数是一等对象，函数名就是可以传递、存放和调用的值，`apply_map(a, op_sq)` 与 C 里 `map(a, n, op_sq)` 是同一个意思 —— 把「要对每个元素做什么」作为参数传进来，而不是把算好的结果传进来。\n\n关键步骤：① 定义三个普通函数，签名统一为一个参数；② apply_map 里用 `a[i] = f(a[i])` 原地替换；③ 用字典把三个名字映射到对应的函数对象，用 get 取值，取不到时返回 None，对应 C 里函数指针为空；④ 判 None 后输出 unknown op 并直接返回；⑤ 用空格连接输出一行，行末不带空格。\n\n复杂度：O(n) 时间，O(n) 空间。\n\n易错点：① 写成 `fn = op_sq()`，把调用结果（一个整数）当成函数传递，后面再调用就报 TypeError；② 用 if/elif 直接把结果算出来，失去了「回调」的结构；③ 在 apply_map 里返回新列表而不是原地修改，调用方用的还是旧数据；④ 判空写成 `if fn == None`，虽然能跑但社区惯例是 `is None`；⑤ 输出直接打印列表，打出方括号与引号；⑥ 字典的键写成函数对象而不是字符串，查表永远失败。"
+      }
+    }
+  },
+  {
+    "id": "指-114",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "字符指针",
+      "双指针",
+      "字符串反转"
+    ],
+    "stem": "读入一行只含小写字母的字符串（不含空白），用字符指针实现原地反转：一个指针指向首字符，一个指向末字符，交换后相向移动，直到两个指针相遇或交错。反转后输出字符串长度、反转后的字符串，以及反转后的首、尾两个字符。\n\n**输入格式：** 一行，一个由小写字母组成的字符串，长度 1~100，不含空格。\n\n**输出格式：** 四行：\n- `len: L`，原串长度；\n- `rev: s`，反转后的字符串；\n- `first: c`，反转后第一个字符；\n- `last: c`，反转后最后一个字符。\n\n**输入样例：**\n```text\nhello\n```\n**输出样例：**\n```text\nlen: 5\nrev: olleh\nfirst: o\nlast: h\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nint main(void)\n{\n    char s[128];\n    char *left, *right;\n\n    if (scanf(\"%127s\", s) != 1)\n        return 0;\n\n    left = s;                        /* 指向首字符 */\n    right = s + strlen(s) - 1;       /* 指向最后一个字符，而不是 '\\0' */\n\n    while (left < right) {           /* 相遇即停，奇数长度时中间字符不动 */\n        char t = *left;\n        *left = *right;\n        *right = t;\n        left++;\n        right--;\n    }\n\n    printf(\"len: %d\\n\", (int)strlen(s));\n    printf(\"rev: %s\\n\", s);\n    printf(\"first: %c\\n\", s[0]);\n    printf(\"last: %c\\n\", s[strlen(s) - 1]);\n    return 0;\n}\n",
+    "points": [
+      "用 strlen 定位末字符，right 指向 s + len - 1 而不是 '\\0'",
+      "用 left < right 作循环条件，避免奇数长度时自我交换",
+      "通过 *left 与 *right 直接修改字符数组内容",
+      "反转后输出长度、串本身与首尾字符"
+    ],
+    "analysis": "思路：字符串在 C 里就是以 '\\0' 结尾的字符数组，数组名可以当成指向首字符的指针。反转不需要额外空间：left 从首字符出发，right 从最后一个字符出发，交换两者指向的内容后各自向中间移动，直到 left 不再小于 right。\n\n关键步骤：① `left = s`；② `right = s + strlen(s) - 1`，这里必须减 1，因为 strlen 返回的是有效字符个数，s + len 指向的正是结束符 '\\0'；③ 循环条件写 `left < right`，当长度为奇数时 left 与 right 会在中间字符处相等，循环自然结束，不需要特判；④ 交换用临时变量 t 完成，注意是交换 `*left` 与 `*right` 指向的字符，不是交换指针本身；⑤ 输出长度用 strlen，首尾字符用 s[0] 与 s[strlen(s)-1]。\n\n复杂度：时间 O(n)，空间 O(1)。\n\n易错点：① right 写成 `s + strlen(s)`，第一次交换就把 '\\0' 换到开头，输出变成空串；② 循环条件写成 `left <= right`，奇数长度时中间字符与自己交换（结果对，但多一次无意义操作，且若改成更复杂的交换逻辑容易出错）；③ 试图修改字符串常量 `char *s = \"hello\";` 的内容，属于未定义行为；④ 用 sizeof(s) 代替 strlen，得到的是数组容量 128；⑤ 忘记包含 string.h，strlen 被隐式声明；⑥ 输出 `first` 时用反转前的字符，与样例对不上。⑦ 交换完成后 left 与 right 会交错，循环条件用小于号比用不等号更稳妥。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\nint main()\n{\n    string s;\n    if (!(cin >> s))\n        return 0;\n\n    // 用两个迭代器（本质是指针）相向移动完成原地反转\n    string::iterator left = s.begin();\n    string::iterator right = s.end() - 1;\n    while (left < right) {\n        swap(*left, *right);\n        ++left;\n        --right;\n    }\n\n    cout << \"len: \" << s.size() << '\\n';\n    cout << \"rev: \" << s << '\\n';\n    cout << \"first: \" << s.front() << '\\n';\n    cout << \"last: \" << s.back() << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 begin() 与 end() - 1 得到指向首尾的迭代器",
+          "用 swap(*left, *right) 交换字符并相向移动",
+          "反转后输出长度、字符串与首尾字符",
+          "说明迭代器在 string 上就是指针语义"
+        ],
+        "analysis": "思路：C++ 的 string 迭代器在实现上就是字符指针，`s.begin()` 等价于 `&s[0]`，`s.end() - 1` 等价于 `&s[s.size() - 1]`，所以这段双指针反转与 C 版逐句对应，只是把裸指针换成了迭代器，并用 std::swap 完成交换。\n\n关键步骤：① 读入 string，cin 会在空白处停下，本题输入不含空格正好合适；② 取 left = s.begin()、right = s.end() - 1；③ `while (left < right)` 里 swap 后 ++left、--right；④ 用 s.size() 输出长度，用 s.front() 与 s.back() 输出首尾字符。\n\n延伸：如果要求把反转结果写到另一块缓冲区，就把双指针写法换成一个从头读、一个从尾写；本题坚持原地交换，是为了说明指针不仅能读元素，还能直接改写元素。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① 用 s.end() 当末字符，end() 指向最后一个字符的下一个位置，解引用它是未定义行为；② 用 <= 比较，长度偶数时两个迭代器错过后仍会继续交换；③ 对 const string 或字符串字面量做交换，编译不过；④ 反转后再取 s[0] 却以为是原字符；⑤ 用 getline 读入带空格的整行，与本题的单行无空格输入语义不同；⑥ 忘记包含 algorithm 就使用 std::swap。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef reverse_chars(chars):\n    \"\"\"用两个下标模拟 C 的 left/right 指针，原地交换字符。\"\"\"\n    left = 0\n    right = len(chars) - 1\n    while left < right:\n        chars[left], chars[right] = chars[right], chars[left]\n        left += 1\n        right -= 1\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    chars = list(data[0])       # 字符串不可变，转成列表才能原地交换\n    reverse_chars(chars)\n\n    s = \"\".join(chars)\n    print(f\"len: {len(s)}\")\n    print(f\"rev: {s}\")\n    print(f\"first: {s[0]}\")\n    print(f\"last: {s[-1]}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "把字符串转成 list，模拟可修改的字符数组",
+          "用 left/right 两个下标相向移动完成交换",
+          "用 join 还原字符串，输出长度与串本身",
+          "用 s[0] 与 s[-1] 取首尾字符"
+        ],
+        "analysis": "思路：Python 的字符串不可变，所以「原地反转」要先转成字符列表：把 s 拆成单字符列表 chars，得到可修改的字符数组，再用两个下标 left、right 模拟 C 里的两个字符指针，交换后相向移动，最后连接回字符串。\n\n关键步骤：① 读入后取第一个记号作为原串；② 把字符串拆成单字符列表；③ `while left < right` 里用元组赋值完成交换，再各自移动；④ 用空串 join 把列表还原成字符串；⑤ 输出长度、串本身、首字符与尾字符。\n\n延伸：如果要求把结果写到另一个列表，可以直接用切片倒序，也可以用双端队列；本题坚持原地交换，是为了说明「两个下标模拟两个指针」这一对应关系，很多 C 算法都可以这样直译。\n\n复杂度：O(n) 时间，O(n) 空间（需要可变的字符列表）。\n\n易错点：① 直接对字符串做下标赋值，字符串不支持，会抛 TypeError；② 用切片 `s[::-1]` 一行完成，结果对但丢掉了「双指针原地交换」的练习目标；③ right 初始写成 len(s) 越界；④ 循环条件写成 `left <= right`；⑤ 输出 first 用了原串首字符而不是反转后的首字符；⑥ 忘了调用 reverse_chars，打印出原串。"
+      }
+    }
+  },
+  {
+    "id": "指-115",
+    "type": "design",
+    "difficulty": 2,
+    "tags": [
+      "指针遍历",
+      "行程编码",
+      "字符串压缩"
+    ],
+    "stem": "读入一行只含小写字母的字符串，用指针扫描实现行程长度编码（RLE）：把连续的相同字符 c（共 k 个）编码成「字符 c 后跟 k 的十进制表示」，例如 aaa 编码为 a3。原串长度不超过 100，k 可能是一位或两位数，按十进制逐位写出即可。最后输出编码串、原串长度与编码串长度。\n\n**输入格式：** 一行，一个由小写字母组成的字符串，长度 1~100，不含空格。\n\n**输出格式：** 三行：`code: 编码串`、`raw: 原串长度`、`enc: 编码串长度`。\n\n**输入样例：**\n```text\naaabccccdd\n```\n**输出样例：**\n```text\ncode: a3b1c4d2\nraw: 10\nenc: 8\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nint main(void)\n{\n    char s[128];\n    char out[256];\n    int olen = 0;\n    const char *p;\n\n    if (scanf(\"%127s\", s) != 1)\n        return 0;\n\n    p = s;\n    while (*p != '\\0') {\n        const char *q = p;      /* q 从 p 出发，划出连续相同字符的区间 */\n        char digits[8];\n        int d = 0;\n        int cnt;\n\n        while (*q == *p)\n            q++;\n        cnt = (int)(q - p);     /* 指针相减：这一段有几个字符 */\n\n        out[olen++] = *p;       /* 先写字符 */\n        do {                    /* 再把个数按十进制逐位展开 */\n            digits[d++] = (char)('0' + cnt % 10);\n            cnt /= 10;\n        } while (cnt > 0);\n        while (d > 0)\n            out[olen++] = digits[--d];\n\n        p = q;                  /* p 跳到下一段起点 */\n    }\n    out[olen] = '\\0';\n\n    printf(\"code: %s\\n\", out);\n    printf(\"raw: %d\\n\", (int)strlen(s));\n    printf(\"enc: %d\\n\", olen);\n    return 0;\n}\n",
+    "points": [
+      "用 p、q 两个字符指针划出「连续相同字符」的区间，q - p 得到个数",
+      "每段处理完让 p 跳到 q，保证每段只扫描一次",
+      "把个数按十进制逐位写入输出缓冲区，正确处理两位及以上的计数",
+      "输出编码串与原串、编码串长度，核对压缩效果"
+    ],
+    "analysis": "思路：行程长度编码（RLE）把连续的相同字符压成「字符 + 个数」。用指针扫描时，p 指向当前段的第一个字符，q 从 p 出发一直走到不等于 *p 的位置，此时 q - p 就是这一段的长度；写完这一段后令 p = q，进入下一段。整个过程只遍历一遍原串。\n\n关键步骤：① `p = s`，外层 `while (*p != '\\0')`；② 内层 `while (*q == *p) q++;`，注意这里不检查 '\\0' 也能停住，因为 '\\0' 不会等于任何小写字母；③ `cnt = (int)(q - p)`，两个同类型指针相减得到元素个数，这是指针运算里很实用的一招；④ 把 cnt 按十进制拆成数字，先存进临时数组再逆序写出（否则会得到反序的计数）；⑤ `p = q` 推进；⑥ 输出时用 strlen(s) 与 olen 分别给出原串与编码串长度。\n\n样例验证：aaabccccdd 分成 aaa、b、cccc、dd 四段，计数依次为 3、1、4、2，编码结果是 a3b1c4d2，共 8 个字符，原串长 10，压缩生效。\n\n复杂度：时间 O(n)，空间 O(n)（输出缓冲区）。\n\n易错点：① 外层每次只 `p++`，同一段被反复处理，编码串会变成 a3a2a1；② `q - p` 写成 `q - s`，得到的是绝对下标而不是段长；③ 计数只取个位，`cnt % 10` 导致 12 个相同字符被写成 c2；④ 拆数字时先写低位且不逆序，得到 a12 写成 a21；⑤ 输出缓冲区不够大，最坏情况（交替字符）编码后长度约为原串的 2 倍；⑥ 用 `p == q` 判断结束，没有考虑 '\\0' 的情况。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main()\n{\n    string s;\n    if (!(cin >> s))\n        return 0;\n\n    string code;\n    size_t i = 0;\n    while (i < s.size()) {\n        size_t j = i;                       // j 划出连续相同字符的区间\n        while (j < s.size() && s[j] == s[i])\n            ++j;\n        code += s[i];                       // 字符\n        code += to_string(j - i);           // 个数，十进制\n        i = j;                              // 跳到下一段起点\n    }\n\n    cout << \"code: \" << code << '\\n';\n    cout << \"raw: \" << s.size() << '\\n';\n    cout << \"enc: \" << code.size() << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用下标 i、j 代替字符指针 p、q，语义等价",
+          "用 j - i 得到当前段长度",
+          "用 to_string 把计数转成十进制，避免手写拆位",
+          "每段结束后 i = j，保证线性扫描"
+        ],
+        "analysis": "思路：C++ 版把字符指针换成 string 的下标 i、j：i 指向当前段起点，j 向后扫描到第一个不同的字符，于是 j - i 就是段长。计数部分直接用 to_string 转换，省掉了 C 版手写拆位的代码，也避免了输出缓冲区大小的顾虑。\n\n关键步骤：① 读入 string s；② 外层 `while (i < s.size())`；③ 内层 `while (j < s.size() && s[j] == s[i]) ++j;`，这里必须加边界判断，否则会越界访问；④ 追加字符与 to_string(j - i)；⑤ 每段结束令 i = j；⑥ 输出编码串、原串长度与编码串长度。\n\n延伸：RLE 在数据重复度高时压缩比很好，遇到随机字符反而会变长（每个字符至少占两位），所以实际应用里通常先比较长度再决定是否采用；本题的 enc 行输出的正是编码后的长度。\n\n复杂度：O(n) 时间，O(n) 空间（编码结果）。\n\n易错点：① 内层循环漏掉边界判断，越界访问 string；② 把 i、j 声明成 int，长串时与 size_t 比较出现符号问题；③ 每次只 ++i，同一段被重复编码，得到 a3a2a1 之类的错误结果；④ 用 `code += j - i` 直接加整数，编译不过；⑤ 用 endl 打散格式；⑥ 忘记把 j 赋回 i，外层陷入死循环。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    s = data[0]\n    out = []\n    i = 0\n    while i < len(s):\n        j = i\n        while j < len(s) and s[j] == s[i]:\n            j += 1\n        out.append(s[i])            # 字符\n        out.append(str(j - i))      # 连续个数，十进制\n        i = j                       # 跳到下一段起点\n\n    code = \"\".join(out)\n    print(f\"code: {code}\")\n    print(f\"raw: {len(s)}\")\n    print(f\"enc: {len(code)}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用下标 i、j 划出连续相同字符的区间",
+          "用 j - i 得到段长，str() 转成十进制文本",
+          "每段结束 i = j，保证线性扫描",
+          "输出编码串与原串、编码串长度"
+        ],
+        "analysis": "思路：Python 版用下标 i、j 模拟 C 的字符指针：i 是当前段起点，j 向后扫描直到字符不同，j - i 就是段长；把字符与段长的十进制文本追加进列表，最后用 join 拼成编码串。整个算法只扫描一遍原串。\n\n关键步骤：① 读入后取第一个记号作为原串；② 外层 `while i < len(s)`；③ 内层在 j 不越界且字符相同的前提下不断后移；④ 追加字符、追加 str(j - i)；⑤ 令 i = j 推进到下一段；⑥ 输出编码串、原串长度与编码串长度。\n\n延伸：RLE 的编码长度取决于数据的重复程度，重复越集中压缩比越高；本题输出 enc 行，就是让做题者直观看到编码后有多少个字符，进而比较两种表示谁更短。\n\n复杂度：O(n) 时间，O(n) 空间。\n\n易错点：① 内层漏掉 `j < len(s)`，最后一个字符处会抛 IndexError；② 段长写成 `s.count(s[i])`，统计的是全串出现次数而不是连续次数；③ 用 itertools.groupby 也能做，但要把 key 与分段长度都取出来，容易漏掉对生成器的消费；④ 只追加字符不追加数字，编码串长度不对；⑤ 用 `print(\"code:\", code)` 会多一个空格，与样例格式不一致；⑥ 忘记 `i = j`，外层死循环。"
+      }
+    }
+  },
+  {
+    "id": "指-116",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "字符指针",
+      "子串查找",
+      "重叠匹配"
+    ],
+    "stem": "不使用 strstr、strchr 等库函数，用字符指针自己实现子串查找：统计模式串 p 在文本串 s 中出现的所有起始位置。匹配允许重叠，例如 s = \"aaaaa\"、p = \"aa\" 时，出现位置为 0、1、2、3。输出出现次数与所有起始下标；一次都没出现时输出次数 0 和下标 -1。\n\n**输入格式：** 第一行一个字符串 s（1 ≤ |s| ≤ 200）；第二行一个字符串 p（1 ≤ |p| ≤ |s|）；两个串都只含小写字母。\n\n**输出格式：** 两行：\n- `count: K`\n- `pos:` 后接 K 个下标（升序，一个空格分隔，行末无多余空格）；K = 0 时这一行为 `pos: -1`。\n\n**输入样例：**\n```text\nabababa\naba\n```\n**输出样例：**\n```text\ncount: 3\npos: 0 2 4\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    char s[256], p[256];\n    int pos[256];\n    int cnt = 0;\n    const char *sp;\n\n    if (scanf(\"%255s\", s) != 1)\n        return 0;\n    if (scanf(\"%255s\", p) != 1)\n        return 0;\n\n    for (sp = s; *sp != '\\0'; sp++) {\n        const char *a = sp;     /* a 指向文本中当前尝试的起点 */\n        const char *b = p;      /* b 指向模式串 */\n\n        while (*a != '\\0' && *b != '\\0' && *a == *b) {\n            a++;\n            b++;\n        }\n        if (*b == '\\0')                           /* 模式串被走完：命中 */\n            pos[cnt++] = (int)(sp - s);           /* 指针相减得到下标 */\n        /* 每轮 sp 只前进一个字符，因此重叠的出现也能被找到 */\n    }\n\n    printf(\"count: %d\\n\", cnt);\n    printf(\"pos:\");\n    if (cnt == 0) {\n        printf(\" -1\");\n    } else {\n        int i;\n\n        for (i = 0; i < cnt; i++)\n            printf(\" %d\", pos[i]);\n    }\n    printf(\"\\n\");\n    return 0;\n}\n",
+    "points": [
+      "外层用 sp 遍历文本的每个起点，sp - s 得到下标",
+      "内层用 a、b 两个指针逐字符比较，b 走到 '\\0' 表示匹配成功",
+      "每轮只让 sp 前进一格，从而找出重叠出现",
+      "未命中时输出 count: 0 与 pos: -1"
+    ],
+    "analysis": "思路：子串查找的朴素做法是「枚举起点 + 逐字符比较」。外层指针 sp 依次指向文本的每一个字符作为候选起点，内层用 a、b 两个指针分别从 sp 和 p 出发逐字符比对：只要两字符相等且都没到结尾就继续前进；退出循环时若 b 已经走到 '\\0'，说明模式串被完整走完，命中一次，下标就是 sp - s。\n\n关键步骤：① 读入两个串，注意宽度限制；② 外层 `for (sp = s; *sp != '\\0'; sp++)`；③ 每轮把 a、b 重新初始化到 sp 与 p；④ 内层 while 同时检查 `*a != '\\0' && *b != '\\0' && *a == *b`，缺一不可；⑤ 命中时用 `sp - s` 记录下标；⑥ 输出时按 cnt 分两种格式。\n\n为什么能找出重叠：外层每轮只把 sp 前移一格，而不是跳到「命中位置 + 模式长度」，所以 abababa 中的 aba 在 0、2、4 三处都能被发现；aaaaa 中的 aa 会出现 4 次。若把 sp 改成 `sp += strlen(p)`，就变成「不重叠查找」，结果与本题要求不同。\n\n复杂度：时间 O(|s|·|p|) 最坏情况（例如 s 全为 a、p 为 aaa…b），空间 O(|s|)。\n\n易错点：① 内层 while 漏掉 `*b != '\\0'`，模式串提前读完还会继续比较；② 命中后让 sp 跳过 |p| 个字符，重叠情况被漏掉；③ 用 `int` 保存 `sp - s` 时忘记强转，某些编译器给出 ptrdiff_t 到 int 的警告；④ 把 pos 数组开得比 |s| 小，s = aaaa…、p = a 时下标数量等于 |s|；⑤ 输出 count: 0 时仍去打 pos 数组，读到未初始化值；⑥ 用 strstr 直接查找，不符合「自己实现」的要求。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\n#include <vector>\nusing namespace std;\n\nint main()\n{\n    string s, p;\n    if (!(cin >> s >> p))\n        return 0;\n\n    vector<int> pos;\n    for (size_t i = 0; i < s.size(); ++i) {        // 每个起点都试\n        size_t a = i, b = 0;\n        while (a < s.size() && b < p.size() && s[a] == p[b]) {\n            ++a;\n            ++b;\n        }\n        if (b == p.size())                         // 模式串走完即命中\n            pos.push_back(static_cast<int>(i));\n    }\n\n    cout << \"count: \" << pos.size() << '\\n';\n    if (pos.empty()) {\n        cout << \"pos: -1\\n\";\n    } else {\n        cout << \"pos:\";\n        for (int v : pos)\n            cout << ' ' << v;\n        cout << '\\n';\n    }\n    return 0;\n}\n",
+        "points": [
+          "用下标 i 枚举起点，a、b 逐字符比较",
+          "命中条件是 b 走到 p.size()",
+          "起点每次只前移一格，保留重叠匹配",
+          "用 vector 收集下标并按要求格式输出"
+        ],
+        "analysis": "思路：C++ 版用下标代替字符指针：外层 i 枚举文本的每个起点，内层用 a、b 从 i 和 0 出发逐字符比对，b 走到 p.size() 即命中。整体结构与 C 版一一对应，只是把指针差值换成了起点下标 i 本身。\n\n关键步骤：① 读入 s、p；② 外层 for 遍历每个 i；③ 内层 while 同时检查 a、b 不越界且字符相等；④ 命中则把 i 存入 vector；⑤ 按 pos 是否为空分别输出 `pos: -1` 或 `pos:` 加下标序列。\n\n延伸：KMP 用 next 数组把最坏情况降到线性，但需要额外的模式串预处理；本题数据很小，朴素双指针更直观，也更能说明「起点只前移一格」与重叠匹配之间的关系。\n\n复杂度：O(|s|·|p|) 时间，O(|s|) 空间。\n\n易错点：① 命中后让 i 跳过 |p| 个字符，重叠匹配全部丢失；② 内层 while 漏掉 b 的边界，越界访问 string；③ 用 `s.find(p, i)` 循环查找，虽然能写对，但把核心逻辑交给了库函数，偏离题意；④ pos 为空时仍输出 `pos:` 后什么都不跟，格式与样例不符；⑤ 用 int 保存 i 却与 size_t 比较，出现符号警告；⑥ 忘记把命中下标转成 int 就放进 vector。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef find_all(text, pat):\n    \"\"\"枚举每个起点逐字符比较；起点每次只前进一格，因此允许重叠。\"\"\"\n    pos = []\n    for start in range(len(text)):\n        a = start\n        b = 0\n        while a < len(text) and b < len(pat) and text[a] == pat[b]:\n            a += 1\n            b += 1\n        if b == len(pat):\n            pos.append(start)\n    return pos\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    s, p = data[0], data[1]\n    pos = find_all(s, p)\n\n    print(f\"count: {len(pos)}\")\n    if pos:\n        print(\"pos: \" + \" \".join(str(i) for i in pos))\n    else:\n        print(\"pos: -1\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "外层枚举起点，内层用 a、b 两个下标逐字符比较",
+          "命中条件 b 走到 len(pat)",
+          "起点只前移一格，保留重叠匹配",
+          "按命中与否输出两种格式"
+        ],
+        "analysis": "思路：Python 版用两个下标 a、b 模拟 C 的字符指针：外层 start 枚举每个候选起点，内层从 start 与 0 出发逐字符比对，b 走到 len(pat) 表示命中。关键在于外层每个起点都要试一次，因此重叠出现不会漏掉。\n\n关键步骤：① 读入 s、p 两个记号；② 外层遍历 `range(len(text))`；③ 内层在 a 不越界、b 不越界且当前位置字符相等的条件下同时后移；④ 退出内层后若 b 等于 len(pat) 就把 start 记入结果；⑤ 输出 count 与 pos，未命中输出 -1。\n\n延伸：KMP 用预处理出的 next 数组避免重复比较，把最坏复杂度降到线性；本题规模很小，朴素做法更直观，也更容易说明重叠匹配与起点前移方式的关系。\n\n复杂度：O(|s|·|p|) 时间，O(|s|) 空间。\n\n易错点：① 用 find 查到一次后让起点跳过整个模式串，重叠情况被漏掉；② 内层条件顺序写错，先访问 text[a] 再判边界，导致 IndexError；③ 用切片比较两段字符串，逻辑等价但丢掉了逐字符比较的练习；④ 命中后忘记记录起点；⑤ 输出直接用 print 打印列表，打出方括号与逗号；⑥ 把模式串长度写成文本串长度，比较时越界。"
+      }
+    }
+  },
+  {
+    "id": "指-117",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "单链表",
+      "二级指针",
+      "有序插入"
+    ],
+    "stem": "单链表的结点定义如下（需要写在你的程序里）：\n```text\ntypedef struct Node {\n    int val;\n    struct Node *next;\n} Node;\n```\n读入 n 个整数，按输入顺序把它们逐个插入到「按 val 升序」的单链表中：\n- 链表为空时，新结点就是表头；\n- 值相同时，后插入的排在已有序同值结点之后（稳定插入）。\n\n要求用「指向指针的指针」一次遍历完成定位与链接：从 `Node **link = &head;` 出发，只要 `*link != NULL && (*link)->val <= v` 就让 link 指向下一个 next 字段，停下来后执行 `node->next = *link; *link = node;`。最后遍历输出链表，链表为空时输出 `empty`。\n\n**输入格式：** 第一行一个整数 n（0 ≤ n ≤ 100）；第二行 n 个整数（-1000 ≤ 值 ≤ 1000），用空格分隔；n = 0 时第二行可以没有。\n\n**输出格式：** 一行，按升序输出链表中所有结点的值，相邻值用一个空格分隔，行末无多余空格；没有结点时输出 `empty`。\n\n**输入样例：**\n```text\n5\n5 1 5 3 2\n```\n**输出样例：**\n```text\n1 2 3 5 5\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct Node {\n    int val;\n    struct Node *next;\n} Node;\n\n/* 用二级指针插入：link 指向「可能存放新结点的那个指针」 */\nstatic void insert_sorted(Node **head, int v)\n{\n    Node *node = (Node *)malloc(sizeof(Node));\n    Node **link;\n\n    if (node == NULL)\n        return;\n    node->val = v;\n    node->next = NULL;\n\n    link = head;\n    while (*link != NULL && (*link)->val <= v)\n        link = &(*link)->next;     /* 前进一格：link 改指向下一个 next 字段 */\n\n    node->next = *link;            /* 先接上后继 */\n    *link = node;                  /* 再让前驱（可能是表头指针）指向新结点 */\n}\n\nint main(void)\n{\n    Node *head = NULL;\n    int n, i;\n\n    if (scanf(\"%d\", &n) != 1)\n        return 0;\n    for (i = 0; i < n; i++) {\n        int v;\n\n        if (scanf(\"%d\", &v) != 1)\n            break;\n        insert_sorted(&head, v);   /* 传 &head，插入表头时才能改到 head */\n    }\n\n    if (head == NULL) {\n        printf(\"empty\\n\");\n    } else {\n        Node *cur = head;\n        int first = 1;\n\n        while (cur != NULL) {\n            if (first) {\n                printf(\"%d\", cur->val);\n                first = 0;\n            } else {\n                printf(\" %d\", cur->val);\n            }\n            cur = cur->next;\n        }\n        printf(\"\\n\");\n    }\n\n    while (head != NULL) {         /* 逐个释放，避免内存泄漏 */\n        Node *next = head->next;\n\n        free(head);\n        head = next;\n    }\n    return 0;\n}\n",
+    "points": [
+      "在题内定义含自引用指针 next 的 Node 结构",
+      "用 Node **link 从 &head 出发，一次遍历覆盖空表、表头、表尾三种插入位置",
+      "用 <= 比较保证相同值按输入顺序稳定插入",
+      "输出后逐个 free 释放整条链表"
+    ],
+    "analysis": "思路：有序单链表插入的难点不在比较，而在「改哪个指针」。插入位置可能有三类：表头之前、两个结点之间、表尾之后。如果分别写三段代码，很容易漏掉空链表的情况。把「表头指针 head」和「普通结点的 next 字段」统一看成同一种东西 —— 都是「指向结点的指针」，再用指向指针的指针去遍历，三类情况就合并成一条路径了。\n\n关键步骤：① 新结点 malloc 后填好 val 与 next；② `Node **link = &head`，此时 *link 就是整条链表的入口；③ 循环条件 `*link != NULL && (*link)->val <= v`，取等号时也继续前进，保证相同值按输入顺序稳定排列；④ 循环结束时 link 指向「新结点应该写进去的那个指针位置」；⑤ 先 `node->next = *link`，再 `*link = node`，顺序不能反，否则后继丢失；⑥ 遍历输出后逐个 free。\n\n样例验证：依次插入 5、1、5、3、2，链表依次变成 5 → 1 5 → 1 5 5 → 1 3 5 5 → 1 2 3 5 5，与输出一致。\n\n复杂度：时间 O(n²)（每次插入最多扫一遍链表，n ≤ 100 足够），空间 O(n)。\n\n易错点：① 先写 `*link = node` 再写 `node->next = *link`，新结点的 next 指向自己，形成环，遍历时死循环；② 比较用 `<` 而不是 `<=`，相同值会插到前面，破坏稳定性；③ 忘记判 `*link != NULL`，走到表尾后解引用空指针；④ 表头插入单独写一套逻辑时忘记更新 head；⑤ 插入时把 `&(*link)->next` 写成 `&link->next`（运算符优先级问题）；⑥ 事后不释放链表，虽然输出正确但属于内存泄漏。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <cstdlib>\nusing namespace std;\n\nstruct Node {\n    int val;\n    Node *next;\n};\n\nstatic void insert_sorted(Node **head, int v)\n{\n    Node *node = new Node{v, nullptr};\n    Node **link = head;\n\n    while (*link != nullptr && (*link)->val <= v)\n        link = &(*link)->next;\n\n    node->next = *link;\n    *link = node;\n}\n\nint main()\n{\n    Node *head = nullptr;\n    int n;\n    if (!(cin >> n))\n        return 0;\n\n    for (int i = 0; i < n; ++i) {\n        int v;\n        cin >> v;\n        insert_sorted(&head, v);\n    }\n\n    if (head == nullptr) {\n        cout << \"empty\\n\";\n    } else {\n        for (Node *cur = head; cur != nullptr; cur = cur->next) {\n            if (cur != head)\n                cout << ' ';\n            cout << cur->val;\n        }\n        cout << '\\n';\n    }\n\n    while (head != nullptr) {\n        Node *next = head->next;\n        delete head;               // new 出来的结点用 delete 配对\n        head = next;\n    }\n    return 0;\n}\n",
+        "points": [
+          "用裸指针 + new 建立链表，Node **link 的遍历方式与 C 版一致",
+          "用 new Node{v, nullptr} 初始化结点",
+          "输出时用 cur != head 判断是否需要前置空格",
+          "用 delete 与 new 配对释放结点"
+        ],
+        "analysis": "思路：C++ 版保留「二级指针遍历」的核心写法，只把 malloc/free 换成 new/delete，并利用聚合初始化 `new Node{v, nullptr}` 一步把值和 next 填好，避免结点里残留野指针。遍历输出时空格判断从 first 标志改成比较当前结点是否等于 head。\n\n关键步骤：① 定义 struct Node，成员是 val 与 next；② insert_sorted 里 `Node **link = head`，循环跳过所有 val 小于等于 v 的结点；③ 先 `node->next = *link`，再 `*link = node`；④ main 里循环读值并传 &head；⑤ 输出时用 `cur != head` 决定是否前置空格；⑥ 用 delete 逐个释放结点。\n\n延伸：也可以先按输入顺序建表、最后整体排序，但那需要交换结点或重建链接；边读边插的好处是任何时刻链表都保持有序，中途停下也能输出一个合法的中间状态。\n\n复杂度：O(n²) 时间，O(n) 空间。\n\n易错点：① 用 `new Node` 却不初始化 next，插入表尾时产生野指针；② 用 free 释放 new 出来的内存，属于未定义行为；③ delete 之后继续访问结点；④ 输出判断写成 `if (cur->next)`，空格位置错乱；⑤ 表头插入时忘记传 &head，新结点丢失；⑥ 循环条件写成 `< v`，相同值插到前面，破坏稳定性。"
+      },
+      "python": {
+        "solution": "import sys\nfrom dataclasses import dataclass\nfrom typing import Optional\n\n\n@dataclass\nclass Node:\n    val: int\n    next: \"Optional[Node]\" = None\n\n\ndef insert_sorted(head, v):\n    \"\"\"返回新的表头：C 里通过 Node ** 改 head，这里用返回值把表头带回。\"\"\"\n    node = Node(v)\n\n    if head is None or head.val > v:      # 插到表头之前（含空表）\n        node.next = head\n        return node\n\n    prev = head\n    while prev.next is not None and prev.next.val <= v:\n        prev = prev.next                  # prev.next 相当于 C 里的 *link\n    node.next = prev.next\n    prev.next = node\n    return head\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    n = int(data[0])\n    values = [int(x) for x in data[1:1 + n]]\n\n    head = None\n    for v in values:\n        head = insert_sorted(head, v)\n\n    if head is None:\n        print(\"empty\")\n        return\n\n    out = []\n    cur = head\n    while cur is not None:\n        out.append(str(cur.val))\n        cur = cur.next\n    print(\" \".join(out))\n\n    head = None            # 释放：整条链表的引用被断开，交给垃圾回收\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 dataclass 定义带 next 引用的结点，等价于结构体 + 指针",
+          "insert_sorted 返回（可能变化的）表头，代替 C 的 Node **head",
+          "用 prev.next 的引用关系完成稳定的有序插入",
+          "遍历收集到列表后用 join 输出一行"
+        ],
+        "analysis": "思路：Python 没有指针，结点之间的「指向」用对象引用表达：dataclass 的 next 字段就是 C 里的 `struct Node *next`。C 版用 `Node **link` 同时覆盖「改 head」和「改某个 next」两种情况；Python 中 head 只是局部变量，函数改不到调用者的 head，所以最小改动是把「可能变化的表头」作为返回值带回，链表内部的链接用 prev.next 完成。\n\n关键步骤：① 用 dataclass 定义 Node，字段 val 与 next，next 默认为 None；② insert_sorted 先处理表头（含空表）；③ 否则用 prev 前进，条件为 prev.next 存在且其 val 小于等于 v，与 C 的 `(*link)->val <= v` 一一对应；④ 先 `node.next = prev.next` 再 `prev.next = node`；⑤ main 里用返回值接收新表头；⑥ 遍历收集到列表后一次连接输出。\n\n复杂度：O(n²) 时间，O(n) 空间。\n\n易错点：① 不接收返回值，插入到表头时新结点丢失；② 条件写成 `prev.val <= v`，会在结点之间插错位置；③ 先接前驱再接后继，node.next 指向自己形成环；④ 忘记处理空表，head 为 None 时访问 head.val 抛 AttributeError；⑤ 用列表配合 sort 代替链表，结果对但不符合题意；⑥ 遍历时用 `while prev.next` 漏掉最后一个结点。"
+      }
+    }
+  },
+  {
+    "id": "指-118",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "单链表",
+      "二级指针",
+      "结点删除"
+    ],
+    "stem": "单链表的结点定义如下（需要写在你的程序里）：\n```text\ntypedef struct Node {\n    int val;\n    struct Node *next;\n} Node;\n```\n按输入顺序建立链表，然后读入一个整数 v，删除链表中所有 val 等于 v 的结点（每删一个立即 free），最后输出剩余结点与删除个数。注意第一个结点也可能被删除，甚至整个链表被删空。\n\n**输入格式：** 第一行两个整数 n 和 v（0 ≤ n ≤ 100，-1000 ≤ v ≤ 1000）；第二行 n 个整数（-1000 ≤ 值 ≤ 1000），用空格分隔；n = 0 时第二行可以没有。\n\n**输出格式：** 两行：\n- `removed: K`，删除的结点个数；\n- `list:` 后接剩余结点的值（保持原相对顺序，一个空格分隔，行末无多余空格）；若删空则输出 `list: empty`。\n\n**输入样例：**\n```text\n6 2\n2 3 2 4 2 5\n```\n**输出样例：**\n```text\nremoved: 3\nlist: 3 4 5\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct Node {\n    int val;\n    struct Node *next;\n} Node;\n\nint main(void)\n{\n    Node *head = NULL, *tail = NULL;\n    Node **pp;\n    int n, v, i, removed = 0;\n\n    if (scanf(\"%d %d\", &n, &v) != 2)\n        return 0;\n\n    for (i = 0; i < n; i++) {          /* 尾插建表，保持输入顺序 */\n        int x;\n        Node *node;\n\n        if (scanf(\"%d\", &x) != 1)\n            break;\n        node = (Node *)malloc(sizeof(Node));\n        if (node == NULL)\n            return 1;\n        node->val = x;\n        node->next = NULL;\n        if (head == NULL)\n            head = node;\n        else\n            tail->next = node;\n        tail = node;\n    }\n\n    pp = &head;                        /* pp 指向「当前待检查的链接」 */\n    while (*pp != NULL) {\n        Node *cur = *pp;\n\n        if (cur->val == v) {\n            *pp = cur->next;           /* 前驱直接跨过被删结点 */\n            free(cur);                 /* 之后不能再访问 cur */\n            removed++;\n        } else {\n            pp = &cur->next;           /* 保留时才前进 */\n        }\n    }\n\n    printf(\"removed: %d\\n\", removed);\n    if (head == NULL) {\n        printf(\"list: empty\\n\");\n    } else {\n        Node *cur = head;\n\n        printf(\"list:\");\n        while (cur != NULL) {\n            printf(\" %d\", cur->val);\n            cur = cur->next;\n        }\n        printf(\"\\n\");\n    }\n\n    while (head != NULL) {             /* 释放剩余结点 */\n        Node *next = head->next;\n\n        free(head);\n        head = next;\n    }\n    return 0;\n}\n",
+    "points": [
+      "用尾指针 tail 尾插建表，保持输入顺序",
+      "用 Node **pp 遍历链接，删除时 *pp = cur->next 同时覆盖表头、中间与表尾",
+      "删除后 pp 不前进，继续检查新的 *pp；保留时才 pp = &cur->next",
+      "删空时输出 list: empty，并统计 removed"
+    ],
+    "analysis": "思路：删除单链表结点最容易出错的是「被删的正好是第一个结点」—— 此时没有前驱，常规的 prev->next 写法无从下手。用二级指针可以把「表头指针 head」和「普通结点的 next 字段」统一成同一种东西：它们都是「指向 Node 的指针」。pp 从 &head 出发，*pp 就是当前待检查的结点；删除时执行 `*pp = cur->next`，前驱（或者 head 本身）就被直接改写成后继，完全不需要特判表头。\n\n关键步骤：① 用尾指针 tail 尾插建表，保持输入顺序；② `Node **pp = &head`；③ 循环 `while (*pp != NULL)`，先取 `Node *cur = *pp`；④ 若 cur->val == v，执行 `*pp = cur->next; free(cur); removed++;`，注意 pp 本身不前进 —— 因为新的 *pp 就是下一个待检查结点；⑤ 否则 `pp = &cur->next` 前进；⑥ 输出剩余链表，最后把剩余结点全部 free。\n\n复杂度：时间 O(n)，空间 O(1)（只用了 pp、cur 等常数个指针）。\n\n易错点：① 删除后仍执行 `pp = &cur->next`，而 cur 已经被 free，属于使用已释放内存；② 先 free(cur) 再取 cur->next，读到的是已释放的内存；③ 删空后 head 变成 NULL，却仍去遍历；④ 只删第一个匹配就停，题目要求删除所有；⑤ 表头删除用 `head = head->next` 单独处理、中间删除又用 prev，逻辑重复而且容易漏掉连续相同值；⑥ 不 free 被删结点，造成内存泄漏。⑦ 删除时如果先改链接再取后继，取到的就是被删结点之后的内容，两句的顺序必须写对。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\nusing namespace std;\n\nstruct Node {\n    int val;\n    Node *next;\n};\n\nint main()\n{\n    int n, v;\n    if (!(cin >> n >> v))\n        return 0;\n\n    Node *head = nullptr, *tail = nullptr;\n    for (int i = 0; i < n; ++i) {\n        int x;\n        cin >> x;\n        Node *node = new Node{x, nullptr};\n        if (head == nullptr)\n            head = node;\n        else\n            tail->next = node;\n        tail = node;\n    }\n\n    int removed = 0;\n    Node **pp = &head;\n    while (*pp != nullptr) {\n        Node *cur = *pp;\n        if (cur->val == v) {\n            *pp = cur->next;\n            delete cur;\n            ++removed;\n        } else {\n            pp = &cur->next;\n        }\n    }\n\n    cout << \"removed: \" << removed << '\\n';\n    if (head == nullptr) {\n        cout << \"list: empty\\n\";\n    } else {\n        cout << \"list:\";\n        for (Node *cur = head; cur != nullptr; cur = cur->next)\n            cout << ' ' << cur->val;\n        cout << '\\n';\n    }\n\n    while (head != nullptr) {\n        Node *next = head->next;\n        delete head;\n        head = next;\n    }\n    return 0;\n}\n",
+        "points": [
+          "用 Node **pp 遍历链接，删除逻辑与 C 版逐句对应",
+          "new/delete 配对管理结点内存",
+          "删空时输出 list: empty",
+          "输出剩余链表前判断 head 是否为空"
+        ],
+        "analysis": "思路：C++ 版沿用 `Node **pp` 的删除方式，只把 malloc/free 换成 new/delete。这种写法在处理「删掉表头」时不需要任何特判，比 prev 版本少一个分支，也比「虚拟头结点」版本少一个额外结点，删除逻辑与 C 版可以逐句对照。\n\n关键步骤：① 用尾指针尾插建表；② `Node **pp = &head`；③ 若 *pp 命中就改链接并 delete，pp 本身不前进；④ 否则 pp 前进到该结点的 next 字段；⑤ 输出 removed 与剩余链表，删空时输出 list: empty；⑥ 清空剩余结点。\n\n延伸：如果删除条件变成「值落在某个区间」，只需改判断那一行，pp 的遍历框架一行都不用动，这正是二级指针删除法可以复用的原因。\n\n复杂度：O(n) 时间，O(1) 额外空间。\n\n易错点：① delete 之后继续用 cur->next 取后继；② 用 free 释放 new 出来的内存；③ 删空后仍循环输出，格式与样例不符；④ 只处理中间结点，表头结点删不掉；⑤ 命中后让 pp 前进，跳过紧跟其后的匹配结点；⑥ 循环条件写成 `while (pp)` 而不是 `while (*pp)`，二级指针永远非空，循环无法结束。"
+      },
+      "python": {
+        "solution": "import sys\nfrom dataclasses import dataclass\nfrom typing import Optional\n\n\n@dataclass\nclass Node:\n    val: int\n    next: \"Optional[Node]\" = None\n\n\ndef remove_all(head, v):\n    \"\"\"返回（可能变化的）表头与删除个数。\"\"\"\n    dummy = Node(0)             # 虚拟头结点：承担 C 里 &head 的角色\n    dummy.next = head\n\n    prev = dummy\n    cur = head\n    removed = 0\n    while cur is not None:\n        if cur.val == v:\n            prev.next = cur.next    # 相当于 C 里的 *pp = cur->next\n            removed += 1\n            cur = prev.next         # 等价于继续检查新的 *pp\n        else:\n            prev = cur              # 相当于 pp = &cur->next\n            cur = cur.next\n    return dummy.next, removed\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    n = int(data[0])\n    v = int(data[1])\n    values = [int(x) for x in data[2:2 + n]]\n\n    head = None\n    for x in values:                # 尾插建表，保持输入顺序\n        node = Node(x)\n        if head is None:\n            head = node\n        else:\n            tail.next = node\n        tail = node\n\n    head, removed = remove_all(head, v)\n\n    print(f\"removed: {removed}\")\n    if head is None:\n        print(\"list: empty\")\n        return\n\n    out = []\n    cur = head\n    while cur is not None:\n        out.append(str(cur.val))\n        cur = cur.next\n    print(\"list: \" + \" \".join(out))\n\n    head = None                     # 释放：断开引用，交给垃圾回收\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 dataclass 定义结点，next 保存下一个结点的引用",
+          "用虚拟头结点承担 &head 的角色，统一表头与中间的删除",
+          "删除时 prev.next 跨过当前结点（对应 C 的 *pp = cur->next）",
+          "输出 removed 与剩余链表，删空输出 list: empty"
+        ],
+        "analysis": "思路：Python 没有二级指针，最省心的等价写法是加一个「虚拟头结点」dummy：dummy.next 就是原来 head 所在的位置，这样「删除表头」和「删除中间结点」都变成「修改某个结点的 next」，统一成一句 `prev.next = cur.next`，这正是 C 版 `*pp = cur->next` 的引用版本。\n\n关键步骤：① 尾插建表，tail 要在循环外先置 None；② 建 dummy 并让 dummy.next 指向 head；③ prev 从 dummy 出发、cur 从 head 出发；④ 命中时 `prev.next = cur.next`，removed 加 1，cur 直接跳到 prev.next；⑤ 未命中时 prev 与 cur 同时前进；⑥ 返回 dummy.next 作为新表头。\n\n延伸：如果删除条件变成「值落在某个区间」，只需改判断那一行，prev 与 cur 的推进框架完全不用动；这种「只改条件、不改骨架」的写法是链表删除题的通用套路。\n\n复杂度：O(n) 时间，O(1) 额外空间。\n\n易错点：① 命中后写成 `cur = cur.next`，会跳过刚被接上来的结点；② 建了 dummy 却返回 head，表头被删时结果错误；③ 不建 dummy 又只写 prev.next 的删除，表头结点永远删不掉；④ 删除后仍访问 cur.val；⑤ 输出用 print(out) 打出方括号与引号；⑥ 忘记返回新表头，main 里仍用旧表头遍历，看到的是被删掉的头结点。"
+      }
+    }
+  },
+  {
+    "id": "指-119",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "单链表",
+      "三指针反转",
+      "原地修改"
+    ],
+    "stem": "单链表的结点定义如下（需要写在你的程序里）：\n```text\ntypedef struct Node {\n    int val;\n    struct Node *next;\n} Node;\n```\n按输入顺序建立链表后，把链表原地反转：不允许新建结点、不允许复制数据，只能修改 next 指针。然后输出反转前后的链表，以及反转后第 k 个结点的值。\n\n**输入格式：** 第一行两个整数 n 和 k（1 ≤ n ≤ 100，1 ≤ k ≤ 100）；第二行 n 个整数（-1000 ≤ 值 ≤ 1000），用空格分隔。\n\n**输出格式：** 三行：\n- `before:` 后接反转前的 n 个值；\n- `after:` 后接反转后的 n 个值；\n- `kth: x`，反转后第 k 个结点的值；k 大于 n 时输出 `kth: none`。\n数字之间一个空格，行末无多余空格。\n\n**输入样例：**\n```text\n5 3\n1 2 3 4 5\n```\n**输出样例：**\n```text\nbefore: 1 2 3 4 5\nafter: 5 4 3 2 1\nkth: 3\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct Node {\n    int val;\n    struct Node *next;\n} Node;\n\n/* 三指针原地反转：返回新表头（原来的尾结点） */\nstatic Node *reverse(Node *head)\n{\n    Node *prev = NULL;          /* 已经反转好的那一段的头 */\n    Node *cur = head;\n\n    while (cur != NULL) {\n        Node *next = cur->next; /* 先保存后继，否则改完 next 就找不回来了 */\n\n        cur->next = prev;       /* 当前结点接到已反转段的头部 */\n        prev = cur;             /* 已反转段扩大 */\n        cur = next;             /* 继续处理原来的下一个 */\n    }\n    return prev;\n}\n\nstatic void print_list(const char *label, Node *head)\n{\n    Node *cur;\n\n    printf(\"%s\", label);\n    for (cur = head; cur != NULL; cur = cur->next)\n        printf(\" %d\", cur->val);\n    printf(\"\\n\");\n}\n\nint main(void)\n{\n    Node *head = NULL, *tail = NULL;\n    int n, k, i;\n\n    if (scanf(\"%d %d\", &n, &k) != 2)\n        return 0;\n    for (i = 0; i < n; i++) {          /* 尾插建表 */\n        int x;\n        Node *node;\n\n        if (scanf(\"%d\", &x) != 1)\n            break;\n        node = (Node *)malloc(sizeof(Node));\n        if (node == NULL)\n            return 1;\n        node->val = x;\n        node->next = NULL;\n        if (head == NULL)\n            head = node;\n        else\n            tail->next = node;\n        tail = node;\n    }\n\n    print_list(\"before:\", head);\n    head = reverse(head);              /* 用返回值更新表头 */\n    print_list(\"after:\", head);\n\n    if (k >= 1 && k <= n) {\n        Node *cur = head;\n\n        for (i = 1; i < k; i++)\n            cur = cur->next;\n        printf(\"kth: %d\\n\", cur->val);\n    } else {\n        printf(\"kth: none\\n\");\n    }\n\n    while (head != NULL) {             /* 释放 */\n        Node *next = head->next;\n\n        free(head);\n        head = next;\n    }\n    return 0;\n}\n",
+    "points": [
+      "用 prev / cur / next 三个指针迭代反转，循环内先保存 cur->next",
+      "反转后原表头成为表尾，返回 prev 作为新表头并赋回 head",
+      "用 for 循环从表头走 k-1 步取第 k 个结点，越界输出 none",
+      "反转前后各遍历输出一次，结尾逐个 free"
+    ],
+    "analysis": "思路：单链表只能单向前进，反转时必须把每个结点的 next 从「指向后一个」改成「指向前一个」，而一旦改掉 next 就再也找不到原来的后继，所以要在改之前先把后继存下来。标准写法用三个指针：prev 指向已经反转好的那一段的表头，cur 是当前要处理的结点，next 临时保存 cur->next。\n\n关键步骤：① 初始化 prev = NULL、cur = head；② 循环里先 `next = cur->next`；③ `cur->next = prev`，把当前结点接到已反转部分的头部；④ `prev = cur; cur = next;` 两个指针同时前移；⑤ 循环结束时 cur 为 NULL，prev 就是新表头，直接 return；⑥ main 里用返回值覆盖 head，再遍历输出。\n\n样例验证：1→2→3→4→5 的反转过程中，第一轮结束后 prev 指向 1、cur 指向 2；最后一轮结束时 prev 指向 5，于是输出 5 4 3 2 1，第 3 个结点的值是 3。\n\n复杂度：时间 O(n)，空间 O(1)（只改 next，不申请新结点）。\n\n易错点：① 忘记保存 next，执行 `cur = cur->next` 时 cur 的 next 已经被改成前驱，会原地打转甚至形成环；② 循环条件写成 `cur->next != NULL`，最后一个结点没有被反转；③ 返回 head 而不是 prev，此时 head 已经是表尾；④ 用「头插法」新建一条链表来实现反转，违背「不新建结点」的要求；⑤ 取第 k 个结点时从 0 开始数，与「第 k 个」差一；⑥ 反转后忘记把返回值赋给 head，后面遍历仍从旧表头开始（它现在指向 NULL 或中间结点）。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\nusing namespace std;\n\nstruct Node {\n    int val;\n    Node *next;\n};\n\nstatic Node *reverse(Node *head)\n{\n    Node *prev = nullptr;\n    Node *cur = head;\n\n    while (cur != nullptr) {\n        Node *next = cur->next;   // 先保存后继\n        cur->next = prev;\n        prev = cur;\n        cur = next;\n    }\n    return prev;\n}\n\nstatic void print_list(const char *label, Node *head)\n{\n    cout << label;\n    for (Node *cur = head; cur != nullptr; cur = cur->next)\n        cout << ' ' << cur->val;\n    cout << '\\n';\n}\n\nint main()\n{\n    int n, k;\n    if (!(cin >> n >> k))\n        return 0;\n\n    Node *head = nullptr, *tail = nullptr;\n    for (int i = 0; i < n; ++i) {\n        int x;\n        cin >> x;\n        Node *node = new Node{x, nullptr};\n        if (head == nullptr)\n            head = node;\n        else\n            tail->next = node;\n        tail = node;\n    }\n\n    print_list(\"before:\", head);\n    head = reverse(head);\n    print_list(\"after:\", head);\n\n    if (k >= 1 && k <= n) {\n        Node *cur = head;\n        for (int i = 1; i < k; ++i)\n            cur = cur->next;\n        cout << \"kth: \" << cur->val << '\\n';\n    } else {\n        cout << \"kth: none\\n\";\n    }\n\n    while (head != nullptr) {\n        Node *next = head->next;\n        delete head;\n        head = next;\n    }\n    return 0;\n}\n",
+        "points": [
+          "三指针迭代反转，与 C 版逐句对应",
+          "用 new Node{x, nullptr} 建结点、delete 释放",
+          "返回值更新 head 后再输出 after",
+          "按 1-based 位置走 k-1 步取第 k 个结点"
+        ],
+        "analysis": "思路：C++ 版与 C 版的算法完全相同，只是把结点创建与释放换成 new/delete，输出换成 cout。三指针反转的价值在于：整个过程只改 next，结点的地址和 val 都不动，因此不需要任何额外空间，也不会产生新的对象。\n\n关键步骤：① 尾插建表；② reverse 中用 prev/cur/next 三指针迭代，循环里先保存 cur->next；③ 用返回的新表头更新 head；④ 输出 before 与 after 两行；⑤ 从新表头走 k-1 步取第 k 个结点；⑥ delete 清空链表。\n\n延伸：如果只要求逆序输出，可以用递归从表尾往回打印，但那会占用与链表等长的栈空间；迭代反转只用三个指针，是空间最优的写法，也是考试中最常被要求的版本。\n\n复杂度：O(n) 时间，O(1) 空间。\n\n易错点：① 忘了保存 next，反转过程中丢失后半条链表；② 循环里写成 `cur = cur->next` 而不是 `cur = next`；③ 返回 head 而不是 prev，此时 head 已是表尾；④ 用 vector 反转再重新建表，违反「只改指针」的要求；⑤ delete 之后继续遍历；⑥ 输出 after 时忘了用 reverse 的返回值，head 仍指向旧表头。"
+      },
+      "python": {
+        "solution": "import sys\nfrom dataclasses import dataclass\nfrom typing import Optional\n\n\n@dataclass\nclass Node:\n    val: int\n    next: \"Optional[Node]\" = None\n\n\ndef reverse(head):\n    \"\"\"三指针原地反转：只改 next 引用，不新建结点。\"\"\"\n    prev = None\n    cur = head\n    while cur is not None:\n        nxt = cur.next      # 先保存后继\n        cur.next = prev     # 当前结点指向前一个\n        prev = cur\n        cur = nxt\n    return prev\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    n = int(data[0])\n    k = int(data[1])\n    values = [int(x) for x in data[2:2 + n]]\n\n    head = None\n    tail = None\n    for x in values:            # 尾插建表\n        node = Node(x)\n        if head is None:\n            head = node\n        else:\n            tail.next = node\n        tail = node\n\n    def dump(label, node):\n        vals = []\n        while node is not None:\n            vals.append(str(node.val))\n            node = node.next\n        print(label + \" \" + \" \".join(vals))\n\n    dump(\"before:\", head)\n    head = reverse(head)\n    dump(\"after:\", head)\n\n    if 1 <= k <= n:\n        cur = head\n        for _ in range(k - 1):\n            cur = cur.next\n        print(f\"kth: {cur.val}\")\n    else:\n        print(\"kth: none\")\n\n    head = None                 # 释放：断开引用\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 dataclass 定义结点，next 是对象引用",
+          "三指针（prev/cur/nxt）迭代反转，只改引用不新建结点",
+          "dump 辅助函数统一输出 before 与 after",
+          "按 k-1 步走到第 k 个结点，越界输出 none"
+        ],
+        "analysis": "思路：Python 的结点用 dataclass 表达，next 字段就是 C 里的指针；反转时同样需要三个变量：prev 记住已反转段的头、cur 是当前结点、nxt 暂存后继。因为 Python 的对象引用可以随时改指，这段代码与 C 版结构几乎一样。\n\n关键步骤：① 尾插建表；② reverse 里循环执行 `nxt = cur.next; cur.next = prev; prev = cur; cur = nxt`；③ 返回 prev 作为新表头并赋给 head；④ 用辅助函数把链表收集成字符串再输出；⑤ 从表头走 k-1 步取第 k 个值。\n\n延伸：也可以用递归从表尾往回打印得到逆序，但递归占用与链表长度成正比的栈空间；迭代反转只用三个变量，空间最优，这也是考试里最常要求的版本。\n\n复杂度：O(n) 时间，O(1) 额外空间。\n\n易错点：① 先写 `cur.next = prev` 再取 nxt，后继已经丢失；② 用列表的 reverse 反转数据再重新建链表，违反「只改指针」；③ 返回 cur（此时为 None）而不是 prev；④ 取第 k 个时用 range(k) 多走一步，越界；⑤ 辅助输出函数里用 `print(label, 内容)` 会带出多余空格，与样例不一致；⑥ 收集结点时忘记推进 cur，死循环。"
+      }
+    }
+  },
+  {
+    "id": "指-120",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "动态数组",
+      "越界检查",
+      "内存泄漏"
+    ],
+    "stem": "用 malloc 分配 n 个 int 的动态数组并读入初值，然后依次执行 m 条写操作 `set idx v`：\n- 若 0 ≤ idx ≤ n-1，把 a[idx] 改成 v，成功次数加 1；\n- 否则拒绝该操作，拒绝次数加 1，数组保持不变。\n\n要求用指针实现检查：函数 `int safe_set(int *a, int n, int idx, int v)` 先把 idx 与 0、n 比较（不要先算出 a + idx 再判断，因为形成数组之外的指针本身就是未定义行为），确认合法后才通过 `*(a + idx) = v` 写入并返回 1，越界返回 0。\n\n最后输出数组内容、成功次数、拒绝次数，以及内存管理计数：本程序只 malloc 一块，结束时 free 一次，因此最后三行的 `leak:` 应为 0。\n\n**输入格式：** 第一行两个整数 n 和 m（1 ≤ n ≤ 50，1 ≤ m ≤ 100）；第二行 n 个整数（-1000 ≤ 初值 ≤ 1000）；接下来 m 行，每行 `set idx v`（-1000 ≤ idx ≤ 1000，-1000 ≤ v ≤ 1000），用一个空格分隔。\n\n**输出格式：** 六行：`array:` 后接 n 个整数、`ok: K`、`reject: R`、`alloc: A`、`free: F`、`leak: L`。\n\n**输入样例：**\n```text\n3 4\n1 2 3\nset 1 9\nset 3 7\nset -1 5\nset 0 4\n```\n**输出样例：**\n```text\narray: 4 9 3\nok: 2\nreject: 2\nalloc: 1\nfree: 1\nleak: 0\n```",
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\n\n/* 先做纯整数比较，确认合法后才形成指针 a + idx */\nstatic int safe_set(int *a, int n, int idx, int v)\n{\n    if (idx < 0 || idx >= n)\n        return 0;               /* 越界：不写，也不形成越界指针 */\n    *(a + idx) = v;\n    return 1;\n}\n\nint main(void)\n{\n    int n, m, i;\n    int *a;\n    int ok = 0, reject = 0;\n    int alloc_cnt = 1, free_cnt = 0;   /* 本程序只分配一块，先记上 */\n\n    if (scanf(\"%d %d\", &n, &m) != 2)\n        return 0;\n\n    a = (int *)malloc((size_t)n * sizeof(int));\n    if (a == NULL)\n        return 1;\n    for (i = 0; i < n; i++) {\n        if (scanf(\"%d\", &a[i]) != 1) {\n            free(a);\n            return 0;\n        }\n    }\n\n    for (i = 0; i < m; i++) {\n        int idx, v;\n\n        /* %*s 读掉 set 关键字但不保存，避免声明用不到的缓冲区 */\n        if (scanf(\"%*s %d %d\", &idx, &v) != 2)\n            break;\n        if (safe_set(a, n, idx, v))\n            ok++;\n        else\n            reject++;\n    }\n\n    printf(\"array:\");\n    for (i = 0; i < n; i++)\n        printf(\" %d\", a[i]);\n    printf(\"\\n\");\n    printf(\"ok: %d\\n\", ok);\n    printf(\"reject: %d\\n\", reject);\n\n    free(a);                    /* 释放后置空，避免悬空指针 */\n    a = NULL;\n    free_cnt++;\n\n    printf(\"alloc: %d\\n\", alloc_cnt);\n    printf(\"free: %d\\n\", free_cnt);\n    printf(\"leak: %d\\n\", alloc_cnt - free_cnt);\n    return 0;\n}\n",
+    "points": [
+      "先用 idx 与 0、n 做整数比较，合法后才形成 a + idx 并解引用",
+      "用 *(a + idx) = v 完成写入，体现指针运算",
+      "统计 ok 与 reject，越界操作不改动数组",
+      "用 alloc / free 计数核对 leak 为 0，free 后把指针置 NULL"
+    ],
+    "analysis": "思路：本题练的是「在解引用之前先确认下标合法」。C 的数组下标本质是指针运算，a[idx] 等价于 *(a + idx)；如果 idx 越界，`a + idx` 本身就已经形成了指向数组之外的指针，标准规定这种指针的形成是未定义行为 —— 哪怕你没有解引用它，编译器也可能据此做优化。所以 safe_set 里必须先比较整数 idx，确认合法之后才去算 a + idx。\n\n关键步骤：① `if (idx < 0 || idx >= n) return 0;` 只做整数比较，不涉及指针；② 合法时执行 `*(a + idx) = v;` 并返回 1；③ main 里用 `scanf(\"%*s %d %d\", &idx, &v)`，其中 `%*s` 表示读掉 set 关键字但不保存，避免声明一个用不到的缓冲区；④ 用 ok、reject 两个计数器统计；⑤ alloc_cnt 初始为 1（只 malloc 了一次），free 之后 free_cnt 加 1，最后输出 leak = alloc - free，正常为 0。\n\n样例验证：n = 3、初值 1 2 3。set 1 9 合法，a[1] 变 9；set 3 7 越界拒绝；set -1 5 越界拒绝；set 0 4 合法，a[0] 变 4。最终数组为 4 9 3，成功 2 次、拒绝 2 次。\n\n复杂度：时间 O(m + n)，空间 O(n)。\n\n易错点：① 先算 `int *p = a + idx` 再判断 `p < a + n`，越界指针已经形成，属于未定义行为；② 只判 idx >= n 不判 idx < 0，负下标会写到数组前面；③ 上界写成 `idx > n`，把 a[n] 当成合法位置；④ free 之后不把指针置 NULL，后面误用就是悬空指针；⑤ alloc 与 free 计数不配对，leak 输出成 1；⑥ `%*s` 写成 `%s` 却没有对应变量，scanf 会往栈上的随机位置写，属于严重错误。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nstatic bool safe_set(vector<int> &a, int idx, int v)\n{\n    if (idx < 0 || idx >= static_cast<int>(a.size()))\n        return false;           // 越界直接拒绝\n    *(a.begin() + idx) = v;     // 迭代器版本：相当于 *(a + idx)\n    return true;\n}\n\nint main()\n{\n    int n, m;\n    if (!(cin >> n >> m))\n        return 0;\n\n    vector<int> a(n);\n    for (int i = 0; i < n; ++i)\n        cin >> a[i];\n\n    int ok = 0, reject = 0;\n    for (int i = 0; i < m; ++i) {\n        string keyword;\n        int idx, v;\n        cin >> keyword >> idx >> v;\n        if (safe_set(a, idx, v))\n            ++ok;\n        else\n            ++reject;\n    }\n\n    cout << \"array:\";\n    for (int x : a)\n        cout << ' ' << x;\n    cout << '\\n';\n    cout << \"ok: \" << ok << '\\n';\n    cout << \"reject: \" << reject << '\\n';\n    cout << \"alloc: 1\\n\";\n    cout << \"free: 1\\n\";\n    cout << \"leak: 0\\n\";        // vector 自带析构，不存在泄漏\n    return 0;\n}\n",
+        "points": [
+          "用 vector 承载动态数组，safe_set 先做边界比较",
+          "用迭代器 a.begin() + idx 表达 *(a + idx)",
+          "统计 ok 与 reject，越界不写入",
+          "用 vector 自动析构替代手写 free，并说明 leak 恒为 0"
+        ],
+        "analysis": "思路：C++ 版用 vector 管理动态数组，边界检查仍然手写：先比较 idx 与 0、a.size()，合法才通过迭代器 `a.begin() + idx` 写入。这样既保留了「先判边界再形成指针」的核心，又免去了手动 free 的配对问题，输出的 alloc、free、leak 固定为 1、1、0。\n\n关键步骤：① `vector<int> a(n)` 建立 n 个元素；② safe_set 先判 idx 是否小于 0 或不小于 size；③ 合法时执行 `*(a.begin() + idx) = v`；④ 读入 m 条指令，keyword 用 string 接住；⑤ 统计 ok 与 reject；⑥ 输出数组与六行统计。\n\n延伸：真实项目里更常见的做法是把长度与指针一起封装进结构体（相当于 C++ 的 vector），这样每次访问都不必再传 n；本题把 n 单独传参，正是为了突出「边界信息必须和指针一起传递」。\n\n复杂度：O(n + m) 时间，O(n) 空间。\n\n易错点：① 用 a.at(idx) 虽然会自动抛异常，但题目要求用返回值表示成功与否，异常会让程序终止；② 边界写成 idx 大于等于 size - 1，漏掉最后一个元素；③ int 与 size_t 比较时出现符号警告，需要强转；④ 直接输出整个 vector，编译不过；⑤ 跳过 keyword 直接读两个整数，遇到格式变化就读错；⑥ 把 leak 输出成 1，与「free 过一次」的事实不符。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef safe_set(a, idx, v):\n    \"\"\"先做边界判断，再写入；越界返回 False。\"\"\"\n    if idx < 0 or idx >= len(a):\n        return False\n    a[idx] = v\n    return True\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if len(data) < 2:\n        return\n\n    n = int(data[0])\n    m = int(data[1])\n    a = [int(x) for x in data[2:2 + n]]\n\n    pos = 2 + n\n    ok = 0\n    reject = 0\n    for _ in range(m):\n        # 每条指令形如 set idx v，关键字不参与计算\n        idx = int(data[pos + 1])\n        v = int(data[pos + 2])\n        pos += 3\n        if safe_set(a, idx, v):\n            ok += 1\n        else:\n            reject += 1\n\n    print(\"array:\" + \"\".join(f\" {x}\" for x in a))\n    print(f\"ok: {ok}\")\n    print(f\"reject: {reject}\")\n    print(\"alloc: 1\")\n    print(\"free: 1\")\n    print(\"leak: 0\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "safe_set 先判断 0 <= idx < len(a) 再写入",
+          "按三条一组取指令中的下标与值，跳过关键字",
+          "统计 ok 与 reject，越界不改动列表",
+          "输出六行，内存计数表明没有泄漏"
+        ],
+        "analysis": "思路：Python 的列表下标越界会抛 IndexError，但题目要求「拒绝并继续」，所以仍要手写边界判断，用返回值区分成功与失败 —— 这与 C 版用 int 返回值表示结果的写法一致。特别注意：Python 的负下标是合法的，不判断就会出现「越界还能写进去」的诡异行为。\n\n关键步骤：① 读入 n、m 与前 n 个初值；② 指令区从下标 2+n 开始，每条占 3 个记号（set、idx、v），用 pos 指针推进；③ safe_set 判断 idx 是否落在 0 到 len(a)-1 之间，合法才赋值；④ 统计 ok 与 reject；⑤ 输出六行，alloc 与 free 固定为 1、leak 为 0。\n\n复杂度：O(n + m) 时间，O(n) 空间。\n\n易错点：① 用 try 与 except 捕获 IndexError 代替显式判断，虽然能跑但把控制流交给异常；② pos 每次只加 2，把关键字当成下标；③ 判断写成 `0 <= idx <= len(a)`，多允许了一个越界位置；④ 忘记负下标的特殊性，a[-1] 会悄悄改掉最后一个元素；⑤ 输出 array 行时直接打印列表，打出方括号；⑥ 把 alloc 与 free 写成动态统计，结果与题目要求的固定值不符。"
+      }
+    }
+  },
+  {
+    "id": "指-121",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "函数指针",
+      "分派表",
+      "结构体数组"
+    ],
+    "stem": "用「结构体数组 + 函数指针」实现一个命令分派器。先定义五个二元整数运算：\n\n```text\nint op_add(int a, int b);   /* 加 */\nint op_sub(int a, int b);   /* 减 */\nint op_mul(int a, int b);   /* 乘 */\nint op_div(int a, int b);   /* 整除，向零截断 */\nint op_mod(int a, int b);   /* 取余，余数与被除数同号 */\n```\n\n再建立分派表 `typedef struct { const char *name; int (*fn)(int, int); } OpEntry;`，表中依次登记 add、sub、mul、div、mod 与对应函数。程序读入 k 条指令，每条形如 `op a b`，用字符串在表中查找函数指针并调用；名字不在表中输出 `unknown op`；div、mod 的除数为 0 时输出 `div by zero`（不调用函数）。\n\n**输入格式：** 第一行一个整数 k（1 ≤ k ≤ 100）；接下来 k 行，每行 `op a b`（a、b 为 -1000~1000 的整数，op 是不含空格的字符串），用一个空格分隔。\n\n**输出格式：** 每条指令输出一行：整数结果，或 `unknown op`，或 `div by zero`。\n\n**输入样例：**\n```text\n6\nadd 3 4\ndiv 5 0\nmod 7 -2\nsqrt 4 2\nsub 0 9\nmul -6 7\n```\n**输出样例：**\n```text\n7\ndiv by zero\n1\nunknown op\n-9\n-42\n```",
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nstatic int op_add(int a, int b) { return a + b; }\nstatic int op_sub(int a, int b) { return a - b; }\nstatic int op_mul(int a, int b) { return a * b; }\nstatic int op_div(int a, int b) { return a / b; }\nstatic int op_mod(int a, int b) { return a % b; }\n\ntypedef struct {\n    const char *name;\n    int (*fn)(int, int);      /* 指向「两个 int 参数、返回 int」的函数 */\n} OpEntry;\n\nint main(void)\n{\n    static const OpEntry table[] = {\n        {\"add\", op_add}, {\"sub\", op_sub}, {\"mul\", op_mul},\n        {\"div\", op_div}, {\"mod\", op_mod}\n    };\n    const int nop = (int)(sizeof(table) / sizeof(table[0]));\n    int k, i;\n\n    if (scanf(\"%d\", &k) != 1)\n        return 0;\n\n    for (i = 0; i < k; i++) {\n        char name[8];\n        int a, b, found = 0, j;\n\n        if (scanf(\"%7s %d %d\", name, &a, &b) != 3)\n            break;\n\n        for (j = 0; j < nop; j++) {\n            if (strcmp(table[j].name, name) == 0) {\n                found = 1;\n                if ((strcmp(name, \"div\") == 0 || strcmp(name, \"mod\") == 0) && b == 0) {\n                    printf(\"div by zero\\n\");   /* 除零是未定义行为，必须先拦下 */\n                    break;\n                }\n                printf(\"%d\\n\", table[j].fn(a, b));   /* 通过函数指针调用 */\n                break;\n            }\n        }\n        if (!found)\n            printf(\"unknown op\\n\");\n    }\n    return 0;\n}\n",
+    "points": [
+      "定义「名字 + 函数指针」的分派表结构，用 sizeof 计算表项个数",
+      "用 strcmp 查表，命中后通过 table[j].fn(a, b) 调用",
+      "div、mod 先判除数为 0，输出 div by zero 且不调用函数",
+      "名字不在表中输出 unknown op，与除零分支互不干扰"
+    ],
+    "analysis": "思路：结构体数组加函数指针是 C 里实现命令分派的标准手段：把「命令名」和「处理函数」绑在同一个表项里，查表得到函数地址后直接调用，避免写一长串 if-else。它的另一个好处是增删命令只需要改表，分派逻辑一行都不用动。\n\n关键步骤：① 五个运算函数的签名统一为 int (int, int)；② 定义 OpEntry 结构，成员一是名字，成员二是 `int (*fn)(int, int)`；③ 用 static const 数组把整张表一次初始化好；④ 用 `sizeof(table) / sizeof(table[0])` 求表项个数，避免手写常量；⑤ 对每条指令用 strcmp 在表中线性查找，命中后先检查除数是否为 0，再通过 `table[j].fn(a, b)` 调用；⑥ 未命中时输出 unknown op。\n\n样例验证：add 3 4 = 7；div 5 0 输出 div by zero；mod 7 -2 中 C 的余数与被除数同号，7 % -2 = 1；sqrt 不在表中输出 unknown op；sub 0 9 = -9；mul -6 7 = -42。\n\n复杂度：时间 O(k·N)（N 为表项个数，这里是 5），空间 O(1)。\n\n易错点：① 结构体成员写成 `int *fn(int, int)`，这是「返回 int * 的函数」而且结构体不能含函数成员，编译直接报错；② 用 sizeof(table) 当表项个数，忘了除以 sizeof(table[0])；③ 先调用再检查除数为 0，程序会因为整数除零而崩溃；④ div by zero 分支里没有把 found 置位，结果又打出一行 unknown op；⑤ 写成 `*table[j].fn(a, b)`，被解析为对返回值的解引用；⑥ 表项名用可变缓冲区，之后被覆盖导致比较失效。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <string>\nusing namespace std;\n\nstatic int op_add(int a, int b) { return a + b; }\nstatic int op_sub(int a, int b) { return a - b; }\nstatic int op_mul(int a, int b) { return a * b; }\nstatic int op_div(int a, int b) { return a / b; }\nstatic int op_mod(int a, int b) { return a % b; }\n\nstruct OpEntry {\n    const char *name;\n    int (*fn)(int, int);\n};\n\nint main()\n{\n    static const OpEntry table[] = {\n        {\"add\", op_add}, {\"sub\", op_sub}, {\"mul\", op_mul},\n        {\"div\", op_div}, {\"mod\", op_mod}\n    };\n    const int nop = static_cast<int>(sizeof(table) / sizeof(table[0]));\n\n    int k;\n    if (!(cin >> k))\n        return 0;\n\n    for (int i = 0; i < k; ++i) {\n        string name;\n        int a, b;\n        if (!(cin >> name >> a >> b))\n            break;\n\n        bool found = false;\n        for (int j = 0; j < nop; ++j) {\n            if (name == table[j].name) {\n                found = true;\n                if ((name == \"div\" || name == \"mod\") && b == 0) {\n                    cout << \"div by zero\\n\";\n                    break;\n                }\n                cout << table[j].fn(a, b) << '\\n';\n                break;\n            }\n        }\n        if (!found)\n            cout << \"unknown op\\n\";\n    }\n    return 0;\n}\n",
+        "points": [
+          "结构体数组保存「名字 + 函数指针」，表长用 sizeof 计算",
+          "用 string 的 == 查表，命中后用 table[j].fn 调用",
+          "除数为 0 时先输出 div by zero 再跳出",
+          "未命中输出 unknown op，注意 found 标志的时机"
+        ],
+        "analysis": "思路：C++ 版把分派表写成 OpEntry 结构体数组，用 string 的 == 代替 strcmp，其余结构与 C 版保持一致：查表、判除零、通过函数指针调用。表长用 sizeof 计算，新增命令时只需在表里加一行，main 的分派逻辑完全不用改。\n\n关键步骤：① 五个函数签名统一；② 定义 OpEntry 并用静态数组初始化；③ 用 `sizeof(table) / sizeof(table[0])` 求表长；④ 每条指令读入 name、a、b；⑤ 线性查找，命中后先处理除零，再调用 `table[j].fn(a, b)`；⑥ 未命中输出 unknown op。\n\n延伸：分派表还可以按名字排序后二分查找，把查表从 O(N) 降到 O(log N)；命令很多时这种优化有意义，但表项很少时线性查找反而更快，也更容易读。\n\n复杂度：O(k·N) 时间（N 为表项数），O(1) 空间。\n\n易错点：① 把函数指针成员写成 std::function，虽然更现代但本题考的就是裸函数指针；② 用 name 的首字符比较，命令区分不出来；③ 除零分支忘记 break，继续调用导致崩溃；④ found 置位太晚，正常结果后多打一行 unknown op；⑤ 每条输出用 endl 刷新，效率无谓降低；⑥ 表长写成 sizeof(table)，循环越界。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef op_add(a, b):\n    return a + b\n\n\ndef op_sub(a, b):\n    return a - b\n\n\ndef op_mul(a, b):\n    return a * b\n\n\ndef trunc_div(a, b):\n    \"\"\"向零截断的整数除法，与 C 的 / 一致。\"\"\"\n    q = abs(a) // abs(b)\n    if (a < 0) != (b < 0):\n        q = -q\n    return q\n\n\ndef op_div(a, b):\n    return trunc_div(a, b)\n\n\ndef op_mod(a, b):\n    \"\"\"余数与被除数同号：a = q * b + r。\"\"\"\n    return a - trunc_div(a, b) * b\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    k = int(data[0])\n    table = {\n        \"add\": op_add, \"sub\": op_sub, \"mul\": op_mul,\n        \"div\": op_div, \"mod\": op_mod,\n    }\n\n    pos = 1\n    for _ in range(k):\n        name = data[pos]\n        a = int(data[pos + 1])\n        b = int(data[pos + 2])\n        pos += 3\n\n        fn = table.get(name)\n        if fn is None:\n            print(\"unknown op\")\n            continue\n        if name in (\"div\", \"mod\") and b == 0:\n            print(\"div by zero\")\n            continue\n        print(fn(a, b))\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用字典把命令名映射到函数对象，代替结构体数组里的函数指针",
+          "自己实现向零截断的整除与同号余数，与 C 的 / 和 % 一致",
+          "查不到名字输出 unknown op 并跳过",
+          "div、mod 先判除数为 0，再调用函数对象"
+        ],
+        "analysis": "思路：Python 的字典可以直接把字符串映射到函数对象，这相当于 C 里「名字 + 函数指针」的结构体数组；用 get 取不到时返回 None，对应 C 里查表失败。真正需要小心的是运算语义：Python 的整除与取余向负无穷取整，与 C 的向零截断不同，所以必须自己实现整除与余数。\n\n关键步骤：① 定义五个函数；② 截断除法先求绝对值之商，再按符号取负，得到向零截断的结果；③ 取余函数用 `a - 商 * b` 得到与被除数同号的余数；④ 用字典登记五个命令；⑤ 每条指令取三个记号，先查表，再处理除零，最后调用函数对象。\n\n复杂度：O(k) 时间，O(1) 空间。\n\n易错点：① 直接用整除与取余运算符，遇到负数与 C 的结果不一致（7 % -2 在 Python 里是 -1，在 C 里是 1）；② 先用 in 判断再取字典值，多一次哈希查找；③ 除零分支写在调用之后，触发除零异常；④ 用 eval 拼字符串执行指令，既不安全又不符合整数语义；⑤ 输出时把命令名也打印出来，与样例不符；⑥ 把字典的键写成函数对象，查表永远失败。"
+      }
+    }
+  },
+  {
+    "id": "指-122",
+    "type": "design",
+    "difficulty": 3,
+    "tags": [
+      "对象表示",
+      "字节序",
+      "指针遍历"
+    ],
+    "stem": "把一个 32 位无符号整数存进 unsigned int 变量，用 unsigned char * 指针逐字节读取它的对象表示，输出 4 个字节的十六进制值，以及把这 4 个字节按相反顺序重新组合得到的整数。\n\n本题按小端序（little-endian）描述：低位字节存放在低地址。对 x = 0x12345678，内存中从低地址到高地址的 4 个字节依次是 78、56、34、12；把字节顺序颠倒后重新拼成的数是 0x78563412。\n\n**输入格式：** 一行一个整数 x（0 ≤ x ≤ 4294967295）。\n\n**输出格式：** 四行：\n- `x: d`，x 的十进制值；\n- `hex: HHHHHHHH`，8 位大写十六进制，不足补前导 0；\n- `bytes:` 后接 4 个字节（从低地址到高地址），每个字节两位大写十六进制，用一个空格分隔；\n- `swap: d`，把 4 个字节按相反顺序重排后再按小端序解读得到的整数值。\n\n**输入样例：**\n```text\n305419896\n```\n**输出样例：**\n```text\nx: 305419896\nhex: 12345678\nbytes: 78 56 34 12\nswap: 2018915346\n```",
+    "solution": "#include <stdio.h>\n\nint main(void)\n{\n    unsigned int x;\n\n    if (scanf(\"%u\", &x) != 1)\n        return 0;\n\n    /* 字符指针可以合法地别名任何对象，用它逐字节观察内存布局 */\n    unsigned char *p = (unsigned char *)&x;\n\n    unsigned int swapped = ((unsigned int)p[0] << 24) |\n                           ((unsigned int)p[1] << 16) |\n                           ((unsigned int)p[2] << 8) |\n                           (unsigned int)p[3];\n\n    printf(\"x: %u\\n\", x);\n    printf(\"hex: %08X\\n\", x);\n    printf(\"bytes: %02X %02X %02X %02X\\n\",\n           (unsigned int)p[0], (unsigned int)p[1],\n           (unsigned int)p[2], (unsigned int)p[3]);\n    printf(\"swap: %u\\n\", swapped);\n    return 0;\n}\n",
+    "points": [
+      "用 unsigned char * 指向 unsigned int 变量，逐字节读取对象表示",
+      "理解小端序下 p[0] 是最低地址字节、p[3] 是最高地址字节",
+      "移位前先把字节转成 unsigned int，再左移到对应位置拼出 swap",
+      "用 %08X 与 %02X 输出固定宽度的大写十六进制"
+    ],
+    "analysis": "思路：C 标准允许用字符类型的指针（char *、unsigned char *、signed char *）去访问任意对象的字节表示，这条例外叫「字符指针可以别名任何对象」。所以 `unsigned char *p = (unsigned char *)&x;` 之后，p[0] 到 p[3] 依次是 x 在内存里从低地址到高地址的 4 个字节，这是观察「内存布局」最直接的方式。\n\n关键步骤：① 用 %u 读入 unsigned int；② 把 &x 强转成 unsigned char *；③ 小端序下 p[0] 是 x 的最低字节（即 x & 0xFF），p[3] 是最高字节；④ 把 4 个字节按相反顺序拼接：`p[0] << 24 | p[1] << 16 | p[2] << 8 | p[3]`，得到「字节序颠倒」后的值；⑤ 用 %08X 输出 8 位十六进制、%02X 输出每个字节。\n\n样例验证：x = 305419896 = 0x12345678，小端存放为 78 56 34 12，所以 bytes 行是 78 56 34 12；把顺序颠倒后按小端解读得到 0x78563412 = 2018915346。\n\n复杂度：O(1)，只做了常数次字节访问与移位。\n\n易错点：① 用 int * 或其他类型指针去读对象表示，违反别名规则；② 移位前没把 byte 转成 unsigned int，若最高位为 1（如 0x80 << 24），提升为 int 后左移会溢出，属于未定义行为；③ 把 p[0] 当成最高字节，字节序整个搞反；④ 用 %d 输出 unsigned int，超过 INT_MAX 时打印成负数；⑤ 用 %x 输出小写，与样例的大写不一致；⑥ 主观认为所有机器都是小端 —— 本题按小端描述，换平台时要按实际字节序理解。⑦ 若把 p 声明为 char * 去读，最高字节会被当作负数，移位与比较都会得到意外结果。",
+    "module": "指针",
+    "variants": {
+      "cpp": {
+        "solution": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main()\n{\n    unsigned int x;\n    if (!(cin >> x))\n        return 0;\n\n    const unsigned char *p = reinterpret_cast<const unsigned char *>(&x);\n    unsigned int swapped = (static_cast<unsigned int>(p[0]) << 24) |\n                           (static_cast<unsigned int>(p[1]) << 16) |\n                           (static_cast<unsigned int>(p[2]) << 8) |\n                           static_cast<unsigned int>(p[3]);\n\n    cout << \"x: \" << dec << x << '\\n';\n    cout << \"hex: \" << uppercase << hex << setw(8) << setfill('0') << x << '\\n';\n\n    cout << \"bytes: \" << uppercase << hex << setfill('0');\n    for (int i = 0; i < 4; ++i) {\n        if (i)\n            cout << ' ';\n        cout << setw(2) << static_cast<unsigned int>(p[i]);\n    }\n    cout << '\\n';\n\n    cout << \"swap: \" << dec << swapped << '\\n';\n    return 0;\n}\n",
+        "points": [
+          "用 reinterpret_cast 把地址转成 const unsigned char *，逐字节观察",
+          "用移位与位或拼出字节序颠倒后的值",
+          "用 uppercase / hex / setw / setfill 输出固定宽度十六进制",
+          "输出 swap 前用 dec 切回十进制，避免格式状态残留"
+        ],
+        "analysis": "思路：C++ 版用 reinterpret_cast 把 unsigned int 的地址转成 const unsigned char *，这与 C 的强制转换语义相同，但更明确地表达了「重新解释这块内存」。拼接与输出分别用移位和 iomanip 完成，不依赖 printf。\n\n关键步骤：① 读入 unsigned int；② 用 reinterpret_cast 得到字节指针；③ 四个字节分别左移 24、16、8、0 位再按位或，得到字节序颠倒的值，每步都先转成 unsigned int；④ 输出 hex 时设置 uppercase、hex、setw(8)、setfill('0')；⑤ 输出 bytes 时每个字节 setw(2)；⑥ 最后用 dec 切回十进制输出 swap。\n\n延伸：若要把结果写回变量，可以用 memcpy 把 4 个字节按新顺序拷回去，但更常见的做法是用位运算重排；理解字节序对网络协议与二进制文件格式的读写尤其重要。\n\n复杂度：O(1)。\n\n易错点：① 用 static_cast 转换指针类型，编译不过（必须用 reinterpret_cast 或 C 风格转换）；② 移位前不转 unsigned int，0x80 这类字节会触发有符号溢出；③ 忘记切回 dec，swap 行被 hex 状态影响而输出成十六进制；④ setw 只对下一次输出有效，漏写导致宽度不足；⑤ 把 p 声明成可写指针后往对象里写字节，破坏原值；⑥ 用 int 而不是 unsigned int 读入，超过 2^31 的值读不进来。"
+      },
+      "python": {
+        "solution": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    if not data:\n        return\n\n    x = int(data[0]) & 0xFFFFFFFF\n\n    # to_bytes(4, \"little\") 等价于 p[0]..p[3]：低地址存放低位字节\n    raw = x.to_bytes(4, \"little\")\n    swapped = int.from_bytes(raw[::-1], \"little\")\n\n    print(f\"x: {x}\")\n    print(f\"hex: {x:08X}\")\n    print(\"bytes: \" + \" \".join(f\"{b:02X}\" for b in raw))\n    print(f\"swap: {swapped}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+        "points": [
+          "用 to_bytes(4, 'little') 得到低地址在前的 4 个字节",
+          "用切片 [::-1] 颠倒字节顺序，再用 from_bytes 还原整数",
+          "用 :08X 与 :02X 输出固定宽度的十六进制",
+          "用 & 0xFFFFFFFF 保证输入落在 32 位范围内"
+        ],
+        "analysis": "思路：Python 的整数没有固定宽度，要观察「内存布局」得显式指定宽度和字节序：`x.to_bytes(4, \"little\")` 得到的 4 字节序列，正好对应 C 里从低地址到高地址的 p[0] 到 p[3]；把序列倒过来再按小端解读，就是 C 版移位拼接的结果。\n\n关键步骤：① 读入 x，用与 0xFFFFFFFF 做按位与的方式截到 32 位；② 调用 to_bytes 得到 4 个小端字节；③ 用切片倒序后交给 int.from_bytes 还原成整数；④ 输出 x 的十进制、八位大写十六进制、每个字节的两位大写十六进制；⑤ 输出 swap。\n\n复杂度：O(1)。\n\n易错点：① 用 \"big\" 作为字节序，得到的序列与小端描述相反；② 直接把原字节按大端解读当成 swap，其实那是另一种含义；③ 忘记截断到 32 位，输入超过范围时 to_bytes 抛 OverflowError；④ 用 hex(x) 输出带 0x 前缀且是小写，与样例不符；⑤ 输出字节时用十进制转换，得不到两位十六进制；⑥ 十六进制格式不带宽度，前导 0 丢失，与样例的 8 位不符。"
+      }
+    }
+  }
+]
