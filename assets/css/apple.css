@@ -824,3 +824,31 @@ body.auth-open { overflow: hidden; }
   .cw-gutter { min-width: 36px; padding-left: 8px; }
   .cw-input { height: 180px; padding-right: 10px; }
 }
+
+/* ---------- 填空判分 / 编程题代码检查 ---------- */
+.fill-work { margin: 16px 0; padding: 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-2); }
+.fill-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; color: var(--ink); }
+.fill-head .icon { width: 16px; height: 16px; color: var(--brand); }
+.fill-head em { margin-left: auto; font-style: normal; font-size: 11.5px; font-weight: 500; color: var(--muted); }
+.fill-rows { display: grid; gap: 8px; margin-top: 12px; }
+.fill-row { display: flex; align-items: center; gap: 10px; }
+.fill-no { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--surface-3); color: var(--muted); font-size: 12px; }
+.fill-input { flex: 1; height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-family: var(--mono); font-size: 13.5px; }
+.fill-input:focus { outline: 0; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(0,113,227,.14); }
+.fill-row.ok .fill-input { border-color: rgba(29,154,74,.55); background: var(--ok-soft); }
+.fill-row.bad .fill-input { border-color: rgba(227,0,0,.5); background: var(--bad-soft); }
+.fill-actions { display: flex; gap: 8px; margin-top: 12px; }
+.fill-work .verdict { margin-top: 10px; }
+.code-check { margin: -4px 0 14px; }
+.code-check.show { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); }
+.code-check .verdict { margin: 0; }
+.check-list { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 12.5px; line-height: 1.75; }
+.check-list li::marker { color: var(--bad); }
+.cw-acts button[data-act=check-code] { border-color: rgba(41,151,255,.55); background: rgba(41,151,255,.18); }
+@media (max-width: 520px) {
+  .fill-work { padding: 12px; }
+  .fill-input { height: 38px; }
+}
+
+.code-check .verdict.pending { background: var(--brand-soft); color: var(--brand); }
+.check-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }

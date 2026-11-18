@@ -175,6 +175,9 @@
       if (typeof p.choice === 'number') return p.choice === lq.answer ? 'ok' : 'bad';
       return p.revealed ? 'seen' : 'none';
     }
+    if (p.check === 'ok') return 'ok';
+    if (p.check === 'bad') return 'bad';
+    if (p.check === 'pending') return 'seen';
     if (p.self === 'ok') return 'ok';
     if (p.self === 'bad') return 'bad';
     return p.revealed ? 'seen' : 'none';
@@ -554,8 +557,196 @@
   }
 
   /* ---------------- Card rendering ---------------- */
-  function renderCard(q) {
-    var lq = localized(q, state.lang);
+  /* ---------------- 填空题作答与判分 ---------------- */
+  function normBlank(v) {
+    return String(v == null ? '' : v)
+      .replace(/[\uFF08]/g, '(').replace(/[\uFF09]/g, ')')
+      .replace(/[\uFF0C]/g, ',').replace(/[\uFF1B]/g, ';')
+      .replace(/[\uFF1A]/g, ':').replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, '');
+  }
+
+  function renderFillWork(lq, p) {
+    if (!Array.isArray(lq.blanks) || !lq.blanks.length) return '';
+    var answers = p.answers || [];
+    var checked = p.check;
+    var rows = lq.blanks.map(function (b, i) {
+      var val = answers[i] == null ? '' : answers[i];
+      var cls = '';
+      if (checked === 'ok') cls = ' ok';
+      else if (checked === 'bad') cls = normBlank(val) === normBlank(b.answer) ? ' ok' : ' bad';
+      return '<div class="fill-row' + cls + '">' +
+        '<span class="fill-no">' + esc(b.no) + '</span>' +
+        '<input class="fill-input" type="text" data-index="' + i + '" value="' + esc(val) + '" ' +
+        'placeholder="填写第 ' + esc(b.no) + ' 空" autocomplete="off" spellcheck="false" ' +
+        'aria-label="第 ' + esc(b.no) + ' 空"' + (checked === 'ok' ? ' disabled' : '') + '>' +
+        '<span class="fill-mark" aria-hidden="true"></span></div>';
+    }).join('');
+
+    var verdict = '';
+    if (checked === 'ok') {
+      verdict = '<div class="verdict ok">' + icon('check') + '<span>填空全部正确，已计入正确率</span></div>';
+    } else if (checked === 'bad') {
+      verdict = '<div class="verdict bad">' + icon('x') +
+        '<span>还有空不正确，已加入错题本；改完可以再检查一次</span></div>';
+    }
+
+    return '<div class="fill-work">' +
+      '<div class="fill-head">' + icon('command') + '<span>在下方填入答案</span>' +
+      '<em>' + lq.blanks.length + ' 个空</em></div>' +
+      '<div class="fill-rows">' + rows + '</div>' +
+      '<div class="fill-actions">' +
+      '<button class="btn primary small" type="button" data-act="check-fill">' + icon('check') + '检查答案</button>' +
+      '<button class="btn ghost small" type="button" data-act="clear-fill">清空</button>' +
+      '</div>' + verdict + '</div>';
+  }
+
+  /* ---------------- 编程题检查 ---------------- */
+  function extractSample(stem) {
+    var text = String(stem || '');
+    function grab(label) {
+      var re = new RegExp('\\*\\*' + label + '[：:]\\*\\*\\s*```[a-zA-Z]*\\n([\\s\\S]*?)```');
+      var m = text.match(re);
+      return m ? m[1] : '';
+    }
+    return { input: grab('输入样例'), output: grab('输出样例') };
+  }
+
+  function blankCount(lq) {
+    var m = String(lq.stem || '').match(/本题无输入|无输入/);
+    return m ? 0 : 1;
+  }
+
+  function balanceIssue(code) {
+    var stack = [], pairs = { ')': '(', ']': '[', '}': '{' }, opens = '([{';
+    var inStr = null, esc = false, inLine = false, inBlock = false;
+    for (var i = 0; i < code.length; i++) {
+      var c = code.charAt(i), n = code.charAt(i + 1);
+      if (inLine) { if (c === '\n') inLine = false; continue; }
+      if (inBlock) { if (c === '*' && n === '/') { inBlock = false; i++; } continue; }
+      if (inStr) {
+        if (esc) { esc = false; continue; }
+        if (c === '\\') { esc = true; continue; }
+        if (c === inStr) inStr = null;
+        continue;
+      }
+      if (c === '/' && n === '/') { inLine = true; i++; continue; }
+      if (c === '/' && n === '*') { inBlock = true; i++; continue; }
+      if (c === '"' || c === "'") { inStr = c; continue; }
+      if (opens.indexOf(c) >= 0) { stack.push(c); continue; }
+      if (pairs[c]) {
+        if (stack.pop() !== pairs[c]) return '括号不配对：多了一个 ' + c + ' 或前面缺少对应的 ' + pairs[c];
+      }
+    }
+    if (inStr) return '字符串引号没有闭合';
+    if (stack.length) return '括号不配对：还有 ' + stack.length + ' 个左括号没有闭合';
+    return '';
+  }
+
+  function staticCheckCode(code, lq) {
+    var issues = [];
+    var src = String(code || '');
+    if (!src.trim()) return { ok: false, issues: ['还没有写代码，先写一个完整程序吧'] };
+    if (src.split('\n').length < 2) issues.push('代码只有一行，写成一个完整程序更稳妥');
+    if (/TODO|待补充|FIXME|XXX/.test(src)) issues.push('代码里还有 TODO / 待补充 之类的占位内容');
+    var bal = balanceIssue(src);
+    if (bal) issues.push(bal);
+    var needInput = blankCount(lq) > 0;
+
+    if (lq.lang === 'python') {
+      if (needInput && !/input\s*\(|sys\.stdin/.test(src)) issues.push('题目需要读入数据，但没有看到 input() 或 sys.stdin');
+      if (!/print\s*\(/.test(src)) issues.push('没有看到 print 输出');
+      if (/[;{}]\s*$/m.test(src)) issues.push('Python 不需要行尾分号或大括号，可能混入了 C 语法');
+    } else {
+      if (!/\bmain\s*\(/.test(src)) issues.push('缺少 main 函数');
+      if (needInput && !/(scanf|cin\s*>>|getchar|fgets|getline)/.test(src)) issues.push('题目需要读入数据，但没有看到输入语句');
+      if (!/(printf|cout\s*<<|puts|putchar)/.test(src)) issues.push('没有看到输出语句');
+      if (lq.lang === 'c' && /#include\s*<iostream>|\bcout\b|\bcin\b|std::/.test(src)) issues.push('当前是 C 模式，不要使用 C++ 的 iostream / cout');
+      if (lq.lang === 'cpp' && /scanf\s*\(/.test(src) && !/iostream/.test(src)) issues.push('C++ 模式建议用 <iostream> 读写');
+    }
+    return { ok: issues.length === 0, issues: issues };
+  }
+
+  function normOutput(s) {
+    return String(s == null ? '' : s).replace(/\r/g, '').split('\n').map(function (l) {
+      return l.replace(/[ \t]+$/, '');
+    }).join('\n').replace(/\n+$/, '');
+  }
+
+  var PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
+
+  function loadPyodideEnv() {
+    if (window.__pyReady) return window.__pyReady;
+    window.__pyReady = new Promise(function (resolve, reject) {
+      function fail(err) { window.__pyReady = null; reject(err); }
+      function boot() {
+        window.loadPyodide({ indexURL: PYODIDE_BASE }).then(resolve, fail);
+      }
+      if (window.loadPyodide) { boot(); return; }
+      var s = document.createElement('script');
+      s.src = PYODIDE_BASE + 'pyodide.js';
+      s.onload = boot;
+      s.onerror = function () { fail(new Error('运行环境加载失败')); };
+      document.head.appendChild(s);
+    });
+    return window.__pyReady;
+  }
+
+  function runPythonInBrowser(code, stdin) {
+    return loadPyodideEnv().then(function (py) {
+      py.globals.set('__user_code', code);
+      py.globals.set('__user_stdin', stdin || '');
+      return py.runPython([
+        'import sys, io, contextlib, traceback',
+        'sys.stdin = io.StringIO(__user_stdin)',
+        'buf = io.StringIO()',
+        'err = ""',
+        'try:',
+        '    with contextlib.redirect_stdout(buf):',
+        '        exec(compile(__user_code, "<answer>", "exec"), {"__name__": "__main__"})',
+        'except Exception:',
+        '    err = traceback.format_exc()',
+        'buf.getvalue() if not err else ("__ERROR__" + err)'
+      ].join('\n'));
+    });
+  }
+
+  function renderCodeCheck(lq, p) {
+    if (lq.type !== 'design') return '';
+    var msg = '';
+    var actions = '';
+    if (p.check === 'ok') {
+      msg = '<div class="verdict ok">' + icon('check') + '<span>代码检查通过，已计入正确率</span></div>';
+    } else if (p.check === 'bad') {
+      msg = '<div class="verdict bad">' + icon('x') + '<span>代码检查未通过，已加入错题本</span></div>';
+    } else if (p.check === 'pending') {
+      msg = '<div class="verdict pending">' + icon('command') + '<span>结构检查通过，等你确认样例结果</span></div>';
+      actions = '<div class="check-actions">' +
+        '<button class="btn primary small" type="button" data-act="code-pass">样例输出一致</button>' +
+        '<button class="btn ghost small" type="button" data-act="code-fail">不一致，继续改</button>' +
+        '</div>';
+    }
+    var issues = Array.isArray(p.checkMsg) ? p.checkMsg : [];
+    var list = issues.length ? '<ul class="check-list">' + issues.map(function (s) {
+      return '<li>' + inline(s) + '</li>';
+    }).join('') + '</ul>' : '';
+    return '<div class="code-check"' + (msg ? ' show' : '') + '>' + msg + list + actions + '</div>';
+  }
+
+  function recordCheck(q, ok, msg) {
+    var p = progressOf(q) || {};
+    p.check = ok ? 'ok' : 'bad';
+    p.checkMsg = msg || [];
+    p.ts = Date.now();
+    if (ok) p.revealed = true;
+    state.progress[state.lang + ':' + q.id] = p;
+    saveState();
+    haptic(ok ? [12, 30, 14] : [42]);
+    afterChange(q);
+    toast(ok ? '检查通过，已计入正确率' : '还没通过，看看红色提示再改改');
+  }
+
+  function renderCard(q) {    var lq = localized(q, state.lang);
     var p = progressOf(q) || {};
     var answeredChoice = lq.type === 'choice' && typeof p.choice === 'number';
     var revealed = answeredChoice || p.revealed === true;
@@ -605,7 +796,9 @@
       }
     }
 
+    if (lq.type === 'fill') body += renderFillWork(lq, p);
     if (lq.type !== 'choice') body += renderEditor(lq, revealed);
+    if (lq.type === 'design') body += renderCodeCheck(lq, p);
 
     if (revealed) {
       body += renderAnswerPanel(lq, p, q);
@@ -643,9 +836,13 @@
     var placeholder = lq.type === 'fill'
       ? '按题目要求补全程序；可点「模板」插入起始代码'
       : '在这里编写完整程序；可点「模板」插入起始代码';
+    var footText = lq.type === 'design'
+      ? (lq.lang === 'python' ? '草稿自动保存 · 检查代码会自动运行样例（需联网）' : '草稿自动保存 · 检查代码会做结构检查')
+      : '草稿自动保存 · 仅本机';
     return '<div class="code-work" data-key="' + esc(key) + '">' +
       '<div class="cw-head"><span class="cw-title">' + icon('command') + '写代码 · ' + esc(langLabel(lq.lang)) + '</span>' +
       '<div class="cw-acts">' +
+      (lq.type === 'design' ? '<button type="button" data-act="check-code">检查代码</button>' : '') +
       '<button type="button" data-act="cw-template">模板</button>' +
       '<button type="button" data-act="cw-copy">复制</button>' +
       (revealed && lq.type === 'design' ? '<button type="button" data-act="cw-ref">对照参考</button>' : '') +
@@ -654,7 +851,7 @@
       '<div class="cw-body"><pre class="cw-gutter" aria-hidden="true">' + gutter + '</pre>' +
       '<textarea class="cw-input" spellcheck="false" autocomplete="off" autocapitalize="off" ' +
       'aria-label="代码编辑区" placeholder="' + esc(placeholder) + '">' + esc(draft) + '</textarea></div>' +
-      '<div class="cw-foot"><span class="cw-status">草稿自动保存 · 仅本机</span>' +
+      '<div class="cw-foot"><span class="cw-status">' + footText + '</span>' +
       '<span class="cw-lines">' + lines + ' 行</span></div>' +
       '</div>';
   }
@@ -906,9 +1103,9 @@
       if (lq.type === 'choice' && p && typeof p.choice === 'number') {
         attempt++;
         if (p.choice === lq.answer) correct++;
-      } else if (lq.type !== 'choice' && p && (p.self === 'ok' || p.self === 'bad')) {
+      } else if (lq.type !== 'choice' && p && (p.check === 'ok' || p.check === 'bad' || p.self === 'ok' || p.self === 'bad')) {
         attempt++;
-        if (p.self === 'ok') correct++;
+        if (p.check === 'ok' || (!p.check && p.self === 'ok')) correct++;
       }
     });
     var pct = Math.round(done / TOTAL * 100);
@@ -1025,6 +1222,104 @@
       return;
     }
 
+    if (act === 'check-fill') {
+      var inputs = card.querySelectorAll('.fill-input');
+      var answers = Array.prototype.map.call(inputs, function (inp) { return inp.value; });
+      if (!inputs.length) return;
+      var filled = answers.filter(function (v) { return String(v).trim(); }).length;
+      if (!filled) { toast('先填几个空再检查吧'); return; }
+      var wrong = 0;
+      (lq.blanks || []).forEach(function (b, i) {
+        if (normBlank(answers[i]) !== normBlank(b.answer)) wrong++;
+      });
+      var pf = progressOf(q) || {};
+      pf.answers = answers;
+      pf.check = wrong ? 'bad' : 'ok';
+      pf.ts = Date.now();
+      if (!wrong) pf.revealed = true;
+      state.progress[state.lang + ':' + q.id] = pf;
+      saveState();
+      haptic(wrong ? [42] : [12, 30, 14]);
+      afterChange(q);
+      toast(wrong ? '还有 ' + wrong + ' 空不对，已加入错题本' : '填空全部正确');
+      return;
+    }
+
+    if (act === 'clear-fill') {
+      var pc = progressOf(q) || {};
+      delete pc.answers;
+      delete pc.check;
+      state.progress[state.lang + ':' + q.id] = pc;
+      saveState();
+      haptic(10);
+      afterChange(q);
+      return;
+    }
+
+    if (act === 'check-code') {
+      var taCode = card.querySelector('.cw-input');
+      if (!taCode) return;
+      var code = taCode.value;
+      var res = staticCheckCode(code, lq);
+      if (!res.ok) {
+        recordCheck(q, false, res.issues);
+        var first = card.querySelector('.code-check');
+        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return;
+      }
+      if (lq.lang !== 'python') {
+        var pp = progressOf(q) || {};
+        pp.check = 'pending';
+        pp.checkMsg = ['结构检查通过。浏览器无法编译 C/C++，请把代码复制到本地，用题目样例运行一次，再选择下面的结果。'];
+        pp.ts = Date.now();
+        state.progress[state.lang + ':' + q.id] = pp;
+        saveState();
+        haptic(8);
+        afterChange(q);
+        var pendingEl = document.querySelector('.q-card[data-id="' + q.id + '"] .code-check');
+        if (pendingEl) pendingEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return;
+      }
+      var statusEl = card.querySelector('.cw-status');
+      if (statusEl) statusEl.textContent = '正在加载 Python 运行环境（首次约 10 MB）…';
+      var sample = extractSample(lq.stem);
+      if (!sample.output) { recordCheck(q, false, ['没有找到输出样例，无法自动判题']); return; }
+      Promise.race([
+        runPythonInBrowser(code, sample.input),
+        new Promise(function (_, rej) { setTimeout(function () { rej(new Error('timeout')); }, 20000); })
+      ]).then(function (out) {
+        var text = String(out);
+        if (text.indexOf('__ERROR__') === 0) {
+          var tail = text.slice(9).trim().split('\n').slice(-2).join(' ');
+          recordCheck(q, false, ['运行出错：' + tail]);
+          return;
+        }
+        var okRun = normOutput(text) === normOutput(sample.output);
+        if (okRun) {
+          recordCheck(q, true, []);
+        } else {
+          recordCheck(q, false, [
+            '样例输入：' + (sample.input || '（无）').replace(/\n/g, ' '),
+            '你的输出：' + normOutput(text).replace(/\n/g, ' '),
+            '期望输出：' + normOutput(sample.output).replace(/\n/g, ' ')
+          ]);
+        }
+      }).catch(function () {
+        var pp2 = progressOf(q) || {};
+        pp2.check = 'pending';
+        pp2.checkMsg = ['浏览器内 Python 运行环境加载失败（可能无网络或被拦截）。请复制代码到本地运行题目样例，再选择结果。'];
+        pp2.ts = Date.now();
+        state.progress[state.lang + ':' + q.id] = pp2;
+        saveState();
+        afterChange(q);
+        toast('运行环境不可用，请本地运行后自评');
+      });
+      return;
+    }
+
+    if (act === 'code-pass') { recordCheck(q, true, []); return; }
+    if (act === 'code-fail') { recordCheck(q, false, ['本地运行结果与样例不一致，请对照参考程序再改改']); return; }
+
     if (act === 'cw-copy') {
       var taCopy = card.querySelector('.cw-input');
       if (taCopy) copyText(taCopy.value);
@@ -1071,6 +1366,18 @@
   }
 
   function onEditorInput(e) {
+    var fill = e.target.closest ? e.target.closest('.fill-input') : null;
+    if (fill) {
+      var cardF = fill.closest('.q-card');
+      var qF = cardF && byId.get(cardF.dataset.id);
+      if (!qF) return;
+      var pF = progressOf(qF) || {};
+      pF.answers = Array.prototype.map.call(cardF.querySelectorAll('.fill-input'), function (inp) { return inp.value; });
+      state.progress[state.lang + ':' + qF.id] = pF;
+      clearTimeout(onEditorInput._t);
+      onEditorInput._t = setTimeout(saveState, 500);
+      return;
+    }
     var ta = e.target.closest ? e.target.closest('.cw-input') : null;
     if (!ta) return;
     var card = ta.closest('.q-card');
